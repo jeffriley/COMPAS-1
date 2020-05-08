@@ -93,12 +93,12 @@ BaseBinaryStar::BaseBinaryStar(const AIS &p_AIS, const long int p_Id) {
 
             m_Eccentricity              = 0.0;                                                                                                  // now circular
 
-            // create new stars with equal masses - eveything else is recalculated
+            // create new stars with equal masses - all other ZAMS values are recalculated
             delete m_Star1;
             m_Star1 = new BinaryConstituentStar(m_RandomSeed, mass1, metallicity1, {}, m_LBVfactor, m_WolfRayetFactor);
             delete m_Star2;
             m_Star2 = new BinaryConstituentStar(m_RandomSeed, mass2, metallicity2, {}, m_LBVfactor, m_WolfRayetFactor);
-        
+
             rocheLobeTracker1 = (m_Star1->Radius() * RSOL_TO_AU) / (m_SemiMajorAxis * CalculateRocheLobeRadius_Static(mass1, mass2));
             rocheLobeTracker2 = (m_Star2->Radius() * RSOL_TO_AU) / (m_SemiMajorAxis * CalculateRocheLobeRadius_Static(mass2, mass1));
         }
@@ -173,18 +173,23 @@ BaseBinaryStar::BaseBinaryStar(const AIS           &p_AIS,
 
         m_MassesEquilibratedAtBirth = true;                                                                                                     // record that we've equilbrated
 
-        double newMass1             = (mass1 + mass2) / 2.0;                                                                                    // equilibrate masses
-        double newMass2             = newMass1;                                                                                                 // ditto
+        mass1            = (mass1 + mass2) / 2.0;                                                                                               // equilibrate masses
+        mass2            = mass1;                                                                                                               // ditto
             
-        double M                    = newMass1 + newMass2;
-        double m1m2                 = newMass1 * newMass2;
-        m_SemiMajorAxis            *= 16.0 * m1m2 * m1m2 / (M * M * M * M) * (1.0 - (m_Eccentricity * m_Eccentricity));                         // circularise; conserve angular momentum
+        double M         = mass1 + mass2;
+        double m1m2      = mass1 * mass2;
+        m_SemiMajorAxis *= 16.0 * m1m2 * m1m2 / (M * M * M * M) * (1.0 - (m_Eccentricity * m_Eccentricity));                                    // circularise; conserve angular momentum
 
-        m_Eccentricity              = 0.0;                                                                                                      // now circular
+        m_Eccentricity   = 0.0;                                                                                                                 // now circular
 
-        // equilibrate masses - recalculate everything else
-        (void)m_Star1->UpdateAttributesAndAgeOneTimestep(newMass1 - mass1, newMass1 - mass1, 0.0, true);
-        (void)m_Star2->UpdateAttributesAndAgeOneTimestep(newMass2 - mass2, newMass2 - mass2, 0.0, true);
+        // create new stars with equal masses - all other ZAMS values are recalculated
+        delete m_Star1;
+        m_Star1 = new BinaryConstituentStar(m_RandomSeed, mass1, metallicity1, p_KickParameters1, m_LBVfactor, m_WolfRayetFactor);
+        delete m_Star2;
+        m_Star2 = new BinaryConstituentStar(m_RandomSeed, mass2, metallicity2, p_KickParameters2, m_LBVfactor, m_WolfRayetFactor);
+
+        m_Star1->SetCompanion(m_Star2);
+        m_Star2->SetCompanion(m_Star1);
     }
 
     SetRemainingCommonValues();                                                                                                                 // complete the construction of the binary

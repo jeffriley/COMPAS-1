@@ -299,8 +299,10 @@
 //                                   Defect repairs:
 //                                      - fixed typo in Options.h: changed '#include "rand.h" to '#include "Rand.h"
 //                                      - fixed printing of actual random seed in Run_Details file (moved to Log.cpp from Options.cpp: initial random seed is set after options are set)
+// 02.11.01      JR - May 08, 2020 - Defect repair:
+//                                      - Issue #260 - Corrected recalculation of ZAMS values after eqilibration and cicularisation at birth when using grid files
 
-const std::string VERSION_STRING = "02.11.00";
+const std::string VERSION_STRING = "02.11.01";
 
 // Todo: still to do for Options code - name class member variables in same estyle as other classes (i.e. m_*)
 

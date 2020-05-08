@@ -287,7 +287,6 @@ double MainSequence::CalculateLuminosityOnPhase(const double p_Time, const doubl
 
 double MainSequence::CalculateAlphaR(const double p_Mass) {
 #define a m_AnCoefficients    // for convenience and readability - undefined at end of function
-
     double alphaR = 0.0;
 
          if (utils::Compare(p_Mass,   0.5) <  0) alphaR = a[62];

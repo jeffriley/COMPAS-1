@@ -1511,7 +1511,7 @@ double BaseStar::CalculateRadiusAtZAMS(const double p_MZAMS) {
  * @param   [IN]    p_Mass                      Mass in Msol
  * @return                                      Maximum core mass in Msol (McMax)
  */
-double BaseStar::CalculateMaximumCoreMass(double p_Mass) {
+double BaseStar::CalculateMaximumCoreMass(const double p_Mass) {
     return min(((1.45 * p_Mass) - 0.31), p_Mass);
 }
 
@@ -3469,7 +3469,6 @@ STELLAR_TYPE BaseStar::EvolveOnPhase() {
         m_Luminosity  = CalculateLuminosityOnPhase();
 
         std::tie(m_Radius, stellarType) = CalculateRadiusAndStellarTypeOnPhase();   // Radius and possibly new stellar type
-
         ResolveEnvelopeMassOnPhase(m_Tau);
 
         m_Mu          = CalculatePerturbationMuOnPhase();
