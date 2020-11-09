@@ -1309,6 +1309,24 @@ bool Options::AddOptions(OptionValues *p_Options, po::options_description *p_Opt
         )
 
         (
+            "initial-stellar-type",                                     
+            po::value<std::string>(&p_Options->m_InitialStellarType.typeString)->default_value(p_Options->m_InitialStellarType.typeString),                                                                    
+            ("Initial mass function (options: [MS, HG, FGB, CHeB, EAGB, TPAGB, HeMS, HeHG, HeGB, HeWD, COWD, ONeWD, NS, BH], default = " + p_Options->m_InitialStellarType.typeString + ")").c_str()
+        )
+
+        (
+            "initial-stellar-type-1",                                     
+            po::value<std::string>(&p_Options->m_InitialStellarType1.typeString)->default_value(p_Options->m_InitialStellarType1.typeString),                                                                    
+            ("Initial mass function (options: [MS, HG, FGB, CHeB, EAGB, TPAGB, HeMS, HeHG, HeGB, HeWD, COWD, ONeWD, NS, BH], default = " + p_Options->m_InitialStellarType1.typeString + ")").c_str()
+        )
+
+        (
+            "initial-stellar-type-2",                                     
+            po::value<std::string>(&p_Options->m_InitialStellarType2.typeString)->default_value(p_Options->m_InitialStellarType2.typeString),                                                                    
+            ("Initial mass function (options: [MS, HG, FGB, CHeB, EAGB, TPAGB, HeMS, HeHG, HeGB, HeWD, COWD, ONeWD, NS, BH], default = " + p_Options->m_InitialStellarType2.typeString + ")").c_str()
+        )
+
+        (
             "kick-direction",                                              
             po::value<std::string>(&p_Options->m_KickDirectionDistribution.typeString)->default_value(p_Options->m_KickDirectionDistribution.typeString),                                                        
             ("Natal kick direction distribution (options: [ISOTROPIC, INPLANE, PERPENDICULAR, POWERLAW, WEDGE, POLES], default = " + p_Options->m_KickDirectionDistribution.typeString + ")").c_str()
@@ -1735,6 +1753,21 @@ std::string Options::OptionValues::CheckAndSetOptions() {
             COMPLAIN_IF(!found, "Unknown Initial Mass Function");
         }
 
+        if (!DEFAULTED("initial-stellar-type")) {                                                                                  // initial stellar type
+            std::tie(found, m_InitialStellarType.type) = utils::GetMapKey(m_InitialStellarType.typeString, INITIAL_STELLAR_TYPE_LABEL, m_InitialStellarType.type);
+            COMPLAIN_IF(!found, "Unknown Initial Stellar Type");
+        }
+
+        if (!DEFAULTED("initial-stellar-type-1")) {                                                                                // primary initial stellar type
+            std::tie(found, m_InitialStellarType1.type) = utils::GetMapKey(m_InitialStellarType1.typeString, INITIAL_STELLAR_TYPE_LABEL, m_InitialStellarType1.type);
+            COMPLAIN_IF(!found, "Unknown Initial Stellar Type");
+        }
+
+        if (!DEFAULTED("initial-stellar-type-2")) {                                                                                // secondary initial stellar type
+            std::tie(found, m_InitialStellarType.type2) = utils::GetMapKey(m_InitialStellarType2.typeString, INITIAL_STELLAR_TYPE_LABEL, m_InitialStellarType2.type);
+            COMPLAIN_IF(!found, "Unknown Initial Stellar Type");
+        }
+
         if (!DEFAULTED("kick-direction")) {                                                                                         // kick direction
             std::tie(found, m_KickDirectionDistribution.type) = utils::GetMapKey(m_KickDirectionDistribution.typeString, KICK_DIRECTION_DISTRIBUTION_LABEL, m_KickDirectionDistribution.type);
             COMPLAIN_IF(!found, "Unknown Kick Direction Distribution");
@@ -1878,20 +1911,6 @@ std::string Options::OptionValues::CheckAndSetOptions() {
 
         COMPLAIN_IF(m_Metallicity < MINIMUM_METALLICITY || m_Metallicity > MAXIMUM_METALLICITY, "Metallicity (--metallicity) should be absolute metallicity and must be between " + std::to_string(MINIMUM_METALLICITY) + " and " + std::to_string(MAXIMUM_METALLICITY));
 
-// commenting this until I figure out the best way of handling minimum secondary mass wrt initial mass limits
-//        if (DEFAULTED("minimum-secondary-mass")) {
-//            m_MinimumMassSecondary = DEFAULTED("initial-mass-2") ? m_InitialMassFunctionMin : MINIMUM_INITIAL_MASS;
-//        }
-//
-//        if (DEFAULTED("initial-mass-2")) {
-//            COMPLAIN_IF(m_MinimumMassSecondary < m_InitialMassFunctionMin, "Seconday minimum mass (--minimum-secondary-mass) must be >= IMF minimum (--initial-mass-min) of " + std::to_string(m_InitialMassFunctionMin) + " Msol");
-//            COMPLAIN_IF(m_MinimumMassSecondary > m_InitialMassFunctionMax, "Seconday minimum mass (--minimum-secondary-mass) must be <= IMF maximum (--initial-mass-max) of " + std::to_string(m_InitialMassFunctionMax) + " Msol");
-//        }
-//        else {
-//            COMPLAIN_IF(m_MinimumMassSecondary < MINIMUM_INITIAL_MASS, "Seconday minimum mass (--minimum-secondary-mass) must be >= minimum initial mass of " + std::to_string(MINIMUM_INITIAL_MASS) + " Msol");
-//            COMPLAIN_IF(m_MinimumMassSecondary > MAXIMUM_INITIAL_MASS, "Seconday minimum mass (--minimum-secondary-mass) must be <= maximum initial mass of " + std::to_string(MAXIMUM_INITIAL_MASS) + " Msol");
-//        }
-// just use this for now
         COMPLAIN_IF(m_MinimumMassSecondary < MINIMUM_INITIAL_MASS, "Seconday minimum mass (--minimum-secondary-mass) must be >= minimum initial mass of " + std::to_string(MINIMUM_INITIAL_MASS) + " Msol");
         COMPLAIN_IF(m_MinimumMassSecondary > MAXIMUM_INITIAL_MASS, "Seconday minimum mass (--minimum-secondary-mass) must be <= maximum initial mass of " + std::to_string(MAXIMUM_INITIAL_MASS) + " Msol");
 

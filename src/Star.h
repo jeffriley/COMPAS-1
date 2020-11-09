@@ -52,11 +52,20 @@ class Star {
 public:
 
     Star();
+
+    Star(const unsigned long int p_RandomSeed,
+         const STELLAR_TYPE      p_StellarType,
+         const double            p_MZAMS, 
+         const double            p_Metallicity, 
+         const KickParameters    p_KickParameters = {});
+
     Star(const unsigned long int p_RandomSeed, 
          const double            p_MZAMS, 
          const double            p_Metallicity, 
          const KickParameters    p_KickParameters = {});
+
     Star(const Star& p_Star);
+
     Star& operator = (const Star& p_Star);
 
     virtual ~Star() { delete m_Star; delete m_SaveStar; }

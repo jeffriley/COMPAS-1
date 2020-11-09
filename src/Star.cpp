@@ -12,6 +12,24 @@ Star::Star() : m_Star(new BaseStar()) {
 }
 
 
+// Regular constructor - with parameters for RandomSeed, StellarType, MZAMS, Metallicity, LBVFactor and WolfRayetFactor
+Star::Star(const unsigned long int p_RandomSeed,
+           const STELLAR_TYPE      p_StellarType,
+           const double            p_MZAMS,
+           const double            p_Metallicity, 
+           const KickParameters    p_KickParameters) {
+
+    m_ObjectId   = globalObjectId++;                                                                                // set object id
+    m_ObjectType = OBJECT_TYPE::STAR;                                                                               // set object type
+
+    m_Star = new BaseStar(p_RandomSeed, p_MZAMS, p_Metallicity, p_KickParameters);                                  // create underlying BaseStar object
+
+    (void)SwitchTo(p_StellarType, true);                                                                            // switch to rquested stellar type
+
+    m_SaveStar = nullptr;
+}
+
+
 // Regular constructor - with parameters for RandomSeed, MZAMS, Metallicity, LBVFactor and WolfRayetFactor
 Star::Star(const unsigned long int p_RandomSeed,
            const double            p_MZAMS,
