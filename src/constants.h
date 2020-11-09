@@ -1145,6 +1145,27 @@ const COMPASUnorderedMap<STELLAR_TYPE, std::string> STELLAR_TYPE_LABEL = {
     { STELLAR_TYPE::NONE,                                      "Not_a_Star!" }
 };
 
+
+// stellar type short names
+const COMPASUnorderedMap<STELLAR_TYPE, std::string> INITIAL_STELLAR_TYPE_LABEL = {
+    { STELLAR_TYPE::MS_LTE_07,                                 "MS1" },
+    { STELLAR_TYPE::MS_GT_07,                                  "MS2" },
+    { STELLAR_TYPE::HERTZSPRUNG_GAP,                           "HG" },
+    { STELLAR_TYPE::FIRST_GIANT_BRANCH,                        "FGB" },
+    { STELLAR_TYPE::CORE_HELIUM_BURNING,                       "CHeB" },
+    { STELLAR_TYPE::EARLY_ASYMPTOTIC_GIANT_BRANCH,             "EAGB" },
+    { STELLAR_TYPE::THERMALLY_PULSING_ASYMPTOTIC_GIANT_BRANCH, "TPAGB" },
+    { STELLAR_TYPE::NAKED_HELIUM_STAR_MS,                      "HeMS" },
+    { STELLAR_TYPE::NAKED_HELIUM_STAR_HERTZSPRUNG_GAP,         "HeHG" },
+    { STELLAR_TYPE::NAKED_HELIUM_STAR_GIANT_BRANCH,            "HeGB" },
+    { STELLAR_TYPE::HELIUM_WHITE_DWARF,                        "HeWD" },
+    { STELLAR_TYPE::CARBON_OXYGEN_WHITE_DWARF,                 "COWD" },
+    { STELLAR_TYPE::OXYGEN_NEON_WHITE_DWARF,                   "ONeWD" },
+    { STELLAR_TYPE::NEUTRON_STAR,                              "NS" },
+    { STELLAR_TYPE::BLACK_HOLE,                                "BH" }
+};
+
+
 // (convenience) initializer list for "evolvable" stellar types
 // i.e. not STAR, BINARY_STAR, or NONE
 const std::initializer_list<STELLAR_TYPE> EVOLVABLE_TYPES = {
@@ -1166,6 +1187,7 @@ const std::initializer_list<STELLAR_TYPE> EVOLVABLE_TYPES = {
     STELLAR_TYPE::MASSLESS_REMNANT,
     STELLAR_TYPE::CHEMICALLY_HOMOGENEOUS
 };
+
 
 // (convenience) initializer list for MAIN SEQUENCE stars (does not include NAKED_HELIUM_STAR_MS)
 const std::initializer_list<STELLAR_TYPE> MAIN_SEQUENCE = {
