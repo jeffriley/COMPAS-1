@@ -34,10 +34,20 @@ BaseBinaryStar::BaseBinaryStar(const AIS &p_AIS, const long int p_Id) {
     // also check m2 > m2min
     // also check that when we are using AIS we are sampling inside the parameter space
 
+    bool done                                   = false;
     bool merger                                 = false;
     bool rlof                                   = false;
     bool secondarySmallerThanMinimumMass        = false;
     bool initialParametersOutsideParameterSpace = false;
+
+    // determine if any if the initial conditions are sampled
+    // we consider eccentricity distribution = ECCENTRICITY_DISTRIBUTION::ZERO to be not sampled!
+    bool sampled = OPTIONS->OptionSpecified("initial-mass-1") == 0 ||
+                   OPTIONS->OptionSpecified("initial-mass-2") == 0 ||
+//                   OPTIONS->OptionSpecified("metallicity") == 0 ||   // for now we don't sample metallicity - we always return ZSOL
+                  (OPTIONS->OptionSpecified("semi-major-axis") == 0 && OPTIONS->OptionSpecified("orbital-period") == 0) ||
+                  (OPTIONS->OptionSpecified("eccentricity") == 0 && OPTIONS->EccentricityDistribution() != ECCENTRICITY_DISTRIBUTION::ZERO);
+
 
     // Single stars are provided with a kick structure that specifies the values of the random
     // number to be used to generate to kick magnitude, and the actual kick magnitude specified
@@ -76,6 +86,15 @@ BaseBinaryStar::BaseBinaryStar(const AIS &p_AIS, const long int p_Id) {
     kickParameters2.meanAnomalySpecified     = OPTIONS->OptionSpecified("kick-mean-anomaly-2") == 1;
     kickParameters2.meanAnomaly              = OPTIONS->SN_MeanAnomaly2();
 
+    // loop here to find initial conditions that suit our needs
+    // if the user supplied all initial conditions, no loop
+    // loop for a maximum of MAX_BSE_INITIAL_CONDITIONS_ITERATIONS - it hasn't (that I
+    // know of) been a problem in the past, but we should have a guard on the loop so
+    // that we don't loop forever - probably more important now that the user can specify
+    // initial conditions (so might leave the insufficient space for the  (say) one to be
+    // sampled...)
+
+    int tries = 0;
     do {
 
         if(OPTIONS->AIS_RefinementPhase()) {                                                                                            // AIS refinement phase?
@@ -89,22 +108,24 @@ BaseBinaryStar::BaseBinaryStar(const AIS &p_AIS, const long int p_Id) {
                             ? OPTIONS->InitialMass1()                                                                                   // yes, use it
                             : m_AIS.DrawingFromAISDistributions()                                                                       // no - asmple it
                                 ? RAND->RandomGaussian(m_AIS.CovM1()) + m_AIS.MuM1()                                                    // ... using AIS
-                                : utils::SampleInitialMassDistribution(OPTIONS->InitialMassFunction(), 
-                                                                       OPTIONS->InitialMassFunctionMax(), 
-                                                                       OPTIONS->InitialMassFunctionMin(), 
-                                                                       OPTIONS->InitialMassFunctionPower());
+                                : utils::SampleInitialMass(OPTIONS->InitialMassFunction(), 
+                                                           OPTIONS->InitialMassFunctionMax(), 
+                                                           OPTIONS->InitialMassFunctionMin(), 
+                                                           OPTIONS->InitialMassFunctionPower());
                                   
         double mass2    = OPTIONS->OptionSpecified("initial-mass-2") == 1                                                               // user specified secondary mass?
                             ? OPTIONS->InitialMass2()                                                                                   // yes, use it
                             : m_AIS.DrawingFromAISDistributions()                                                                       // no, sample q and calculate mass2
                                 ? RAND->RandomGaussian(m_AIS.CovQ()) + m_AIS.MuQ() * mass1                                              // ... using AIS
-                                : utils::SampleQDistribution(OPTIONS->MassRatioDistribution(),
-                                                             OPTIONS->MassRatioDistributionMax(), 
-                                                             OPTIONS->MassRatioDistributionMin()) * mass1;                                                                        
+                                : utils::SampleMassRatio(OPTIONS->MassRatioDistribution(),
+                                                         OPTIONS->MassRatioDistributionMax(), 
+                                                         OPTIONS->MassRatioDistributionMin()) * mass1;                                                                        
 
         double metallicity = OPTIONS->OptionSpecified("metallicity") == 1                                                               // user specified metallicity?
                                 ? OPTIONS->Metallicity()                                                                                // yes, use it
-                                : utils::SampleMetallicity();                                                                           // no, sample it
+                                : utils::SampleMetallicity(OPTIONS->MetallicityDistribution(), 
+                                                           OPTIONS->MetallicityDistributionMax(), 
+                                                           OPTIONS->MetallicityDistributionMin());                                      // no, sample it
 
         if (OPTIONS->OptionSpecified("semi-major-axis") == 1) {                                                                         // user specified semi-major axis?
             m_SemiMajorAxis = OPTIONS->SemiMajorAxis();                                                                                 // yes, use it
@@ -118,28 +139,44 @@ BaseBinaryStar::BaseBinaryStar(const AIS &p_AIS, const long int p_Id) {
                     m_SemiMajorAxis = PPOW(10, RAND->RandomGaussian(m_AIS.CovLogA()) + m_AIS.MuLogA());                                 // yes, AIS
                 }
                 else {                                                                                                                  // no, not AIS
-                    m_SemiMajorAxis = utils::SampleSemiMajorAxisDistribution(OPTIONS->SemiMajorAxisDistribution(),                              
-                                                                             OPTIONS->SemiMajorAxisDistributionMax(), 
-                                                                             OPTIONS->SemiMajorAxisDistributionMin(),
-                                                                             OPTIONS->SemiMajorAxisDistributionPower(), 
-                                                                             OPTIONS->PeriodDistributionMax(), 
-                                                                             OPTIONS->PeriodDistributionMin(), 
-                                                                             mass1, 
-                                                                             mass2);
+                    m_SemiMajorAxis = utils::SampleSemiMajorAxis(OPTIONS->SemiMajorAxisDistribution(),                              
+                                                                 OPTIONS->SemiMajorAxisDistributionMax(), 
+                                                                 OPTIONS->SemiMajorAxisDistributionMin(),
+                                                                 OPTIONS->SemiMajorAxisDistributionPower(), 
+                                                                 OPTIONS->PeriodDistributionMax(), 
+                                                                 OPTIONS->PeriodDistributionMin(), 
+                                                                 mass1, 
+                                                                 mass2);
                 }
             }
         }
 
         m_Eccentricity  = OPTIONS->OptionSpecified("eccentricity") == 1                                                                 // user specified semi-major axis?
                             ? OPTIONS->Eccentricity()                                                                                   // yes, use it
-                            : utils::SampleEccentricityDistribution(OPTIONS->EccentricityDistribution(), 
-                                                                    OPTIONS->EccentricityDistributionMax(), 
-                                                                    OPTIONS->EccentricityDistributionMin());                            // no, sample it
+                            : utils::SampleEccentricity(OPTIONS->EccentricityDistribution(), 
+                                                        OPTIONS->EccentricityDistributionMax(), 
+                                                        OPTIONS->EccentricityDistributionMin());                                        // no, sample it
 
         // binary star contains two instances of star to hold masses, radii and luminosities.
         // star 1 initially more massive
-        m_Star1 = new BinaryConstituentStar(m_RandomSeed, mass1, metallicity, kickParameters1);
-        m_Star2 = new BinaryConstituentStar(m_RandomSeed, mass2, metallicity, kickParameters2);
+
+        // the initial stellar type of the stars may be supplied - this is to allow the user to 
+        // specify where evolution should start
+
+        // create stars according to the user-specified options
+        if (OPTIONS->OptionSpecified("initial-stellar-type-1") == 1 && OPTIONS->InitialStellarType1() != STELLAR_TYPE::NONE) {          // user specified valid initial stellar type for primary?                   
+            m_Star1 = new BinaryConstituentStar(m_RandomSeed, OPTIONS->InitialStellarType1(), mass1, metallicity, kickParameters1);     // yes - use it
+        }
+        else {
+            m_Star1 = new BinaryConstituentStar(m_RandomSeed, mass1, metallicity, kickParameters1);                                     // no - initial stellar type wil be one of the MS variants depending upon initial mass
+        }
+
+        if (OPTIONS->OptionSpecified("initial-stellar-type-2") == 1 && OPTIONS->InitialStellarType2() != STELLAR_TYPE::NONE) {          // user specified valid initial stellar type for secondary?                   
+            m_Star2 = new BinaryConstituentStar(m_RandomSeed, OPTIONS->InitialStellarType2(), mass2, metallicity, kickParameters2);     // yes - use it
+        }
+        else {
+            m_Star2 = new BinaryConstituentStar(m_RandomSeed, mass2, metallicity, kickParameters2);                                     // no - initial stellar type wil be one of the MS variants depending upon initial mass
+        }
 
         double rocheLobeTracker1 = (m_Star1->Radius() * RSOL_TO_AU) / (m_SemiMajorAxis * (1.0 - m_Eccentricity) * CalculateRocheLobeRadius_Static(mass1, mass2));
         double rocheLobeTracker2 = (m_Star2->Radius() * RSOL_TO_AU) / (m_SemiMajorAxis * (1.0 - m_Eccentricity) * CalculateRocheLobeRadius_Static(mass2, mass1));
@@ -159,13 +196,24 @@ BaseBinaryStar::BaseBinaryStar(const AIS &p_AIS, const long int p_Id) {
             double m1m2      = mass1 * mass2;
             m_SemiMajorAxis *= 16.0 * m1m2 * m1m2 / (M * M * M * M) * (1.0 - (m_Eccentricity * m_Eccentricity));                        // circularise; conserve angular momentum
 
-            m_Eccentricity   = 0.0;                                                                                                      // now circular
+            m_Eccentricity   = 0.0;                                                                                                     // now circular
 
             // create new stars with equal masses - all other ZAMS values recalculated
             delete m_Star1;
-            m_Star1 = new BinaryConstituentStar(m_RandomSeed, mass1, metallicity, kickParameters1);
+            if (OPTIONS->OptionSpecified("initial-stellar-type-1") == 1 && OPTIONS->InitialStellarType1() != STELLAR_TYPE::NONE) {      // user specified valid initial stellar type for primary?                   
+                m_Star1 = new BinaryConstituentStar(m_RandomSeed, OPTIONS->InitialStellarType1(), mass1, metallicity, kickParameters1); // yes - use it
+            }
+            else {
+                m_Star1 = new BinaryConstituentStar(m_RandomSeed, mass1, metallicity, kickParameters1);                                 // no - initial stellar type wil be one of the MS variants depending upon initial mass
+            }
+
             delete m_Star2;
-            m_Star2 = new BinaryConstituentStar(m_RandomSeed, mass2, metallicity, kickParameters2);
+            if (OPTIONS->OptionSpecified("initial-stellar-type-2") == 1 && OPTIONS->InitialStellarType2() != STELLAR_TYPE::NONE) {      // user specified valid initial stellar type for secondary?                   
+                m_Star2 = new BinaryConstituentStar(m_RandomSeed, OPTIONS->InitialStellarType2(), mass2, metallicity, kickParameters2); // yes - use it
+            }
+            else {
+                m_Star2 = new BinaryConstituentStar(m_RandomSeed, mass2, metallicity, kickParameters2);                                 // no - initial stellar type wil be one of the MS variants depending upon initial mass
+            }
         
             rocheLobeTracker1 = (m_Star1->Radius() * RSOL_TO_AU) / (m_SemiMajorAxis * CalculateRocheLobeRadius_Static(mass1, mass2));   //eccentricity already zero
             rocheLobeTracker2 = (m_Star2->Radius() * RSOL_TO_AU) / (m_SemiMajorAxis * CalculateRocheLobeRadius_Static(mass2, mass1));
@@ -190,7 +238,24 @@ BaseBinaryStar::BaseBinaryStar(const AIS &p_AIS, const long int p_Id) {
                                                      (OPTIONS->OptionSpecified("semi-major-axis") != 1 && utils::Compare(m_SemiMajorAxis, OPTIONS->SemiMajorAxisDistributionMin()) < 0) ||  // semiMajorAxis is outside (below) parameter space
                                                      (OPTIONS->OptionSpecified("semi-major-axis") != 1 && utils::Compare(m_SemiMajorAxis, OPTIONS->SemiMajorAxisDistributionMax())) > 0;    // semiMajorAxis is outside (above) parameter space
         }
-    } while ( (!OPTIONS->AllowRLOFAtBirth() && rlof) || (!OPTIONS->AllowTouchingAtBirth() && merger) || secondarySmallerThanMinimumMass || initialParametersOutsideParameterSpace);
+
+        // check whether our initial conditions are good
+        // if they are - evolve the binary
+        // if they are not ok:
+        //    - if we sampled at least one of them, sample again
+        //    - if all were user supplied, set error - Evolve() will show the error and return without evolving
+
+        bool ok = !((!OPTIONS->AllowRLOFAtBirth() && rlof) || (!OPTIONS->AllowTouchingAtBirth() && merger) || secondarySmallerThanMinimumMass || initialParametersOutsideParameterSpace);
+
+        done = ok;
+        if (!sampled && !ok) {
+            m_Error = ERROR::INVALID_INITIAL_ATTRIBUTES;
+            done = true;
+        }
+
+    } while (!done && ++tries < MAX_BSE_INITIAL_CONDITIONS_ITERATIONS);
+
+    if (!done) m_Error = ERROR::INVALID_INITIAL_ATTRIBUTES;                                                                             // too many iterations - bad initial conditions
 
     SetRemainingValues();                                                                                                               // complete the construction of the binary
 }
@@ -253,8 +318,6 @@ void BaseBinaryStar::SetInitialValues(const AIS &p_AIS, const long int p_Id) {
     // apply option values for initial values
 
     m_CEDetails.alpha = OPTIONS->CommonEnvelopeAlpha();         // JR: we can probably remove this variable now and just use the option value directly in the code
-    m_LBVfactor       = OPTIONS->LuminousBlueVariableFactor();  // ditto
-    m_WolfRayetFactor = OPTIONS->WolfRayetFactor();             // ditto
 }
 
 
@@ -595,7 +658,6 @@ COMPAS_VARIABLE BaseBinaryStar::BinaryPropertyValue(const T_ANY_PROPERTY p_Prope
         case BINARY_PROPERTY::ERROR:                                                value = Error();                                                            break;
         case BINARY_PROPERTY::ID:                                                   value = ObjectId();                                                         break;
         case BINARY_PROPERTY::IMMEDIATE_RLOF_POST_COMMON_ENVELOPE:                  value = ImmediateRLOFPostCEE();                                             break;
-        case BINARY_PROPERTY::LUMINOUS_BLUE_VARIABLE_FACTOR:                        value = LBV_Factor();                                                       break;
         case BINARY_PROPERTY::MASS_1_FINAL:                                         value = Mass1Final();                                                       break;
         case BINARY_PROPERTY::MASS_1_POST_COMMON_ENVELOPE:                          value = Mass1PostCEE();                                                     break;
         case BINARY_PROPERTY::MASS_1_PRE_COMMON_ENVELOPE:                           value = Mass1PreCEE();                                                      break;
@@ -683,7 +745,6 @@ COMPAS_VARIABLE BaseBinaryStar::BinaryPropertyValue(const T_ANY_PROPERTY p_Prope
         case BINARY_PROPERTY::TIME_TO_COALESCENCE:                                  value = TimeToCoalescence();                                                break;
         case BINARY_PROPERTY::TOTAL_ANGULAR_MOMENTUM:                               value = TotalAngularMomentum();                                             break;
         case BINARY_PROPERTY::TOTAL_ENERGY:                                         value = TotalEnergy();                                                      break;
-        case BINARY_PROPERTY::WOLF_RAYET_FACTOR:                                    value = WolfRayetFactor();                                                  break;
         case BINARY_PROPERTY::ZETA_LOBE:                                            value = ZetaLobe();                                                         break;
         case BINARY_PROPERTY::ZETA_STAR:                                            value = ZetaStar();                                                         break;
 
@@ -2281,10 +2342,15 @@ EVOLUTION_STATUS BaseBinaryStar::Evolve() {
 
     EVOLUTION_STATUS evolutionStatus = EVOLUTION_STATUS::CONTINUE;
 
+    if (m_Error != ERROR::NONE) {                                                                                                           // check for error creating binary
+        SHOW_ERROR(m_Error);                                                                                                                // no - show error
+        return EVOLUTION_STATUS::ERROR;                                                                                                     // return without evolving
+    }
+
     if (HasStarsTouching()) {                                                                                                               // check if stars are touching
         m_Flags.stellarMerger        = true;
         m_Flags.stellarMergerAtBirth = true;
-        evolutionStatus        = EVOLUTION_STATUS::STELLAR_MERGER_AT_BIRTH;                                                                 // binary components are touching - merger at birth
+        evolutionStatus              = EVOLUTION_STATUS::STELLAR_MERGER_AT_BIRTH;                                                           // binary components are touching - merger at birth
     }
 
     PrintDetailedOutput(m_Id);                                                                                                              // print (log) detailed output for binary

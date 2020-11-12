@@ -158,6 +158,15 @@ void Options::OptionValues::Initialise() {
     m_MaxNumberOfTimestepIterations                                 = 99999;
     m_TimestepMultiplier                                            = 1.0;
 
+    // Initial stellar type
+    m_InitialStellarType.type                                       = STELLAR_TYPE::NONE;                                   // none specified - will be MS<=0.7 or MS>0.7 depending upon initial mass
+    m_InitialStellarType.typeString                                 = INITIAL_STELLAR_TYPE_LABEL.at(m_InitialStellarType.type);
+    m_InitialStellarType1.type                                      = STELLAR_TYPE::NONE;                                   // none specified - will be MS<=0.7 or MS>0.7 depending upon initial mass
+    m_InitialStellarType1.typeString                                = INITIAL_STELLAR_TYPE_LABEL.at(m_InitialStellarType1.type);
+    m_InitialStellarType2.type                                      = STELLAR_TYPE::NONE;                                   // none specified - will be MS<=0.7 or MS>0.7 depending upon initial mass
+    m_InitialStellarType2.typeString                                = INITIAL_STELLAR_TYPE_LABEL.at(m_InitialStellarType2.type);
+
+
     // Initial mass options
     m_InitialMass                                                   = 5.0;
     m_InitialMass1                                                  = 5.0;
@@ -421,6 +430,10 @@ void Options::OptionValues::Initialise() {
 
     // Metallicity options
     m_Metallicity                                                   = ZSOL;
+    m_MetallicityDistribution.type                                  = METALLICITY_DISTRIBUTION::ZSOLAR; 
+    m_MetallicityDistribution.typeString                            = METALLICITY_DISTRIBUTION_LABEL.at(m_MetallicityDistribution.type);
+    m_MetallicityDistributionMin                                    = MINIMUM_METALLICITY;
+    m_MetallicityDistributionMax                                    = MAXIMUM_METALLICITY;
 
 
     // Neutron star equation of state
@@ -1103,6 +1116,16 @@ bool Options::AddOptions(OptionValues *p_Options, po::options_description *p_Opt
             ("Metallicity to use (default " + std::to_string(p_Options->m_Metallicity) + " Zsol)").c_str()
         )
         (
+            "metallicity-max",                                            
+            po::value<double>(&p_Options->m_MetallicityDistributionMax)->default_value(p_Options->m_MetallicityDistributionMax),                                                                
+            ("Maximum metallicity to generate (default = " + std::to_string(p_Options->m_MetallicityDistributionMax) + ")").c_str()
+        )
+        (
+            "metallicity-min",                                            
+            po::value<double>(&p_Options->m_MetallicityDistributionMin)->default_value(p_Options->m_MetallicityDistributionMin),                                                                
+            ("Minimum metallicity to generate (default = " + std::to_string(p_Options->m_MetallicityDistributionMin) + ")").c_str()
+        )
+        (
             "minimum-secondary-mass",                                      
             po::value<double>(&p_Options->m_MinimumMassSecondary)->default_value(p_Options->m_MinimumMassSecondary),                                                                              
             ("Minimum mass of secondary to generate in Msol (default = " + std::to_string(p_Options->m_MinimumMassSecondary) + ")").c_str()
@@ -1282,7 +1305,7 @@ bool Options::AddOptions(OptionValues *p_Options, po::options_description *p_Opt
         (
             "eccentricity-distribution",                                 
             po::value<std::string>(&p_Options->m_EccentricityDistribution.typeString)->default_value(p_Options->m_EccentricityDistribution.typeString),                                                          
-            ("Initial eccentricity distribution (options: [ZERO, FIXED, FLAT, THERMALISED, GELLER+2013], default = " + p_Options->m_EccentricityDistribution.typeString + ")").c_str()
+            ("Initial eccentricity distribution (options: [ZERO, FLAT, THERMAL, THERMALISED, GELLER+2013, DUQUENNOYMAYOR1991, SANA2012], default = " + p_Options->m_EccentricityDistribution.typeString + ")").c_str()
         )
         (
             "envelope-state-prescription",                                 
@@ -1311,19 +1334,19 @@ bool Options::AddOptions(OptionValues *p_Options, po::options_description *p_Opt
         (
             "initial-stellar-type",                                     
             po::value<std::string>(&p_Options->m_InitialStellarType.typeString)->default_value(p_Options->m_InitialStellarType.typeString),                                                                    
-            ("Initial mass function (options: [MS, HG, FGB, CHeB, EAGB, TPAGB, HeMS, HeHG, HeGB, HeWD, COWD, ONeWD, NS, BH], default = " + p_Options->m_InitialStellarType.typeString + ")").c_str()
+            ("Initial mass function (options: [MS1, MS2, HG, FGB, CHeB, EAGB, TPAGB, HeMS, HeHG, HeGB, HeWD, COWD, ONeWD, NS, BH, NONE], default = " + p_Options->m_InitialStellarType.typeString + ")").c_str()
         )
 
         (
             "initial-stellar-type-1",                                     
             po::value<std::string>(&p_Options->m_InitialStellarType1.typeString)->default_value(p_Options->m_InitialStellarType1.typeString),                                                                    
-            ("Initial mass function (options: [MS, HG, FGB, CHeB, EAGB, TPAGB, HeMS, HeHG, HeGB, HeWD, COWD, ONeWD, NS, BH], default = " + p_Options->m_InitialStellarType1.typeString + ")").c_str()
+            ("Initial mass function (options: [MS1, MS2, HG, FGB, CHeB, EAGB, TPAGB, HeMS, HeHG, HeGB, HeWD, COWD, ONeWD, NS, BH, NONE], default = " + p_Options->m_InitialStellarType1.typeString + ")").c_str()
         )
 
         (
             "initial-stellar-type-2",                                     
             po::value<std::string>(&p_Options->m_InitialStellarType2.typeString)->default_value(p_Options->m_InitialStellarType2.typeString),                                                                    
-            ("Initial mass function (options: [MS, HG, FGB, CHeB, EAGB, TPAGB, HeMS, HeHG, HeGB, HeWD, COWD, ONeWD, NS, BH], default = " + p_Options->m_InitialStellarType2.typeString + ")").c_str()
+            ("Initial mass function (options: [MS1, MS2, HG, FGB, CHeB, EAGB, TPAGB, HeMS, HeHG, HeGB, HeWD, COWD, ONeWD, NS, BH, NONE], default = " + p_Options->m_InitialStellarType2.typeString + ")").c_str()
         )
 
         (
@@ -1432,7 +1455,11 @@ bool Options::AddOptions(OptionValues *p_Options, po::options_description *p_Opt
             po::value<std::string>(&p_Options->m_MassTransferThermallyLimitedVariation.typeString)->default_value(p_Options->m_MassTransferThermallyLimitedVariation.typeString),                                
             ("Mass Transfer Thermal Accretion limit (options: [CFACTOR, ROCHELOBE], default = " + p_Options->m_MassTransferThermallyLimitedVariation.typeString + ")").c_str()
         )
-
+        (
+            "metallicity-distribution",                                 
+            po::value<std::string>(&p_Options->m_MetallicityDistribution.typeString)->default_value(p_Options->m_MetallicityDistribution.typeString),                                                          
+            ("Initial eccentricity distribution (options: [ZSOLAR, LOGUNIFORM], default = " + p_Options->m_MetallicityDistribution.typeString + ")").c_str()
+        )
         (
             "mode",                                                 
             po::value<std::string>(&p_Options->m_EvolutionMode.typeString)->default_value(p_Options->m_EvolutionMode.typeString),                                                                              
@@ -1764,7 +1791,7 @@ std::string Options::OptionValues::CheckAndSetOptions() {
         }
 
         if (!DEFAULTED("initial-stellar-type-2")) {                                                                                // secondary initial stellar type
-            std::tie(found, m_InitialStellarType.type2) = utils::GetMapKey(m_InitialStellarType2.typeString, INITIAL_STELLAR_TYPE_LABEL, m_InitialStellarType2.type);
+            std::tie(found, m_InitialStellarType2.type) = utils::GetMapKey(m_InitialStellarType2.typeString, INITIAL_STELLAR_TYPE_LABEL, m_InitialStellarType2.type);
             COMPLAIN_IF(!found, "Unknown Initial Stellar Type");
         }
 
@@ -1819,6 +1846,11 @@ std::string Options::OptionValues::CheckAndSetOptions() {
             if (m_MassTransferThermallyLimitedVariation.type == MT_THERMALLY_LIMITED_VARIATION::RADIUS_TO_ROCHELOBE) {
                 m_MassTransferCParameter = DEFAULTED("mass-transfer-thermal-limit-C") ? 1.0 : m_MassTransferCParameter;
             }
+        }
+
+        if (!DEFAULTED("metallicity-distribution")) {                                                                               // metallicity distribution
+            std::tie(found, m_MetallicityDistribution.type) = utils::GetMapKey(m_MetallicityDistribution.typeString, METALLICITY_DISTRIBUTION_LABEL, m_MetallicityDistribution.type);
+            COMPLAIN_IF(!found, "Unknown Metallicity Distribution");
         }
 
         if (!DEFAULTED("mode")) {                                                                                                   // mode
@@ -1910,6 +1942,9 @@ std::string Options::OptionValues::CheckAndSetOptions() {
         COMPLAIN_IF(m_MaxEvolutionTime <= 0.0, "Maximum evolution time in Myr (--maxEvolutionTime) must be > 0");
 
         COMPLAIN_IF(m_Metallicity < MINIMUM_METALLICITY || m_Metallicity > MAXIMUM_METALLICITY, "Metallicity (--metallicity) should be absolute metallicity and must be between " + std::to_string(MINIMUM_METALLICITY) + " and " + std::to_string(MAXIMUM_METALLICITY));
+        COMPLAIN_IF(m_MetallicityDistributionMin < MINIMUM_METALLICITY || m_MetallicityDistributionMin > MAXIMUM_METALLICITY, "Minimum metallicity (--metallicity-min) must be between " + std::to_string(MINIMUM_METALLICITY) + " and " + std::to_string(MAXIMUM_METALLICITY));
+        COMPLAIN_IF(m_MetallicityDistributionMax < MINIMUM_METALLICITY || m_MetallicityDistributionMax > MAXIMUM_METALLICITY, "Maximum metallicity (--metallicity-max) must be between " + std::to_string(MINIMUM_METALLICITY) + " and " + std::to_string(MAXIMUM_METALLICITY));
+        COMPLAIN_IF(m_MetallicityDistributionMax <= m_MetallicityDistributionMin, "Maximum metallicity (--metallicity-max) must be > Minimum metallicity (--metallicity-min)");
 
         COMPLAIN_IF(m_MinimumMassSecondary < MINIMUM_INITIAL_MASS, "Seconday minimum mass (--minimum-secondary-mass) must be >= minimum initial mass of " + std::to_string(MINIMUM_INITIAL_MASS) + " Msol");
         COMPLAIN_IF(m_MinimumMassSecondary > MAXIMUM_INITIAL_MASS, "Seconday minimum mass (--minimum-secondary-mass) must be <= maximum initial mass of " + std::to_string(MAXIMUM_INITIAL_MASS) + " Msol");

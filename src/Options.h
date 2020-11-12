@@ -228,12 +228,15 @@ private:
     // inconsistent options.
 
     std::vector<std::string> m_SSEOnly = {
+        "initial-stellar-type",
         "initial-mass",
         "kick-magnitude",
         "kick-magnitude-random"
     };
 
     std::vector<std::string> m_BSEOnly = {
+        "initial-stellar-type-1",
+        "initial-stellar-type-2",
         "initial-mass-1",
         "initial-mass-2",
         "semi-major-axis", "a",
@@ -324,7 +327,10 @@ private:
         "common-envelope-lambda-prescription",
         "common-envelope-mass-accretion-prescription",
 
+        "eccentricity", "e",
         "eccentricity-distribution",
+        "eccentricity-max",
+        "eccentricity-min",
 
         "mass-ratio-distribution", "q",
 
@@ -411,6 +417,10 @@ private:
 
         "initial-mass-function", "i",
 
+        "initial-stellar-type",
+        "initial-stellar-type-1",
+        "initial-stellar-type-2",
+
         "kick-direction",
         "kick-magnitude-distribution", 
 
@@ -421,6 +431,8 @@ private:
         "mass-transfer-angular-momentum-loss-prescription",
         "mass-transfer-rejuvenation-prescription",
         "mass-transfer-thermal-limit-accretor",
+
+        "metallicity-distribution",
 
         "neutrino-mass-loss-bh-formation",
         "neutron-star-equation-of-state",
@@ -580,6 +592,10 @@ public:
             // Miscellaneous evolution variables
 
             ENUM_OPT<EVOLUTION_MODE>                            m_EvolutionMode;                                                // Mode of evolution: SSE or BSE
+
+            ENUM_OPT<STELLAR_TYPE>                              m_InitialStellarType;                                           // Initial stellar type for star in SSE
+            ENUM_OPT<STELLAR_TYPE>                              m_InitialStellarType1;                                          // Initial stellar type for primary star in BSE
+            ENUM_OPT<STELLAR_TYPE>                              m_InitialStellarType2;                                          // Initial stellar type for secondary star in BSE
 
             int                                                 m_ObjectsToEvolve;                                              // Number of stars (SSE) or binaries (BSE) to evolve
             bool                                                m_FixedRandomSeed;                                              // Whether to use a fixed random seed given by options.randomSeed (set to true if --random-seed is passed on command line)
@@ -806,6 +822,9 @@ public:
 
             // Metallicity options
             double                                              m_Metallicity;                                                  // Metallicity
+            ENUM_OPT<METALLICITY_DISTRIBUTION>                  m_MetallicityDistribution;                                      // Which metallicity distribution
+            double                                              m_MetallicityDistributionMin;                                   // Minimum initial metallicity when using a distribution
+            double                                              m_MetallicityDistributionMax;                                   // Maximum initial metallicity when using a distribution
 
             double                                              m_mCBUR1;                                                       // Minimum core mass at base of the AGB to avoid fully degenerate CO core formation
 
@@ -1087,6 +1106,10 @@ public:
     double                                      InitialMassFunctionMin() const                                          { return OPT_VALUE("initial-mass-min", m_InitialMassFunctionMin, true); }
     double                                      InitialMassFunctionPower() const                                        { return OPT_VALUE("initial-mass-power", m_InitialMassFunctionPower, true); }
 
+    STELLAR_TYPE                                InitialStellarType() const                                              { return OPT_VALUE("initial-stellar-type", m_InitialStellarType.type, true); }
+    STELLAR_TYPE                                InitialStellarType1() const                                             { return OPT_VALUE("initial-stellar-type-1", m_InitialStellarType1.type, true); }
+    STELLAR_TYPE                                InitialStellarType2() const                                             { return OPT_VALUE("initial-stellar-type-2", m_InitialStellarType2.type, true); }
+
     KICK_DIRECTION_DISTRIBUTION                 KickDirectionDistribution() const                                       { return OPT_VALUE("kick-direction", m_KickDirectionDistribution.type, true); }
     double                                      KickDirectionPower() const                                              { return OPT_VALUE("kick-direction-power", m_KickDirectionPower, true); }
     double                                      KickScalingFactor() const                                               { return OPT_VALUE("kick-scaling-factor", m_KickScalingFactor, true); }
@@ -1139,13 +1162,19 @@ public:
                                                                                                                                       );
                                                                                                                         }
     string                                      LogfileSwitchLog() const                                                { return m_CmdLine.optionValues.m_Populated && !m_CmdLine.optionValues.m_VM["logfile-switch-log"].defaulted()
-                                                                                                                                    ? m_CmdLine.optionValues.m_LogfileSupernovae
+                                                                                                                                    ? m_CmdLine.optionValues.m_LogfileSwitchLog
                                                                                                                                     : (m_CmdLine.optionValues.m_EvolutionMode.type == EVOLUTION_MODE::SSE
                                                                                                                                         ? get<0>(LOGFILE_DESCRIPTOR.at(LOGFILE::SSE_SWITCH_LOG))
                                                                                                                                         : get<0>(LOGFILE_DESCRIPTOR.at(LOGFILE::BSE_SWITCH_LOG))
                                                                                                                                       );
                                                                                                                         }
-    string                                      LogfileSystemParameters() const                                         { return m_CmdLine.optionValues.m_LogfileSystemParameters; }
+    string                                      LogfileSystemParameters() const                                         { return m_CmdLine.optionValues.m_Populated && !m_CmdLine.optionValues.m_VM["logfile-system-parameters"].defaulted()
+                                                                                                                                    ? m_CmdLine.optionValues.m_LogfileSystemParameters
+                                                                                                                                    : (m_CmdLine.optionValues.m_EvolutionMode.type == EVOLUTION_MODE::SSE
+                                                                                                                                        ? get<0>(LOGFILE_DESCRIPTOR.at(LOGFILE::SSE_SYSTEM_PARAMETERS))
+                                                                                                                                        : get<0>(LOGFILE_DESCRIPTOR.at(LOGFILE::BSE_SYSTEM_PARAMETERS))
+                                                                                                                                      );
+                                                                                                                        }
     int                                         LogLevel() const                                                        { return m_CmdLine.optionValues.m_LogLevel; }
 
     double                                      LuminousBlueVariableFactor() const                                      { return OPT_VALUE("luminous-blue-variable-multiplier", m_LuminousBlueVariableFactor, true); }
@@ -1197,6 +1226,9 @@ public:
     double                                      MCBUR1() const                                                          { return OPT_VALUE("mcbur1", m_mCBUR1, true); }
 
     double                                      Metallicity() const                                                     { return OPT_VALUE("metallicity", m_Metallicity, true); }
+    METALLICITY_DISTRIBUTION                    MetallicityDistribution() const                                         { return OPT_VALUE("metallicity-distribution", m_MetallicityDistribution.type, true); }
+    double                                      MetallicityDistributionMax() const                                      { return OPT_VALUE("metallicity-distribution-max", m_MetallicityDistributionMax, true); }
+    double                                      MetallicityDistributionMin() const                                      { return OPT_VALUE("metallicity-distribution-min", m_MetallicityDistributionMin, true); }
 
     double                                      MinimumMassSecondary() const                                            { return OPT_VALUE("minimum-secondary-mass", m_MinimumMassSecondary, true); }
 

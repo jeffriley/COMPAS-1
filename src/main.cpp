@@ -202,10 +202,10 @@ std::tuple<int, int> EvolveSingleStars() {
 
                 double initialMass = OPTIONS->OptionSpecified("initial-mass") == 1                                  // user specified mass?
                                         ? OPTIONS->InitialMass()                                                    // yes, use it
-                                        : utils::SampleInitialMassDistribution(OPTIONS->InitialMassFunction(),      // no, sample it
-                                                                               OPTIONS->InitialMassFunctionMax(), 
-                                                                               OPTIONS->InitialMassFunctionMin(), 
-                                                                               OPTIONS->InitialMassFunctionPower());
+                                        : utils::SampleInitialMass(OPTIONS->InitialMassFunction(),                  // no, sample it
+                                                                   OPTIONS->InitialMassFunctionMax(), 
+                                                                   OPTIONS->InitialMassFunctionMin(), 
+                                                                   OPTIONS->InitialMassFunctionPower());
 
                 // the metallicity of the star is supplied - this is to allow binary stars to initialise
                 // the metallicity of their constituent stars (rather than have the constituent stars sample 
@@ -214,7 +214,10 @@ std::tuple<int, int> EvolveSingleStars() {
 
                 double metallicity = OPTIONS->OptionSpecified("metallicity") == 1                                   // user specified metallicity?
                                         ? OPTIONS->Metallicity()                                                    // yes, use it
-                                        : utils::SampleMetallicity();                                               // no, sample it
+                                        : utils::SampleMetallicity(OPTIONS->MetallicityDistribution(), 
+                                                                   OPTIONS->MetallicityDistributionMax(), 
+                                                                   OPTIONS->MetallicityDistributionMin());          // no, sample it
+
 
 
                 // Single stars (in SSE) are provided with a kick structure that specifies the 
@@ -239,7 +242,17 @@ std::tuple<int, int> EvolveSingleStars() {
                        
                 // create the star
                 delete star; star = nullptr;                                                                        // so we don't leak...
-                star = new Star(randomSeed, initialMass, metallicity, kickParameters);                              // create star according to the user-specified options
+
+                // the initial stellar type of the star may be supplied - this is to allow the user to 
+                // specify where evolution should start
+
+                // create star according to the user-specified options
+                if (OPTIONS->OptionSpecified("initial-stellar-type") == 1 && OPTIONS->InitialStellarType() != STELLAR_TYPE::NONE) { // user specified valid initial stellar type?
+                    star = new Star(randomSeed, OPTIONS->InitialStellarType(), initialMass, metallicity, kickParameters);           // yes - use it
+                }
+                else {
+                    star = new Star(randomSeed, initialMass, metallicity, kickParameters);                          // no - initial stellar type wil be one of the MS variants depending upon initial mass
+                }
 
                 EVOLUTION_STATUS thisStatus = star->Evolve(index);                                                  // evolve the star
 
@@ -425,6 +438,10 @@ std::tuple<int, int> EvolveBinaryStars() {
 
                 EVOLUTION_STATUS binaryStatus = binary->Evolve();                                               // evolve the binary
 
+                if (binaryStatus == EVOLUTION_STATUS::ERROR ||binaryStatus == EVOLUTION_STATUS::SSE_ERROR) {    // ok?
+                    SHOW_ERROR(ERROR::BINARY_EVOLUTION_STOPPED, EVOLUTION_STATUS_LABEL.at(binaryStatus));       // no - show error
+                }
+                
                 // announce result of evolving the binary
                 if (!OPTIONS->Quiet()) {                                                                        // quiet mode?
                                                                                                                 // no - announce result of evolving the binary

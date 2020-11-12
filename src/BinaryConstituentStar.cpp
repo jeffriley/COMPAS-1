@@ -6,6 +6,67 @@
 class BaseBinaryStar;
 
 
+
+/*
+ * Set  initial values
+ *
+ *
+ * void SetInitialValues()
+ *
+ */
+void BinaryConstituentStar::SetInitialValues() {
+    m_ObjectId                                   = globalObjectId++;
+    m_ObjectType                                 = OBJECT_TYPE::BINARY_CONSTITUENT_STAR;
+
+    m_Companion                                  = nullptr;
+
+
+    m_CEDetails.bindingEnergy                    = DEFAULT_INITIAL_DOUBLE_VALUE;
+    m_CEDetails.COCoreMass                       = DEFAULT_INITIAL_DOUBLE_VALUE;
+    m_CEDetails.CoreMass                         = DEFAULT_INITIAL_DOUBLE_VALUE;
+    m_CEDetails.HeCoreMass                       = DEFAULT_INITIAL_DOUBLE_VALUE;
+    m_CEDetails.lambda                           = DEFAULT_INITIAL_DOUBLE_VALUE;
+
+    m_CEDetails.preCEE.bindingEnergy             = DEFAULT_INITIAL_DOUBLE_VALUE;
+    m_CEDetails.preCEE.luminosity                = DEFAULT_INITIAL_DOUBLE_VALUE;
+    m_CEDetails.preCEE.mass                      = DEFAULT_INITIAL_DOUBLE_VALUE;
+    m_CEDetails.preCEE.radius                    = DEFAULT_INITIAL_DOUBLE_VALUE;
+    m_CEDetails.preCEE.stellarType               = STELLAR_TYPE::NONE;
+    m_CEDetails.preCEE.temperature               = DEFAULT_INITIAL_DOUBLE_VALUE;
+    m_CEDetails.preCEE.dynamicalTimescale        = DEFAULT_INITIAL_DOUBLE_VALUE;
+    m_CEDetails.preCEE.thermalTimescale          = DEFAULT_INITIAL_DOUBLE_VALUE;
+    m_CEDetails.preCEE.nuclearTimescale          = DEFAULT_INITIAL_DOUBLE_VALUE;
+    m_CEDetails.preCEE.radialExpansionTimescale  = DEFAULT_INITIAL_DOUBLE_VALUE;
+
+    m_CEDetails.postCEE.luminosity               = DEFAULT_INITIAL_DOUBLE_VALUE;
+    m_CEDetails.postCEE.temperature              = DEFAULT_INITIAL_DOUBLE_VALUE;
+    m_CEDetails.postCEE.dynamicalTimescale       = DEFAULT_INITIAL_DOUBLE_VALUE;
+    m_CEDetails.postCEE.thermalTimescale         = DEFAULT_INITIAL_DOUBLE_VALUE;
+    m_CEDetails.postCEE.nuclearTimescale         = DEFAULT_INITIAL_DOUBLE_VALUE;
+    m_CEDetails.postCEE.radialExpansionTimescale = DEFAULT_INITIAL_DOUBLE_VALUE;
+
+    m_Flags.recycledNS                           = false;
+    m_Flags.rlofOntoNS                           = false;
+
+    m_IsPrimary                                  = false;
+
+    m_MassTransferDiff                           = DEFAULT_INITIAL_DOUBLE_VALUE;
+    m_MassLossDiff                               = DEFAULT_INITIAL_DOUBLE_VALUE;
+
+    m_OrbitalEnergyPreSN                         = DEFAULT_INITIAL_DOUBLE_VALUE;
+    m_OrbitalEnergyPostSN                        = DEFAULT_INITIAL_DOUBLE_VALUE;
+
+    m_FirstMassTransferEpisode                   = false;
+    m_MassTransferCaseInitial                    = MT_CASE::NONE;
+
+    m_OmegaTidesIndividualDiff                   = DEFAULT_INITIAL_DOUBLE_VALUE;
+
+    m_RLOFDetails.isRLOF                         = false;
+    m_RLOFDetails.experiencedRLOF                = false;
+    m_RLOFDetails.RLOFPostCEE                    = false;
+}
+
+
 /*
  * Determine the value of the requested property of the constituent star (parameter p_Property)
  *

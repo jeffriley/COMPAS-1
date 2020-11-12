@@ -24,7 +24,7 @@ Star::Star(const unsigned long int p_RandomSeed,
 
     m_Star = new BaseStar(p_RandomSeed, p_MZAMS, p_Metallicity, p_KickParameters);                                  // create underlying BaseStar object
 
-    (void)SwitchTo(p_StellarType, true);                                                                            // switch to rquested stellar type
+    (void)SwitchTo(p_StellarType, true);                                                                            // switch to requested stellar type
 
     m_SaveStar = nullptr;
 }
@@ -525,6 +525,8 @@ EVOLUTION_STATUS Star::Evolve(const long int p_Id) {
             m_Star->PrintDetailedOutput(m_Id);                                  // log record  JR: this should probably be before the star switches type, but this way matches the original code
         }
     }
+
+    m_Star->PrintSystemParameters();                                            // log system parameters
 
     return status;
 }
