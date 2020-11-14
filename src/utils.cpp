@@ -3,6 +3,14 @@
 #include <fstream>
 #include <algorithm>
 #include <cstring>
+
+// gsl includes
+#include <gsl/gsl_roots.h>
+#include <gsl/gsl_cdf.h>
+
+// boost includes
+#include <boost/math/distributions.hpp>
+
 #include "profiling.h"
 #include "utils.h"
 #include "Rand.h"
@@ -98,6 +106,182 @@ namespace utils {
         }
 
         return CDF;
+    }
+
+
+    /*
+     * Calculate rotational velocity from the analytic cumulative distribution function (CDF)
+     * for the equatorial rotational velocity of single O stars.
+     *
+     * Uses inverse sampling and root finding
+     *
+     * Ramirez-Agudelo et al. 2013 https://arxiv.org/abs/1309.2929
+     *
+     *
+     * double CalculateOStarRotationalVelocity(double p_U, double p_Xmin, double p_Xmax)
+     *
+     * @param   [IN]    p_Xmin                      Minimum value for root
+     * @param   [IN]    p_Xmax                      Maximum value for root
+     * @return                                      Rotational velocity in km s^-1
+     */
+    double CalculateOStarRotationalVelocity(const double p_Xmin, const double p_Xmax) {
+
+        double xMin = p_Xmin;
+        double xMax = p_Xmax;
+
+        double result = xMin;
+
+        double maximumInverse = CalculateOStarRotationalVelocityAnalyticCDF(xMax);
+        double minimumInverse = CalculateOStarRotationalVelocityAnalyticCDF(xMin);
+
+        double rand = RAND->Random();
+
+        while(utils::Compare(rand, maximumInverse) > 0) {   // JR: todo: this should be guarded
+            xMax          *= 2.0;
+            maximumInverse = CalculateOStarRotationalVelocityAnalyticCDF(xMax);
+        }
+
+        if(utils::Compare(rand, minimumInverse) >= 0) {
+
+            const gsl_root_fsolver_type *T;
+            gsl_root_fsolver            *s;
+            gsl_function                 F;
+
+    	    RotationalVelocityParams     params = {rand};
+
+	        F.function = &CalculateOStarRotationalVelocityAnalyticCDFInverse;
+	        F.params   = &params;
+
+	        // gsl_root_fsolver_brent
+	        // gsl_root_fsolver_bisection
+	        T = gsl_root_fsolver_brent;
+	        s = gsl_root_fsolver_alloc(T);
+
+	        gsl_root_fsolver_set(s, &F, xMin, xMax);
+
+	        int status  = GSL_CONTINUE;
+            int iter    = 0;
+            int maxIter = 100;
+
+    	    while (status == GSL_CONTINUE && iter < maxIter) {
+        	    iter++;
+        	    status = gsl_root_fsolver_iterate(s);
+        	    result = gsl_root_fsolver_root(s);
+        	    xMin   = gsl_root_fsolver_x_lower(s);
+        	    xMax   = gsl_root_fsolver_x_upper(s);
+        	    status = gsl_root_test_interval(xMin, xMax, 0, 0.001);
+            }
+
+    	    gsl_root_fsolver_free(s);   // de-allocate memory for root solver
+        }
+
+        return result;
+    }
+
+
+    /*
+     * Calculate the analytic cumulative distribution function (CDF) for the
+     * equatorial rotational velocity of single O stars.
+     *
+     * From Equation 1-4 of Ramirez-Agudelo et al 2013 https://arxiv.org/abs/1309.2929
+     * Modelled as a mixture of a gamma component and a normal component.
+     *
+     * Uses the Boost library
+     *
+     *
+     * double CalculateOStarRotationalVelocityAnalyticCDF(const double p_Ve)
+     * @param   [IN]    p_vE                        Rotational velocity (in km s^-1) at which to calculate CDF
+     * @return                                      The CDF for the rotational velocity
+     */
+    double CalculateOStarRotationalVelocityAnalyticCDF(const double p_Ve) {
+
+        double alpha  = 4.82;
+        double beta   = 1.0 / 25.0;
+        double mu     = 205.0;
+        double sigma  = 190.0;
+        double iGamma = 0.43;
+
+        boost::math::inverse_gamma_distribution<> gammaComponent(alpha, beta);  // (shape, scale) = (alpha, beta)
+        boost::math::normal_distribution<> normalComponent(mu, sigma);
+
+	    return (iGamma * boost::math::cdf(gammaComponent, p_Ve)) + ((1.0 - iGamma) * boost::math::cdf(normalComponent, p_Ve));
+    }
+
+
+    /*
+     * Calculate the inverse of the analytic cumulative distribution function (CDF) for the
+     * equatorial rotational velocity of single O stars.
+     *
+     * (i.e. calculate the inverse of CalculateOStarRotationalVelocityAnalyticCDF())
+     *
+     *
+     * double CalculateOStarRotationalVelocityAnalyticCDFInverse(const double p_Ve, const void *p_Params)
+     * @param   [IN]    p_vE                        Rotational velocity (in km s^-1) - value of the kick vk which we want to find
+     * @param   [IN]    p_Params                    Pointer to RotationalVelocityParams structure containing y, the CDF draw U(0,1)
+     * @return                                      Inverse CDF
+     *                                              Should be zero when p_Ve = vk, the value of the kick to draw
+     */
+    double CalculateOStarRotationalVelocityAnalyticCDFInverse(double p_Ve, void* p_Params) {
+        RotationalVelocityParams* params = (RotationalVelocityParams*) p_Params;
+        return CalculateOStarRotationalVelocityAnalyticCDF(p_Ve) - params->u;
+    }
+
+
+    /*
+     * Calculate the rotational velocity (in km s^-1 ) of a star with mass mass p_Mass
+     *
+     * The rotational velocity distribution used is determined by program option "rotational-velocity-distribution"
+     *
+     *
+     * double CalculateRotationalVelocity(const ROTATIONAL_VELOCITY_DISTRIBUTION p_vRotDist, const double p_Mass)
+     *
+     * @param   [IN]    p_vRotDist                  The rotational velocity distribution
+     * @param   [IN]    p_Mass                      Mass in Msol
+     * @return                                      Equatorial rotational velocity in km s^-1 - vRot in Hurley et al. 2000
+     */
+    double CalculateRotationalVelocity(const ROTATIONAL_VELOCITY_DISTRIBUTION p_vRotDist, const double p_Mass) {
+
+        double vRot = 0.0;
+
+        switch (p_vRotDist) {                                                                   // which prescription?
+
+            case ROTATIONAL_VELOCITY_DISTRIBUTION::ZERO: break;                                 // ZERO
+
+            case ROTATIONAL_VELOCITY_DISTRIBUTION::HURLEY:                                      // HURLEY
+
+                // Hurley et al. 2000, eq 107 (uses fit from Lang 1992)
+                vRot = (330.0 * PPOW(p_Mass, 3.3)) / (15.0 + PPOW(p_Mass, 3.45));
+                break;
+
+            case ROTATIONAL_VELOCITY_DISTRIBUTION::VLTFLAMES:                                   // VLTFLAMES
+
+                // Rotational velocity based on VLT-FLAMES survey.
+                // For O-stars use results of Ramirez-Agudelo et al. (2013) https://arxiv.org/abs/1309.2929 (single stars)
+                // and Ramirez-Agudelo et al. (2015) https://arxiv.org/abs/1507.02286 (spectroscopic binaries)
+                // For B-stars use results of Dufton et al. (2013) https://arxiv.org/abs/1212.2424
+                // For lower mass stars, I don't know what updated results there are so default back to
+                // Hurley et al. 2000 distribution for now
+
+                if (utils::Compare(p_Mass, 16.0) >= 0) {
+                    vRot = CalculateOStarRotationalVelocity(0.0, 800.0);
+                }
+                else if (utils::Compare(p_Mass, 2.0) >= 0) {
+                    vRot = utils::InverseSampleFromTabulatedCDF(RAND->Random(), BStarRotationalVelocityCDFTable);
+                }
+                else {
+                    // Don't know what better to use for low mass stars so for now
+                    // default to Hurley et al. 2000, eq 107 (uses fit from Lang 1992)
+                    vRot = (330.0 * PPOW(p_Mass, 3.3)) / (15.0 + PPOW(p_Mass, 3.45));
+                }
+                break;
+
+            default:                                                                            // unknown rorational velocity prescription
+                // the rotational velocity distribution distribution is set by a
+                // commandline option that has already been checked by the time we 
+                // get to this function -  the default case should never be taken.
+                vRot = 0.0;
+        }
+        return vRot;
     }
 
 
@@ -788,7 +972,7 @@ namespace utils {
                 } while (eccentricity < p_Min || eccentricity > p_Max);                                 // JR: don't use utils::Compare() here
                 break;
 
-            case ECCENTRICITY_DISTRIBUTION::DUQUENNOYMAYOR1991:                                        // eccentricity distribution from Duquennoy & Mayor (1991)
+            case ECCENTRICITY_DISTRIBUTION::DUQUENNOYMAYOR1991:                                         // eccentricity distribution from Duquennoy & Mayor (1991)
                 // http://adsabs.harvard.edu/abs/1991A%26A...248..485D
                 // Sampling function taken from binpop.f in NBODY6
 
@@ -805,7 +989,10 @@ namespace utils {
                 eccentricity = utils::InverseSampleFromPowerLaw(-0.42, p_Max, p_Min);
                 break;
 
-            default:                                                                                    // unknown distribution - should not be possible (options code should prevent this)
+            default:                                                                                    // unknown distribution
+                // the eccentricity distribution is set by a commandline option that
+                // has already been checked by the time we get to this function - the
+                // default case should never be taken.
                 eccentricity = 0.0;
         }
 
@@ -970,6 +1157,9 @@ namespace utils {
                 break;
 
             default:                                                                                                // unknown IMF
+                // the IMF is set by a commandline option that has already 
+                // been checked by the time we get to this function - the
+                // default case should never be taken.
                 thisMass = utils::InverseSampleFromPowerLaw(KROUPA_POWER, KROUPA_MAXIMUM, KROUPA_MINIMUM);          // calculate mass using power law with default values
         }
 
@@ -1013,6 +1203,9 @@ namespace utils {
                 break;
 
             default:                                                                                            // unknown q-distribution
+                // the mass ratio distribution is set by a commandline option
+                // that has already been checked by the time we get to this 
+                // function - the default case should never be taken.
                 q = utils::InverseSampleFromPowerLaw(0.0, 1.0, 0.0);                                            // calculate q using power law with default values
         }
 
@@ -1021,7 +1214,7 @@ namespace utils {
 
 
     /*
-     * Draw eccentricity from the distribution specified by the user
+     * Draw metallicity from the distribution specified by the user
      *
      *
      * double SampleMetallicity()
@@ -1048,6 +1241,9 @@ namespace utils {
             } break;
 
             default:                                                                                    // unknown distribution - should not be possible (options code should prevent this)
+                // the metallicity distribution is set by a commandline option
+                // that has already been checked by the time we get to this 
+                // function - the default case should never be taken.
                 metallicity = 0.0;
         }
 
@@ -1130,6 +1326,9 @@ namespace utils {
                 } break;
 
             default:                                                                                                    // unknown distribution
+                // the semi-major axis distribution is set by a commandline
+                // option that has already been checked by the time we get to
+                // this  function - the default case should never be taken.
                 semiMajorAxis = utils::InverseSampleFromPowerLaw(-1.0, 100.0, 0.5);                                     // calculate semiMajorAxis using power law with default values
         }
 

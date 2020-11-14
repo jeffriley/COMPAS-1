@@ -427,7 +427,7 @@ double TPAGB::CalculateLambdaNanjing() {
 
 /*
  * Calculate M'c (core mass used for calculating luminosity and core mass on TPAGB)
- * Described in Hurley at al. 2000, just after eq 73.
+ * Described in Hurley et al. 2000, just after eq 73.
  * Calculated using Hurley et al. 2000, eq 39, modified as described in Section 5.4
  *
  *

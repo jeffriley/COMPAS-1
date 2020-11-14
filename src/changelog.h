@@ -598,6 +598,10 @@
 //                                          - Removed BINARY_PROPERTY::COMMON_ENVELOPE_ALPHA - use PROGRAM_OPTION::COMMON_ENVELOPE_ALPHA
 //                                      - Issue #443: removed eccentricity distribution options FIXED, IMPORTANCE & THERMALISE (THERMALISE = THERMAL, which remains) 
 
+
+// implemented --stelar-type(1,2), --age-on-phase(1,2)
+// moved more sampling functions to utils.cpp
+
 const std::string VERSION_STRING = "02.17.03";
 
 # endif // __changelog_h__

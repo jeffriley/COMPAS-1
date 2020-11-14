@@ -30,12 +30,14 @@ public:
     static  DBL_DBL_DBL     CalculateCoreCollapseSNParams_Static(const double p_Mass);
 
     static  double          CalculateLuminosityOnPhase_Static()                             { return 1.0E-10; }                                                     // Hurley et al. 2000, eq 96
+            double          CalculateLuminosityOnPhase()                                    { return CalculateLuminosityOnPhase_Static(); }      
 
     static  double          CalculateNeutrinoMassLoss_Static(const double p_BaryonicMass);
 
     static  double          CalculateRadiusOnPhase_Static(const double p_Mass)              { return 4.24E-6 * p_Mass; }                                            // Schwarzschild radius of Black Hole - Hurley et al. 2000, eq 94
+            double          CalculateRadiusOnPhase()                                        { return CalculateRadiusOnPhase_Static(m_Mass);}                        // Use class member variables
 
-    virtual void            UpdateMagneticFieldAndSpin(const bool   p_CommonEnvelope,
+            void            UpdateMagneticFieldAndSpin(const bool   p_CommonEnvelope,
                                                        const bool   p_RecycledNS,
                                                        const double p_Stepsize,
                                                        const double p_MassGainPerTimeStep,

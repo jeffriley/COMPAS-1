@@ -35,10 +35,10 @@ ICFLAGS := -I$(BOOST)/include -I.
 LFLAGS :=  -L$(BOOST)/lib -lgsl -lgslcblas -lstdc++ -lm -lz -ldl -lboost_filesystem -lboost_program_options -lboost_system -Xlinker -rpath -Xlinker $(BOOST)/lib
 SOURCES :=                                                               \
             profiling.cpp               \
+            Rand.cpp                    \
             utils.cpp                   \
             vector3d.cpp                \
                                         \
-            Rand.cpp                    \
             Options.cpp                 \
             Log.cpp                     \
             Errors.cpp                  \

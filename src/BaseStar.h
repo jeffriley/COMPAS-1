@@ -79,7 +79,7 @@ public:
             double              Mass() const                                                    { return m_Mass; }
             double              Mass0() const                                                   { return m_Mass0; }
             double              MassPrev() const                                                { return m_MassPrev; }
-            STYPE_VECTOR          MassTransferDonorHistory() const                                { return m_MassTransferDonorHistory; }
+            STYPE_VECTOR        MassTransferDonorHistory() const                                { return m_MassTransferDonorHistory; }
             std::string         MassTransferDonorHistoryString() const;
             double              Mdot() const                                                    { return m_Mdot; }
             double              Metallicity() const                                             { return m_Metallicity; }
@@ -432,10 +432,6 @@ protected:
 
             double          CalculateOmegaBreak() const;
 
-    static  double          CalculateOStarRotationalVelocityAnalyticCDF_Static(const double p_Ve);
-    static  double          CalculateOStarRotationalVelocityAnalyticCDFInverse_Static(double p_Ve, void *p_Params);
-    static  double          CalculateOStarRotationalVelocity_Static(const double p_Xmin, const double p_Xmax);
-
             double          CalculatePerturbationB(const double p_Mass);
             double          CalculatePerturbationC(double p_Mass);
     virtual double          CalculatePerturbationMu()                                                           { return m_Mu; }                                                            // Default is NO-OP
@@ -459,8 +455,6 @@ protected:
     virtual std::tuple <double, STELLAR_TYPE> CalculateRadiusAndStellarTypeOnPhase()                            { return std::make_tuple(CalculateRadiusOnPhase(), m_StellarType); }
 
             void            CalculateRCoefficients(const double p_LogMetallicityXi, DBL_VECTOR &p_RCoefficients);
-
-            double          CalculateRotationalVelocity(double p_MZAMS);
 
     virtual double          CalculateTauOnPhase()                                                               { return m_Tau; }                                                           // Default is NO-OP
     virtual double          CalculateTauAtPhaseEnd()                                                            { return m_Tau; }                                                           // Default is NO-OP
@@ -518,7 +512,7 @@ protected:
     /*
      * Perturb Luminosity and Radius
      *
-     * See Hurley at al. 2000, section 6.3
+     * See Hurley et al. 2000, section 6.3
      *
      * The default is no perturbation - this function does nothing and is called
      * only if the stellar class doesn't define its own perturbation function.

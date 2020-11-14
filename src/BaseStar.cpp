@@ -1889,188 +1889,16 @@ double BaseStar::CalculateTemperatureKelvinOnPhase(const double p_Luminosity, co
 
 ///////////////////////////////////////////////////////////////////////////////////////
 //                                                                                   //
-//                      ROTATIONAL / FREQUENCY CALCULATIONS ETC.                     //
+//                      ROTATIONAL FREQUENCY CALCULATIONS ETC.                       //
 //                                                                                   //
 ///////////////////////////////////////////////////////////////////////////////////////
-
-
-/*
- * Calculate the analytic cumulative distribution function (CDF) for the
- * equatorial rotational velocity of single O stars.
- *
- * From Equation 1-4 of Ramirez-Agudelo et al 2013 https://arxiv.org/abs/1309.2929
- * Modelled as a mixture of a gamma component and a normal component.
- *
- * Uses the Boost library
- *
- *
- * double CalculateOStarRotationalVelocityAnalyticCDF_Static(const double p_Ve)
- * @param   [IN]    p_vE                        Rotational velocity (in km s^-1) at which to calculate CDF
- * @return                                      The CDF for the rotational velocity
- */
-double BaseStar::CalculateOStarRotationalVelocityAnalyticCDF_Static(const double p_Ve) {
-
-    double alpha  = 4.82;
-    double beta   = 1.0 / 25.0;
-    double mu     = 205.0;
-    double sigma  = 190.0;
-    double iGamma = 0.43;
-
-    boost::math::inverse_gamma_distribution<> gammaComponent(alpha, beta); // (shape, scale) = (alpha, beta)
-    boost::math::normal_distribution<> normalComponent(mu, sigma);
-
-	return (iGamma * boost::math::cdf(gammaComponent, p_Ve)) + ((1.0 - iGamma) * boost::math::cdf(normalComponent, p_Ve));
-}
-
-
-/*
- * Calculate the inverse of the analytic cumulative distribution function (CDF) for the
- * equatorial rotational velocity of single O stars.
- *
- * (i.e. calculate the inverse of CalculateOStarRotationalVelocityAnalyticCDF_Static())
- *
- *
- * double CalculateOStarRotationalVelocityAnalyticCDFInverse_Static(const double p_Ve, const void *p_Params)
- * @param   [IN]    p_vE                        Rotational velocity (in km s^-1) - value of the kick vk which we want to find
- * @param   [IN]    p_Params                    Pointer to RotationalVelocityParams structure containing y, the CDF draw U(0,1)
- * @return                                      Inverse CDF
- *                                              Should be zero when p_Ve = vk, the value of the kick to draw
- */
-double BaseStar::CalculateOStarRotationalVelocityAnalyticCDFInverse_Static(double p_Ve, void* p_Params) {
-    RotationalVelocityParams* params = (RotationalVelocityParams*) p_Params;
-    return CalculateOStarRotationalVelocityAnalyticCDF_Static(p_Ve) - params->u;
-}
-
-
-/*
- * Calculate rotational velocity from the analytic cumulative distribution function (CDF)
- * for the equatorial rotational velocity of single O stars.
- *
- * Uses inverse sampling and root finding
- *
- * Ramirez-Agudelo et al. 2013 https://arxiv.org/abs/1309.2929
- *
- *
- * double CalculateOStarRotationalVelocity_Static(double p_U, double p_Xmin, double p_Xmax)
- *
- * @param   [IN]    p_Xmin                      Minimum value for root
- * @param   [IN]    p_Xmax                      Maximum value for root
- * @return                                      Rotational velocity in km s^-1
- */
-double BaseStar::CalculateOStarRotationalVelocity_Static(const double p_Xmin, const double p_Xmax) {
-
-    double xMin = p_Xmin;
-    double xMax = p_Xmax;
-
-    double result = xMin;
-
-    double maximumInverse = CalculateOStarRotationalVelocityAnalyticCDF_Static(xMax);
-    double minimumInverse = CalculateOStarRotationalVelocityAnalyticCDF_Static(xMin);
-
-    double rand = RAND->Random();
-
-    while(utils::Compare(rand, maximumInverse) > 0) {
-        xMax          *= 2.0;
-        maximumInverse = CalculateOStarRotationalVelocityAnalyticCDF_Static(xMax);
-    }
-
-    if(utils::Compare(rand, minimumInverse) >= 0) {
-
-        const gsl_root_fsolver_type *T;
-        gsl_root_fsolver            *s;
-        gsl_function                 F;
-
-    	RotationalVelocityParams     params = {rand};
-
-	    F.function = &CalculateOStarRotationalVelocityAnalyticCDFInverse_Static;
-	    F.params   = &params;
-
-	    // gsl_root_fsolver_brent
-	    // gsl_root_fsolver_bisection
-	    T = gsl_root_fsolver_brent;
-	    s = gsl_root_fsolver_alloc(T);
-
-	    gsl_root_fsolver_set(s, &F, xMin, xMax);
-
-	    int status  = GSL_CONTINUE;
-        int iter    = 0;
-        int maxIter = 100;
-
-    	while (status == GSL_CONTINUE && iter < maxIter) {
-        	iter++;
-        	status = gsl_root_fsolver_iterate(s);
-        	result = gsl_root_fsolver_root(s);
-        	xMin   = gsl_root_fsolver_x_lower(s);
-        	xMax   = gsl_root_fsolver_x_upper(s);
-        	status = gsl_root_test_interval(xMin, xMax, 0, 0.001);
-        }
-
-    	gsl_root_fsolver_free(s);   // de-allocate memory for root solver
-    }
-
-    return result;
-}
-
-
-/*
- * Calculate the inital rotational velocity (in km s^-1 ) of a star with ZAMS mass MZAMS
- *
- * Distribution used is determined by program option "rotationalVelocityDistribution"
- *
- *
- * double CalculateRotationalVelocity(double p_MZAMS)
- *
- * @param   [IN]    p_MZAMS                     Zero age main sequence mass in Msol
- * @return                                      Initial equatorial rotational velocity in km s^-1 - vRot in Hurley at al. 2000
- */
-double BaseStar::CalculateRotationalVelocity(double p_MZAMS) {
-
-    double vRot = 0.0;
-
-    switch (OPTIONS->RotationalVelocityDistribution()) {                                // which prescription?
-
-        case ROTATIONAL_VELOCITY_DISTRIBUTION::ZERO: break;                             // ZERO
-
-        case ROTATIONAL_VELOCITY_DISTRIBUTION::HURLEY:                                  // HURLEY
-
-            // Hurley et al. 2000, eq 107 (uses fit from Lang 1992)
-            vRot = (330.0 * PPOW(p_MZAMS, 3.3)) / (15.0 + PPOW(p_MZAMS, 3.45));
-            break;
-
-        case ROTATIONAL_VELOCITY_DISTRIBUTION::VLTFLAMES:                               // VLTFLAMES
-
-            // Rotational velocity based on VLT-FLAMES survey.
-            // For O-stars use results of Ramirez-Agudelo et al. (2013) https://arxiv.org/abs/1309.2929 (single stars)
-            // and Ramirez-Agudelo et al. (2015) https://arxiv.org/abs/1507.02286 (spectroscopic binaries)
-            // For B-stars use results of Dufton et al. (2013) https://arxiv.org/abs/1212.2424
-            // For lower mass stars, I don't know what updated results there are so default back to
-            // Hurley et al. 2000 distribution for now
-
-            if (utils::Compare(p_MZAMS, 16.0) >= 0) {
-                vRot = CalculateOStarRotationalVelocity_Static(0.0, 800.0);
-            }
-            else if (utils::Compare(p_MZAMS, 2.0) >= 0) {
-                vRot = utils::InverseSampleFromTabulatedCDF(RAND->Random(), BStarRotationalVelocityCDFTable);
-            }
-            else {
-                // Don't know what better to use for low mass stars so for now
-                // default to Hurley et al. 2000, eq 107 (uses fit from Lang 1992)
-                vRot = (330.0 * PPOW(p_MZAMS, 3.3)) / (15.0 + PPOW(p_MZAMS, 3.45));
-            }
-            break;
-
-        default:                                                                        // unknown rorational velocity prescription
-            SHOW_WARN(ERROR::UNKNOWN_VROT_PRESCRIPTION, "Using default vRot = 0.0");     // show warning
-    }
-    return vRot;
-}
 
 
 /*
  * Calculate the initial angular frequency (in yr^-1) of a star with
  * ZAMS mass and radius MZAMS and RZAMS respectively
  *
- * Hurley at al. 2000, eq 108
+ * Hurley et al. 2000, eq 108
  *
  *
  * double CalculateRotationalAngularFrequency(const double p_MZAMS, const double p_RZAMS)
@@ -2080,8 +1908,8 @@ double BaseStar::CalculateRotationalVelocity(double p_MZAMS) {
  * @return                                      Initial angular frequency in yr^-1 - omega in Hurley et al. 2000
  */
 double BaseStar::CalculateZAMSAngularFrequency(const double p_MZAMS, const double p_RZAMS) {
-    double vRot = CalculateRotationalVelocity(p_MZAMS);
-    return utils::Compare(vRot, 0.0) == 0 ? 0.0 : 45.35 * vRot / p_RZAMS;    // Hurley at al. 2000, eq 108       JR: todo: added check for vRot = 0
+    double vRot = utils::CalculateRotationalVelocity(OPTIONS->RotationalVelocityDistribution(), p_MZAMS);
+    return utils::Compare(vRot, 0.0) == 0 ? 0.0 : 45.35 * vRot / p_RZAMS;    // Hurley et al. 2000, eq 108       JR: todo: added check for vRot = 0
 }
 
 

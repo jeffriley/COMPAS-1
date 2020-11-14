@@ -1,6 +1,9 @@
 #ifndef __utils_h__
 #define __utils_h__
 
+#include <gsl/gsl_roots.h>
+#include <gsl/gsl_sf_erf.h>
+
 #include "constants.h"
 #include "typedefs.h"
 
@@ -18,6 +21,12 @@ namespace utils {
     // namespace functions - alphabetical (sort of)
 
     double                              CalculateCDFKroupa(const double p_Mass, const double p_Max, const double p_Min);
+
+    double                              CalculateOStarRotationalVelocity(const double p_Xmin, const double p_Xmax);
+    double                              CalculateOStarRotationalVelocityAnalyticCDF(const double p_Ve);
+    double                              CalculateOStarRotationalVelocityAnalyticCDFInverse(double p_Ve, void* p_Params);
+
+    double                              CalculateRotationalVelocity(const ROTATIONAL_VELOCITY_DISTRIBUTION p_vRotDist, const double p_Mass);
 
     std::string                         CentreJustify(const std::string p_Str, std::size_t p_Width);
 
