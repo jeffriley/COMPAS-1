@@ -71,7 +71,7 @@ void Vector3d::operator =( Vector3d vNew ) {
 Vector3d Vector3d::operator +(Vector3d vec) {
     Vector3d newVect;
 
-    for (int i=0; i<3; i++) {
+    for (int i = 0; i < 3; i++) {
         newVect[i] = (*this)[i] + vec[i];
     }
 
@@ -82,7 +82,7 @@ Vector3d Vector3d::operator +(Vector3d vec) {
 Vector3d Vector3d::operator -(Vector3d vec) {
     Vector3d newVect;
 
-    for (int i=0; i<3; i++) {
+    for (int i = 0; i < 3; i++) {
         newVect[i] = (*this)[i] - vec[i];
     }
 
@@ -93,20 +93,20 @@ Vector3d Vector3d::operator -(Vector3d vec) {
 Vector3d Vector3d::operator *(const double scalar) {
     Vector3d newVect;
 
-    for (int i=0; i<3; i++) { 
+    for (int i = 0; i < 3; i++) { 
         newVect[i] = (*this)[i] * scalar; 
     }
 
     return newVect;
 }
 // ...and in reverse order (need the reverser to be a free function)
-Vector3d operator *(double s, Vector3d v) { return v*s; }
+Vector3d operator *(double s, Vector3d v) { return v * s; }
 
 // Overload scalar division operator
 Vector3d Vector3d::operator /(const double scalar) {
     Vector3d newVect;
 
-    for (int i=0; i<3; i++) { 
+    for (int i = 0; i < 3; i++) { 
         newVect[i] = (*this)[i] / scalar; 
     }
 
@@ -195,9 +195,9 @@ Vector3d Vector3d::RotateVector(const double p_ThetaE, const double p_PhiE, cons
 
     // Define the Rotation Matrix     
     std::vector<DBL_VECTOR> RotationMatrix = {
-        { cPhi*cPsi - sPhi*cTheta*sPsi ,  -cPhi*sPsi - sPhi*cTheta*cPsi ,  sTheta*sPhi },
-        { sPhi*cPsi + cPhi*cTheta*sPsi ,  -sPhi*sPsi + cPhi*cTheta*cPsi , -sTheta*cPhi },
-        { sTheta*sPsi                  ,  sTheta*cPsi                   ,  cTheta      }};
+        { cPhi * cPsi - sPhi * cTheta * sPsi ,  -cPhi * sPsi - sPhi * cTheta * cPsi ,  sTheta * sPhi },
+        { sPhi * cPsi + cPhi * cTheta * sPsi ,  -sPhi * sPsi + cPhi * cTheta * cPsi , -sTheta * cPhi },
+        { sTheta * sPsi                      ,  sTheta * cPsi                       ,  cTheta      }};
 
     #undef cTheta
     #undef cPhi
@@ -211,8 +211,8 @@ Vector3d Vector3d::RotateVector(const double p_ThetaE, const double p_PhiE, cons
     Vector3d oldVector = (*this);
     Vector3d newVector = Vector3d(0.0, 0.0, 0.0);
 
-    for (int i=0; i< 3; i++) {
-        for (int j=0; j<3; j++) {
+    for (int i = 0; i < 3; i++) {
+        for (int j = 0; j < 3; j++) {
             newVector[i] += RotationMatrix[i][j] * oldVector[j];
         }
     }
@@ -230,7 +230,7 @@ Vector3d Vector3d::RotateVector(const double p_ThetaE, const double p_PhiE, cons
  */
 Vector3d Vector3d::UnitVector() {
 
-    Vector3d newVector = (*this)/(*this).Magnitude(); 
+    Vector3d newVector = (*this) / (*this).Magnitude(); 
 
     return newVector;
 }
@@ -256,8 +256,8 @@ namespace linalg {
     
         double c = 0;
     
-        for (int i=0; i<3; i++) {
-            c += a[i]*b[i];
+        for (int i = 0; i < 3; i++) {
+            c += a[i] * b[i];
         }
     
         return c;
@@ -276,9 +276,9 @@ namespace linalg {
     
         Vector3d c = Vector3d(0, 0, 0);
     
-        c[0] = a[1]*b[2] - a[2]*b[1];
-        c[1] = a[2]*b[0] - a[0]*b[2];
-        c[2] = a[0]*b[1] - a[1]*b[0];
+        c[0] = a[1] * b[2] - a[2] * b[1];
+        c[1] = a[2] * b[0] - a[0] * b[2];
+        c[2] = a[0] * b[1] - a[1] * b[0];
     
         return c;
     }
@@ -293,7 +293,7 @@ namespace linalg {
      */
     double angleBetween(const Vector3d& a, const Vector3d& b) {
         // Angle between 2 vectors, between [0, pi] 
-        return acos(linalg::dot(a,b)/(a.Magnitude()*b.Magnitude()));
+        return acos(linalg::dot(a,b) / (a.Magnitude() * b.Magnitude()));
     }
 
 }

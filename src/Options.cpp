@@ -164,6 +164,10 @@ void Options::OptionValues::Initialise() {
     m_InitialStellarType2.type                                      = STELLAR_TYPE::NONE;                                   // none specified - will be MS<=0.7 or MS>0.7 depending upon initial mass
     m_InitialStellarType2.typeString                                = INITIAL_STELLAR_TYPE_LABEL.at(m_InitialStellarType2.type);
 
+    // Initial age on phase (for us with initial stellar type)
+    m_InitialAgeOnPhase                                             = 0.0;                                                  // start of phase
+    m_InitialAgeOnPhase1                                            = 0.0;                                                  // start of phase
+    m_InitialAgeOnPhase2                                            = 0.0;                                                  // start of phase
 
     // Initial mass options
     m_InitialMass                                                   = 5.0;
@@ -872,6 +876,21 @@ bool Options::AddOptions(OptionValues *p_Options, po::options_description *p_Opt
             ("Fix dimensionless kick magnitude uk to this value (default = " + std::to_string(p_Options->m_FixedUK) + ", -ve values false, +ve values true)").c_str()
         )
 
+        (
+            "initial-age-on-phase",                                       
+            po::value<double>(&p_Options->m_InitialAgeOnPhase)->default_value(p_Options->m_InitialAgeOnPhase),                                                                                
+            ("Initial age of the star on the phase specified by option '--initial-stellar-type' (default = " + std::to_string(p_Options->m_InitialAgeOnPhase) + ")").c_str()
+        )
+        (
+            "initial-age-on-phase-1",                                       
+            po::value<double>(&p_Options->m_InitialAgeOnPhase1)->default_value(p_Options->m_InitialAgeOnPhase1),                                                                                
+            ("Initial age of the primary star on the phase specified by option '--initial-stellar-type-1' (default = " + std::to_string(p_Options->m_InitialAgeOnPhase1) + ")").c_str()
+        )
+        (
+            "initial-age-on-phase-2",                                       
+            po::value<double>(&p_Options->m_InitialAgeOnPhase2)->default_value(p_Options->m_InitialAgeOnPhase2),                                                                                
+            ("Initial age of the secondary star on the phase specified by option '--initial-stellar-type-2' (default = " + std::to_string(p_Options->m_InitialAgeOnPhase2) + ")").c_str()
+        )
         (
             "initial-mass",                                            
             po::value<double>(&p_Options->m_InitialMass)->default_value(p_Options->m_InitialMass),                                                                          
@@ -1841,6 +1860,10 @@ std::string Options::OptionValues::CheckAndSetOptions() {
         COMPLAIN_IF(m_EccentricityDistributionMin < 0.0 || m_EccentricityDistributionMin > 1.0, "Minimum eccentricity (--eccentricity-min) must be between 0 and 1");
         COMPLAIN_IF(m_EccentricityDistributionMax < 0.0 || m_EccentricityDistributionMax > 1.0, "Maximum eccentricity (--eccentricity-max) must be between 0 and 1");
         COMPLAIN_IF(m_EccentricityDistributionMax <= m_EccentricityDistributionMin, "Maximum eccentricity (--eccentricity-max) must be > Minimum eccentricity (--eccentricity-min)");
+
+        COMPLAIN_IF(m_InitialAgeOnPhase < 0.0 || m_InitialAgeOnPhase > MAXIMUM_INITIAL_MASS, "Initial mass (--initial-mass) must be between " + std::to_string(MINIMUM_INITIAL_MASS) + " and " + std::to_string(MAXIMUM_INITIAL_MASS) + " Msol");
+        COMPLAIN_IF(m_InitialAgeOnPhase1 < 0.0 || m_InitialAgeOnPhase1 > MAXIMUM_INITIAL_MASS, "Primary initial mass (--initial-mass-1) must be between " + std::to_string(MINIMUM_INITIAL_MASS) + " and " + std::to_string(MAXIMUM_INITIAL_MASS) + " Msol");
+        COMPLAIN_IF(m_InitialAgeOnPhase2 < 0.0 || m_InitialAgeOnPhase2 > MAXIMUM_INITIAL_MASS, "Secondary initial mass (--initial-mass-2) must be between " + std::to_string(MINIMUM_INITIAL_MASS) + " and " + std::to_string(MAXIMUM_INITIAL_MASS) + " Msol");
 
         COMPLAIN_IF(m_InitialMass < MINIMUM_INITIAL_MASS || m_InitialMass > MAXIMUM_INITIAL_MASS, "Initial mass (--initial-mass) must be between " + std::to_string(MINIMUM_INITIAL_MASS) + " and " + std::to_string(MAXIMUM_INITIAL_MASS) + " Msol");
         COMPLAIN_IF(m_InitialMass1 < MINIMUM_INITIAL_MASS || m_InitialMass1 > MAXIMUM_INITIAL_MASS, "Primary initial mass (--initial-mass-1) must be between " + std::to_string(MINIMUM_INITIAL_MASS) + " and " + std::to_string(MAXIMUM_INITIAL_MASS) + " Msol");

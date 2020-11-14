@@ -547,6 +547,10 @@ public:
             ENUM_OPT<STELLAR_TYPE>                              m_InitialStellarType1;                                          // Initial stellar type for primary star in BSE
             ENUM_OPT<STELLAR_TYPE>                              m_InitialStellarType2;                                          // Initial stellar type for secondary star in BSE
 
+            double                                              m_InitialAgeOnPhase;                                            // Initial age on phase for star in SSE - for use with m_InitialStellarType
+            double                                              m_InitialAgeOnPhase1;                                           // Initial age on phase for primary star in BSE - for use with m_InitialStellarType1
+            double                                              m_InitialAgeOnPhase2;                                           // Initial age on phase for secondary star in BSE - for use with m_InitialStellarType2
+
             int                                                 m_ObjectsToEvolve;                                              // Number of stars (SSE) or binaries (BSE) to evolve
             bool                                                m_FixedRandomSeed;                                              // Whether to use a fixed random seed given by options.randomSeed (set to true if --random-seed is passed on command line)
             unsigned long int                                   m_RandomSeed;                                                   // Random seed to use
@@ -1028,6 +1032,10 @@ public:
     SN_ENGINE                                   FryerSupernovaEngine() const                                            { return OPT_VALUE("fryer-supernova-engine", m_FryerSupernovaEngine.type, true); }
 
     string                                      GridFilename() const                                                    { return m_CmdLine.optionValues.m_GridFilename; }
+
+    double                                      InitialAgeOnPhase() const                                               { return OPT_VALUE("initial-age-on-phase", m_InitialAgeOnPhase, true); }
+    double                                      InitialAgeOnPhase1() const                                              { return OPT_VALUE("initial-age-on-phase-1", m_InitialAgeOnPhase1, true); }
+    double                                      InitialAgeOnPhase2() const                                              { return OPT_VALUE("initial-age-on-phase-2", m_InitialAgeOnPhase2, true); }
 
     double                                      InitialMass() const                                                     { return OPT_VALUE("initial-mass", m_InitialMass, true); }
     double                                      InitialMass1() const                                                    { return OPT_VALUE("initial-mass-1", m_InitialMass1, true); }
