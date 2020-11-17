@@ -161,8 +161,8 @@ public:
 
             double          CalculateMassLossValues(const bool p_UpdateMDot = false, const bool p_UpdateMDt = false);                                                               // JR: todo: better name?
 
-    virtual double          CalculateMomentOfInertia(const double p_RemnantRadius = 0.0)    { return 0.0; }                                                                         // Use inheritance hierarchy
-    virtual double          CalculateMomentOfInertiaAU(const double p_RemnantRadius = 0.0)  { return 0.0; }                                                                         // Use inheritance hierarchy
+    virtual double          CalculateMomentOfInertia(const double p_RemnantRadius = 0.0)    { return 0.0; }                                                                         // Default
+    virtual double          CalculateMomentOfInertiaAU(const double p_RemnantRadius = 0.0)  { return 0.0; }                                                                         // Default
     
             double          CalculateNuclearTimescale() const                                                   { return CalculateNuclearTimescale_Static(m_Mass, m_Luminosity); }     // Use class member variables
     
@@ -176,23 +176,24 @@ public:
 
             double          CalculateSNKickMagnitude(const double p_RemnantMass, const double p_EjectaMass, const STELLAR_TYPE p_StellarType);
 
-    virtual double          CalculateThermalMassLossRate()                                                      { return m_Mass / CalculateThermalTimescale(); }                    // Use class member variables - and inheritance hierarchy
+    virtual double          CalculateThermalMassLossRate() const                                                 { return m_Mass / CalculateThermalTimescale(); }                    // Use class member variables - and inheritance hierarchy
 
     virtual double          CalculateThermalTimescale(const double p_Mass,
                                                       const double p_Radius,
                                                       const double p_Luminosity,
-                                                      const double p_EnvMass = 1.0) const { return 0.0; }                                                                           // Use inheritance hierarchy
-    virtual double          CalculateThermalTimescale() const { return 0.0; }                                                                                                       // Use inheritance hierarchy
+                                                      const double p_EnvMass = 1.0) const { return 0.0; }                                                                           // Default
+                                                      
+    virtual double          CalculateThermalTimescale() const { return CalculateThermalTimescale(m_Mass, m_Radius, m_Luminosity); }                                                 // Use class member variables
 
             double          CalculateTimestep();
 
-    virtual double          CalculateZeta(ZETA_PRESCRIPTION p_ZetaPrescription) { return 0.0; }                                                                                     // Use inheritance hierarchy
+    virtual double          CalculateZeta(ZETA_PRESCRIPTION p_ZetaPrescription) { return 0.0; }                                                                                     // Default
 
             void            ClearCurrentSNEvent()                                                               { m_SupernovaDetails.events.current = SN_EVENT::NONE; }             // Clear supernova event/state for current timestep
 
     virtual ENVELOPE        DetermineEnvelopeType()                                                             { return ENVELOPE::REMNANT; }                                       // Default is REMNANT - but should never be called
 
-    virtual MT_CASE         DetermineMassTransferCase() { return MT_CASE::NONE; }                                                                                                   // Use inheritance hierarchy
+    virtual MT_CASE         DetermineMassTransferCase() { return MT_CASE::NONE; }                                                                                                   // Default
 
             void            IncrementOmega(const double p_OmegaDelta)                                           { m_Omega += p_OmegaDelta; }                                        // Apply delta to current m_Omega
 
@@ -202,7 +203,7 @@ public:
 
     virtual void            ResolveMassLoss();
 
-    virtual STELLAR_TYPE    ResolveRemnantAfterEnvelopeLoss()                                                   { return m_StellarType; }
+    virtual STELLAR_TYPE    ResolveRemnantAfterEnvelopeLoss() const                                             { return m_StellarType; }
 
             void            SetStellarTypePrev(const STELLAR_TYPE p_StellarTypePrev)                            { m_StellarTypePrev = p_StellarTypePrev; }
 
@@ -221,7 +222,7 @@ public:
                                                        const bool   p_RecyclesNS,
                                                        const double p_Stepsize,
                                                        const double p_MassGainPerTimeStep,
-                                                       const double p_Epsilon) { }                                                                                                  // Default is NO-OP
+                                                       const double p_Epsilon) const { }                                                                                             // Default is NO-OP
 
     // printing functions
             void            PrintDetailedOutput(const int p_Id)                                                 { if (OPTIONS->DetailedOutput()) LOGGING->LogSSEDetailedOutput(this, p_Id, ""); } // Write record to SSE Detailed Output log file
@@ -387,10 +388,10 @@ protected:
 
     static  double          CalculateInitialEnvelopeMass_Static(const double p_Mass);
 
-    virtual double          CalculateLambdaDewi()                                                               { SHOW_WARN(ERROR::NO_LAMBDA_DEWI, "Default used: 1.0"); return 1.0; }      // Not supported: show error
+    virtual double          CalculateLambdaDewi() const                                                              { SHOW_WARN(ERROR::NO_LAMBDA_DEWI, "Default used: 1.0"); return 1.0; }      // Not supported: show error
             double          CalculateLambdaKruckow(const double p_Radius, const double p_Alpha);
             double          CalculateLambdaLoveridgeEnergyFormalism(const double p_EnvMass, const double p_IsMassLoss = false);
-    virtual double          CalculateLambdaNanjing()                                                            { SHOW_WARN(ERROR::NO_LAMBDA_NANJING, "Default used: 1.0"); return 1.0; }   // Not supported: show error
+    virtual double          CalculateLambdaNanjing() const                                                           { SHOW_WARN(ERROR::NO_LAMBDA_NANJING, "Default used: 1.0"); return 1.0; }   // Not supported: show error
 
             void            CalculateLCoefficients(const double p_LogMetallicityXi, DBL_VECTOR &p_LCoefficients);
 
@@ -416,7 +417,7 @@ protected:
             double          CalculateMassLossRateKudritzkiReimers();
             double          CalculateMassLossRateLBV();
             double          CalculateMassLossRateLBV2(const double p_Flbv);
-            double          CalculateMassLossRateNieuwenhuijzenDeJager();
+            double          CalculateMassLossRateNieuwenhuijzenDeJager() const;
             double          CalculateMassLossRateOB(const double p_Teff);
             double          CalculateMassLossRateVassiliadisWood();
     virtual double          CalculateMassLossRateVink();
@@ -451,7 +452,7 @@ protected:
                                                                      const double       p_RadiusPrev,
                                                                      const double       p_DtPrev);
 
-            virtual double  CalculateRadialExtentConvectiveEnvelope()                                           { return m_Radius; }                                                        // default for stars with no convective envelope
+            virtual double  CalculateRadialExtentConvectiveEnvelope() const                                     { return m_Radius; }                                                        // default for stars with no convective envelope
 
     virtual double          CalculateRadiusAtPhaseEnd()                                                         { return m_Radius; }                                                        // Default is NO-OP
             double          CalculateRadiusAtZAMS(const double p_MZAMS);
@@ -503,11 +504,11 @@ protected:
                                                const double p_EjectaMass,
                                                const double p_RemnantMass);
 
-    virtual void            EvolveOneTimestepPreamble() { };                                                                                                                                    // Default is NO-OP
+    virtual void            EvolveOneTimestepPreamble() const { };                                                                                                                          // Default is NO-OP
 
             STELLAR_TYPE    EvolveOnPhase();
 
-    virtual STELLAR_TYPE    EvolveToNextPhase()                                                                 { return m_StellarType; }
+    virtual STELLAR_TYPE    EvolveToNextPhase() const                                                           { return m_StellarType; }
 
 
     virtual bool            IsEndOfPhase()                                                                      { return false; }
@@ -539,8 +540,8 @@ protected:
 
             STELLAR_TYPE    ResolveEndOfPhase();
     virtual void            ResolveHeliumFlash() { }
-    virtual STELLAR_TYPE    ResolveSkippedPhase()                                                               { return EvolveToNextPhase(); }                                                 // Default is evolve to next phase
-    virtual STELLAR_TYPE    ResolveSupernova()                                                                  { return m_StellarType; }                                                       // Default is NO-OP
+    virtual STELLAR_TYPE    ResolveSkippedPhase() const                                                         { return EvolveToNextPhase(); }                                                 // Default is evolve to next phase
+    virtual STELLAR_TYPE    ResolveSupernova() const                                                            { return m_StellarType; }                                                       // Default is NO-OP
 
     virtual void            SetSNHydrogenContent()                                                              { m_SupernovaDetails.isHydrogenPoor = false; }                                  // Default is false
 

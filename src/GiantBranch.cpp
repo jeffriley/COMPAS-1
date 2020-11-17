@@ -1,5 +1,7 @@
 #include "GiantBranch.h"
 #include "HeMS.h"
+#include "HeWD.h"
+#include "NS.h"
 #include "BH.h"
 
 

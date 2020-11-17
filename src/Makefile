@@ -64,6 +64,9 @@ SOURCES :=                                                               \
             HeHG.cpp                    \
             HeGB.cpp                    \
                                         \
+            Remnants.cpp                \
+                                        \
+            WhiteDwarfs.cpp             \
             HeWD.cpp                    \
             COWD.cpp                    \
             ONeWD.cpp                   \

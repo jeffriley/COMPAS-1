@@ -1451,7 +1451,7 @@ double BaseStar::CalculateMassLossRateKudritzkiReimers() {
  *
  * @return                                      Nieuwenhuijzen & de Jager mass loss rate for massive stars (in Msol yr^-1)
  */
-double BaseStar::CalculateMassLossRateNieuwenhuijzenDeJager() {
+double BaseStar::CalculateMassLossRateNieuwenhuijzenDeJager() const {
     double smoothTaper = min(1.0, (m_Luminosity - 4000.0) / 500.0); // Smooth taper between no mass loss and mass loss
     return sqrt((m_Metallicity / ZSOL)) * smoothTaper * 9.6E-15 * PPOW(m_Radius, 0.81) * PPOW(m_Luminosity, 1.24) * PPOW(m_Mass, 0.16);
 }
