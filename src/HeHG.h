@@ -39,7 +39,7 @@ protected:
         // can get here via EvolveOneTimestep() and ResolveEnvelopeLoss(),
         // and Age is calculated differently in those cases
         
-        //Update stellar properties at start of HeHG phase (since core defintion changes)
+        //Update stellar properties at start of HeHG phase (since core definition changes)
         CalculateGBParams();
         m_COCoreMass  = CalculateCOCoreMassOnPhase();
         m_CoreMass    = CalculateCoreMassOnPhase();
@@ -60,24 +60,24 @@ protected:
     static  double          CalculateCoreMass_Luminosity_B_Static()                                                 { return 4.1E4; }
     static  double          CalculateCoreMass_Luminosity_D_Static(const double p_Mass)                              { return 5.5E4 / (1.0 + (0.4 * p_Mass * p_Mass * p_Mass * p_Mass)); }   // pow() is slow - use multiplication
 
+            double          CalculateCriticalMassRatioClaeys14(const bool p_AccretorIsDegenerate) const;
+            double          CalculateCriticalMassRatioHurleyHjellmingWebbink() const                                { return 1.28; }                                                        // From BSE. Using the inverse owing to how qCrit is defined in COMPAS. See Hurley et al. 2002 sect. 2.6.1 for additional details.
+
             void            CalculateGBParams(const double p_Mass, DBL_VECTOR &p_GBParams);
             void            CalculateGBParams()                                                                     { CalculateGBParams(m_Mass0, m_GBParams); }                             // Use class member variables
-
-            double          CalculateGyrationRadius() const                                                         { return 0.21; }                                                        // Hurley et al., 2000, after eq 109 for n=3/2 polytrope or dense convective core. Single number approximation.
 
             double          CalculateHeCoreMassAtPhaseEnd() const                                                   { return CalculateHeCoreMassOnPhase(); }                                // Same as on phase
             double          CalculateHeCoreMassOnPhase() const                                                      { return m_Mass; }                                                      // NO-OP
 
             double          CalculateLambdaNanjingStarTrack(const double p_Mass, const double p_Metallicity) const;
-            double          CalculateLambdaNanjingEnhanced(const int p_MassInd, const int p_Zind) const             { return CalculateLambdaNanjingStarTrack(0.0, 0.0); }                            // 0.0 are dummy values that are not used
+            double          CalculateLambdaNanjingEnhanced(const int p_MassInd, const int p_Zind) const             { return CalculateLambdaNanjingStarTrack(0.0, 0.0); }                   // 0.0 are dummy values that are not used
 
             double          CalculateLuminosityOnPhase() const;
             double          CalculateLuminosityAtPhaseEnd() const                                                   { return m_Luminosity; }                                                // NO-OP
 
             double          CalculateMassTransferRejuvenationFactor() const;
 
-   	        double          CalculateMomentOfInertia(const double p_RemnantRadius = 0.0) const                      { return GiantBranch::CalculateMomentOfInertia(p_RemnantRadius); }      // Skip HeMS
-   	        double          CalculateMomentOfInertiaAU(const double p_RemnantRadius = 0.0) const                    { return GiantBranch::CalculateMomentOfInertiaAU(p_RemnantRadius); }    // Skip HeMS
+            double          CalculateMomentOfInertia() const                                                        { return GiantBranch::CalculateMomentOfInertia(); }
 
             double          CalculatePerturbationMu() const;
             double          CalculatePerturbationMuAtPhaseEnd() const                                               { return m_Mu; }                                                        // NO-OP
@@ -101,7 +101,7 @@ protected:
             void            CalculateTimescales(const double p_Mass, DBL_VECTOR &p_Timescales);
             void            CalculateTimescales()                                                                   { CalculateTimescales(m_Mass0, m_Timescales); }                         // Use class member variables
     
-            double          CalculateZeta(ZETA_PRESCRIPTION p_ZetaPrescription)                                     { return HG::CalculateZeta(p_ZetaPrescription); }                       // Calculate Zetas as for HG and other giant stars (HeMS stars were an exception)
+            double          CalculateZetaConstantsByEnvelope(ZETA_PRESCRIPTION p_ZetaPrescription)                  { return GiantBranch::CalculateZetaConstantsByEnvelope(p_ZetaPrescription); } // Calculate Zetas as for other giant stars (HeMS stars were an exception)
 
             double          ChooseTimestep(const double p_Time) const;
 
@@ -110,7 +110,6 @@ protected:
             STELLAR_TYPE    EvolveToNextPhase();
 
             bool            IsEndOfPhase() const                                                                    { return !ShouldEvolveOnPhase(); }
-            bool            IsMassRatioUnstable(const double p_AccretorMass, const bool p_AccretorIsDegenerate) const;
             bool            IsSupernova() const;
             double          CalculateInitialSupernovaMass() const;
     
@@ -120,6 +119,7 @@ protected:
             void            ResolveHeliumFlash() { }                                                                                                                                        // NO-OP
             STELLAR_TYPE    ResolveSkippedPhase()                                                                   { return m_StellarType; }                                               // NO-OP
 
+            bool            ShouldEnvelopeBeExpelledByPulsations() const                                            { return CHeB::ShouldEnvelopeBeExpelledByPulsations(); }                // Envelope of convective star with luminosity to mass ratio beyond threshold should be expelled
             bool            ShouldEvolveOnPhase() const;
             bool            ShouldSkipPhase() const                                                                 { return false; }                                                       // Never skip HeMS phase
 

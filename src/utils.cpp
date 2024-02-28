@@ -1,6 +1,5 @@
 #include <iostream>
 #include <stdarg.h>
-#include <fstream>
 #include <algorithm>
 #include <cstring>
 #include "profiling.h"
@@ -169,27 +168,44 @@ namespace utils {
     /*
      * Compare floating-point numbers with tolerance
      *
-     * Absolute and relative tolerance can be different - see constants.h
-     * Set relative tolerance = 0.0 to always use absolute
-     * Set absolute tolerance = 0.0 to always use relative
-     * Set both to zero for no tolerance - or #undef COMPARE_WITH_TOLERANCE for performance
+     * For comparisons using the global tolerance values (FLOAT_TOLERANCE_ABSOLUTE, FLOAT_TOLERANCE_RELATIVE):
+     *    - Absolute and relative tolerance can be different - see constants.h
+     *    - Set relative tolerance = 0.0 to always use absolute
+     *    - Set absolute tolerance = 0.0 to always use relative
+     *    - Set both to zero for no tolerance - or #undef COMPARE_GLOBAL_TOLERANCE for performance
      *
+     * If p_Tolerance is > 0.0 it will be used in preference to the global tolerance values
+     * If p_Tolerance is > 0.0, then p_Absolute determines if p_Tolerance should be treated as an absolute
+     * tolerance (p_Absolute = true), or a relative tolerance (p_Absolute = false).
+     * 
      *
      * int Compare(const double p_X, const double p_Y)
      *
      * @param   [IN]    p_X                 Floating-point value to be compared
      * @param   [IN]    p_Y                 Floating-point value to be compared
+     * @param   [IN]    p_Tolerance         Floating-point tolerance value - if > 0.0 supersedes global tolerance
+     * @param   [IN]    p_Absolute          Boolean indicating whether p_Tolerance should be treated as absolute tolerance (true) or relative tolerance (false)
      * @return                              Integer indicating result of comparison:
      *                                         -1 indicates p_X is less than p_Y
      *                                          0 indicates equality
      *                                          1 indicates p_X is greater than p_Y
      */
-    int Compare(const double p_X, const double p_Y) {
-    #ifdef COMPARE_WITH_TOLERANCE
-        return (std::abs(p_X - p_Y) <= std::max(FLOAT_TOLERANCE_ABSOLUTE, FLOAT_TOLERANCE_RELATIVE * std::max(std::abs(p_X), fabs(p_Y)))) ? 0 : (p_X < p_Y ? -1 : 1);
+    int Compare(const double p_X, const double p_Y, const double p_Tolerance, const bool p_Absolute) {
+        if (p_Tolerance > 0.0) {                                                                                                // use tolerance passed?
+            if (p_Absolute) {                                                                                                   // yes - absolute tolerance?
+                return (fabs(p_X - p_Y) <= p_Tolerance) ? 0 : (p_X < p_Y ? -1 : 1);                                             // yes
+            }
+            else {                                                                                                              // no - relative tolerance
+                return (fabs(p_X - p_Y) <= p_Tolerance * std::max(fabs(p_X), fabs(p_Y))) ? 0 : (p_X < p_Y ? -1 : 1);
+            }
+        }
+        else {                                                                                                                  // use global tolerance
+    #ifdef COMPARE_GLOBAL_TOLERANCE
+            return (fabs(p_X - p_Y) <= std::max(FLOAT_TOLERANCE_ABSOLUTE, FLOAT_TOLERANCE_RELATIVE * std::max(fabs(p_X), fabs(p_Y)))) ? 0 : (p_X < p_Y ? -1 : 1);
     #else
-        return (p_X == p_Y) ? 0 : (p_X < p_Y ? -1 : 1);
+            return (p_X == p_Y) ? 0 : (p_X < p_Y ? -1 : 1);
     #endif
+        }
     }
 
 
@@ -205,13 +221,7 @@ namespace utils {
      * @return                              Semi-major axis in AU
      */
     double ConvertPeriodInDaysToSemiMajorAxisInAU(const double p_Mass1, const double p_Mass2, const double p_Period) {
-
-        double a_cubed_SI_top    = G * ((p_Mass1 * MSOL_TO_KG) + (p_Mass2 * MSOL_TO_KG)) * p_Period * p_Period * SECONDS_IN_DAY * SECONDS_IN_DAY;
-        double a_cubed_SI_bottom = 4.0 * M_PI * M_PI;
-        double a_cubed_SI        = a_cubed_SI_top / a_cubed_SI_bottom;
-        double a_SI              = std::cbrt(a_cubed_SI); 
-
-        return a_SI / AU;
+        return std::cbrt((p_Mass1 + p_Mass2) * p_Period * p_Period / DAYS_IN_YEAR / DAYS_IN_YEAR);
     }
 
 
@@ -352,7 +362,7 @@ namespace utils {
      * double intPow(const double p_Base, const int p_Exponent)
      *
      * @param   [IN]    p_Base              Base - number to be raised to integer power
-     * @param   [IN]    p_Exponent          Exponent - integer to wich base should be raised
+     * @param   [IN]    p_Exponent          Exponent - integer to which base should be raised
      * @return                              Base ^ Exponent
      */
     double intPow(const double p_Base, const int p_Exponent) {
@@ -498,7 +508,7 @@ namespace utils {
      * Determines if the string passed as p_Str is a valid DOUBLE
      *
      * In this context, to be a valid DOUBLE the string must convert to a
-     * double succussfully via the std::stod() function
+     * double successfully via the std::stod() function
      * 
      * 
      * int IsDOUBLE(const std::string p_Str)
@@ -530,7 +540,7 @@ namespace utils {
      * Determines if the string passed as p_Str is a valid FLOAT
      *
      * In this context, to be a valid FLOAT the string must convert to a
-     * double succussfully via the std::stof() function
+     * double successfully via the std::stof() function
      * 
      * 
      * int IsFLOAT(const std::string p_Str)
@@ -562,7 +572,7 @@ namespace utils {
      * Determines if the string passed as p_Str is a valid INT
      *
      * In this context, to be a valid INT the string must convert to an
-     * integer succussfully via the std::stoi() function
+     * integer successfully via the std::stoi() function
      * 
      * 
      * int IsINT(const std::string p_Str)
@@ -594,7 +604,7 @@ namespace utils {
      * Determines if the string passed as p_Str is a valid LONG DOUBLE
      *
      * In this context, to be a valid LONG DOUBLE the string must convert to a
-     * long double succussfully via the std::stold() function
+     * long double successfully via the std::stold() function
      * 
      * 
      * int IsLONGDOUBLE(const std::string p_Str)
@@ -626,7 +636,7 @@ namespace utils {
      * Determines if the string passed as p_Str is a valid LONG INT
      *
      * In this context, to be a valid LONG INT the string must convert to a
-     * long integer succussfully via the std::stol() function
+     * long integer successfully via the std::stol() function
      * 
      * 
      * int IsLONGINT(const std::string p_Str)
@@ -658,7 +668,7 @@ namespace utils {
      * Determines if the string passed as p_Str is a valid UNSIGNED LONG INT
      *
      * In this context, to be a valid UNSIGNED LONG INT the string must convert to a
-     * unsigned long integer succussfully via the std::stoul() function
+     * unsigned long integer successfully via the std::stoul() function
      * 
      * 
      * int IsULONGINT(const std::string p_Str)
@@ -712,7 +722,7 @@ namespace utils {
      *
      * @param   [IN]    p_Str                       String to be padded with leading "0"s
      * @param   [IN]    p_MaxLength                 The required length of the resultant string
-     * @return                                      String padded with leading "0"s - will be unchanged from input string if length alread >= required length
+     * @return                                      String padded with leading "0"s - will be unchanged from input string if length already >= required length
      */
     std::string PadLeadingZeros(const std::string p_Str, const std::size_t p_MaxLength) {
         return (p_Str.length() < p_MaxLength) ? std::string(p_MaxLength - p_Str.length(), '0') + p_Str : p_Str;
@@ -729,7 +739,7 @@ namespace utils {
      *
      * @param   [IN]    p_Str                       String to be padded with trailing " "s
      * @param   [IN]    p_MaxLength                 The required length of the resultant string
-     * @return                                      String padded with leading "0"s - will be unchanged from input string if length alread >= required length
+     * @return                                      String padded with leading "0"s - will be unchanged from input string if length already >= required length
      */
     std::string PadTrailingSpaces(const std::string p_Str, const std::size_t p_MaxLength) {
         return (p_Str.length() < p_MaxLength) ? p_Str + std::string(p_MaxLength - p_Str.length(), ' ') : p_Str;
@@ -884,7 +894,7 @@ namespace utils {
                 // Sampling function taken from binpop.f in NBODY6
 
                 do {
-                    eccentricity = 0.23 * std::sqrt(-2.0 * log(RAND->Random())) * cos(2.0 * M_PI * RAND->Random()) + 0.38;
+                    eccentricity = 0.23 * std::sqrt(-2.0 * log(RAND->Random())) * cos(_2_PI * RAND->Random()) + 0.38;
                 } while (eccentricity < p_Min || eccentricity > p_Max);                                 // JR: don't use utils::Compare() here
                 break;
 
@@ -893,7 +903,7 @@ namespace utils {
                 // Sampling function taken from binpop.f in NBODY6
 
                 do {
-                    eccentricity = 0.15 * std::sqrt(-2.0 * log(RAND->Random())) * cos(2.0 * M_PI * RAND->Random()) + 0.3;
+                    eccentricity = 0.15 * std::sqrt(-2.0 * log(RAND->Random())) * cos(_2_PI * RAND->Random()) + 0.3;
                 } while (eccentricity < p_Min or eccentricity > p_Max);                                 // JR: don't use utils::Compare() here
                 break;
 
@@ -993,14 +1003,14 @@ namespace utils {
                 thisMass = utils::InverseSampleFromPowerLaw(p_Power, p_Max, p_Min);
                 break;
 
-            case INITIAL_MASS_FUNCTION::UNIFORM:                                                                    // UNIFORM - convienience function for POWERLAW with slope of 0
+            case INITIAL_MASS_FUNCTION::UNIFORM:                                                                    // UNIFORM - convenience function for POWERLAW with slope of 0
 
                 thisMass = RAND->Random(p_Min, p_Max);
                 break;
 
             case INITIAL_MASS_FUNCTION::KROUPA:                                                                     // KROUPA
 
-                // find out where the user specificed their minimum and maximum masses to generate
+                // find out where the user specified their minimum and maximum masses to generate
                 if (utils::Compare(p_Min, KROUPA_BREAK_1) <= 0 && utils::Compare(p_Max, KROUPA_BREAK_1) <= 0) {
                     thisMass = utils::InverseSampleFromPowerLaw(KROUPA_POWER_1, p_Max, p_Min);                      // draw mass using inverse sampling
                 }
@@ -1101,7 +1111,7 @@ namespace utils {
             case MASS_RATIO_DISTRIBUTION::DUQUENNOYMAYOR1991:                                                   // mass ratio distribution from Duquennoy & Mayor (1991) (http://adsabs.harvard.edu/abs/1991A%26A...248..485D)
 
                 do {                                                                                            // JR: todo: catch non-convergence?
-                    q = 0.42 * std::sqrt(-2.0 * log(RAND->Random())) * cos(2.0 * M_PI * RAND->Random()) + 0.23;
+                    q = 0.42 * std::sqrt(-2.0 * log(RAND->Random())) * cos(_2_PI * RAND->Random()) + 0.23;
                 } while (q < p_Min || q > p_Max);                                                               // JR: don't use utils::Compare() here
                 break;
 
@@ -1239,7 +1249,7 @@ namespace utils {
 
                 // Make sure that the drawn semi-major axis is in the range specified by the user
                 do {                                                                                                    // JR: todo: catch for non-convergence?
-                    double periodInDays = PPOW(10.0, 2.3 * std::sqrt(-2.0 * log(RAND->Random())) * cos(2.0 * M_PI * RAND->Random()) + 4.8);
+                    double periodInDays = PPOW(10.0, 2.3 * std::sqrt(-2.0 * log(RAND->Random())) * cos(_2_PI * RAND->Random()) + 4.8);
                     semiMajorAxis = utils::ConvertPeriodInDaysToSemiMajorAxisInAU(p_Mass1, p_Mass2, periodInDays);      // convert period in days to semi-major axis in AU
                 } while (semiMajorAxis < p_AdistMin || semiMajorAxis > p_AdistMax);                                     // JR: don't use utils::Compare() here
                 break;
@@ -1276,6 +1286,9 @@ namespace utils {
      *    SN_EVENT::PISN  iff PISN  bit is set
      *    SN_EVENT::PPISN iff PPISN bit is set
      *    SN_EVENT::USSN  iff USSN  bit is set
+     *    SN_EVENT::AIC   iff AIC   bit is set
+     *    SN_EVENT::SNIA  iff SNIA  bit is set and HeSD bit is not set
+     *    SN_EVENT::HeSD  iff HeSD  bit is set
      *    SN_EVENT::NONE  otherwise
      * 
      *
@@ -1289,7 +1302,10 @@ namespace utils {
         if ((p_SNEvent & SN_EVENT::PISN )                   == SN_EVENT::PISN ) return SN_EVENT::PISN;
         if ((p_SNEvent & SN_EVENT::PPISN)                   == SN_EVENT::PPISN) return SN_EVENT::PPISN;
         if ((p_SNEvent & SN_EVENT::USSN )                   == SN_EVENT::USSN ) return SN_EVENT::USSN;
-        
+        if ((p_SNEvent & SN_EVENT::AIC  )                   == SN_EVENT::AIC  ) return SN_EVENT::AIC;
+        if ((p_SNEvent & (SN_EVENT::SNIA | SN_EVENT::HeSD)) == SN_EVENT::SNIA ) return SN_EVENT::SNIA;
+        if ((p_SNEvent & SN_EVENT::HeSD )                   == SN_EVENT::HeSD ) return SN_EVENT::HeSD;
+
         return SN_EVENT::NONE;
     }
 
@@ -1359,7 +1375,6 @@ namespace utils {
      * @param   [IN]    p_A                       Coefficient of x^2
      * @param   [IN]    p_B                       Coefficient of x^1
      * @param   [IN]    p_C                       Coefficient of x^0 (Constant)
-     * @return                                    Root found (see above)
      * @return                                    Tuple containing (in order): error value, root found (see above)
      *                                            The error value returned will be:
      *                                                ERROR::NONE if no error occurred
@@ -1396,6 +1411,25 @@ namespace utils {
 
 
     /*
+     * Tolerance for Boost bracket_and_solve_root()
+     *
+     * Determines if the brackets around the root are within the COMPAS defined tolerance.
+     * 
+     * 
+     * bool BracketTolerance(const double p_Bracket1, const double p_Bracket2)
+     * 
+     * @param   [IN]    p_Bracket1                Bracket bound 1
+     * @param   [IN]    p_Bracket2                Bracket bound 2
+     * @return                                    Boolean indicating if the brackets bounds are within tolerance
+     */
+    bool BracketTolerance(const double p_Bracket1, const double p_Bracket2) {
+        double diff = fabs(p_Bracket1 - p_Bracket2);                                            // absolute value of difference
+        double min  = std::min(p_Bracket1, p_Bracket2);                                         // minimum bracket value - could straddle 0.0
+        return diff <= ROOT_ABS_TOLERANCE || fabs(diff / min) <= ROOT_REL_TOLERANCE;
+    }
+
+
+    /*
      * Announce COMPAS
      * 
      * Constructs and returns a splash string.  Prints string to stdout if required.
@@ -1413,11 +1447,126 @@ namespace utils {
                                    VERSION_STRING + 
                                    "\nCompact Object Mergers: Population Astrophysics and Statistics"
                                    "\nby Team COMPAS (http://compas.science/index.html)"
-                                   "\nA binary star simulator\n";
+                                   "\nA binary star simulator\n"
+                                   "\nGo to https://compas.readthedocs.io/en/latest/index.html for the online documentation"
+                                   "\nCheck https://compas.readthedocs.io/en/latest/pages/whats-new.html to see what's new in the latest release\n";
 
         if (p_Print) std::cout << splashString << std::endl;    // print the splash string if required
 
         return splashString;                                    // return the splash string
+    }
+
+
+    /*
+     * Read timesteps from timesteps file
+     *
+     * Timesteps file is expected to be an ascii file with one timestep per record.
+     * Timesteps must be > 0.0
+     *  
+     * 
+     * std::tuple<ERROR, DBL_VECTOR> ReadTimesteps(const std::string p_TimestepsFileName)
+     * 
+     * @param   [IN]    p_TimestepsFileName       Filename to be read - should be fully qualified
+     * @return                                    Tuple containing error value and timesteps vector
+     *                                            The error value returned will be:
+     *                                                ERROR::NONE                                 if no error occurred
+     *                                                ERROR::EMPTY_FILENAME                       if the filename provided was an empty string
+     *                                                ERROR::FILE_DOES_NOT_EXIST                  if the timesteps file does not exist
+     *                                                ERROR::FILE_OPEN_ERROR                      if the timesteps file exists but could not be opened
+     *                                                ERROR::FILE_READ_ERROR                      if the timesteps file could not be read
+     *                                                ERROR::EMPTY_FILE                           if the timesteps file contains no content
+     *                                                ERROR::INVALID_VALUE_IN_TIMESTEPS_FILE      if the file contains an invalid value for timestep
+     *                                                ERROR::TOO_MANY_TIMESTEPS_IN_TIMESTEPS_FILE if the file contains too many timesteps (> maximum per OPTIONS)
+     *                                              If the error returned is not ERROR:NONE, the content of the timesteps vector returned is not defined
+     */
+    std::tuple<ERROR, DBL_VECTOR> ReadTimesteps(const std::string p_TimestepsFileName) {
+
+        ERROR error = ERROR::NONE;                                                                                  // error - initially NONE
+ 
+        DBL_VECTOR timesteps;                                                                                       // timesteps vector
+
+        if (p_TimestepsFileName.empty()) {                                                                          // timesteps filename empty?
+            error = ERROR::EMPTY_FILENAME;                                                                          // yes - fail
+        }
+        else {
+
+            if (!FileExists(p_TimestepsFileName)) {                                                                 // timesteps file exists?
+                error = ERROR::FILE_DOES_NOT_EXIST;                                                                 // no - fail
+            }
+            else {                                                                                                  // yes
+                std::ifstream timestepsFile;
+                timestepsFile.exceptions(std::ifstream::failbit | std::ifstream::badbit);
+                try {
+                    timestepsFile.open(p_TimestepsFileName);                                                        // open the timesteps file
+                    if (!timestepsFile.is_open()) {                                                                 // open ok?
+                        error = ERROR::FILE_OPEN_ERROR;                                                             // no - fail
+                    }
+                    else {                                                                                          // yes - file open
+                        std::string rec;                                                                            // record read from file
+                        unsigned int numTimesteps = 0;
+                        while (std::getline(timestepsFile, rec)) {                                                  // get next record from timesteps file
+
+                            if (rec.size() > 0 && (rec[rec.size() - 1] == '\n' || rec[rec.size() - 1] == '\r')) {   // last character `\n` or `\r`?
+                                rec.erase(rec.size() - 1);                                                          // yes - strip it
+                            }
+
+                            rec = trim(rec);                                                                        // remove leading and trailing blanks
+
+                            if (!(rec.empty() || rec[0] == '#')) {                                                  // blank record or comment?                                 
+                                try {                                                                               // no - process it
+                                    size_t lastChar;
+                                    long double v = std::stold(rec, &lastChar);                                     // try conversion
+                                    if (lastChar != (rec.size())) {                                                 // conversion valid only if rec completely consumed
+                                        error = ERROR::INVALID_VALUE_IN_TIMESTEPS_FILE;                             // not a valid DOUBLE
+                                        break;                                                                      // stop processing
+                                    }
+
+                                    if (v < 0.0) {                                                                  // timestep must be >= 0.0
+                                       error = ERROR::INVALID_VALUE_IN_TIMESTEPS_FILE;                              // not a valid timestep
+                                       break;                                                                       // stop processing
+                                    }
+                                    else {                                                                          // ok - timestep >= 0.0
+                                        timesteps.push_back(v);                                                     // add timestep to timesteps vector
+                                    }
+                    
+                                    numTimesteps++;                                                                 // increment number of timesteps read
+                                    if (numTimesteps >= ABSOLUTE_MAXIMUM_TIMESTEPS) {                               // number of timesteps exceeds maximum?
+                                        error = ERROR::TOO_MANY_TIMESTEPS_IN_TIMESTEPS_FILE;                        // yes - fail
+                                        break;                                                                      // stop processing
+                                    }
+                                }
+                                catch (const std::out_of_range& e) {                                                // conversion failed
+                                    error = ERROR::INVALID_VALUE_IN_TIMESTEPS_FILE;                                 // not a valid DOUBLE
+                                    break;                                                                          // stop processing
+                                }
+                                catch (const std::invalid_argument& e) {                                            // conversion failed
+                                    error = ERROR::INVALID_VALUE_IN_TIMESTEPS_FILE;                                 // not a valid DOUBLE
+                                    break;                                                                          // stop processing
+                                }
+                            }
+                        }
+                        try {
+                            timestepsFile.close();                                                                  // close the timesteps file
+                        }
+                        catch (std::ifstream::failure& e) {                                                         // close failed
+                            error = ERROR::FILE_NOT_CLOSED;                                                         // fail
+                        }
+                    }
+                }
+                catch (std::ifstream::failure& e) {                                                                 // something was flagged...
+                    if (timestepsFile.eof()) {                                                                      // end-of-file?
+                        if (timesteps.size() < 1) {                                                                 // yes - at least one timestep read?
+                            error = ERROR::EMPTY_FILE;                                                              // no - fail
+                        }
+                    }
+                    else {                                                                                          // not end-of-file - error
+                        error = ERROR::FILE_READ_ERROR;                                                             // fail
+                    }
+                }
+
+            }
+        }
+        return std::make_tuple(error, timesteps);
     }
 
 }

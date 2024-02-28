@@ -1,4 +1,5 @@
 #include "MainSequence.h"
+#include "HG.h"
 
 
 ///////////////////////////////////////////////////////////////////////////////////////
@@ -27,8 +28,6 @@ void MainSequence::CalculateTimescales(const double p_Mass, DBL_VECTOR &p_Timesc
 #define timescales(x) p_Timescales[static_cast<int>(TIMESCALE::x)]  // for convenience and readability - undefined at end of function
     timescales(tBGB)   = CalculateLifetimeToBGB(p_Mass);
     timescales(tMS)    = CalculateLifetimeOnPhase(p_Mass, timescales(tBGB));
-    timescales(tMcMax) = 0.0;                                       // JR: todo: this is never used - is it actually needed?
-
 #undef timescales
 }
 
@@ -104,7 +103,7 @@ double MainSequence::CalculateBetaL(const double p_Mass) const {
 
 
 /*
- * Calcluate the luminosity alpha constant alpha_L
+ * Calculate the luminosity alpha constant alpha_L
  *
  * Hurley et al. 2000, eqs 19a & 19b
  *
@@ -534,7 +533,7 @@ double MainSequence::CalculateLifetimeOnPhase(const double p_Mass, const double 
     double tHook = mu * p_TBGB;
 
     // For mass < Mhook, x > mu (i.e. for stars without a hook)
-    double x = std::max(0.95, std::min((0.95 - (0.03 * (m_LogMetallicityXi + 0.30103))), 0.99));
+    double x = std::max(0.95, std::min((0.95 - (0.03 * (LogMetallicityXi() + 0.30103))), 0.99));
 
     return std::max(tHook, (x * p_TBGB));
 
@@ -560,50 +559,6 @@ void MainSequence::UpdateAgeAfterMassLoss() {
     double tMSprime  = MainSequence::CalculateLifetimeOnPhase(m_Mass, tBGBprime);
 
     m_Age *= tMSprime / tMS;
-}
-
-
-///////////////////////////////////////////////////////////////////////////////////////
-//                                                                                   //
-//                  ROTATIONAL / GYRATION / FREQUENCY CALCULATIONS                   //
-//                                                                                   //
-///////////////////////////////////////////////////////////////////////////////////////
-
-/*
- * Calculate gyration radius
- *
- * Define gyration radius 'k=r_g^2' using fit from de Mink et al. 2013, calling k_definition function
- * Original created by Alejandro Vigna-Gomez on 11/2015.  Rewritten June 2019, JR.
- *
- * The original fits from de Mink+2013 were made for MS stars a Z=0.02.
- *
- * Uses class member variables instaed of passing in parameters
- *
- *
- * double CalculateGyrationRadius()
- *
- * @return                                      Gyration radius in Rsol
- *
- */
-double MainSequence::CalculateGyrationRadius() const {
-
-    double log10M = log10(m_Mass);
-
-	double cLower = 0.0;                                                                            // correction factor 'c' (lowercase 'c') in de Mink et al., 2013 eq A1
-	if ((utils::Compare(log10M, 1.3) > 0)) {                                                        // log10(M) > 1.3 (de Mink doesn't include '=' - we assume it not to be here))
-        double log10M_13 = log10M - 1.3;
-        cLower = -0.055 * log10M_13 * log10M_13;
-	}
-
-	double CUpper = -2.5;                                                                           // exponent 'C' (uppercase 'C') in de Mink et al., 2013 eq A2
-	     if ((utils::Compare(log10M, 0.2) > 0)) CUpper = -1.5;                                      // log10(M) > 0.2
-	else if ((utils::Compare(log10M, 0.0) > 0)) CUpper = -2.5 + (5.0 * log10M);                     // 0.2 <= log10(M) > 0.0 (de Mink doesn't include '=' - we assume it to be here (and for log10(M) <= 0.0))
-
-    double k0 = cLower+ std::min(0.21, std::max(0.09 - (0.27 * log10M), 0.037 + (0.033 * log10M))); // gyration radius squared for ZAMS stars
-
-    double radiusRatio = m_Radius / m_RZAMS;
-
-	return ((k0 - 0.025) * PPOW(radiusRatio, CUpper)) + (0.025 * PPOW(radiusRatio, -0.1));          // gyration radius
 }
 
 
@@ -682,9 +637,31 @@ STELLAR_TYPE MainSequence::ResolveEnvelopeLoss(bool p_NoCheck) {
     
     if (p_NoCheck || utils::Compare(m_Mass, 0.0) <= 0) {
         stellarType = STELLAR_TYPE::MASSLESS_REMNANT;
-        m_Radius = 0.0;   // massless remnant
-        m_Mass = 0.0;
+        m_Radius    = 0.0;   // massless remnant
+        m_Mass      = 0.0;
     }
     
     return stellarType;
+}
+
+
+/*
+ * Update the minimum core mass of a main sequence star that loses mass through Case A mass transfer by
+ * setting it equal to the core mass of a TAMS star, scaled by the fractional age.
+ * 
+ * The minimum core mass of the star is updated only if the retain-core-mass-during-caseA-mass-transfer
+ * option is specified, otherwise it is left unchanged.
+ *
+ *
+ * STELLAR_TYPE UpdateMinimumCoreMass()
+ *
+ */
+void MainSequence::UpdateMinimumCoreMass()
+{
+    if (OPTIONS->RetainCoreMassDuringCaseAMassTransfer()) {
+        double fractionalAge =CalculateTauOnPhase();
+        HG clone             = *this;                           //create an HG star clone to query its core mass just after TAMS
+        double TAMSCoreMass  = clone.CoreMass();
+        m_MinimumCoreMass    = std::max(m_MinimumCoreMass, fractionalAge * TAMSCoreMass);
+    }
 }

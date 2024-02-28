@@ -36,7 +36,6 @@ protected:
         m_HeCoreMass  = 0.0;
         m_CoreMass    = 0.0;
         m_Mass0       = 0.0;
-        m_CoreRadius  = 0.0;
         m_Luminosity  = 0.0;
         m_Radius      = 0.0;
         m_Temperature = 0.0;
@@ -44,13 +43,13 @@ protected:
 
 
     // member functions
-   	 double     CalculateMomentOfInertia(const double p_RemnantRadius = 0.0) const      { return 0.0; }     // No moment of inertia for massless remnants - use 0.0
-   	 double     CalculateMomentOfInertiaAU(const double p_RemnantRadius = 0.0) const    { return 0.0; }     // No moment of inertia for massless remnants - use 0.0
+   	 double     CalculateMomentOfInertia() const        { return 0.0; }                                     // No moment of inertia for massless remnants - use 0.0
+   	 double     CalculateMomentOfInertiaAU() const      { return 0.0; }                                     // No moment of inertia for massless remnants - use 0.0
 
      void       SetPulsarParameters() const { }                                                             // NO-OP
 
-     bool       ShouldEvolveOnPhase() const                                             { return true; }    // Always
-     bool       ShouldSkipPhase() const                                                 { return false; }   // Don't skip
+     bool       ShouldEvolveOnPhase() const             { return true; }                                    // Always
+     bool       ShouldSkipPhase() const                 { return false; }                                   // Don't skip
 };
 
 #endif // __MR_h__
