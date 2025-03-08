@@ -81,7 +81,7 @@ ACCRETION_REGIME COWD::DetermineAccretionRegime(const bool p_HeRich, const doubl
     } 
     else {
         // The following coefficients in logMassTransfer limits come from quadratic fits to Nomoto+ 2007 results (table 5) in Mass vs log10 Mdot space, to cover the low-mass end.
-        double m_Mass_2 = m_Mass * m_Mass;
+        double m_Mass_2              = m_Mass * m_Mass;
         double logMassTransferCrit   = WD_LOG_MT_LIMIT_NOMOTO_REDGIANT_0 + WD_LOG_MT_LIMIT_NOMOTO_REDGIANT_1 * m_Mass + WD_LOG_MT_LIMIT_NOMOTO_REDGIANT_2 * m_Mass_2;
         double logMassTransferStable = WD_LOG_MT_LIMIT_NOMOTO_STABLE_0   + WD_LOG_MT_LIMIT_NOMOTO_STABLE_1   * m_Mass + WD_LOG_MT_LIMIT_NOMOTO_STABLE_2   * m_Mass_2;
 

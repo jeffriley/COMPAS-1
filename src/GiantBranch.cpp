@@ -2191,7 +2191,7 @@ STELLAR_TYPE GiantBranch::ResolvePulsationalPairInstabilitySN() {
 
 
 /*
- * The main supernova function
+ * The main supernova function for non-remnants (remanants handled in remnants code)
  *
  * This function determines the type of the supernova and calls the appropriate functions
  * to calculate attributes correctly, and to determine the type of remnant to which the
