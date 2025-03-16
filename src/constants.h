@@ -278,6 +278,7 @@ constexpr double ADAPTIVE_MASS0_SEARCH_FACTOR_FRAC      = 1.0;                  
 constexpr int    MULLERMANDEL_REMNANT_MASS_MAX_ITERATIONS = 1000;                                                   // Maximum number of iterations to find remnant mass in GiantBranch::CalculateRemnantMassByMullerMandel()
 
 constexpr int    PULSAR_SPIN_ITERATIONS                 = 100;                                                      // Maximum number of iterations to find pulsar birth spin period in NS::CalculatePulsarBirthSpinPeriod()
+constexpr int    PULSAR_MAG_ITERATIONS                  = 100;                                                      // Maximum number of iterations to find pulsar birth magnetic field in NS::CalculateBirthMagneticField()
 
 constexpr int    SEMI_MAJOR_AXIS_SAMPLES                = 100;                                                      // Maximum number of samples when sampling period/semi-major axis in utils::SampleSemiMajorAxis()
 
@@ -286,7 +287,7 @@ constexpr int    TIDES_OMEGA_MAX_ITERATIONS             = 50;                   
 constexpr double TIDES_OMEGA_SEARCH_FACTOR_FRAC         = 1.0;                                                      // Search size factor (fractional part) in BaseBinaryStar::OmegaAfterCircularisation() (added to 1.0)
 constexpr double TIDES_MINIMUM_FRACTIONAL_EXTENT        = 1.0E-4;                                                   // Minimum fractional radius or mass of the stellar core or envelope, above which a given tidal dissipation mechanism is considered applicable
 constexpr double TIDES_MAXIMUM_ORBITAL_CHANGE_FRAC      = 0.01;                                                     // Maximum allowed change in orbital and spin properties due to KAPIL2024 tides in a single timestep - 1% expressed as a fraction
-constexpr double TIDES_MNIMUM_FRACTIONAL_NUCLEAR_TIME   = 0.001;                                                    // Minimum allowed timestep from tidal processes, as a fraction of the nuclear minimum time scale
+constexpr double TIDES_MINIMUM_FRACTIONAL_NUCLEAR_TIME   = 0.001;                                                    // Minimum allowed timestep from tidal processes, as a fraction of the nuclear minimum time scale
 
 constexpr double FARMER_PPISN_UPP_LIM_LIN_REGIME        = 38.0;                                                     // Maximum CO core mass to result in the linear remnant mass regime of the FARMER PPISN prescription
 constexpr double FARMER_PPISN_UPP_LIM_QUAD_REGIME       = 60.0;                                                     // Maximum CO core mass to result in the quadratic remnant mass regime of the FARMER PPISN prescription
@@ -294,8 +295,6 @@ constexpr double FARMER_PPISN_UPP_LIM_INSTABILLITY      = 140.0;                
 constexpr double STARTRACK_PPISN_HE_CORE_MASS           = 45.0;                                                     // Helium core mass remaining following PPISN as assumed in StarTrack (Belczynski et al. 2017 https://arxiv.org/abs/1607.03116)
 
 constexpr double Q_CNO                                  = 9.9073E4;                                                 // Energy released per unit mass by hydrogen fusion via the CNO cycle in Lsol Myr Msol-1
-
-constexpr double ALFVEN_CONST                           = std::pow(2.0 * PI_2 / G_CGS, 1.0 / 7.0);                  // Constant for calculatinf Alfven radius - CGS units (mu0 = 1.0)
 
 // Initial mass of stars above which (including the limit) we allow convective core mass calculations from Shikauchi et al. (2024) and rejuvenation calculations
 // Note that this value should always be > 0.7 Msol

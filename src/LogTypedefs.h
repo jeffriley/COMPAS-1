@@ -159,6 +159,7 @@ enum class STRING_QUALIFIER: int { NONE, FIXED_LENGTH, VARIABLE_LENGTH };
     CORE_MASS,                                       \
     CORE_MASS_AT_COMMON_ENVELOPE,                    \
     CORE_MASS_AT_COMPACT_OBJECT_FORMATION,           \
+    CORE_RADIUS_AT_COMPACT_OBJECT_FORMATION,         \
     DRAWN_KICK_MAGNITUDE,                            \
     DOMINANT_MASS_LOSS_RATE,                         \
     DT,                                              \
@@ -267,6 +268,7 @@ enum class STRING_QUALIFIER: int { NONE, FIXED_LENGTH, VARIABLE_LENGTH };
     TIME,                                            \
     TIMESCALE_MS,                                    \
     TOTAL_MASS_AT_COMPACT_OBJECT_FORMATION,          \
+    TOTAL_RADIUS_AT_COMPACT_OBJECT_FORMATION,        \
     TRUE_ANOMALY,                                    \
     TZAMS,                                           \
     ZETA_HURLEY,                                     \
@@ -304,6 +306,7 @@ const COMPASUnorderedMap<STAR_PROPERTY, std::string> STAR_PROPERTY_LABEL = {
     { STAR_PROPERTY::CORE_MASS,                                       "CORE_MASS" },
     { STAR_PROPERTY::CORE_MASS_AT_COMMON_ENVELOPE,                    "CORE_MASS_AT_COMMON_ENVELOPE" },
     { STAR_PROPERTY::CORE_MASS_AT_COMPACT_OBJECT_FORMATION,           "CORE_MASS_AT_COMPACT_OBJECT_FORMATION" },
+    { STAR_PROPERTY::CORE_RADIUS_AT_COMPACT_OBJECT_FORMATION,         "CORE_RADIUS_AT_COMPACT_OBJECT_FORMATION" },
     { STAR_PROPERTY::DRAWN_KICK_MAGNITUDE,                            "DRAWN_KICK_MAGNITUDE" },
     { STAR_PROPERTY::DOMINANT_MASS_LOSS_RATE,                         "DOMINANT_MASS_LOSS_RATE"},
     { STAR_PROPERTY::DT,                                              "DT" },
@@ -413,6 +416,7 @@ const COMPASUnorderedMap<STAR_PROPERTY, std::string> STAR_PROPERTY_LABEL = {
     { STAR_PROPERTY::TIME,                                            "TIME" },
     { STAR_PROPERTY::TIMESCALE_MS,                                    "TIMESCALE_MS" },
     { STAR_PROPERTY::TOTAL_MASS_AT_COMPACT_OBJECT_FORMATION,          "TOTAL_MASS_AT_COMPACT_OBJECT_FORMATION" },
+    { STAR_PROPERTY::TOTAL_RADIUS_AT_COMPACT_OBJECT_FORMATION,        "TOTAL_RADIUS_AT_COMPACT_OBJECT_FORMATION" },
     { STAR_PROPERTY::TRUE_ANOMALY,                                    "TRUE_ANOMALY" },
     { STAR_PROPERTY::TZAMS,                                           "TZAMS" },
     { STAR_PROPERTY::ZETA_HURLEY,                                     "ZETA_HURLEY" },
@@ -860,6 +864,7 @@ enum class PROGRAM_OPTION: int {
 
     NOTES,
 
+    NS_ACCRETION_IN_CE,
     NS_EOS,
 
     ORBITAL_PERIOD,
@@ -1081,6 +1086,7 @@ const COMPASUnorderedMap<PROGRAM_OPTION, std::string> PROGRAM_OPTION_LABEL = {
 
     { PROGRAM_OPTION::NOTES,                                            "NOTES" },
 
+    { PROGRAM_OPTION::NS_ACCRETION_IN_CE,                               "NS_ACCRETION_IN_CE" },
     { PROGRAM_OPTION::NS_EOS,                                           "NS_EOS" },
 
     { PROGRAM_OPTION::ORBITAL_PERIOD,                                   "ORBITAL_PERIOD" },
@@ -1227,6 +1233,7 @@ const std::map<ANY_STAR_PROPERTY, PROPERTY_DETAILS> ANY_STAR_PROPERTY_DETAIL = {
     { ANY_STAR_PROPERTY::CORE_MASS,                                         { TYPENAME::DOUBLE,           "Mass_Core",                       "Msol",             24, 15}},
     { ANY_STAR_PROPERTY::CORE_MASS_AT_COMMON_ENVELOPE,                      { TYPENAME::DOUBLE,           "Mass_Core@CE",                    "Msol",             24, 15}},
     { ANY_STAR_PROPERTY::CORE_MASS_AT_COMPACT_OBJECT_FORMATION,             { TYPENAME::DOUBLE,           "Mass_Core@CO",                    "Msol",             24, 15}},
+    { ANY_STAR_PROPERTY::CORE_RADIUS_AT_COMPACT_OBJECT_FORMATION,           { TYPENAME::DOUBLE,           "Radius_Core@CO",                  "Rsol",             24, 15}},
     { ANY_STAR_PROPERTY::DRAWN_KICK_MAGNITUDE,                              { TYPENAME::DOUBLE,           "Drawn_Kick_Magnitude",            "kms^-1",           24, 15}},
     { ANY_STAR_PROPERTY::DOMINANT_MASS_LOSS_RATE,                           { TYPENAME::INT,              "Dominant_Mass_Loss_Rate",         "-",                 4, 1 }},
     { ANY_STAR_PROPERTY::DT,                                                { TYPENAME::DOUBLE,           "dT",                              "Myr",              24, 15}},
@@ -1299,12 +1306,12 @@ const std::map<ANY_STAR_PROPERTY, PROPERTY_DETAILS> ANY_STAR_PROPERTY_DETAIL = {
     { ANY_STAR_PROPERTY::OMEGA_ZAMS,                                        { TYPENAME::DOUBLE,           "Omega@ZAMS",                      "Hz",               24, 15}},
     { ANY_STAR_PROPERTY::ORBITAL_ENERGY_POST_SUPERNOVA,                     { TYPENAME::DOUBLE,           "Orbital_Energy>SN",               "Msol^2AU^-1",      24, 15}},
     { ANY_STAR_PROPERTY::ORBITAL_ENERGY_PRE_SUPERNOVA,                      { TYPENAME::DOUBLE,           "Orbital_Energy<SN",               "Msol^2AU^-1",      24, 15}},
-    { ANY_STAR_PROPERTY::PULSAR_MAGNETIC_FIELD,                             { TYPENAME::DOUBLE,           "Pulsar_Mag_Field",                "Tesla",            24, 15}},
-    { ANY_STAR_PROPERTY::PULSAR_SPIN_DOWN_RATE,                             { TYPENAME::DOUBLE,           "Pulsar_Spin_Down",                "rad/s^2",          24, 15}},
+    { ANY_STAR_PROPERTY::PULSAR_MAGNETIC_FIELD,                             { TYPENAME::DOUBLE,           "Pulsar_Mag_Field",                "Gauss",            24, 15}},
+    { ANY_STAR_PROPERTY::PULSAR_SPIN_DOWN_RATE,                             { TYPENAME::DOUBLE,           "Pulsar_Spin_Down",                "s/s",              24, 15}},
     { ANY_STAR_PROPERTY::PULSAR_BIRTH_PERIOD,                               { TYPENAME::DOUBLE,           "Pulsar_Birth_Period",             "s",                24, 15}},
     { ANY_STAR_PROPERTY::PULSAR_BIRTH_SPIN_DOWN_RATE,                       { TYPENAME::DOUBLE,           "Pulsar_Birth_Spin_Down",          "s/s",              24, 15}},
     { ANY_STAR_PROPERTY::PULSAR_SPIN_FREQUENCY,                             { TYPENAME::DOUBLE,           "Pulsar_Spin_Freq",                "rad/s",            24, 15}},
-    { ANY_STAR_PROPERTY::PULSAR_SPIN_PERIOD,                                { TYPENAME::DOUBLE,           "Pulsar_Spin_Period",              "ms",               24, 15}},
+    { ANY_STAR_PROPERTY::PULSAR_SPIN_PERIOD,                                { TYPENAME::DOUBLE,           "Pulsar_Spin_Period",              "s",                24, 15}},
     { ANY_STAR_PROPERTY::RADIAL_EXPANSION_TIMESCALE,                        { TYPENAME::DOUBLE,           "Tau_Radial",                      "Myr",              24, 15}},
     { ANY_STAR_PROPERTY::RADIAL_EXPANSION_TIMESCALE_POST_COMMON_ENVELOPE,   { TYPENAME::DOUBLE,           "Tau_Radial>CE",                   "Myr",              24, 15}},
     { ANY_STAR_PROPERTY::RADIAL_EXPANSION_TIMESCALE_PRE_COMMON_ENVELOPE,    { TYPENAME::DOUBLE,           "Tau_Radial<CE",                   "Myr",              24, 15}},
@@ -1335,6 +1342,7 @@ const std::map<ANY_STAR_PROPERTY, PROPERTY_DETAILS> ANY_STAR_PROPERTY_DETAIL = {
     { ANY_STAR_PROPERTY::TIME,                                              { TYPENAME::DOUBLE,           "Time",                            "Myr",              24, 15 }},
     { ANY_STAR_PROPERTY::TIMESCALE_MS,                                      { TYPENAME::DOUBLE,           "tMS",                             "Myr",              24, 15}},
     { ANY_STAR_PROPERTY::TOTAL_MASS_AT_COMPACT_OBJECT_FORMATION,            { TYPENAME::DOUBLE,           "Mass_Total@CO",                   "Msol",             24, 15}},
+    { ANY_STAR_PROPERTY::TOTAL_RADIUS_AT_COMPACT_OBJECT_FORMATION,          { TYPENAME::DOUBLE,           "Radius_Total@CO",                 "Rsol",             24, 15}},
     { ANY_STAR_PROPERTY::TRUE_ANOMALY,                                      { TYPENAME::DOUBLE,           "True_Anomaly(psi)",               "-",                24, 15}},
     { ANY_STAR_PROPERTY::TZAMS,                                             { TYPENAME::DOUBLE,           "Teff@ZAMS",                       "K",                24, 15}},
     { ANY_STAR_PROPERTY::ZETA_HURLEY,                                       { TYPENAME::DOUBLE,           "Zeta_Hurley",                     "-",                24, 15}},
@@ -1623,6 +1631,7 @@ const std::map<PROGRAM_OPTION, PROPERTY_DETAILS> PROGRAM_OPTION_DETAIL = {
     { PROGRAM_OPTION::NEUTRINO_MASS_LOSS_ASSUMPTION_BH,                         { TYPENAME::INT,        "PO_Neutrino_Mass_Loss_Assmptn",             "-",          4, 1 }},
     { PROGRAM_OPTION::NEUTRINO_MASS_LOSS_VALUE_BH,                              { TYPENAME::DOUBLE,     "PO_Neutrino_Mass_Loss_Value",               "-",         24, 15}},
 
+    { PROGRAM_OPTION::NS_ACCRETION_IN_CE,                                       { TYPENAME::INT,        "PO_NS_ACCRETION_IN_CE",                     "-",          4, 1 }},
     { PROGRAM_OPTION::NS_EOS,                                                   { TYPENAME::INT,        "PO_NS_EOS",                                 "-",          4, 1 }},
 
     { PROGRAM_OPTION::ORBITAL_PERIOD,                                           { TYPENAME::DOUBLE,     "PO_Orbital_Period",                         "days",      24, 15}},
@@ -1969,8 +1978,8 @@ const ANY_PROPERTY_VECTOR BSE_DETAILED_OUTPUT_REC = {
     BINARY_PROPERTY::MASS_TRANSFER_TRACKER_HISTORY,
     STAR_1_PROPERTY::PULSAR_MAGNETIC_FIELD,
     STAR_2_PROPERTY::PULSAR_MAGNETIC_FIELD,
-    STAR_1_PROPERTY::PULSAR_SPIN_FREQUENCY,
-    STAR_2_PROPERTY::PULSAR_SPIN_FREQUENCY,
+    STAR_1_PROPERTY::PULSAR_SPIN_PERIOD,
+    STAR_2_PROPERTY::PULSAR_SPIN_PERIOD,
     STAR_1_PROPERTY::PULSAR_SPIN_DOWN_RATE,
     STAR_2_PROPERTY::PULSAR_SPIN_DOWN_RATE,
     STAR_1_PROPERTY::PULSAR_BIRTH_PERIOD,
@@ -2018,8 +2027,8 @@ const ANY_PROPERTY_VECTOR BSE_PULSAR_EVOLUTION_REC = {
     BINARY_PROPERTY::MASS_TRANSFER_TRACKER_HISTORY,
     STAR_1_PROPERTY::PULSAR_MAGNETIC_FIELD,
     STAR_2_PROPERTY::PULSAR_MAGNETIC_FIELD,
-    STAR_1_PROPERTY::PULSAR_SPIN_FREQUENCY,
-    STAR_2_PROPERTY::PULSAR_SPIN_FREQUENCY,
+    STAR_1_PROPERTY::PULSAR_SPIN_PERIOD,
+    STAR_2_PROPERTY::PULSAR_SPIN_PERIOD,
     STAR_1_PROPERTY::PULSAR_SPIN_DOWN_RATE,
     STAR_2_PROPERTY::PULSAR_SPIN_DOWN_RATE,
     STAR_1_PROPERTY::PULSAR_BIRTH_PERIOD,
@@ -2106,9 +2115,11 @@ const ANY_PROPERTY_VECTOR BSE_SUPERNOVAE_REC = {
     SUPERNOVA_PROPERTY::STELLAR_TYPE_PREV,
     COMPANION_PROPERTY::MASS,
     SUPERNOVA_PROPERTY::TOTAL_MASS_AT_COMPACT_OBJECT_FORMATION,
+    SUPERNOVA_PROPERTY::TOTAL_RADIUS_AT_COMPACT_OBJECT_FORMATION,
     SUPERNOVA_PROPERTY::CORE_MASS_AT_COMPACT_OBJECT_FORMATION,
     SUPERNOVA_PROPERTY::CO_CORE_MASS_AT_COMPACT_OBJECT_FORMATION,
     SUPERNOVA_PROPERTY::HE_CORE_MASS_AT_COMPACT_OBJECT_FORMATION,
+    SUPERNOVA_PROPERTY::CORE_RADIUS_AT_COMPACT_OBJECT_FORMATION,
     SUPERNOVA_PROPERTY::MASS,
     SUPERNOVA_PROPERTY::EXPERIENCED_RLOF,
     SUPERNOVA_PROPERTY::MASS_TRANSFER_DONOR_HISTORY,
@@ -2204,7 +2215,7 @@ const ANY_PROPERTY_VECTOR SSE_PULSAR_EVOLUTION_REC = {
     STAR_PROPERTY::MASS,
     STAR_PROPERTY::STELLAR_TYPE,
     STAR_PROPERTY::PULSAR_MAGNETIC_FIELD,
-    STAR_PROPERTY::PULSAR_SPIN_FREQUENCY,
+    STAR_PROPERTY::PULSAR_SPIN_PERIOD,
     STAR_PROPERTY::PULSAR_SPIN_DOWN_RATE,
     STAR_PROPERTY::PULSAR_BIRTH_PERIOD,
     STAR_PROPERTY::PULSAR_BIRTH_SPIN_DOWN_RATE,
@@ -2224,11 +2235,13 @@ const ANY_PROPERTY_VECTOR SSE_SUPERNOVAE_REC = {
     STAR_PROPERTY::MEAN_ANOMALY,				
     STAR_PROPERTY::SN_TYPE,
     STAR_PROPERTY::TOTAL_MASS_AT_COMPACT_OBJECT_FORMATION,
+    STAR_PROPERTY::TOTAL_RADIUS_AT_COMPACT_OBJECT_FORMATION,
     STAR_PROPERTY::CO_CORE_MASS_AT_COMPACT_OBJECT_FORMATION,
     STAR_PROPERTY::MASS,
     STAR_PROPERTY::STELLAR_TYPE,
     STAR_PROPERTY::STELLAR_TYPE_PREV,
     STAR_PROPERTY::CORE_MASS_AT_COMPACT_OBJECT_FORMATION,
+    STAR_PROPERTY::CORE_RADIUS_AT_COMPACT_OBJECT_FORMATION,
     STAR_PROPERTY::HE_CORE_MASS_AT_COMPACT_OBJECT_FORMATION,
     STAR_PROPERTY::TIME,
     STAR_PROPERTY::IS_HYDROGEN_POOR

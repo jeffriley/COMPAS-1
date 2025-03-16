@@ -161,6 +161,7 @@ public:
             unsigned long int   RandomSeed() const                                              { return m_RandomSeed; }
             double              RZAMS() const                                                   { return m_RZAMS; }
             double              SN_CoreMassAtCOFormation() const                                { return m_SupernovaDetails.coreMassAtCOFormation; }
+            double              SN_CoreRadiusAtCOFormation() const                              { return m_SupernovaDetails.coreRadiusAtCOFormation; }
             double              SN_COCoreMassAtCOFormation() const                              { return m_SupernovaDetails.COCoreMassAtCOFormation; }
             SupernovaDetailsT   SN_Details() const                                              { return m_SupernovaDetails; }
             double              SN_DrawnKickMagnitude() const                                   { return m_SupernovaDetails.drawnKickMagnitude; }
@@ -175,6 +176,7 @@ public:
             double              SN_RocketKickPhi() const                                        { return m_SupernovaDetails.rocketKickPhi; }
             double              SN_RocketKickTheta() const                                      { return m_SupernovaDetails.rocketKickTheta; }
             double              SN_TotalMassAtCOFormation() const                               { return m_SupernovaDetails.totalMassAtCOFormation; }
+            double              SN_TotalRadiusAtCOFormation() const                             { return m_SupernovaDetails.totalRadiusAtCOFormation; }
             double              SN_TrueAnomaly() const                                          { return m_SupernovaDetails.trueAnomaly; }
             double              SN_Theta() const                                                { return m_SupernovaDetails.theta; }
             SN_EVENT            SN_Type() const                                                 { return utils::SNEventType(m_SupernovaDetails.events.current); }
@@ -564,7 +566,7 @@ protected:
 
     virtual double              CalculateLambdaDewi() const                                                             { return 1.0; }                                                             // Default for stellar types with no LamdaDewi definitions - 1.0 is benign
             double              CalculateLambdaKruckow(const double p_Radius, const double p_Alpha) const;
-            double              CalculateLambdaLoveridgeEnergyFormalism(const double p_EnvMass, const double p_IsMassLoss = false) const;
+            double              CalculateLambdaLoveridgeEnergyFormalism(const double p_EnvMass, const bool p_IsMassLoss = false) const;
     virtual double              CalculateLambdaNanjingStarTrack(const double p_Mass, const double p_Metallicity) const  { return 1.0; }                                                             // Default for stellar types with no LamdaNanjing definitions - 1.0 is benign
     virtual double              CalculateLambdaNanjingEnhanced(const int p_MassIndex, const STELLAR_POPULATION p_StellarPop) const { return 1.0; }                                                  // Default for stellar types with no LamdaNanjing definitions - 1.0 is benign
 
