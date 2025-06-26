@@ -1461,6 +1461,7 @@ void BaseBinaryStar::ResolveSupernova() {
     m_IPrime    = m_ThetaE;                                                                                                     // inclination angle between preSN and postSN orbital planes 
     m_CosIPrime = cos(m_IPrime);
 
+std::cout << "Printing SN entry\n";
     (void)PrintSupernovaDetails();                                                                                              // log record to supernovae logfile
     m_Supernova->ClearCurrentSNEvent();
 
