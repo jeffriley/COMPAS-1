@@ -526,6 +526,22 @@ enum class GBP: int {
     COUNT                   // Sentinel for entry count
 };
 
+// immediate events
+// these are events that must be processed immediately, on their own, and in a minimum timestep
+enum class IMMEDIATE_EVENT: int { NONE, RLOF, SWITCH, SUPERNOVA };
+const COMPASUnorderedMap<IMMEDIATE_EVENT, std::string> IMMEDIATE_EVENT_LABEL = {
+    { IMMEDIATE_EVENT::NONE,      "NONE" },
+    { IMMEDIATE_EVENT::RLOF,      "ROCHE_LOBE_OVERFLOW" },
+    { IMMEDIATE_EVENT::SWITCH,    "STELLAR_TYPE_SWITCH" },
+    { IMMEDIATE_EVENT::SUPERNOVA, "SUPERNOVA" }
+};
+
+typedef struct ImmediateEvent {
+    IMMEDIATE_EVENT eventType;
+    STELLAR_TYPE    stellarType1;
+    STELLAR_TYPE    stellarType2;
+} ImmediateEventT;
+
 // initial mass functions
 enum class INITIAL_MASS_FUNCTION: int { SALPETER, POWERLAW, UNIFORM, KROUPA };
 const COMPASUnorderedMap<INITIAL_MASS_FUNCTION, std::string> INITIAL_MASS_FUNCTION_LABEL = {

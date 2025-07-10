@@ -420,3 +420,67 @@ STELLAR_TYPE WhiteDwarfs::ResolveHeSD() {
 
     return STELLAR_TYPE::MASSLESS_REMNANT;
 }
+
+
+
+/*
+ * ResolveSupernova
+ *
+ * This function determines the type of the supernova and calls the appropriate functions
+ * to calculate attributes correctly, and to determine the type of remnant to which the
+ * star should evolve.
+ * 
+ * The WhiteDwarfs class also has a ResolveSupernova() function that handles WD SNe.
+ *
+ *
+ * STELLAR_TYPE ResolveSupernova()
+ *
+ * @return                                      Stellar type of remnant
+ */
+STELLAR_TYPE WhiteDwarfs::ResolveSupernova() {
+
+    STELLAR_TYPE stellarType = m_StellarType;
+
+    if (IsSupernova()) {                                                                            // supernova?
+                                                                                                    // yes - resolve supernova event
+        ResolveSupernovaPreamble();                                                                 // store pre-SN stellar attributes; set H content
+
+        if (                             OPTIONS->UsePulsationalPairInstability()              &&
+            utils::Compare(m_HeCoreMass, OPTIONS->PulsationalPairInstabilityLowerLimit()) >= 0 &&
+            utils::Compare(m_HeCoreMass, OPTIONS->PulsationalPairInstabilityUpperLimit()) <= 0) {   // Pulsational Pair Instability Supernova
+
+            stellarType = ResolvePulsationalPairInstabilitySN();                                    // BH or MR
+        }
+        else if (                        OPTIONS->UsePairInstabilitySupernovae()    &&
+            utils::Compare(m_HeCoreMass, OPTIONS->PairInstabilityLowerLimit()) >= 0 &&
+            utils::Compare(m_HeCoreMass, OPTIONS->PairInstabilityUpperLimit()) <= 0) {              // Pair Instability Supernova
+
+            stellarType = ResolvePairInstabilitySN();                                               // MR
+        }
+        else if (utils::Compare(CalculateInitialSupernovaMass(), MCBUR2) < 0 && 
+                (!m_MassTransferDonorHistory.empty() || OPTIONS->AllowNonStrippedECSN())) {
+
+            stellarType = ResolveElectronCaptureSN();                                               // Electron Capture SN; requires progenitor to have been a MT donor unless non-stripped ECSN are allowed; forms NS
+        }
+        else {                                                                                      // Core Collapse Supernova
+            stellarType = ResolveCoreCollapseSN();                                                  // BH or NS
+        }
+        
+        // check if the SN will actually happen (i.e. new stellar type indicates a switch)
+        if (utils::IsOneOf(stellarType, { STELLAR_TYPE::NEUTRON_STAR, STELLAR_TYPE::BLACK_HOLE, STELLAR_TYPE::MASSLESS_REMNANT })) {
+                                                                                                    // SN will happen
+            // calculate kick magnitude if required 
+            if (utils::SNEventType(m_SupernovaDetails.events.current) != SN_EVENT::PISN && 
+               !utils::IsOneOf(stellarType, { STELLAR_TYPE::MASSLESS_REMNANT })) {
+
+                CalculateSNKickMagnitude(m_Mass, m_SupernovaDetails.totalMassAtCOFormation - m_Mass, stellarType);
+            }
+
+            // only NSs can get rocket kicks
+            if (!utils::IsOneOf(stellarType, { STELLAR_TYPE::NEUTRON_STAR })) m_SupernovaDetails.rocketKickMagnitude = 0.0;
+        }
+    }
+
+    return stellarType;
+}
+

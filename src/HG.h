@@ -130,7 +130,6 @@ protected:
 
     ENVELOPE        DetermineEnvelopeType() const;
 
-    void            EvolveOneTimestepPreamble()                                     { BaseStar::EvolveOneTimestepPreamble(); }                                                  // Skip MainSequence
     STELLAR_TYPE    EvolveToNextPhase();
 
     bool            IsEndOfPhase() const                                            { return !ShouldEvolveOnPhase(); }                                                          // Phase ends when age at or after Base Giant Branch MS timescale

@@ -252,7 +252,10 @@ void BaseBinaryStar::SetInitialValues(const unsigned long int p_Seed, const long
     m_RandomSeed        = p_Seed;
     m_Id                = p_Id;
 
-    m_EvolutionStatus   = EVOLUTION_STATUS::CONTINUE;
+    m_EvolutionStatus             = EVOLUTION_STATUS::CONTINUE;
+    m_ImmediateEvent.eventType    = IMMEDIATE_EVENT::NONE;
+    m_ImmediateEvent.stellarType1 = STELLAR_TYPE::NONE;
+    m_ImmediateEvent.stellarType2 = STELLAR_TYPE::NONE;
 
     if (OPTIONS->PopulationDataPrinting()) {                                                                                            // user wants to see details of binary?
         SAY("Using supplied random seed " << m_RandomSeed << " for Binary Star id = " << m_ObjectId);                                   // yes - show them
@@ -609,8 +612,7 @@ COMPAS_VARIABLE BaseBinaryStar::BinaryPropertyValue(const T_ANY_PROPERTY p_Prope
         case BINARY_PROPERTY::SEMI_MAJOR_AXIS_AT_DCO_FORMATION:                     value = SemiMajorAxisAtDCOFormation();                                      break;
         case BINARY_PROPERTY::SEMI_MAJOR_AXIS_INITIAL:                              value = SemiMajorAxisInitial();                                             break;
         case BINARY_PROPERTY::SEMI_MAJOR_AXIS_POST_COMMON_ENVELOPE:                 value = SemiMajorAxisPostCEE();                                             break;
-        case BINARY_PROPERTY::SEMI_MAJOR_AXIS_POST_STAGE_1_CE:                      value = SemiMajorAxisAfterStage1CEE();
-                               break;
+        case BINARY_PROPERTY::SEMI_MAJOR_AXIS_POST_STAGE_1_CE:                      value = SemiMajorAxisAfterStage1CEE();                                      break;
         case BINARY_PROPERTY::SEMI_MAJOR_AXIS_PRE_SUPERNOVA:                        value = SemiMajorAxisPreSN();                                               break;
         case BINARY_PROPERTY::SEMI_MAJOR_AXIS_PRE_SUPERNOVA_RSOL:                   value = SemiMajorAxisPreSN() * AU_TO_RSOL;                                  break;
         case BINARY_PROPERTY::SEMI_MAJOR_AXIS_PRE_COMMON_ENVELOPE:                  value = SemiMajorAxisPreCEE();                                              break;
@@ -961,7 +963,7 @@ void BaseBinaryStar::SetPreCEEValues(const double p_SemiMajorAxis,
  *                       const double p_RocheLobe2to1)
  *
  * @param   [IN]    p_SemiMajorAxis             post CEE semi-major axis in Rsol
- * @param   [IN]    p_SemiMajorAxisAfterStage1   semi-major axis in Rsol after step 1 of 2-stage CE (should be 0.0 for alpha-lambda CE)
+ * @param   [IN]    p_SemiMajorAxisAfterStage1  semi-major axis in Rsol after step 1 of 2-stage CE (should be 0.0 for alpha-lambda CE)
  * @param   [IN]    p_Eccentricity              post CEE eccentricity
  * @param   [IN]    p_RocheLobe1to2             post CEE Roche Lobe radius in Rsol as seen by star1
  * @param   [IN]    p_RocheLobe2to1             post CEE Roche Lobe radius in Rsol as seen by star2
@@ -972,11 +974,11 @@ void BaseBinaryStar::SetPostCEEValues(const double p_SemiMajorAxis,
                                       const double p_RocheLobe1to2,
                                       const double p_RocheLobe2to1) {
 
-	m_CEDetails.postCEE.semiMajorAxis = p_SemiMajorAxis;
+	m_CEDetails.postCEE.semiMajorAxis            = p_SemiMajorAxis;
     m_CEDetails.postCEE.semiMajorAxisAfterStage1 = p_SemiMajorAxisAfterStage1;
-    m_CEDetails.postCEE.eccentricity  = p_Eccentricity;
-	m_CEDetails.postCEE.rocheLobe1to2 = p_RocheLobe1to2;
-	m_CEDetails.postCEE.rocheLobe2to1 = p_RocheLobe2to1;
+    m_CEDetails.postCEE.eccentricity             = p_Eccentricity;
+	m_CEDetails.postCEE.rocheLobe1to2            = p_RocheLobe1to2;
+	m_CEDetails.postCEE.rocheLobe2to1            = p_RocheLobe2to1;
 
     if (utils::Compare(m_Star1->RadiusPostCEE(), m_CEDetails.postCEE.rocheLobe1to2) >= 0 ||         // Check for RLOF immediately after the CEE
         utils::Compare(m_Star2->RadiusPostCEE(), m_CEDetails.postCEE.rocheLobe2to1) >= 0) {
@@ -1211,37 +1213,37 @@ void BaseBinaryStar::ResolveSupernova() {
 #define mag               Magnitude()
 #define hat               UnitVector()
     
-    // set relevant preSN parameters 
-    m_EccentricityPreSN     = m_Eccentricity;                                                 
-    m_SemiMajorAxisPreSN    = m_SemiMajorAxis;                                               
+    // set relevant pre-SN parameters 
+    m_EccentricityPreSN     = m_Eccentricity;                                                                                   // eccentricity pre-SN                                                 
+    m_SemiMajorAxisPreSN    = m_SemiMajorAxis;                                                                                  // semi-major axis pre-SN                                            
 
-    double totalMassPreSN   = m_Supernova->SN_TotalMassAtCOFormation() + m_Companion->Mass();                                   // total Mass preSN
-    double reducedMassPreSN = m_Supernova->SN_TotalMassAtCOFormation() * m_Companion->Mass() / totalMassPreSN;                  // reduced Mass preSN
-    m_Supernova->SetOrbitalEnergyPreSN(CalculateOrbitalEnergy(reducedMassPreSN, totalMassPreSN, m_SemiMajorAxisPreSN));         // orbital energy preSN
+    double totalMassPreSN   = m_Supernova->SN_TotalMassAtCOFormation() + m_Companion->Mass();                                   // total Mass pre-SN
+    double reducedMassPreSN = m_Supernova->SN_TotalMassAtCOFormation() * m_Companion->Mass() / totalMassPreSN;                  // reduced Mass pre-SN
 
-    // define the natal kick vector (see above for precise definitions of the angles)
+    m_Supernova->SetOrbitalEnergyPreSN(CalculateOrbitalEnergy(reducedMassPreSN, totalMassPreSN, m_SemiMajorAxisPreSN));         // orbital energy pre-SN
+
+    // define the natal kick vector (see description above for precise definitions of the angles)
     double theta             = m_Supernova->SN_Theta();                                                                         // angle out of the binary plane
     double phi               = m_Supernova->SN_Phi();                                                                           // angle in the binary plane
     Vector3d natalKickVector = m_Supernova->SN_KickMagnitude() * Vector3d(cos(theta) * cos(phi), cos(theta) * sin(phi), sin(theta));
     
-    // Define the rocket kick vector - will be 0 if unused. 
-    // The rocket is aligned with the NS spin axis, which by default is aligned with the pre-SN orbit (0.0, 0.0, 1.0)
-    // Defined here in case the system is already unbound.
+    // define the rocket kick vector - will be 0 if unused
+    // the rocket is aligned with the NS spin axis, which by default is aligned with the pre-SN orbit (0.0, 0.0, 1.0)
+    // defined here in case the system is already unbound
     double rocketTheta        = m_Supernova->SN_RocketKickTheta();                                                              // azimuthal angle
     double rocketPhi          = m_Supernova->SN_RocketKickPhi();                                                                // polar angle
     Vector3d rocketKickVector = m_Supernova->SN_RocketKickMagnitude() * Vector3d(sin(rocketTheta) * cos(rocketPhi), sin(rocketTheta) * sin(rocketPhi), cos(rocketTheta));
 
-    // Check if the system is already unbound
+    // check if the system is already unbound
     if (IsUnbound()) {                                                                                                          // is system already unbound?
                                                                                                                                 // yes
         m_Supernova->UpdateComponentVelocity( (natalKickVector+rocketKickVector).ChangeBasis(m_ThetaE, m_PhiE, m_PsiE));        // only need to update the velocity of the star undergoing SN
-
-        m_OrbitalVelocityPreSN = 0.0;
+        m_OrbitalVelocityPreSN = 0.0;                                                                                           // orbital velocity pre-SN (km/s) 
     }
     else {                                                                                                                      // no, not unbound - evaluate orbital changes and calculate velocities
-        // Evolve SN out of binary       
+        // evolve SN out of binary       
         
-        // Pre-SN parameters
+        // pre-SN parameters
         double semiMajorAxisPrev_km     = m_SemiMajorAxis * AU_TO_KM;                                                           // semi-Major axis in km
         double eccentricityPrev         = m_Eccentricity;                                                                       // eccentricity prior to any updates to m_Eccentricity
         double sqrt1MinusEccPrevSquared = std::sqrt(1.0 - eccentricityPrev * eccentricityPrev);                                 // useful function of eccentricity
@@ -1250,16 +1252,16 @@ void BaseBinaryStar::ResolveSupernova() {
         double m2Prev                   = m_Companion->Mass();                                                                  // companion pre-SN mass (Msol)
         double totalMassPrev            = m1Prev + m2Prev;                                                                      // total binary pre-SN mass (Msol)
         
-        // Functions of eccentric anomaly
+        // functions of eccentric anomaly
         m_Supernova->CalculateSNAnomalies(eccentricityPrev);
         double cosEccAnomaly = cos(m_Supernova->SN_EccentricAnomaly());        
         double sinEccAnomaly = sin(m_Supernova->SN_EccentricAnomaly());
-        if ((utils::Compare(eccentricityPrev, 0.0) == 0) && m_Companion->IsOneOf(SN_REMNANTS)) {                                // If circular and first SN, fix eccentric anomaly to 0
-            cosEccAnomaly = 1;
-            sinEccAnomaly = 0;
+        if ((utils::Compare(eccentricityPrev, 0.0) == 0) && m_Companion->IsOneOf(SN_REMNANTS)) {                                // if circular and first SN, fix eccentric anomaly to 0
+            cosEccAnomaly = 1.0;
+            sinEccAnomaly = 0.0;
         }
 
-        // Derived quantities
+        // derived quantities
         double aPrev   = semiMajorAxisPrev_km;
         double aPrev_2 = aPrev * aPrev;
         double aPrev_3 = aPrev_2 * aPrev;
@@ -1272,20 +1274,17 @@ void BaseBinaryStar::ResolveSupernova() {
 
         Vector3d relativeVelocityVectorPrev       = Vector3d(-fact1 * sinEccAnomaly, fact1 * cosEccAnomaly * sqrt1MinusEccPrevSquared, 0.0); // relative velocity vector, in the m1Prev rest frame (km/s)
         Vector3d orbitalAngularMomentumVectorPrev = cross(separationVectorPrev, relativeVelocityVectorPrev);                    // specific orbital angular momentum vector (km^2 s^-1)
-        Vector3d eccentricityVectorPrev           = cross(relativeVelocityVectorPrev, orbitalAngularMomentumVectorPrev) / 
-                                                    (G_km_Msol_s * totalMassPrev) - separationVectorPrev.hat;                   // Laplace-Runge-Lenz vector (magnitude = eccentricity)
+        Vector3d eccentricityVectorPrev           = cross(relativeVelocityVectorPrev, orbitalAngularMomentumVectorPrev) / (G_km_Msol_s * totalMassPrev) - separationVectorPrev.hat; // Laplace-Runge-Lenz vector (magnitude = eccentricity)
 
-        m_OrbitalVelocityPreSN = relativeVelocityVectorPrev.mag;                                                                // pre-SN orbital velocity (km/s) 
+        m_OrbitalVelocityPreSN = relativeVelocityVectorPrev.mag;                                                                // orbital velocity pre-SN (km/s) 
 
-        // Note: In the following,
-        // orbitalAngularMomentumVectorPrev defines the Z-axis, 
-        // eccentricityVectorPrev defines the X-axis, and
-        // (orbitalAngularMomentumVectorPrev x eccentricityVectorPrev) defines the Y-axis
+        // in the following:
+        //    orbitalAngularMomentumVectorPrev defines the Z-axis, 
+        //    eccentricityVectorPrev defines the X-axis, and
+        //    (orbitalAngularMomentumVectorPrev x eccentricityVectorPrev) defines the Y-axis
         
-        // Apply supernova natal kick and mass loss  
-        //
-        // Note: the code allows for mass loss and kick in the companion 
-        // (due to ablation), though we currently do not apply these.
+        // apply supernova natal kick and mass loss
+        // the code allows for mass loss and kick in the companion (due to ablation), though we currently do not apply these.
         
         Vector3d companionRecoilVector = Vector3d(0.0, 0.0, 0.0);                                                               // km/s - The recoil of the companion due to ablation
 
@@ -1305,104 +1304,102 @@ void BaseBinaryStar::ResolveSupernova() {
         double   orbitalAngularMomentum          = orbitalAngularMomentumVector.mag;                                            // post-SN specific orbital angular momentum (km^2 s^-1)
         m_NormalizedOrbitalAngularMomentumVector = orbitalAngularMomentumVector/orbitalAngularMomentum;                         // set unit vector here to make printing out the inclination vector easier
 
-        Vector3d eccentricityVector           = cross(relativeVelocityVector, orbitalAngularMomentumVector) / 
-                                                (G_km_Msol_s * totalMass) - separationVectorPrev / separationPrev;              // post-SN Laplace-Runge-Lenz vector
+        Vector3d eccentricityVector           = cross(relativeVelocityVector, orbitalAngularMomentumVector) / (G_km_Msol_s * totalMass) - separationVectorPrev / separationPrev; // post-SN Laplace-Runge-Lenz vector
         m_Eccentricity                        = eccentricityVector.mag;                                                         // post-SN eccentricity
         double eccSquared                     = m_Eccentricity * m_Eccentricity;                                                // useful function of eccentricity
 
         double semiMajorAxis_km               = (orbitalAngularMomentum * orbitalAngularMomentum) / (G_km_Msol_s * totalMass * (1.0 - eccSquared)); // post-SN semi-major axis (km)
         m_SemiMajorAxis                       = semiMajorAxis_km * KM_TO_AU;                                                    // post-SN semi-major axis (AU)
 
-        // Note: similar to above,
-        // orbitalAngularMomentumVector defines the Z'-axis, 
-        // eccentricityVector defines the X'-axis, and
-        // (orbitalAngularMomentumVector x eccentricityVector) defines the Y'-axis
+        // in the following:
+        //    orbitalAngularMomentumVector defines the Z'-axis, 
+        //    eccentricityVector defines the X'-axis, and
+        //    (orbitalAngularMomentumVector x eccentricityVector) defines the Y'-axis
          
         UpdateSystemicVelocity(centerOfMassVelocity.ChangeBasis(m_ThetaE, m_PhiE, m_PsiE));                                     // update the system velocity with the new center of mass velocity
         double reducedMass = m_Supernova->Mass() * m_Companion->Mass() / totalMass;                                             // reduced Mass
         m_Supernova->SetOrbitalEnergyPostSN(CalculateOrbitalEnergy(reducedMass, totalMass, m_SemiMajorAxis));                   // orbital energy
 
-        // Split off and evaluate depending on whether the binary is now bound or unbound
-	    if (utils::Compare(m_Eccentricity, 1.0) >= 0) {                                                                         // unbound?
+        // split off and evaluate depending on whether the binary is now bound or unbound
+        // JR: we can use IsUnbound() here - m_SemiMajorAxis will be <= 0.0 if m_Eccentricity is > 1.0 (calculated above)  
+	    if (IsUnbound()) {                                                                                                      // is systemunbound?
                                                                                                                                 // yes, unbound            
             m_Unbound = true;
 
-            // Calculate the asymptotic Center of Mass velocity 
+            // calculate the asymptotic Center of Mass velocity 
             double   relativeVelocityAtInfinity       = (G_km_Msol_s*totalMass/orbitalAngularMomentum) * std::sqrt(eccSquared - 1.0);
             Vector3d relativeVelocityVectorAtInfinity = relativeVelocityAtInfinity 
-                                                        * (-1.0 * (eccentricityVector.hat / m_Eccentricity) 
-                                                        + std::sqrt(1.0 - 1.0 / eccSquared) * cross(orbitalAngularMomentumVector.hat, eccentricityVector.hat));
+                                                        * (-1.0 * (eccentricityVector.hat / m_Eccentricity) + std::sqrt(1.0 - 1.0 / eccSquared) * cross(orbitalAngularMomentumVector.hat, eccentricityVector.hat));
 
-            // Calculate the asymptotic velocities of Star1 (SN) and Star2 (CP)
+            // calculate the asymptotic velocities of Star1 (SN) and Star2 (CP)
             Vector3d component1VelocityVectorAtInfinity =  (m2 / totalMass) * relativeVelocityVectorAtInfinity + centerOfMassVelocity;
             Vector3d component2VelocityVectorAtInfinity = -(m1 / totalMass) * relativeVelocityVectorAtInfinity + centerOfMassVelocity;
 
-            // Update the component velocities 
+            // update the component velocities 
             m_Supernova->UpdateComponentVelocity(component1VelocityVectorAtInfinity.ChangeBasis(m_ThetaE, m_PhiE, m_PsiE));
             m_Companion->UpdateComponentVelocity(component2VelocityVectorAtInfinity.ChangeBasis(m_ThetaE, m_PhiE, m_PsiE));
 
-            // Set Euler Angles 
+            // set Euler Angles 
             m_ThetaE = angleBetween(orbitalAngularMomentumVectorPrev, orbitalAngularMomentumVector);                            // angle between the angular momentum unit vectors, always well defined
             m_PhiE   = _2_PI * RAND->Random(); 
             m_PsiE   = _2_PI * RAND->Random(); 
         }
         else {                                                                                                                  // no - binary still bound
-
-            // Set the component velocites to the system velocity. System velocity was already correctly set above.
+            // set the component velocites to the system velocity. System velocity was already correctly set above.
              
             m_Supernova->UpdateComponentVelocity(centerOfMassVelocity.ChangeBasis(m_ThetaE, m_PhiE, m_PsiE));
             m_Companion->UpdateComponentVelocity(centerOfMassVelocity.ChangeBasis(m_ThetaE, m_PhiE, m_PsiE));
 
-            // Calculate Euler angles - see ChangeBasis() in vector.cpp for details
-            m_ThetaE = angleBetween(orbitalAngularMomentumVector, orbitalAngularMomentumVectorPrev); // angle between the angular momentum unit vectors, always well defined
+            // calculate Euler angles - see ChangeBasis() in vector.cpp for details
+            m_ThetaE = angleBetween(orbitalAngularMomentumVector, orbitalAngularMomentumVectorPrev);                            // angle between the angular momentum unit vectors, always well defined
 
-            // If the new orbital A.M. is parallel or anti-parallel to the previous orbital A.M., 
-            // then the cross product is not well-defined, and we need to account for degeneracy between eccentricity vectors.
-            // Also, if either eccentricity is 0.0, then the eccentricity vector is not well defined.
+            // ff the new orbital A.M. is parallel or anti-parallel to the previous orbital A.M., the cross product
+            // is not well-defined and we need to account for degeneracy between eccentricity vectors
+            // if previous or current eccentricity is 0.0, the eccentricity vector is not well defined
 
-            if ((utils::Compare(m_ThetaE, 0.0) == 0) || (utils::Compare(m_ThetaE, M_PI) == 0)) {                                // orbitalAngularMomentumVectorPrev parallel or anti-parallel to orbitalAngularMomentumVector
-                if ((utils::Compare(eccentricityPrev, 0.0) == 0) || (utils::Compare(m_Eccentricity, 0.0) == 0)) {               // either e_prev or e_now is 0, so eccentricity vector is not well-defined
-                    m_PhiE            = _2_PI * RAND->Random();    
-                    m_PsiE            = _2_PI * RAND->Random();    
+            if ((utils::Compare(m_ThetaE, 0.0) == 0) || (utils::Compare(m_ThetaE, M_PI) == 0)) {                                // orbitalAngularMomentumVectorPrev parallel or anti-parallel to orbitalAngularMomentumVector?
+                if ((utils::Compare(eccentricityPrev, 0.0) == 0) || (utils::Compare(m_Eccentricity, 0.0) == 0)) {               // yes - previous or current eccentricity vector = 0.0?
+                    m_PhiE = _2_PI * RAND->Random();                                                                            // yes
+                    m_PsiE = _2_PI * RAND->Random();    
                 } 
-                else {                                                                                                          // both eccentricityVectorPrev and eccentricityVector well-defined
-                    if (utils::Compare(m_ThetaE, 0.0) == 0){                                                                    // Orbital AM is parallel ?
-                        double psiPlusPhi = angleBetween(eccentricityVector, eccentricityVectorPrev);                               // yes - then psi + phi is constant
+                else {                                                                                                          // no - eccentricityVectorPrev and eccentricityVector are well-defined
+                    if (utils::Compare(m_ThetaE, 0.0) == 0){                                                                    // orbital AM is parallel ?
+                        double psiPlusPhi = angleBetween(eccentricityVector, eccentricityVectorPrev);                           // yes - psi + phi is constant
                         m_PhiE            = _2_PI * RAND->Random();    
                         m_PsiE            = psiPlusPhi - m_PhiE;
                     }
-                    else {                                      
-                        double psiMinusPhi = angleBetween(eccentricityVector, eccentricityVectorPrev);                              // no - then psi - phi is constant
+                    else {                                                                                                      // no - psi - phi is constant                               
+                        double psiMinusPhi = angleBetween(eccentricityVector, eccentricityVectorPrev);
                         m_PhiE             = _2_PI * RAND->Random();    
                         m_PsiE             = psiMinusPhi + m_PhiE;
                     }
                 }
             }
-            else {                                                                                                              // neither - the cross product of the orbit normals is well-defined
+            else {                                                                                                              // no - the cross product of the orbit normals is well-defined
                 Vector3d orbitalPivotAxis = cross(orbitalAngularMomentumVectorPrev, orbitalAngularMomentumVector);              // cross product of the orbit normals
 
                 if (utils::Compare(eccentricityPrev, 0.0) == 0 ) {                                                              // eccentricityVectorPrev well-defined?
                     m_PhiE = _2_PI * RAND->Random();                                                                            // no - set phi random
                 }
                 else {                                                                                                          // yes - phi is +/- angle between eccentricityVectorPrev and orbitalPivotAxis
-                    m_PhiE = utils::Compare( dot(eccentricityVectorPrev, orbitalAngularMomentumVector), 0.0) >= 0               // are eccentricityVectorPrev and orbitalAngularMomentumVector in the same hemisphere?
-                        ? angleBetween(eccentricityVectorPrev, orbitalPivotAxis)                                                // yes - phi in [0,pi)
-                        : -angleBetween(eccentricityVectorPrev, orbitalPivotAxis);                                              // no  - phi in [-pi,0)
+                    m_PhiE = utils::Compare(dot(eccentricityVectorPrev, orbitalAngularMomentumVector), 0.0) >= 0                // are eccentricityVectorPrev and orbitalAngularMomentumVector in the same hemisphere?
+                                ? angleBetween(eccentricityVectorPrev, orbitalPivotAxis)                                        // yes - phi in [0,pi)
+                                : -angleBetween(eccentricityVectorPrev, orbitalPivotAxis);                                      // no  - phi in [-pi,0)
                 }
 
                 if ( utils::Compare(m_Eccentricity, 0.0) == 0 ) {                                                               // is eccentricityVector well-defined?
                     m_PsiE = _2_PI * RAND->Random();                                                                            // no - set psi random 
                 }                                                                                              
                 else {                                                                                                          // yes - psi is +/- angle between eccentricityVector and orbitalPivotAxis
-                    m_PsiE = utils::Compare( dot(eccentricityVector, orbitalAngularMomentumVectorPrev), 0.0) >= 0               // are eccentricityVector and orbitalAngularMomentumVectorPrev in the same hemisphere?
-                    ? angleBetween(eccentricityVector, orbitalPivotAxis)                                                        // yes - psi in [0,pi)
-                    : -angleBetween(eccentricityVector, orbitalPivotAxis);                                                      // no  - psi in [-pi,0)
+                    m_PsiE = utils::Compare(dot(eccentricityVector, orbitalAngularMomentumVectorPrev), 0.0) >= 0                // are eccentricityVector and orbitalAngularMomentumVectorPrev in the same hemisphere?
+                                ? angleBetween(eccentricityVector, orbitalPivotAxis)                                            // yes - psi in [0,pi)
+                                : -angleBetween(eccentricityVector, orbitalPivotAxis);                                          // no  - psi in [-pi,0)
                 }
             }
 
-            // Note: There is some evidence for evolution of periapsis in mass transferring binaries (see e.g Dosopoulou & Kalogera 2016, 2018). 
-            // This should be investigated in more depth, but until then, we assume that the periapsis *may* evolve, and accordingly randomize
-            // the angle of periapsis around the new orbital angular momentum, (i.e, Psi) - RTW 15/05/20
+            // there is some evidence for evolution of periapsis in mass transferring binaries (see e.g Dosopoulou & Kalogera 2016, 2018), 
+            // and this should be investigated in more depth, but until then we assume that the periapsis *may* evolve, and accordingly
+            // randomise the angle of periapsis around the new orbital angular momentum, (i.e, Psi) - RTW 15/05/20
             m_PsiE = _2_PI * RAND->Random();
         }
         
@@ -1414,7 +1411,7 @@ void BaseBinaryStar::ResolveSupernova() {
             }
             else {                                                                                                              // no - need to update the eccentricity and system velocity
                 Vector3d eccentricityVectorPreRocket             = eccentricityVector;                                          // defined earlier
-                double averageOrbitalVelocityPreRocket           = std::sqrt(-2.0 * m_OrbitalEnergy/reducedMass);               // average orbital velocity post-SN (AU/yr)
+                double averageOrbitalVelocityPreRocket           = std::sqrt(-2.0 * m_OrbitalEnergy / reducedMass);             // average orbital velocity post-SN (AU/yr)
                 double kGrav                                     = averageOrbitalVelocityPreRocket * averageOrbitalVelocityPreRocket * reducedMass * m_SemiMajorAxis; // AU^3 * Msol / yr^2
                 Vector3d totalAmVectorPreRocket                  = orbitalAngularMomentumVector * reducedMass * KM_TO_AU * KM_TO_AU * SECONDS_IN_YEAR; // Msol * AU^2 / yr (orbitalAngularMomentumVector is the specific orbital AM)
                 Vector3d amVectorNormalizedByCircularAmPreRocket = totalAmVectorPreRocket * (averageOrbitalVelocityPreRocket / kGrav); // unitless!
@@ -1448,15 +1445,9 @@ void BaseBinaryStar::ResolveSupernova() {
                 m_Companion->UpdateComponentVelocity(rocketKickVector.ChangeBasis(m_ThetaE, m_PhiE, m_PsiE));
             }
         }
-
-        #undef hat
-        #undef mag        
-        #undef angleBetween
-        #undef dot
-        #undef cross
     }
 
-    // Do for all systems 
+    // for all systems 
 
     m_IPrime    = m_ThetaE;                                                                                                     // inclination angle between preSN and postSN orbital planes 
     m_CosIPrime = cos(m_IPrime);
@@ -1475,7 +1466,7 @@ std::cout << "Printing SN entry\n";
 
 /*
  * Determine if one or both of the stars are undergoing a supernova event,
- * and if so resolve the event(s) by calling ResolveSupernova() for each of
+ * and if so set SN stateresolve the event(s) by calling ResolveSupernova() for each of
  * the stars as appropriate.
  *
  * void EvaluateSupernovae
@@ -1493,7 +1484,7 @@ void BaseBinaryStar::EvaluateSupernovae() {
         m_Companion = m_Star2;                                          // companion
         ResolveSupernova();                                             // resolve supernova
     }
-
+    
     if (m_Star2->IsSNevent()) {                                         // star2 supernova                                                                                                        
         m_SupernovaState = m_SupernovaState == SN_STATE::NONE           // star1 not supernova?
                             ? SN_STATE::STAR2                           // yes - just star2
@@ -1519,10 +1510,12 @@ void BaseBinaryStar::EvaluateSupernovae() {
  *    is transferred from a giant (k1 {2,3,4,5,6,8,9}) on a dynamical time-scale
  *
  *
- * void ResolveCommonEnvelopeEvent()
+ * ImmediateEventT ResolveCommonEnvelopeEvent()
  */
-void BaseBinaryStar::ResolveCommonEnvelopeEvent() {
-    
+ImmediateEventT BaseBinaryStar::ResolveCommonEnvelopeEvent() {
+
+    ImmediateEventT result = { IMMEDIATE_EVENT::NONE, STELLAR_TYPE::NONE, STELLAR_TYPE::NONE };                         // default result
+
     double alphaCE = OPTIONS->CommonEnvelopeAlpha();                                                                    // CE efficiency parameter
 
 	double eccentricity      = Eccentricity();								                                            // current eccentricity (before CEE)
@@ -1709,13 +1702,15 @@ void BaseBinaryStar::ResolveCommonEnvelopeEvent() {
         STELLAR_TYPE stellarType2 = m_Star2->StellarType();                                                             // star 2 stellar type before resolving envelope loss
         
         if (envelopeFlag1) {
-            m_Star1->ResolveEnvelopeLossAndSwitch();                                                                    // resolve envelope loss for star1 and switch to new stellar type
+            //m_Star1->ResolveEnvelopeLossAndSwitch();                                                                    // resolve envelope loss for star1 and switch to new stellar type
+            stellarType1 = m_Star1->ResolveEnvelopeLoss(true);
             m_Star1->SetOmega(omegaSpin1_pre_CE);                                                                       // keep the rotation frequency of the core equal to the pre-envelope-loss rotation frequency
             m_MassTransferTrackerHistory = MT_TRACKING::CE_1_TO_2_SURV;
         }
 
         if (envelopeFlag2) {
-            m_Star2->ResolveEnvelopeLossAndSwitch();                                                                    // resolve envelope loss for star1 and switch to new stellar type
+            //m_Star2->ResolveEnvelopeLossAndSwitch();                                                                    // resolve envelope loss for star1 and switch to new stellar type
+            stellarType2 = m_Star2->ResolveEnvelopeLoss(true);
             m_Star2->SetOmega(omegaSpin2_pre_CE);                                                                       // keep the rotation frequency of the core equal to the pre-envelope-loss rotation frequency
             m_MassTransferTrackerHistory = MT_TRACKING::CE_2_TO_1_SURV;
         }
@@ -1723,12 +1718,18 @@ void BaseBinaryStar::ResolveCommonEnvelopeEvent() {
         if (m_CEDetails.doubleCoreCE)
             m_MassTransferTrackerHistory = MT_TRACKING::CE_DOUBLE_SURV;                                                 // record history - double CEE
 
-        m_Star1->UpdateAttributes(0.0, 0.0, true);
-        m_Star2->UpdateAttributes(0.0, 0.0, true);
+        //m_Star1->UpdateAttributes(0.0, 0.0, true);// THIS MAY SWITCH
+        //m_Star2->UpdateAttributes(0.0, 0.0, true);// THIS MAY SWITCH
 
-        if (m_Star1->StellarType() != stellarType1 || m_Star2->StellarType() != stellarType2) {                         // stellar type change?
-            (void)PrintDetailedOutput(m_Id, BSE_DETAILED_RECORD_TYPE::STELLAR_TYPE_CHANGE_DURING_CEE);                  // yes - print (log) detailed output
-        }
+        //if (m_Star1->StellarType() != stellarType1 || m_Star2->StellarType() != stellarType2) {                         // stellar type change?
+        //    (void)PrintDetailedOutput(m_Id, BSE_DETAILED_RECORD_TYPE::STELLAR_TYPE_CHANGE_DURING_CEE);                  // yes - print (log) detailed output
+        //}
+                  
+        result = { 
+                   IMMEDIATE_EVENT::SWITCH, 
+                   (stellarType1 == m_Star1->StellarType() ? STELLAR_TYPE::NONE : stellarType1), 
+                   (stellarType2 == m_Star2->StellarType() ? STELLAR_TYPE::NONE : stellarType2)
+                 };
 
         m_Star1->SetPostCEEValues();                                                                                    // squirrel away post CEE stellar values for star 1
         m_Star2->SetPostCEEValues();                                                                                    // squirrel away post CEE stellar values for star 2
@@ -1742,6 +1743,7 @@ void BaseBinaryStar::ResolveCommonEnvelopeEvent() {
     
     (void)PrintCommonEnvelope();                                                                                        // print (log) common envelope details
     
+    return result;
 }
 
 
@@ -1750,13 +1752,14 @@ void BaseBinaryStar::ResolveCommonEnvelopeEvent() {
  *
  * Star1 will become the merger product; Star2 will become a massless remnant
  *
- * void ResolveMainSequenceMerger()
+ * ImmediateEventT ResolveMainSequenceMerger()
  *
  */
-void BaseBinaryStar::ResolveMainSequenceMerger() {
+ImmediateEventT BaseBinaryStar::ResolveMainSequenceMerger() {
 
     // sanity check for MS merger: do nothing if conditions for MS merger are not satisfied
-    if (!(m_Star1->IsOneOf(MAIN_SEQUENCE) && m_Star2->IsOneOf(MAIN_SEQUENCE) && OPTIONS->EvolveMainSequenceMergers())) return;
+    if (!(m_Star1->IsOneOf(MAIN_SEQUENCE) && m_Star2->IsOneOf(MAIN_SEQUENCE) && OPTIONS->EvolveMainSequenceMergers())) 
+        return { IMMEDIATE_EVENT::NONE, STELLAR_TYPE::NONE, STELLAR_TYPE::NONE };
 
     // resolve MS merger
     
@@ -1792,7 +1795,9 @@ void BaseBinaryStar::ResolveMainSequenceMerger() {
     
     m_Star1->UpdateAfterMerger(finalMass, finalHydrogenMass);
     
-    m_Star2->SwitchTo(STELLAR_TYPE::MASSLESS_REMNANT);
+    //m_Star2->SwitchTo(STELLAR_TYPE::MASSLESS_REMNANT);
+
+    return { IMMEDIATE_EVENT::SWITCH, STELLAR_TYPE::NONE, STELLAR_TYPE::MASSLESS_REMNANT };
 }
 
 
@@ -2333,6 +2338,7 @@ void BaseBinaryStar::InitialiseMassTransfer() {
                 STELLAR_TYPE stellarType2 = m_Star2->StellarType();                                                             // star 2 stellar type before updating attributes
 
                 double mass = (m_Star1->Mass() + m_Star2->Mass()) / 2.0;                                                        // share mass equally
+                // THIS MAY SWITCH
                 if ((m_Star1->UpdateAttributes(mass - m_Star1->Mass(), mass - m_Star1->Mass0(), true) != stellarType1) ||       // set new mass, mass0 for star 1
                     (m_Star2->UpdateAttributes(mass - m_Star2->Mass(), mass - m_Star2->Mass0(), true) != stellarType2)) {       // set new mass, mass0 for star 2
                     (void)PrintDetailedOutput(m_Id, BSE_DETAILED_RECORD_TYPE::STELLAR_TYPE_CHANGE_DURING_CHE_EQUILIBRATION);    // print (log) detailed output if stellar type changed
@@ -2508,6 +2514,7 @@ void BaseBinaryStar::CalculateEnergyAndAngularMomentum() {
  *
  */
 void BaseBinaryStar::ResolveMassChanges() {
+std::cout << "BaseBinaryStar::ResolveMassChanges(@1), ST1 = " << (int)m_Star1->StellarType() << ", ST2 = " << (int)m_Star2->StellarType() << "\n";
 
     STELLAR_TYPE stellarType1 = m_Star1->StellarTypePrev();                                             // star 1 stellar type before updating attributes
     STELLAR_TYPE stellarType2 = m_Star2->StellarTypePrev();                                             // star 2 stellar type before updating attributes
@@ -2527,11 +2534,13 @@ void BaseBinaryStar::ResolveMassChanges() {
                 double angularMomentumChangeStar = (2.0 / 3.0) * massChange * m_Star1->Radius() * RSOL_TO_AU * m_Star1->Radius() * RSOL_TO_AU * m_Star1->Omega();
                 extraAngularMomentumChangeOrbit -= angularMomentumChangeStar;
                 // update mass of star according to mass loss and mass transfer, then update age accordingly
-                (void)m_Star1->UpdateAttributes(massChange, 0.0);                                       // update mass for star
+                (void)m_Star1->UpdateAttributes(massChange, 0.0);// THIS MAY SWITCH                                      // update mass for star
+std::cout << "BaseBinaryStar::ResolveMassChanges(@2), ST1 = " << (int)m_Star1->StellarType() << ", ST2 = " << (int)m_Star2->StellarType() << "\n";
                 m_Star1->UpdateInitialMass();                                                           // update effective initial mass of star (MS, HG & HeMS)
                 m_Star1->UpdateAgeAfterMassLoss();                                                      // update age of star
                 m_Star1->ApplyMassTransferRejuvenationFactor();                                         // apply age rejuvenation factor for star
-                m_Star1->UpdateAttributes(0.0, 0.0, true);
+                (void)m_Star1->UpdateAttributes(0.0, 0.0, true);// THIS MAY SWITCH
+std::cout << "BaseBinaryStar::ResolveMassChanges(@3), ST1 = " << (int)m_Star1->StellarType() << ", ST2 = " << (int)m_Star2->StellarType() << "\n";
                 m_Star1->SetAngularMomentum(m_Star1->AngularMomentum() + angularMomentumChangeStar);
             }
             
@@ -2552,11 +2561,13 @@ void BaseBinaryStar::ResolveMassChanges() {
                 double angularMomentumChangeStar = (2.0 / 3.0) * massChange * m_Star2->Radius() * RSOL_TO_AU * m_Star2->Radius() * RSOL_TO_AU * m_Star2->Omega();
                 extraAngularMomentumChangeOrbit -= angularMomentumChangeStar;
                 // update mass of star according to mass loss and mass transfer, then update age accordingly
-                (void)m_Star2->UpdateAttributes(massChange, 0.0);                                       // update mass for star
+                (void)m_Star2->UpdateAttributes(massChange, 0.0);// THIS MAY SWITCH                                       // update mass for star
+std::cout << "BaseBinaryStar::ResolveMassChanges(@1), ST4 = " << (int)m_Star1->StellarType() << ", ST2 = " << (int)m_Star2->StellarType() << "\n";
                 m_Star2->UpdateInitialMass();                                                           // update effective initial mass of star (MS, HG & HeMS)
                 m_Star2->UpdateAgeAfterMassLoss();                                                      // update age of star
                 m_Star2->ApplyMassTransferRejuvenationFactor();                                         // apply age rejuvenation factor for star
-                m_Star2->UpdateAttributes(0.0, 0.0, true);
+                (void)m_Star2->UpdateAttributes(0.0, 0.0, true);// THIS MAY SWITCH
+std::cout << "BaseBinaryStar::ResolveMassChanges(@1), ST5 = " << (int)m_Star1->StellarType() << ", ST2 = " << (int)m_Star2->StellarType() << "\n";
                 m_Star2->SetAngularMomentum(m_Star2->AngularMomentum() + angularMomentumChangeStar);
             }
             
@@ -2577,7 +2588,8 @@ void BaseBinaryStar::ResolveMassChanges() {
             THROW_ERROR(ERROR::ADDED_EXCESS_AM_TO_STARS);                                               // throw error
         }
         else {
-            m_SemiMajorAxis = m_SemiMajorAxis * (1.0 + fractionalChangeAngularMomentum) * (1.0 + fractionalChangeAngularMomentum); // angular momentum is proportional to the square root of the semimajor axis
+            double fractionalChangeAngularMomentumPlus1 = fractionalChangeAngularMomentum + 1.0;
+            m_SemiMajorAxis = m_SemiMajorAxis * fractionalChangeAngularMomentumPlus1 * fractionalChangeAngularMomentumPlus1; // angular momentum is proportional to the square root of the semimajor axis
         }
     }
     
@@ -2631,21 +2643,21 @@ double BaseBinaryStar::ResolveAccretionAngularMomentumGain(BinaryConstituentStar
             p_MassChange                    = std::min(p_MassChange, maxMassGain);
             angularMomentumChangeStar       = p_MassChange * sqrt(G_AU_Msol_yr * p_Accretor->Mass() * p_Accretor->Radius() * RSOL_TO_AU);
             extraAngularMomentumChangeOrbit = - angularMomentumChangeStar - massLost * (p_Donor->Mass()/p_Accretor->Mass()) * CalculateOrbitalAngularMomentum(p_Accretor->Mass(), p_Donor->Mass(), m_SemiMajorAxis, m_Eccentricity) / (p_Accretor->Mass() + p_Donor->Mass());                  // assumes isotropic re-emission of excess mass loss from the accretor; does not account for changing orbital angular momentum (second-order)
-            (void)p_Accretor->UpdateAttributes(p_MassChange, 0.0);                                          // update mass for star
+            (void)p_Accretor->UpdateAttributes(p_MassChange, 0.0);// THIS MAY SWITCH                                          // update mass for star
             p_Accretor->UpdateInitialMass();                                                                // update effective initial mass of star (MS, HG & HeMS)
             p_Accretor->UpdateAgeAfterMassLoss();                                                           // update age of star
             p_Accretor->ApplyMassTransferRejuvenationFactor();                                              // apply age rejuvenation factor for star
-            p_Accretor->UpdateAttributes(0.0, 0.0, true);
+            p_Accretor->UpdateAttributes(0.0, 0.0, true);// THIS MAY SWITCH
             p_Accretor->SetAngularMomentum(p_Accretor->AngularMomentum() + angularMomentumChangeStar);      // note that because stellar properties have been updated, the actual angular momentum may be slightly over or under the Keplerian limit
         } break;
         
         case RESPONSE_TO_SPIN_UP::TRANSFER_TO_ORBIT: {
             double initialAngularMomentum = p_Accretor->AngularMomentum();
-            (void)p_Accretor->UpdateAttributes(p_MassChange, 0.0);                                          // update mass for star
+            (void)p_Accretor->UpdateAttributes(p_MassChange, 0.0);// THIS MAY SWITCH                                          // update mass for star
             p_Accretor->UpdateInitialMass();                                                                // update effective initial mass of star (MS, HG & HeMS)
             p_Accretor->UpdateAgeAfterMassLoss();                                                           // update age of star
             p_Accretor->ApplyMassTransferRejuvenationFactor();                                              // apply age rejuvenation factor for star
-            p_Accretor->UpdateAttributes(0.0, 0.0, true);
+            p_Accretor->UpdateAttributes(0.0, 0.0, true);// THIS MAY SWITCH
             double keplerianFrequency = p_Accretor->OmegaBreak();
             double maxAngularMomentum = p_Accretor->CalculateMomentOfInertiaAU() * keplerianFrequency;
             angularMomentumChangeStar = p_MassChange * sqrt(G_AU_Msol_yr * p_Accretor->Mass() * p_Accretor->Radius() * RSOL_TO_AU);
@@ -2654,11 +2666,11 @@ double BaseBinaryStar::ResolveAccretionAngularMomentumGain(BinaryConstituentStar
         } break;
             
         case RESPONSE_TO_SPIN_UP::NO_LIMIT: {
-            (void)p_Accretor->UpdateAttributes(p_MassChange, 0.0);                                          // update mass for star
+            (void)p_Accretor->UpdateAttributes(p_MassChange, 0.0);// THIS MAY SWITCH                                          // update mass for star
             p_Accretor->UpdateInitialMass();                                                                // update effective initial mass of star (MS, HG & HeMS)
             p_Accretor->UpdateAgeAfterMassLoss();                                                           // update age of star
             p_Accretor->ApplyMassTransferRejuvenationFactor();                                              // apply age rejuvenation factor for star
-            p_Accretor->UpdateAttributes(0.0, 0.0, true);
+            p_Accretor->UpdateAttributes(0.0, 0.0, true);// THIS MAY SWITCH
             angularMomentumChangeStar = p_MassChange * sqrt(G_AU_Msol_yr * p_Accretor->Mass() * p_Accretor->Radius() * RSOL_TO_AU);
             p_Accretor->SetAngularMomentum(m_Accretor->AngularMomentum() + angularMomentumChangeStar);
             extraAngularMomentumChangeOrbit = -angularMomentumChangeStar;
@@ -3089,17 +3101,22 @@ double BaseBinaryStar::ChooseTimestep(const double p_Factor) {
  *    - update pulsar parameters
  *
  * 
- * void EvaluateBinary(const double p_Dt)
+ * ImmediateEventT EvaluateBinary(const double p_Dt)
  *
  * @param   [in]        p_Dt                    Timestep (in Myr)
  */
-void BaseBinaryStar::EvaluateBinary(const double p_Dt) {
+ImmediateEventT BaseBinaryStar::EvaluateBinary(const double p_Dt) {
+std::cout << "BaseBinaryStar::EvaluateBinary(@1), ST1 = " << (int)m_Star1->StellarType() << ", ST2 = " << (int)m_Star2->StellarType() << "\n";
+
+    ImmediateEventT result = { IMMEDIATE_EVENT::NONE, STELLAR_TYPE::NONE, STELLAR_TYPE::NONE };                           // default result
 
     CalculateMassTransfer(p_Dt);                                                                                        // calculate mass transfer if necessary
+std::cout << "BaseBinaryStar::EvaluateBinary(@2), ST1 = " << (int)m_Star1->StellarType() << ", ST2 = " << (int)m_Star2->StellarType() << "\n";
 
     (void)PrintDetailedOutput(m_Id, BSE_DETAILED_RECORD_TYPE::POST_MT);                                                 // print (log) detailed output
 
     CalculateWindsMassLoss(p_Dt);                                                                                       // calculate mass loss dues to winds
+std::cout << "BaseBinaryStar::EvaluateBinary(@3), ST1 = " << (int)m_Star1->StellarType() << ", ST2 = " << (int)m_Star2->StellarType() << "\n";
 
     (void)PrintDetailedOutput(m_Id, BSE_DETAILED_RECORD_TYPE::POST_WINDS);                                              // print (log) detailed output
 
@@ -3107,18 +3124,23 @@ void BaseBinaryStar::EvaluateBinary(const double p_Dt) {
         !(OPTIONS->CHEMode() != CHE_MODE::NONE && HasTwoOf({STELLAR_TYPE::CHEMICALLY_HOMOGENEOUS}))
         && !HasOneOf({STELLAR_TYPE::MASSLESS_REMNANT}) ) {                                                              // yes - avoid CEE if CH+CH or one star is a massless remnant
 
-        ResolveCommonEnvelopeEvent();                                                                                   // resolve CEE - immediate event
+        (void)ResolveCommonEnvelopeEvent();                                                                                   // resolve CEE - immediate event
+std::cout << "BaseBinaryStar::EvaluateBinary(@4), ST1 = " << (int)m_Star1->StellarType() << ", ST2 = " << (int)m_Star2->StellarType() << "\n";
         (void)PrintDetailedOutput(m_Id, BSE_DETAILED_RECORD_TYPE::POST_CEE);                                            // print (log) detailed output
     }
     else if (m_Star1->IsSNevent() || m_Star2->IsSNevent()) {
-        EvaluateSupernovae();                                                                                           // evaluate supernovae (both stars) - immediate event
-        (void)PrintDetailedOutput(m_Id, BSE_DETAILED_RECORD_TYPE::POST_SN);                                             // print (log) detailed output
-        if (HasOneOf({ STELLAR_TYPE::NEUTRON_STAR })) {
-            (void)PrintPulsarEvolutionParameters(BSE_PULSAR_RECORD_TYPE::POST_SN);                                      // print (log) pulsar evolution parameters 
-        }
+std::cout << "BaseBinaryStar::EvaluateBinary(@a), SN flagged, ST1 = " << (int)m_Star1->StellarType() << ", ST2 = " << (int)m_Star2->StellarType() << "\n";
+        result = { IMMEDIATE_EVENT::SUPERNOVA, STELLAR_TYPE::NONE, STELLAR_TYPE::NONE };
+        //EvaluateSupernovae();                                                                                  // evaluate supernovae (both stars) - immediate event
+        //(void)PrintDetailedOutput(m_Id, BSE_DETAILED_RECORD_TYPE::POST_SN);                                             // print (log) detailed output
+        //if (HasOneOf({ STELLAR_TYPE::NEUTRON_STAR })) {
+        //    (void)PrintPulsarEvolutionParameters(BSE_PULSAR_RECORD_TYPE::POST_SN);                                      // print (log) pulsar evolution parameters 
+        //}
     }
     else {
+std::cout << "BaseBinaryStar::EvaluateBinary(@5.1), ST1 = " << (int)m_Star1->StellarType() << ", ST2 = " << (int)m_Star2->StellarType() << "\n";
         ResolveMassChanges();                                                                                           // apply mass loss and mass transfer as necessary
+std::cout << "BaseBinaryStar::EvaluateBinary(@5.2), ST1 = " << (int)m_Star1->StellarType() << ", ST2 = " << (int)m_Star2->StellarType() << "\n";
         (void)PrintDetailedOutput(m_Id, BSE_DETAILED_RECORD_TYPE::POST_MASS_RESOLUTION);                                // print (log) detailed output
 
         if (HasStarsTouching()) {                                                                                       // if stars emerged from mass transfer as touching, it's a merger
@@ -3131,16 +3153,19 @@ void BaseBinaryStar::EvaluateBinary(const double p_Dt) {
         }
     }
 
-    if (!StellarMerger() || (HasOneOf({ STELLAR_TYPE::MASSLESS_REMNANT }) && OPTIONS->EvolveMainSequenceMergers())) {   // check stellar merger or evolving MS mergers
+    if (result.eventType == IMMEDIATE_EVENT::NONE) {
+    if (!StellarMerger() || (HasOneOf({STELLAR_TYPE::MASSLESS_REMNANT}) && OPTIONS->EvolveMainSequenceMergers())) {     // check stellar merger or evolving MS mergers
                                                                                                                         // continue evolution
         if ((m_Star1->IsSNevent() || m_Star2->IsSNevent())) {
-            EvaluateSupernovae();                                                                                       // evaluate supernovae (both stars) if mass changes are responsible for a supernova
-            (void)PrintDetailedOutput(m_Id, BSE_DETAILED_RECORD_TYPE::POST_SN);                                         // print (log) detailed output
-            if (HasOneOf({ STELLAR_TYPE::NEUTRON_STAR })) {
-                (void)PrintPulsarEvolutionParameters(BSE_PULSAR_RECORD_TYPE::POST_SN);                                  // print (log) pulsar evolution parameters 
-            }
+std::cout << "BaseBinaryStar::EvaluateBinary(@b), SN flagged, ST1 = " << (int)m_Star1->StellarType() << ", ST2 = " << (int)m_Star2->StellarType() << "\n";
+            result = { IMMEDIATE_EVENT::SUPERNOVA, STELLAR_TYPE::NONE, STELLAR_TYPE::NONE };
+            //EvaluateSupernovae();                                                                                  // evaluate supernovae (both stars) - immediate event
+            //(void)PrintDetailedOutput(m_Id, BSE_DETAILED_RECORD_TYPE::POST_SN);                                         // print (log) detailed output
+            //if (HasOneOf({ STELLAR_TYPE::NEUTRON_STAR })) {
+            //    (void)PrintPulsarEvolutionParameters(BSE_PULSAR_RECORD_TYPE::POST_SN);                                  // print (log) pulsar evolution parameters 
+            //}
         }
-
+        else {
         CalculateEnergyAndAngularMomentum();                                                                            // perform energy and angular momentum calculations
         
         ProcessTides(p_Dt);                                                                                             // process tides if required
@@ -3151,7 +3176,11 @@ void BaseBinaryStar::EvaluateBinary(const double p_Dt) {
 
         m_Star1->UpdateMagneticFieldAndSpin(m_CEDetails.CEEnow, m_Dt * MYR_TO_YEAR * SECONDS_IN_YEAR, EPSILON_PULSAR);  // update pulsar parameters for star1
         m_Star2->UpdateMagneticFieldAndSpin(m_CEDetails.CEEnow, m_Dt * MYR_TO_YEAR * SECONDS_IN_YEAR, EPSILON_PULSAR);  // update pulsar parameters for star2
+        }
     }
+    }
+
+    return result;
 }
 
 
@@ -3310,95 +3339,134 @@ EVOLUTION_STATUS BaseBinaryStar::Evolve() {
 
             while (evolutionStatus == EVOLUTION_STATUS::CONTINUE) {                                                                     // perform binary evolution - iterate over timesteps until told to stop
 
-                if (OPTIONS->EmitGravitationalRadiation()) EmitGravitationalWave(dt);                                                   // emit gravitational wave if required
+                // do we have an immediate event that needs to be processed?
+                if (m_ImmediateEvent.eventType != IMMEDIATE_EVENT::NONE) {                                                              // immediate event requiring processing?
+                    std::cout << "Have immediate event\n";
+                    dt = ABSOLUTE_MINIMUM_TIMESTEP;                                                                                     // yes - set minimum timestep
 
-                if (OPTIONS->RLOFPrinting()) StashRLOFProperties(MT_TIMING::PRE_MT);                                                    // stash RLOF properties immediately pre-Mass Transfer if required
+                    switch (m_ImmediateEvent.eventType) {                                                                               // which immediate event?
+                        case IMMEDIATE_EVENT::RLOF:                                                                          // common envelope
 
-                EvaluateBinary(dt);                                                                                                     // evaluate the binary at this timestep
+                            break;
+                            
+                        case IMMEDIATE_EVENT::SWITCH:                                                                      // stellar type switch
+                            std::cout << "before processing SWITCH, ST1 = " << (int)m_Star1->StellarType() << ", ST2 = " << (int)m_Star2->StellarType() << "\n";
+                            if (utils::IsOneOf(m_ImmediateEvent.stellarType1, EVOLVABLE_TYPES)) (void)m_Star1->SwitchTo(m_ImmediateEvent.stellarType1);
+                            if (utils::IsOneOf(m_ImmediateEvent.stellarType2, EVOLVABLE_TYPES)) (void)m_Star2->SwitchTo(m_ImmediateEvent.stellarType2);
 
-                (void)PrintDetailedOutput(m_Id, BSE_DETAILED_RECORD_TYPE::POST_BINARY_TIMESTEP);                                        // print (log) detailed output
+                            std::cout << "after  processing SWITCH, ST1 = " << (int)m_Star1->StellarType() << ", ST2 = " << (int)m_Star2->StellarType() << "\n";
+                            break;
+
+                        case IMMEDIATE_EVENT::SUPERNOVA:                                                                                // supernova
+                            std::cout << "before processing SN, ST1 = " << (int)m_Star1->StellarType() << ", ST2 = " << (int)m_Star2->StellarType() << "\n";
+                            EvaluateSupernovae();
+                            (void)PrintDetailedOutput(m_Id, BSE_DETAILED_RECORD_TYPE::POST_SN);                                         // print (log) detailed output
+                            if (HasOneOf({ STELLAR_TYPE::NEUTRON_STAR })) {
+                                (void)PrintPulsarEvolutionParameters(BSE_PULSAR_RECORD_TYPE::POST_SN);                                  // print (log) pulsar evolution parameters 
+                            }
+                            std::cout << "after  processing SN, ST1 = " << (int)m_Star1->StellarType() << ", ST2 = " << (int)m_Star2->StellarType() << "\n";
+                            break;
+
+                        default:                                                                                                        // unknown immediate event
+                            continue;   // THIS IS AN ERROR! <<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+                    }
+                    m_ImmediateEvent.eventType    = IMMEDIATE_EVENT::NONE;                                                               // ...processed
+                    m_ImmediateEvent.stellarType1 = STELLAR_TYPE::NONE;                                                                  // ...ditto
+                    m_ImmediateEvent.stellarType2 = STELLAR_TYPE::NONE;                                                                  // ...ditto
+                }
+                else {
+
+                    if (OPTIONS->EmitGravitationalRadiation()) EmitGravitationalWave(dt);                                                   // emit gravitational wave if required
+
+                    if (OPTIONS->RLOFPrinting()) StashRLOFProperties(MT_TIMING::PRE_MT);                                                    // stash RLOF properties immediately pre-Mass Transfer if required
+
+                    m_ImmediateEvent = EvaluateBinary(dt);                                                                                  // evaluate the binary at this timestep
+
+
+                    (void)PrintDetailedOutput(m_Id, BSE_DETAILED_RECORD_TYPE::POST_BINARY_TIMESTEP);                                        // print (log) detailed output
                 
-                (void)PrintRLOFParameters();                                                                                            // print (log) RLOF parameters
+                    (void)PrintRLOFParameters();                                                                                            // print (log) RLOF parameters
 
-                // check for reasons to not continue evolution
-                if (StellarMerger() && !HasOneOf({ STELLAR_TYPE::MASSLESS_REMNANT })) {                                                 // have stars merged without merger already being resolved?
-                    if (m_Star1->IsOneOf(MAIN_SEQUENCE) && m_Star2->IsOneOf(MAIN_SEQUENCE) && OPTIONS->EvolveMainSequenceMergers())     // yes - both MS and evolving MS merger products?
-                        ResolveMainSequenceMerger();                                                                                    // yes - handle main sequence mergers gracefully; no need to change evolution status
-                    else {                                                                                                              // no - for now, log the merger and stop evolution
-                        // log the merger to the switchlog file
-                        // eventually, will want to implement a more careful prescription for the merger product,
-                        // perhaps allowing further evolution of the merger product
-                        (void)LogMergerToSwitchLog();                                                                                   // log merger
-                        evolutionStatus = EVOLUTION_STATUS::STELLAR_MERGER;                                                             // stop evolution
+                    // check for reasons to not continue evolution
+                    if (StellarMerger() && !HasOneOf({ STELLAR_TYPE::MASSLESS_REMNANT })) {                                                 // have stars merged without merger already being resolved?
+                        if (m_Star1->IsOneOf(MAIN_SEQUENCE) && m_Star2->IsOneOf(MAIN_SEQUENCE) && OPTIONS->EvolveMainSequenceMergers())     // yes - both MS and evolving MS merger products?
+                            ResolveMainSequenceMerger();                                                                                    // yes - handle main sequence mergers gracefully; no need to change evolution status
+                        else {                                                                                                              // no - for now, log the merger and stop evolution
+                            // log the merger to the switchlog file
+                            // eventually, will want to implement a more careful prescription for the merger product,
+                            // perhaps allowing further evolution of the merger product
+                            (void)LogMergerToSwitchLog();                                                                                   // log merger
+                            evolutionStatus = EVOLUTION_STATUS::STELLAR_MERGER;                                                             // stop evolution
+                        }
                     }
-                }
-                else if (HasStarsTouching()) {                                                                                          // binary components touching? (should usually be avoided as MT or CE or merger should happen prior to this)
-                    evolutionStatus = EVOLUTION_STATUS::STARS_TOUCHING;                                                                 // yes - stop evolution
-                }
-                else if (IsUnbound()) {                                                                                                 // binary is unbound?
-                    m_Flags.mergesInHubbleTime = false;                                                                                 // yes - won't merge in a Hubble time
+                    else if (HasStarsTouching()) {                                                                                          // binary components touching? (should usually be avoided as MT or CE or merger should happen prior to this)
+                        evolutionStatus = EVOLUTION_STATUS::STARS_TOUCHING;                                                                 // yes - stop evolution
+                    }
+                    else if (IsUnbound()) {                                                                                                 // binary is unbound?
+                        m_Flags.mergesInHubbleTime = false;                                                                                 // yes - won't merge in a Hubble time
 
-                    if (IsDCO()) {                                                                                                      // DCO (has two COs)?
-                        if (m_DCOFormationTime == DEFAULT_INITIAL_DOUBLE_VALUE) {                                                       // DCO not yet evaluated
-                            m_DCOFormationTime = m_Time;                                                                                // set the DCO formation time
+                        if (IsDCO()) {                                                                                                      // DCO (has two COs)?
+                            if (m_DCOFormationTime == DEFAULT_INITIAL_DOUBLE_VALUE) {                                                       // DCO not yet evaluated
+                                m_DCOFormationTime = m_Time;                                                                                // set the DCO formation time
+                            }
+                        }
+
+                        if (!OPTIONS->EvolveUnboundSystems() || IsDCO()) {                                                                  // should we evolve unbound systems?
+                            evolutionStatus = EVOLUTION_STATUS::UNBOUND;                                                                    // no - stop evolution
                         }
                     }
 
-                    if (!OPTIONS->EvolveUnboundSystems() || IsDCO()) {                                                                  // should we evolve unbound systems?
-                        evolutionStatus = EVOLUTION_STATUS::UNBOUND;                                                                    // no - stop evolution
-                    }
-                }
-
-                if (evolutionStatus == EVOLUTION_STATUS::CONTINUE) {                                                                    // continue evolution?
+                    if (evolutionStatus == EVOLUTION_STATUS::CONTINUE) {                                                                    // continue evolution?
                                                                                                                                         // yes
-                    if (HasOneOf({ STELLAR_TYPE::NEUTRON_STAR })) {
-                        (void)PrintPulsarEvolutionParameters(BSE_PULSAR_RECORD_TYPE::POST_BINARY_TIMESTEP);                                 // print (log) pulsar evolution parameters 
-                    }
+                        if (HasOneOf({ STELLAR_TYPE::NEUTRON_STAR })) {
+                            (void)PrintPulsarEvolutionParameters(BSE_PULSAR_RECORD_TYPE::POST_BINARY_TIMESTEP);                                 // print (log) pulsar evolution parameters 
+                        }
                         
-                    if (IsDCO() && !IsUnbound()) {                                                                                      // bound double compact object?
-                        if (m_DCOFormationTime == DEFAULT_INITIAL_DOUBLE_VALUE) {                                                       // DCO not yet evaluated -- to ensure that the coalescence is only resolved once
-                            ResolveCoalescence();                                                                                       // yes - resolve coalescence
-                            m_DCOFormationTime = m_Time;                                                                                // set the DCO formation time
+                        if (IsDCO() && !IsUnbound()) {                                                                                      // bound double compact object?
+                            if (m_DCOFormationTime == DEFAULT_INITIAL_DOUBLE_VALUE) {                                                       // DCO not yet evaluated -- to ensure that the coalescence is only resolved once
+                                ResolveCoalescence();                                                                                       // yes - resolve coalescence
+                                m_DCOFormationTime = m_Time;                                                                                // set the DCO formation time
+                            }
+
+                            if (!(OPTIONS->EvolvePulsars() && HasOneOf({ STELLAR_TYPE::NEUTRON_STAR })) &&                                  // evolve pulsar?
+                                !(OPTIONS->EvolveDoubleWhiteDwarfs() && IsWDandWD())) {                                                     // no - evolve WDWD?
+                                evolutionStatus = EVOLUTION_STATUS::DCO;                                                                    // no - have DCO - stop evolving
+                            }
                         }
 
-                        if (!(OPTIONS->EvolvePulsars() && HasOneOf({ STELLAR_TYPE::NEUTRON_STAR })) &&                                  // evolve pulsar?
-                            !(OPTIONS->EvolveDoubleWhiteDwarfs() && IsWDandWD())) {                                                     // no - evolve WDWD?
-                            evolutionStatus = EVOLUTION_STATUS::DCO;                                                                    // no - have DCO - stop evolving
+                        // check whether to continue evolution
+                        if (evolutionStatus == EVOLUTION_STATUS::CONTINUE) {                                                                // continue evolution?
+                                                                                                                                        // yes
+                            // check for other reasons to stop evolution
+                            if (IsDCO() && m_Time > (m_DCOFormationTime + m_TimeToCoalescence) && !IsUnbound()) {                           // evolution time exceeds DCO merger time?
+                                evolutionStatus = EVOLUTION_STATUS::DCO_MERGER_TIME;                                                        // yes - stop evolution
+                            }
+                            else if (m_Time > OPTIONS->MaxEvolutionTime()) {                                                                // evolution time exceeds maximum?
+                                evolutionStatus = EVOLUTION_STATUS::TIMES_UP;                                                               // yes - stop evolution
+                            }
+                            else if (!OPTIONS->EvolveDoubleWhiteDwarfs() && IsWDandWD()) {                                                  // double WD and their evolution is not enabled?
+                                evolutionStatus = EVOLUTION_STATUS::WD_WD;                                                                  // yes - do not evolve double WD systems
+                            }
+                            else if ((HasOneOf({ STELLAR_TYPE::MASSLESS_REMNANT }) && !OPTIONS->EvolveMainSequenceMergers()) || IsMRandRemant()) { // at least one massless remnant and not evolving MS merger products, or is MR + stellar remnant        
+                                if (IsMRandNS() && OPTIONS->EvolvePulsars()) {                                                               // However, keep evolving if the stellar remnant is a neutron star and we are evolving pulsars
+                                    evolutionStatus = EVOLUTION_STATUS::CONTINUE;
+                                }
+                                else{
+                                    evolutionStatus = EVOLUTION_STATUS::MASSLESS_REMNANT;                                                   // yes - stop evolution
+                                }
+                            }
                         }
                     }
 
-                    // check whether to continue evolution
-                    if (evolutionStatus == EVOLUTION_STATUS::CONTINUE) {                                                                // continue evolution?
+                    if (evolutionStatus == EVOLUTION_STATUS::CONTINUE) {                                                                    // continue evolution?
                                                                                                                                         // yes
-                        // check for other reasons to stop evolution
-                        if (IsDCO() && m_Time > (m_DCOFormationTime + m_TimeToCoalescence) && !IsUnbound()) {                           // evolution time exceeds DCO merger time?
-                            evolutionStatus = EVOLUTION_STATUS::DCO_MERGER_TIME;                                                        // yes - stop evolution
-                        }
-                        else if (m_Time > OPTIONS->MaxEvolutionTime()) {                                                                // evolution time exceeds maximum?
-                            evolutionStatus = EVOLUTION_STATUS::TIMES_UP;                                                               // yes - stop evolution
-                        }
-                        else if (!OPTIONS->EvolveDoubleWhiteDwarfs() && IsWDandWD()) {                                                  // double WD and their evolution is not enabled?
-                            evolutionStatus = EVOLUTION_STATUS::WD_WD;                                                                  // yes - do not evolve double WD systems
-                        }
-                        else if ((HasOneOf({ STELLAR_TYPE::MASSLESS_REMNANT }) && !OPTIONS->EvolveMainSequenceMergers()) || 
-                                IsMRandRemant()) {                                                         // at least one massless remnant and not evolving MS merger products, or is MR + stellar remnant        
-                            if (IsMRandNS() && OPTIONS->EvolvePulsars()){                                                               // However, keep evolving if the stellar remnant is a neutron star and we are evolving pulsars
-                                evolutionStatus = EVOLUTION_STATUS::CONTINUE;
-                            }
-                            else{
-                                evolutionStatus = EVOLUTION_STATUS::MASSLESS_REMNANT;                                                   // yes - stop evolution
-                            }
-                        }
-                    }
-                }
+                        (void)PrintDetailedOutput(m_Id, BSE_DETAILED_RECORD_TYPE::PRE_STELLAR_TIMESTEP);                                    // print (log) detailed output
 
-                if (evolutionStatus == EVOLUTION_STATUS::CONTINUE) {                                                                    // continue evolution?
-                                                                                                                                        // yes
-                    (void)PrintDetailedOutput(m_Id, BSE_DETAILED_RECORD_TYPE::PRE_STELLAR_TIMESTEP);                                    // print (log) detailed output
-
-                    error = EvolveOneTimestep(dt);                                                                                      // evolve the binary system one timestep
-                    if (error != ERROR::NONE) {                                                                                         // SSE error for either constituent star?
-                        evolutionStatus = EVOLUTION_STATUS::SSE_ERROR;                                                                  // yes - stop evolution
+                        error = EvolveOneTimestep(dt);                                                                                      // evolve the binary system one timestep
+                        if (error != ERROR::NONE) {                                                                                         // SSE error for either constituent star?
+                            evolutionStatus = EVOLUTION_STATUS::SSE_ERROR;                                                                  // yes - stop evolution
+                        }
                     }
                 }
 

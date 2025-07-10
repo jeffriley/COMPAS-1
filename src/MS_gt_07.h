@@ -50,7 +50,7 @@ protected:
                                                                                                                                                         // yes - initialise
             m_InitialMainSequenceCoreMass = MainSequence::CalculateInitialMainSequenceCoreMass(m_MZAMS, m_InitialHeliumAbundance);
             m_MainSequenceCoreMass        = m_InitialMainSequenceCoreMass;
-            m_Luminosity                  = MainSequence::CalculateLuminosityOnPhase(m_Age, m_Mass0, m_LZAMS0);
+            m_Luminosity                  = MainSequence::CalculateLuminosityOnPhase(m_Age, m_Mass0, BaseStar::CalculateLuminosityAtZAMS(m_Mass0));
             m_Radius                      = MainSequence::CalculateRadiusOnPhase(m_Mass, m_Tau, m_RZAMS0);
             m_Temperature                 = BaseStar::CalculateTemperatureOnPhase_Static(m_Luminosity, m_Radius);
         }

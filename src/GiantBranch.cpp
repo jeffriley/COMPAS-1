@@ -666,13 +666,11 @@ double GiantBranch::CalculateRadiusAtHeIgnition(const double p_Mass) const {
  * @return                                      Radius of remnant core in Rsol
  */
 double GiantBranch::CalculateRemnantRadius() const {
-#define massCutoffs(x) m_MassCutoffs[static_cast<int>(MASS_CUTOFF::x)]  // for convenience and readability - undefined at end of function
-    return (utils::Compare(m_Mass0, massCutoffs(MHeF)) > 0)
+    return (utils::Compare(m_Mass0, m_MassCutoffs[static_cast<int>(MASS_CUTOFF::MHeF)]) > 0)
             ? HeMS::CalculateRadiusAtZAMS_Static(m_CoreMass)
             : WhiteDwarfs::CalculateRadiusOnPhase_Static(m_CoreMass);
-
-#undef massCutoffs
 }
+
 
 /*
  * Calculate the radial extent of the convective outer envelope
@@ -1853,7 +1851,9 @@ double GiantBranch::CalculateRemnantMassByBelczynski2002(const double p_Mass, co
 
 
 /*
- * Driver function for Core Collapse Supernovas
+ * ResolveCoreCollapseSN
+ *
+ * Driver function for Core Collapse Supernovae
  *
  * This function determines which prescription is used for the core collapse SN (via program options)
  *
@@ -1946,15 +1946,10 @@ STELLAR_TYPE GiantBranch::ResolveCoreCollapseSN() {
         stellarType = CalculateRemnantTypeByMuller2016(m_COCoreMass);
     }
     else if (OPTIONS->RemnantMassPrescription() == REMNANT_MASS_PRESCRIPTION::MULLERMANDEL) {
-        if (utils::Compare(m_Mass, OPTIONS->MaximumNeutronStarMass() ) > 0)
-            stellarType = STELLAR_TYPE::BLACK_HOLE;
-        else
-            stellarType = STELLAR_TYPE::NEUTRON_STAR;
+        stellarType = (utils::Compare(m_Mass, OPTIONS->MaximumNeutronStarMass()) > 0) ? STELLAR_TYPE::BLACK_HOLE : STELLAR_TYPE::NEUTRON_STAR;
     }
     else if (OPTIONS->RemnantMassPrescription() == REMNANT_MASS_PRESCRIPTION::HURLEY2000) {
-        stellarType = (utils::Compare(m_Mass, 1.8 ) > 0)
-                        ? STELLAR_TYPE::BLACK_HOLE
-                        : STELLAR_TYPE::NEUTRON_STAR;                                                       // Hurley+ 2000, Eq. (92)
+        stellarType = (utils::Compare(m_Mass, 1.8 ) > 0) ? STELLAR_TYPE::BLACK_HOLE : STELLAR_TYPE::NEUTRON_STAR; // Hurley+ 2000, Eq. (92)
     }
     else if (utils::Compare(m_Mass, OPTIONS->MaximumNeutronStarMass()) > 0) {
         std::tie(m_Luminosity, m_Radius, m_Temperature) = BH::CalculateCoreCollapseSNParams_Static(m_Mass);
@@ -1978,7 +1973,7 @@ STELLAR_TYPE GiantBranch::ResolveCoreCollapseSN() {
 
 
 /*
- * Resolve Electron Capture Supernova
+ * ResolveElectronCaptureSN
  *
  * Calculate the mass of the remnant and set remnant type - always a Neutron Star
  * Updates attributes of star; sets SN flags
@@ -2008,7 +2003,7 @@ STELLAR_TYPE GiantBranch::ResolveElectronCaptureSN() {
 
 
 /*
- * Resolve Pair-Instability Supernova
+ * ResolvePairInstabilitySN
  *
  * Calculate the mass of the remnant and set remnant type according to mass
  * Updates attributes of star; sets SN events
@@ -2024,7 +2019,7 @@ STELLAR_TYPE GiantBranch::ResolveElectronCaptureSN() {
  *
  * STELLAR_TYPE ResolvePairInstabilitySN()
  *
- * @return                                      Stellar type of remnant
+ * @return                                      Stellar type of remnant (always STELLAR_TYPE::MASSLESS_REMNANT)
  */
 STELLAR_TYPE GiantBranch::ResolvePairInstabilitySN() {
 
@@ -2048,7 +2043,7 @@ STELLAR_TYPE GiantBranch::ResolvePairInstabilitySN() {
 
 
 /*
- * Resolve Pulsational Pair-Instability Supernova
+ * ResolvePulsationalPairInstabilitySN
  *
  * Calculate the mass of the remnant and set remnant type according to mass
  * Updates attributes of star; sets SN events
@@ -2106,12 +2101,7 @@ STELLAR_TYPE GiantBranch::ResolvePulsationalPairInstabilitySN() {
                 m_Mass = m_COCoreMass + 4.0;                                                            // a linear relation below CO core masses of 38 Msun
             }
             else if (utils::Compare(m_COCoreMass, FARMER_PPISN_UPP_LIM_QUAD_REGIME) < 0) {              // a quadratic relation in CO core mass for 38 =< CO_core < 60  JR: shouldn't have constants here (in the comment) - they may change
-                const double a1 = -0.096;
-                const double a2 = 8.564;
-                const double a3 = -2.07;
-                const double a4 = -152.97;
-
-                m_Mass = a1 * PPOW(m_COCoreMass, 2.0) + a2 * m_COCoreMass + a3 * m_Log10Metallicity + a4;
+                m_Mass = -0.096 * PPOW(m_COCoreMass, 2.0) + 8.564 * m_COCoreMass + -2.07 * m_Log10Metallicity + -152.97;
             }
             else if (utils::Compare(m_COCoreMass, FARMER_PPISN_UPP_LIM_INSTABILLITY) < 0) {             // no remnant between 60 - 140 Msun  JR: shouldn't have constants here (in the comment) - they may change
                 m_Mass = 0.0;
@@ -2121,6 +2111,7 @@ STELLAR_TYPE GiantBranch::ResolvePulsationalPairInstabilitySN() {
             }
 
             m_Mass = std::min(totalMassPrePPISN, m_Mass);                                               // check if remnant mass is bigger than total mass    
+
             } break;
     
         case PPI_PRESCRIPTION::HENDRIKS: {    
@@ -2129,22 +2120,22 @@ STELLAR_TYPE GiantBranch::ResolvePulsationalPairInstabilitySN() {
             // 
             // Suggest using --PPI-upper-limit 80.0 and --PISN-lower-limit 80.0
 
-            double DeltaMPPICOShift = OPTIONS->PulsationalPairInstabilityCOCoreShiftHendriks();
-            double DeltaMPPIExtraML = 0.0; 								// Make an option? Currently does nothing
+            double deltaMPPICOShift = OPTIONS->PulsationalPairInstabilityCOCoreShiftHendriks();
+            double deltaMPPIExtraML = 0.0;                                                              // make an option? Currently does nothing
 
             // Equation (6) of Hendricks et al. 2023			
-            double PPIOnset        = m_COCoreMass - DeltaMPPICOShift - 34.8;
+            double PPIOnset        = m_COCoreMass - deltaMPPICOShift - 34.8;
             double PPIOnsetSquared = PPIOnset * PPIOnset;
             double PPIOnsetCubed   = PPIOnsetSquared * PPIOnset;
-            double firstTerm  = (0.0006 * m_Log10Metallicity + 0.0054) * PPIOnsetCubed;
-            double secondTerm = 0.0013 * PPIOnsetSquared;
-            double DeltaMPPI  = firstTerm - secondTerm + DeltaMPPIExtraML;
+            double firstTerm       = (0.0006 * m_Log10Metallicity + 0.0054) * PPIOnsetCubed;
+            double secondTerm      = 0.0013 * PPIOnsetSquared;
+            double deltaMPPI       = firstTerm - secondTerm + deltaMPPIExtraML;                         // the amount of the He core that's lost in pulsations
             
-            DeltaMPPI = std::max(DeltaMPPI, 0.0);						// DeltaMPPI, the amount of the He core that's lost in pulsations, is non-negative
-            m_Mass = std::max(m_HeCoreMass - DeltaMPPI, 0.0);			// Remnant mass should be non-negative		
-            m_Mass = m_Mass > 10.0 ? m_Mass : 0.0;                      // If the predicted remnant mass is below 10 Msun, set it equal to 0 (assume a PISN)
+            deltaMPPI = std::max(deltaMPPI, 0.0);                                                       // deltaMPPI must be non-negative
+            m_Mass    = std::max(m_HeCoreMass - deltaMPPI, 0.0);                                        // remnant mass should be non-negative		
+            m_Mass    = utils::Compare(m_Mass, 10.0) > 0 ? m_Mass : 0.0;                                // if the predicted remnant mass is below 10 Msun, set it equal to 0 (assume a PISN)
 
-        } break;
+            } break;
 
         default:                                                                                        // unknown prescription
             // the only way this can happen is if someone added a REMNANT_MASS_PRESCRIPTION
@@ -2178,34 +2169,52 @@ STELLAR_TYPE GiantBranch::ResolvePulsationalPairInstabilitySN() {
 
 
 /*
- * The main supernova function
+ * ResolveSupernovaPreamble
+ * 
+ * Preamble for main GiantBranch and WhiteDwarfs ResolveSupernova() functions
+ * Store stellar attributes before they get changed by ResolveSupernova() and set
+ * the hydrogen content for the star (H-rich or H-poor)
  *
- * This function determines the type of the supernova and calls the appropriate functions
- * to calculate attributes correctly, and to determine the type of remnant to which the
- * star should evolve.
+ *
+ * void ResolveSupernova()
+ *
+ */
+void GiantBranch::ResolveSupernovaPreamble() {
+
+    m_SupernovaDetails.totalMassAtCOFormation   = m_Mass;
+    m_SupernovaDetails.HeCoreMassAtCOFormation  = m_HeCoreMass;
+    m_SupernovaDetails.COCoreMassAtCOFormation  = m_COCoreMass;
+    m_SupernovaDetails.coreMassAtCOFormation    = m_CoreMass;
+
+    m_SupernovaDetails.totalRadiusAtCOFormation = m_Radius;
+    m_SupernovaDetails.coreRadiusAtCOFormation  = CalculateConvectiveCoreRadius();
+        
+    SetSNHydrogenContent();
+}
+
+
+/*
+ * ResolveSupernova
+ *
+ * This function checks if the star is about to undergo a SN event, and if so determines
+ * the type of the supernova and calls the appropriate functions to calculate attributes
+ * correctly, and to determine the type of remnant to which the star should evolve.
+ * 
+ * The WhiteDwarfs class also has a ResolveSupernova() function that handles WD SNe.
  *
  *
  * STELLAR_TYPE ResolveSupernova()
  *
  * @return                                      Stellar type of remnant
+ *                                              Will be same as stellar type on entry if no SN
  */
 STELLAR_TYPE GiantBranch::ResolveSupernova() {
 
     STELLAR_TYPE stellarType = m_StellarType;
 
-    if (IsSupernova()) {                                                                            // is going supernova
-                                                                                                    // yes - resolve new supernova event
-        // squirrel away some attributes before they get changed...
-        m_SupernovaDetails.totalMassAtCOFormation  = m_Mass;
-        m_SupernovaDetails.totalRadiusAtCOFormation= m_Radius;
-        m_SupernovaDetails.HeCoreMassAtCOFormation = m_HeCoreMass;
-        m_SupernovaDetails.COCoreMassAtCOFormation = m_COCoreMass;
-        m_SupernovaDetails.coreMassAtCOFormation   = m_CoreMass;
-        m_SupernovaDetails.coreRadiusAtCOFormation = CalculateConvectiveCoreRadius();
-
-        double snMass = CalculateInitialSupernovaMass();                                            // calculate SN initial mass
-        
-        SetSNHydrogenContent();                                                                     // set H-rich or H-poor  JR: why don't we do this when we initialise the star at change of stellar type?
+    if (IsSupernova()) {                                                                            // sanity check
+                                                                                                    // is SN - resolve
+        ResolveSupernovaPreamble();                                                                 // store pre-SN stellar attributes; set H content
 
         if (                             OPTIONS->UsePulsationalPairInstability()              &&
             utils::Compare(m_HeCoreMass, OPTIONS->PulsationalPairInstabilityLowerLimit()) >= 0 &&
@@ -2219,28 +2228,28 @@ STELLAR_TYPE GiantBranch::ResolveSupernova() {
 
             stellarType = ResolvePairInstabilitySN();                                               // MR
         }
-        else if (utils::Compare(snMass, MCBUR2) < 0 && (!m_MassTransferDonorHistory.empty() || OPTIONS->AllowNonStrippedECSN())) {
-            stellarType = ResolveElectronCaptureSN();                                               // electron capture SN; requires progenitor to have been a MT donor unless non-stripped ECSN are allowed; forms NS
+        else if (utils::Compare(CalculateInitialSupernovaMass(), MCBUR2) < 0 && 
+                (!m_MassTransferDonorHistory.empty() || OPTIONS->AllowNonStrippedECSN())) {
+
+            stellarType = ResolveElectronCaptureSN();                                               // Electron Capture SN; requires progenitor to have been a MT donor unless non-stripped ECSN are allowed; forms NS
         }
         else {                                                                                      // Core Collapse Supernova
             stellarType = ResolveCoreCollapseSN();                                                  // BH or NS
         }
         
-        // check if the SN actually happened
+        // check if the SN will actually happen (i.e. new stellar type indicates a switch)
         if (utils::IsOneOf(stellarType, { STELLAR_TYPE::NEUTRON_STAR, STELLAR_TYPE::BLACK_HOLE, STELLAR_TYPE::MASSLESS_REMNANT })) {
-                                                                                                    // SN happened
-            if (utils::SNEventType(m_SupernovaDetails.events.current) != SN_EVENT::PISN && !utils::IsOneOf(stellarType, { STELLAR_TYPE::MASSLESS_REMNANT }))
-                CalculateSNKickMagnitude(m_Mass, m_SupernovaDetails.totalMassAtCOFormation - m_Mass, stellarType);
-        
-            if (!utils::IsOneOf(stellarType, { STELLAR_TYPE::NEUTRON_STAR }))
-                m_SupernovaDetails.rocketKickMagnitude = 0;                                         // only NSs can get rocket kicks
+                                                                                                    // SN will happen
+            // calculate kick magnitude if required 
+            if (utils::SNEventType(m_SupernovaDetails.events.current) != SN_EVENT::PISN && 
+               !utils::IsOneOf(stellarType, { STELLAR_TYPE::MASSLESS_REMNANT })) {
 
-            // Print SN details to the SSE Supernova log.
-            // Only if SSE (BSE does its own SN printing), and only if not an ephemeral clone
-            if (OPTIONS->EvolutionMode() == EVOLUTION_MODE::SSE && m_ObjectPersistence == OBJECT_PERSISTENCE::PERMANENT) {
-                PrintSupernovaDetails();
+                CalculateSNKickMagnitude(m_Mass, m_SupernovaDetails.totalMassAtCOFormation - m_Mass, stellarType);
             }
-       }
+
+            // only NSs can get rocket kicks
+            if (!utils::IsOneOf(stellarType, { STELLAR_TYPE::NEUTRON_STAR })) m_SupernovaDetails.rocketKickMagnitude = 0.0;
+        }
     }
 
     return stellarType;

@@ -16,7 +16,8 @@ STELLAR_TYPE COWD::EvolveToNextPhase() {
         stellarType = STELLAR_TYPE::OXYGEN_NEON_WHITE_DWARF;
     }
     else {                                         
-        stellarType = ResolveSNIa(); 
+//        stellarType = ResolveSNIa(); 
+        stellarType = m_HeShellDetonation ? ResolveHeSD() : ResolveSNIa(); 
     }
     return stellarType;
 }

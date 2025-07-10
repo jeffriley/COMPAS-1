@@ -1023,18 +1023,6 @@ double MainSequence::CalculateZetaEquilibrium() {
 
 
 /*
- * Set parameters required before evolving one timestep - modify star values
- *
- *
- * void EvolveOneTimestepPreamble()
- */
-void MainSequence::EvolveOneTimestepPreamble() {
-    m_LZAMS0 = CalculateLuminosityAtZAMS(m_Mass0);
-    m_RZAMS0 = CalculateRadiusAtZAMS(m_Mass0);
-}
-
-
-/*
  * Choose timestep for evolution
  *
  * Given in the discussion in Hurley et al. 2000

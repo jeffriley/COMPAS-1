@@ -48,7 +48,10 @@ public:
         m_Unbound                          = p_Star.m_Unbound;
 
         m_DCOFormationTime                 = p_Star.m_DCOFormationTime;
-        
+
+        m_DaDtGW                           = p_Star.m_DaDtGW;
+        m_DeDtGW                           = p_Star.m_DeDtGW;
+
         m_Dt                               = p_Star.m_Dt;
 
         m_Eccentricity                     = p_Star.m_Eccentricity;
@@ -63,6 +66,8 @@ public:
 
         m_CosIPrime                        = p_Star.m_CosIPrime;
         m_IPrime                           = p_Star.m_IPrime;
+
+        m_ImmediateEvent                   = p_Star.m_ImmediateEvent;
 
         m_JLoss                            = p_Star.m_JLoss;
 
@@ -338,6 +343,8 @@ private:
     double              m_CosIPrime;
     double              m_IPrime;  
 
+    ImmediateEventT     m_ImmediateEvent;                                                   // Event that needs to be processed immediately
+
     double	            m_JLoss;			                                                // Specific angular momentum with which mass is lost during non-conservative mass transfer
 
     double              m_Mass1Final;                                                       // Star1 mass in Msol after losing its envelope (in this case, we assume it loses all of its envelope)
@@ -487,7 +494,7 @@ private:
 
     double  CalculateTotalEnergy() const                                        { return CalculateTotalEnergy(m_SemiMajorAxis, m_Star1->Mass(), m_Star2->Mass(), m_Star1->Omega(), m_Star2->Omega(), m_Star1->CalculateMomentOfInertiaAU(), m_Star2->CalculateMomentOfInertiaAU()); }
 
-    void    EvaluateBinary(const double p_Dt);
+    ImmediateEventT EvaluateBinary(const double p_Dt);
 
     void    EvaluateSupernovae();
 
@@ -498,8 +505,8 @@ private:
 
     double  ResolveAccretionAngularMomentumGain(BinaryConstituentStar *p_Accretor, BinaryConstituentStar *p_Donor, double p_MassChange);
     void    ResolveCoalescence();
-    void    ResolveCommonEnvelopeEvent();
-    void    ResolveMainSequenceMerger();
+    ImmediateEventT ResolveCommonEnvelopeEvent();
+    ImmediateEventT ResolveMainSequenceMerger();
     void    ResolveMassChanges();
     void    ResolveSupernova();
     

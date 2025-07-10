@@ -107,6 +107,7 @@ public:
     bool                IsPISN() const                                                                              { return m_Star->IsPISN(); }
     bool                IsPPISN() const                                                                             { return m_Star->IsPPISN(); }
     bool                IsSNIA() const                                                                              { return m_Star->IsSNIA(); }
+    bool                IsSupernova() const                                                                         { return m_Star->IsSupernova(); }
     bool                IsUSSN() const                                                                              { return m_Star->IsUSSN(); }
     double              CalculateLambdaLoveridge() const                                                            { return m_Star->CalculateLambdaLoveridge(); }
     double              CalculateLambdaNanjing() const                                                              { return m_Star->CalculateLambdaNanjing(); }
@@ -239,6 +240,7 @@ public:
                                                    const double p_CompanionRadius,
                                                    const double p_CompanionEnvelope)                                { return m_Star->ResolveCommonEnvelopeAccretion(p_FinalMass, p_CompanionMass, p_CompanionRadius, p_CompanionEnvelope); } 
 
+    STELLAR_TYPE    ResolveEnvelopeLoss(bool p_Force = false)                                                       { return m_Star->ResolveEnvelopeLoss(p_Force); } 
     void            ResolveEnvelopeLossAndSwitch();
 
     void            ResolveShellChange(const double p_AccretedMass)                                                 { m_Star->ResolveShellChange(p_AccretedMass); }
