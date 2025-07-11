@@ -450,20 +450,19 @@ EVOLUTION_STATUS Star::Evolve(const long int p_Id) {
             
                 // check for, and process, immediate events, in the following order:
                 //
-                // 1. supernona
+                // 1. supernova
                 // 2. stellar type switch
                 // 3. common envelope
 
                 // supernova
                 if (IsSupernova()) {                                                                            // is star about to go supernova?
-                    stellarType = ResolveSupernova();                                                           // yes, resolve the supernova event
+                    m_star->UpdateDt(ABSOLUTE_MINIMUM_TIMESTEP);                                                // yes - advance dt, age, and simulation time by minimum timestep
+                    stellarType = ResolveSupernova();                                                           // resolve the supernova event
                     if (stellarType != m_star->StellarType()) {                                                 // stellar type change?
-                                                                                                                // yes
-                        m_star->UpdateDt(ABSOLUTE_MINIMUM_TIMESTEP);                                            // advance dt, age, and simulation time by minimum timestep
-                        (void)SwitchTo(stellarType, false);                                                     // switch stellar type
+                        (void)SwitchTo(stellarType, false);                                                     // yes - switch stellar type
 
-                        // Print SN details to the SSE Supernova log.
-                        // Only if SSE (BSE does its own SN printing), and only if not an ephemeral clone
+                        // log SN details to the SSE Supernova log (BSE does its own SN printing)
+                        // - only if not an ephemeral clone
                         if (OPTIONS->EvolutionMode() == EVOLUTION_MODE::SSE && m_ObjectPersistence == OBJECT_PERSISTENCE::PERMANENT) {
                             PrintSupernovaDetails();
                         }

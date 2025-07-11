@@ -387,6 +387,9 @@ COMPAS_VARIABLE BaseStar::StellarPropertyValue(const T_ANY_PROPERTY p_Property) 
         case ANY_STAR_PROPERTY::TOTAL_RADIUS_AT_COMPACT_OBJECT_FORMATION:           value = SN_TotalRadiusAtCOFormation();                          break;
         case ANY_STAR_PROPERTY::TRUE_ANOMALY:                                       value = SN_TrueAnomaly();                                       break;
         case ANY_STAR_PROPERTY::TZAMS:                                              value = TZAMS() * TSOL;                                         break;
+        case ANY_STAR_PROPERTY::VELOCITY_X:                                         value = VelocityX();											break;
+        case ANY_STAR_PROPERTY::VELOCITY_Y:                                         value = VelocityY();											break;
+        case ANY_STAR_PROPERTY::VELOCITY_Z:                                         value = VelocityZ();											break;
         case ANY_STAR_PROPERTY::ZETA_HURLEY:                                        value = CalculateZetaAdiabaticHurley2002(m_CoreMass);           break;
         case ANY_STAR_PROPERTY::ZETA_HURLEY_HE:                                     value = CalculateZetaAdiabaticHurley2002(m_HeCoreMass);         break;
         case ANY_STAR_PROPERTY::ZETA_SOBERMAN:                                      value = CalculateZetaAdiabaticSPH(m_CoreMass);                  break;
@@ -3854,7 +3857,7 @@ double BaseStar::DrawSNKickMagnitude(const double p_Sigma,
                                      const double p_COCoreMass,
                                      const double p_Rand,
                                      const double p_EjectaMass,
-                                     const double p_RemnantMass) {
+                                     const double p_RemnantMass) const {
 	double kickMagnitude;
 
     switch (OPTIONS->KickMagnitudeDistribution()) {                                             // which distribution
@@ -4227,7 +4230,7 @@ double BaseStar::CalculateTimestep() {
  *
  *    - if required, the star is aged by the amount passed as the p_DeltaTime parameter, and the simulation time
  *      is advanced by the same amount, before other attributes are updated.  The p_deltaTime parameter may be
- *      zero, in which case no change is made to the star's age or the physical time attribute.
+ *      zero, in which case no change is made to the star's age or the simulation time attribute.
  *
  *
  * Before updating attributes we check whether the star:
@@ -4239,8 +4242,8 @@ double BaseStar::CalculateTimestep() {
  * the star's attributes other than age are re-calculated), then the need to evolve the star off phase is checked.
  *
  * If p_DeltaMass, p_DeltaMass0 and p_DeltaTime are all passed as zero the checks for massless remnant and supernova
- * are performed (and consequential changes made), but no other changes to the star's attributes are made - unless
- * the p_ForceRecalculate parameter is set true.
+ * are performed, but no other changes to the star's attributes are made - unless the p_ForceRecalculate parameter is
+ * set true.
  *
  * The functional return is the stellar type to which the star should evolve.  The returned stellar type is just the
  * stellar type of the star upon entry if it should remain on phase.  The star's stellar type is not changed here.
