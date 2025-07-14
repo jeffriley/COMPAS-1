@@ -89,6 +89,7 @@ protected:
 
     STELLAR_TYPE    EvolveToNextPhase();                                                                                                                                                    // Allow evolution, either SN or Rejuvenation
     bool            IsSupernova() const                                                                     { return m_IsSubChandrasekharTypeIa; }                                          // Go supernova if mass and He shell are large enough;                                                           
+    STELLAR_TYPE    ResolveSupernova()                                                                      { return ResolveSNIa(); }
     bool            ShouldEvolveOnPhase() const                                                             { return m_ShouldRejuvenate ? false : !IsSupernova(); }              
 
 };

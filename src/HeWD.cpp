@@ -41,14 +41,16 @@ DBL_DBL HeWD::CalculateMassAcceptanceRate(const double p_DonorMassRate, const bo
  *
  * @param   [IN]    p_DonorMassRate      Donor mass loss rate, in units of Msol / Myr
  * @param   [IN]    p_HeRich             Whether the accreted material is helium-rich or not
- * @return                               Current WD accretion regime
+ * @return                               WD accretion regime
  */
 ACCRETION_REGIME HeWD::DetermineAccretionRegime(const double p_DonorMassRate, const bool p_HeRich) {
+
     double Mdot = p_DonorMassRate / MYR_TO_YEAR;                                                        // Accreted mass rate (M_sun/yr)
+
     ACCRETION_REGIME regime;
     if (p_HeRich) {
         if (utils::Compare(Mdot, HEWD_HE_MDOT_CRIT) <= 0) {
-            regime = ACCRETION_REGIME::HELIUM_WHITE_DWARF_HELIUM_SUB_CHANDRASEKHAR;                     // Could lead to Sub-Chandrasekhar SN Ia
+            regime           = ACCRETION_REGIME::HELIUM_WHITE_DWARF_HELIUM_SUB_CHANDRASEKHAR;           // Could lead to Sub-Chandrasekhar SN Ia
             double massSubCh = WD_BELCZYNSKI_SN_CONSTANT - WD_BELCZYNSKI_SN_LINEAR * Mdot;              // Minimum mass for Sub-Chandrasekhar Mass detonation. Eq 62, Belczynski+ 2008.
             if (utils::Compare(m_Mass, massSubCh) >= 0 ) {
                 m_IsSubChandrasekharTypeIa = true;
@@ -58,7 +60,7 @@ ACCRETION_REGIME HeWD::DetermineAccretionRegime(const double p_DonorMassRate, co
             regime = ACCRETION_REGIME::HELIUM_WHITE_DWARF_HELIUM_IGNITION;                              // Could lift degeneracy and evolve into He MS. Requires minimum mass ! on top of the shell size
             if (utils::Compare(m_Mass, HEWD_MINIMUM_MASS_IGNITION) >= 0) {
                 if (utils::Compare(Mdot, WD_BELCZYNSKI_IMMEDIATE_FLASH) < 0) {                          // Accretion limit from eq 61, Belczynski+ 2008.
-                    double mCritHeShell = WD_BELCZYNSKI_MINIMUM_HE_CONSTANT - WD_BELCZYNSKI_MINIMUM_HE_LINEAR * Mdot;// Minimum shell mass of He for ignition. Eq 61, Belczynski+ 2008. This helium should not be burnt, but not implemented this yet. Ruiter+ 2014.
+                    double mCritHeShell = WD_BELCZYNSKI_MINIMUM_HE_CONSTANT - WD_BELCZYNSKI_MINIMUM_HE_LINEAR * Mdot; // Minimum shell mass of He for ignition. Eq 61, Belczynski+ 2008. This helium should not be burnt, but not implemented this yet. Ruiter+ 2014.
                     if (utils::Compare(m_HeShell, mCritHeShell) >= 0) {
                         m_ShouldRejuvenate = true;
                     }
@@ -88,21 +90,14 @@ ACCRETION_REGIME HeWD::DetermineAccretionRegime(const double p_DonorMassRate, co
  *
  * STELLAR_TYPE EvolveToNextPhase()
  *
- * @return                               Stellar type of the upcoming stage.
+ * @return                               Stellar Type for next phase
  */
 STELLAR_TYPE HeWD::EvolveToNextPhase() {
 
-    STELLAR_TYPE stellarType;
+    m_CoreMass   = m_Mass;
+    m_Radius     = HeMS::CalculateRadiusAtZAMS_Static(m_CoreMass);
+    m_Luminosity = HeMS::CalculateLuminosityAtZAMS_Static(m_CoreMass);
+    m_Tau        = 0;
 
-    if (m_ShouldRejuvenate) {
-        m_CoreMass   = m_Mass;
-        m_Radius     = HeMS::CalculateRadiusAtZAMS_Static(m_CoreMass);
-        m_Luminosity = HeMS::CalculateLuminosityAtZAMS_Static(m_CoreMass);
-        m_Tau        = 0;
-        stellarType  = STELLAR_TYPE::NAKED_HELIUM_STAR_MS; 
-    }
-    else {                                         
-        stellarType  = ResolveSNIa();       // currently, assume a Type Ia from a HeWD is the same as other WDs. May want to vary in the future
-    }
-    return stellarType;
+    return STELLAR_TYPE::NAKED_HELIUM_STAR_MS;
 }

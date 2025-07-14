@@ -1329,7 +1329,7 @@ double BaseStar::CalculateCriticalMassRatio(const bool p_AccretorIsDegenerate, c
  * @param   [IN]    p_MZAMS                     Zero age main sequence mass in Msol
  * @return                                      Luminosity in Lsol (LZAMS)
  */
-double BaseStar::CalculateLuminosityAtZAMS(const double p_MZAMS) {
+double BaseStar::CalculateLuminosityAtZAMS(const double p_MZAMS) const {
 #define coeff(x) m_LCoefficients[static_cast<int>(L_Coeff::x)]   // for convenience and readability - undefined at end of function
 
     // pow() is slow - use multiplication where it makes sense
@@ -3647,7 +3647,7 @@ double BaseStar::CalculateRadialExpansionTimescaleDuringMassTransfer() {
     BaseStar *clone = Clone(OBJECT_PERSISTENCE::EPHEMERAL, false);                              // do not re-initialise the clone
 
     double timestep = std::max(1000.0 * NUCLEAR_MINIMUM_TIMESTEP, m_Age / 1.0E6);
-    clone->UpdateAttributesAndAgeOneTimestep(0.0, 0.0, timestep, true, false);
+    clone->EvolveOneTimestep(0.0, 0.0, timestep, true);
     double radiusAfterAging = clone->Radius();
     delete clone; clone = nullptr;                                                              // return the memory allocated for the clone
 
@@ -4147,23 +4147,6 @@ double BaseStar::CalculateConvectiveEnvelopeLambdaPicker(const DBL_DBL p_convect
 //                    MISCELLANEOUS FUNCTIONS / CONTROL FUNCTIONS                    //
 //                                                                                   //
 ///////////////////////////////////////////////////////////////////////////////////////
-
-
-/*
- * Determines if the star is one of a list of stellar types passed
- *
- *
- * bool IsOneOf(const STELLAR_TYPE_LIST p_List)
- *
- * @param   [IN]    p_List                      List of stellar types
- * @return                                      Boolean - true if star is in list, false if not
- */
-bool BaseStar::IsOneOf(const STELLAR_TYPE_LIST p_List) const {
-    for (auto elem: p_List) {
-        if (m_StellarType == elem) return true;
-    }
-	return false;
-}
 
 
 /*

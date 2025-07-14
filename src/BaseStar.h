@@ -205,12 +205,12 @@ public:
     inline void                 UpdateComponentVelocity(const Vector3d p_NewVelocity)           { m_ComponentVelocity += p_NewVelocity; }
 
     inline void                 UpdateDt(const double p_DeltaTime)                              {
-                                                                                                    m_Dt    = max(0.0, p_DeltaTime);                                                                                                                                    // set timestep - ignore -ve dt
+                                                                                                    m_Dt    = std::max(0.0, p_DeltaTime);                                                                                                                                    // set timestep - ignore -ve dt
                                                                                                     m_Age  += m_Dt;                                                                                                                                                     // advance age of star
                                                                                                     m_Time += m_Dt;                                                                                                                                                     // advance  simulation time
                                                                                                 };
     
-    inline void                 UpdateMassTransferDonorHistory();
+    void                        UpdateMassTransferDonorHistory();
     inline void                 UpdatePreviousTimestepDuration()                                { m_DtPrev = m_Dt; }
     
     
@@ -310,6 +310,8 @@ public:
     virtual double              InterpolateGeEtAlQCrit(const QCRIT_PRESCRIPTION p_qCritPrescription, 
                                                        const double p_massTransferEfficiencyBeta)               { return 0.0; }                                                     // Placeholder, use interpolator for either H-rich or H-poor stars
 
+    virtual bool                IsSupernova() const                                                             { return false; }
+
     inline void                 ResetEnvelopeExpulsationByPulsations()                                          { m_EnvelopeJustExpelledByPulsations = false; }
 
     inline void                 ResolveAccretion(const double p_AccretionMass)                                  { m_Mass = std::max(0.0, m_Mass + p_AccretionMass); }               // Handles donation and accretion - won't let mass go negative
@@ -321,6 +323,7 @@ public:
     virtual STELLAR_TYPE        ResolveEnvelopeLoss(bool p_Force = false)                                       { return m_StellarType; }
     virtual void                ResolveMassLoss(double p_Dt);
     virtual void                ResolveShellChange(const double p_AccretedMass) { }                                                                                                 // Default does nothing, use inheritance for WDs.
+    virtual STELLAR_TYPE        ResolveSupernova()                                                              { return m_StellarType; }                                           // Default is NO-OP
        
     inline void                 SetStellarTypePrev(const STELLAR_TYPE p_StellarTypePrev)                        { m_StellarTypePrev = p_StellarTypePrev; }
     
@@ -538,7 +541,7 @@ protected:
 
     double              CalculateLuminosityAtBAGB(double p_Mass) const;
     virtual double      CalculateLuminosityAtPhaseEnd() const                                                           { return m_Luminosity; }                                                    // Default is NO-OP
-    double              CalculateLuminosityAtZAMS(const double p_MZAMS);
+    double              CalculateLuminosityAtZAMS(const double p_MZAMS) const;
     double              CalculateLuminosityGivenCoreMass(const double p_CoreMass) const;
     virtual double      CalculateLuminosityOnPhase() const                                                              { return m_Luminosity; }                                                    // Default is NO-OP
 
@@ -658,7 +661,6 @@ protected:
     double              FindLambdaNanjingNearestMassIndex(const double p_Mass) const;
 
     virtual bool        IsEndOfPhase() const                                                                            { return false; }
-    virtual bool        IsSupernova() const                                                                             { return false; }
 
     /*
      * Perturb Luminosity and Radius
@@ -685,7 +687,6 @@ protected:
     STELLAR_TYPE        ResolveEndOfPhase();
     virtual void        ResolveHeliumFlash() { }
     virtual STELLAR_TYPE ResolveSkippedPhase()                                                                          { return EvolveToNextPhase(); }                                             // Default is evolve to next phase
-    virtual STELLAR_TYPE ResolveSupernova()                                                                             { return m_StellarType; }                                                   // Default is NO-OP
 
     double              ReweightSupernovaKickByMass(const double p_vK,
                                                     const double p_FallbackFraction,

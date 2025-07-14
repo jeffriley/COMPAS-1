@@ -180,7 +180,7 @@ protected:
             // To ensure the clone does not participate in logging, we set its persistence to EPHEMERAL.
 
             HG *clone = m_Star->Clone(OBJECT_PERSISTENCE::EPHEMERAL, false);
-            clone->UpdateAttributesAndAgeOneTimestep(0.0, p_GuessMass0 - clone->Mass0(), 0.0, true);        // update clone's mass and age it one timestep 
+            clone->EvolveOneTimestep(0.0, p_GuessMass0 - clone->Mass0(), 0.0, true);                        // update clone's mass and age it one timestep 
             double coreMassEstimate = clone->CalculateCoreMassOnPhase(p_GuessMass0, clone->Age());          // calculate clone's core mass
             delete clone; clone = nullptr;                                                                  // return the memory allocated for the clone
 

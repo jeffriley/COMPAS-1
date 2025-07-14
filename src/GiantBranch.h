@@ -128,6 +128,7 @@ protected:
 
     virtual void            PerturbLuminosityAndRadius();
 
+            void            ResolveSupernovaPreamble();
             STELLAR_TYPE    ResolveSupernova();
             STELLAR_TYPE    ResolveCoreCollapseSN();
             STELLAR_TYPE    ResolveElectronCaptureSN();

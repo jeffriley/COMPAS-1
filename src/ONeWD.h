@@ -71,9 +71,10 @@ protected:
     double          CalculateLuminosityOnPhase() const                              { return CalculateLuminosityOnPhase(m_Mass, m_Age, m_Metallicity); }    // Use class member variables
 
 
-    STELLAR_TYPE    EvolveToNextPhase();
-    bool            IsSupernova() const;                                             
-    bool            ShouldEvolveOnPhase() const;   
+    STELLAR_TYPE    EvolveToNextPhase()                                             { return m_StellarType; };                                                                                                                // NO-OP
+    bool            IsSupernova() const                                             { return IsMassAboveChandrasekhar(); };                                             
+    STELLAR_TYPE    ResolveSupernova()                                              { return ResolveAIC(); }
+    bool            ShouldEvolveOnPhase() const                                     { return !IsSupernova(); };   
                                                            
 };
 

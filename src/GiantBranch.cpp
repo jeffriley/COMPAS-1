@@ -1072,7 +1072,7 @@ DBL_DBL GiantBranch::CalculateConvectiveEnvelopeMass() const {
     // underlying object is, we cast it to EAGB&.
 
     EAGB *clone = EAGB::Clone(static_cast<EAGB&>(const_cast<GiantBranch&>(*this)), OBJECT_PERSISTENCE::EPHEMERAL);
-    clone->UpdateAttributesAndAgeOneTimestep(0.0, 0.0, 0.0, true);                                                          // otherwise, temperature not updated
+    clone->EvolveOneTimestep(0.0, 0.0, 0.0, true);                                                                          // otherwise, temperature not updated
     double Tmin = clone->Temperature();                                                                                     // get temperature of clone
     delete clone; clone = nullptr;                                                                                          // return the memory allocated for the clone
     

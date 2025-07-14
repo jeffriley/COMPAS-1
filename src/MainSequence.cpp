@@ -1153,7 +1153,7 @@ void MainSequence::UpdateAfterMerger(double p_Mass, double p_HydrogenMass) {
         m_MainSequenceCoreMass        = m_InitialMainSequenceCoreMass;                                                 // update core mass
     }
     
-    UpdateAttributesAndAgeOneTimestep(0.0, 0.0, 0.0, true);
+    EvolveOneTimestep(0.0, 0.0, 0.0, true);
     
     #undef timescales
 }
