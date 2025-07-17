@@ -205,9 +205,11 @@ public:
     inline void                 UpdateComponentVelocity(const Vector3d p_NewVelocity)           { m_ComponentVelocity += p_NewVelocity; }
 
     inline void                 UpdateDt(const double p_DeltaTime)                              {
-                                                                                                    m_Dt    = std::max(0.0, p_DeltaTime);                                                                                                                                    // set timestep - ignore -ve dt
-                                                                                                    m_Age  += m_Dt;                                                                                                                                                     // advance age of star
-                                                                                                    m_Time += m_Dt;                                                                                                                                                     // advance  simulation time
+                                                                                                    if (p_DeltaTime > 0.0) {                                                        // only if delta > 0.0 (don't use utils::Compare() here)
+                                                                                                        m_Dt    = std::max(0.0, p_DeltaTime);                                       // set timestep
+                                                                                                        m_Age  += m_Dt;                                                             // advance age of star
+                                                                                                        m_Time += m_Dt;                                                             // advance  simulation time
+                                                                                                    }
                                                                                                 };
     
     void                        UpdateMassTransferDonorHistory();
@@ -272,7 +274,7 @@ public:
 
     inline double               CalculateOpacity() const                                                        { return CalculateOpacity_Static(m_HeliumAbundanceSurface); }       // Use class member variables
 
-    inline double               CalculateRadialChange() const                                                   { return (utils::Compare(m_RadiusPrev,0)<=0)? 0 : std::abs(m_Radius - m_RadiusPrev) / m_RadiusPrev; } // Return fractional radial change (if previous radius is negative or zero, return 0 to avoid NaN
+    inline double               CalculateRadialChange() const                                                   { return (utils::Compare(m_RadiusPrev,0) <= 0)? 0 : std::abs(m_Radius - m_RadiusPrev) / m_RadiusPrev; } // Return fractional radial change (if previous radius is negative or zero, return 0 to avoid NaN
     inline double               CalculateRadialExpansionTimescale() const                                       { return CalculateRadialExpansionTimescale_Static(m_StellarType, m_StellarTypePrev, m_Radius, m_RadiusPrev, m_DtPrev); } // Use class member variables
     double                      CalculateRadialExpansionTimescaleDuringMassTransfer();
     virtual double              CalculateRadialExtentConvectiveEnvelope() const                                 { return 0.0; }                                                     // Default for stars with no convective envelope
@@ -507,7 +509,11 @@ protected:
                                                                                                                         }
 
     virtual double      CalculateCoreMassAtPhaseEnd() const                                                             { return m_CoreMass; }                                                      // Default is NO-OP
-    static  double      CalculateCoreMassGivenLuminosity_Static(const double p_Luminosity, const DBL_VECTOR &p_GBParams);
+    static  double      CalculateCoreMassGivenLuminosity_Static(const double p_Luminosity, const DBL_VECTOR &p_GBParams){                                                                           // Hurley et al. 2000, eqs 37 & 38
+                                                                                                                            return (utils::Compare(p_Luminosity, p_GBParams[static_cast<int>(GBP::Lx)]) > 0)
+                                                                                                                                ? PPOW((p_Luminosity / p_GBParams[static_cast<int>(GBP::B)]), (1.0 / p_GBParams[static_cast<int>(GBP::q)]))
+                                                                                                                                : PPOW((p_Luminosity / p_GBParams[static_cast<int>(GBP::D)]), (1.0 / p_GBParams[static_cast<int>(GBP::p)]));
+                                                                                                                        }
     virtual double      CalculateCoreMassOnPhase() const                                                                { return m_CoreMass; }                                                      // Default is NO-OP
 
     static  double      CalculateDynamicalTimescale_Static(const double p_Mass, const double p_Radius);
@@ -542,7 +548,8 @@ protected:
     double              CalculateLuminosityAtBAGB(double p_Mass) const;
     virtual double      CalculateLuminosityAtPhaseEnd() const                                                           { return m_Luminosity; }                                                    // Default is NO-OP
     double              CalculateLuminosityAtZAMS(const double p_MZAMS) const;
-    double              CalculateLuminosityGivenCoreMass(const double p_CoreMass) const;
+    inline double       CalculateLuminosityGivenCoreMass(const double p_CoreMass) const                                 { return std::min((m_GBParams[static_cast<int>(GBP::B)] * PPOW(p_CoreMass, m_GBParams[static_cast<int>(GBP::q)])), (m_GBParams[static_cast<int>(GBP::D)] * PPOW(p_CoreMass, m_GBParams[static_cast<int>(GBP::p)]))); } // Hurley et al. 2000, eq 37
+
     virtual double      CalculateLuminosityOnPhase() const                                                              { return m_Luminosity; }                                                    // Default is NO-OP
 
     double              CalculateMassAndZInterpolatedLambdaNanjing(const double p_Mass, const double p_Z) const;
@@ -560,23 +567,48 @@ protected:
     virtual double      CalculateMassLossRate();
     virtual double      CalculateMassLossRateBelczynski2010();
     double              CalculateMassLossRateBjorklundEddingtonFactor() const;
-    double              CalculateMassLossRateEnhancementRotation();
-    double              CalculateMassLossRateHeliumStarVink2017() const;
-    virtual double      CalculateMassLossRateHurley();
-    double              CalculateMassLossRateKudritzkiReimers() const;
+
+    // CalculateMassLossRateEnhancementRotation
+    // The exponent originally comes from Bjorkman & Cassinelli 1993 (https://ui.adsabs.harvard.edu/abs/1993ApJ...409..429B/abstract),
+    // based on a fit to data from Friend & Abbott 1986 (https://ui.adsabs.harvard.edu/abs/1986ApJ...311..701F/abstract) 
+    inline double       CalculateMassLossRateEnhancementRotation()                                                      { return OPTIONS->EnableRotationallyEnhancedMassLoss() ? PPOW((1.0 - Omega() / OmegaBreak()), -0.43) : 1.0; } // Langer 1998 (https://ui.adsabs.harvard.edu/abs/1998A%26A...329..551L/abstract) eq 3
+
+    inline double       CalculateMassLossRateHeliumStarVink2017() const                                                 {                                                                           // Vink 2017 (https://ui.adsabs.harvard.edu/abs/2017A%26A...607L...8V/abstract)
+                                                                                                                            double logMdot = -13.3 + (1.36 * log10(m_Luminosity)) + (0.61 * LogMetallicityXiAnders()); // Vink 2017 Eq. 1.
+                                                                                                                            return PPOW(10.0, logMdot);
+                                                                                                                        }
+    virtual double      CalculateMassLossRateHurley()                                                                   { return CalculateMassLossRateNieuwenhuijzenDeJager(); }                    // Hurley et al. 2000
+    inline double       CalculateMassLossRateKudritzkiReimers() const                                                   { return 4.0E-13 * (MASS_LOSS_ETA * m_Luminosity * m_Radius / m_Mass); }    // Hurley et al. 2000, eq 106 (based on a prescription taken from Kudritzki and Reimers 1978). Note: shouldn't be eta squared like in paper!}
+
     double              CalculateMassLossRateLBV(const LBV_MASS_LOSS_PRESCRIPTION p_LBVprescription);
-    double              CalculateMassLossRateLBVBelczynski() const;
-    double              CalculateMassLossRateLBVHurley(const double p_HDlimitfactor) const;
+    inline double       CalculateMassLossRateLBVBelczynski() const                                                      { return OPTIONS->LuminousBlueVariableFactor() * 1.0E-4;}                   // Belczynski et al. 2010, eq 8
+    inline double       CalculateMassLossRateLBVHurley(const double p_HDlimitfactor) const                              {                                                                           // Hurley+ 2000 Section 7.1 a few equation after Eq. 106 (Equation not labelled)
+                                                                                                                            double v = p_HDlimitfactor - 1.0;
+                                                                                                                            return 0.1 * v * v * v * ((m_Luminosity / 6.0E5) - 1.0);
+                                                                                                                        }
     virtual double      CalculateMassLossRateMerritt2024();
     double              CalculateMassLossRateNieuwenhuijzenDeJager() const;
     double              CalculateMassLossRateOB(const OB_MASS_LOSS_PRESCRIPTION p_OBMassLossPrescription);
     double              CalculateMassLossRateOBBjorklund2022() const;
-    double              CalculateMassLossRateOBKrticka2018() const;
+    inline double       CalculateMassLossRateOBKrticka2018() const                                                      {                                                                           // https://arxiv.org/pdf/1712.03321.pdf
+                                                                                                                            double logMdot = -5.70 + 0.50 * LogMetallicityXiAsplund() + (1.61 - 0.12 * LogMetallicityXiAsplund()) * log10(m_Luminosity / 1.0E6);
+                                                                                                                            return PPOW(10.0, logMdot);
+                                                                                                                        }
     double              CalculateMassLossRateOBVink2001() const;
     double              CalculateMassLossRateOBVinkSander2021() const;
     double              CalculateMassLossRateRSG(const RSG_MASS_LOSS_PRESCRIPTION p_RSG_mass_loss);
-    double              CalculateMassLossRateRSGBeasor2020() const;
-    double              CalculateMassLossRateRSGDecin2023() const;
+
+    // CalculateMassLossRateRSGBeasor2020
+    // https://arxiv.org/pdf/2001.07222.pdf eq 4.
+    // fit corrected slightly in Decin 2023, eq E.1 https://arxiv.org/pdf/2303.09385.pdf
+    // corrected again by Beasor+2023, https://ui.adsabs.harvard.edu/abs/2023MNRAS.524.2460B/abstract
+    // // further correction by Beasor+
+    inline double       CalculateMassLossRateRSGBeasor2020() const                                                      {
+                                                                                                                            double logMdot = (-21.5 - 0.15 * m_MZAMS) + (3.6 * log10(m_Luminosity));
+                                                                                                                            return PPOW(10.0, logMdot);
+                                                                                                                        }
+
+    inline double       CalculateMassLossRateRSGDecin2023() const                                                       { return PPOW(10.0, -20.63 - 0.16 * m_MZAMS + 3.47 * log10(m_Luminosity)); }// https://arxiv.org/pdf/2303.09385.pdf eq 6.
     double              CalculateMassLossRateRSGKee2021() const;
     double              CalculateMassLossRateRSGVinkSabhahit2023() const;
     double              CalculateMassLossRateRSGYang2023() const;
@@ -593,7 +625,7 @@ protected:
 
     virtual double      CalculateMassTransferRejuvenationFactor()                                                       { return 1.0; }
 
-    double              CalculateMaximumCoreMass(double p_Mass) const;
+    inline double       CalculateMaximumCoreMass(double p_Mass) const                                                   { return std::min(((1.45 * p_Mass) - 0.31), p_Mass); }                      // Hurley et al. 2000, eq 89
 
     double              CalculateOmegaBreak() const;
 
@@ -603,12 +635,12 @@ protected:
     static  double      CalculateOStarRotationalVelocityAnalyticCDFInverse_Static(double p_Ve, void *p_Params);
     static  double      CalculateOStarRotationalVelocity_Static(const double p_Xmin, const double p_Xmax);
 
-    double              CalculatePerturbationB(const double p_Mass) const;
-    double              CalculatePerturbationC(double p_Mass) const;
+    inline double       CalculatePerturbationB(const double p_Mass) const                                               { return 0.002 * std::max(1.0, (2.5 / p_Mass)); }                           // Hurley et al. 2000, eq 103
+    inline double       CalculatePerturbationC(double p_Mass) const                                                     { return 0.006 * std::max(1.0, (2.5 / p_Mass)); }                           // Hurley et al. 2000, eq 104
     virtual double      CalculatePerturbationMu() const                                                                 { return m_Mu; }                                                            // Default is NO-OP
     virtual double      CalculatePerturbationMuAtPhaseEnd() const                                                       { return CalculatePerturbationMuOnPhase(); }                                // Same as on phase
     virtual double      CalculatePerturbationMuOnPhase() const                                                          { return CalculatePerturbationMu(); }
-    double              CalculatePerturbationQ(const double p_Radius, const double p_Rc) const;
+    inline double       CalculatePerturbationQ(const double p_Radius, const double p_Rc) const                          { return log(p_Radius / p_Rc); }                                            // Hurley et al. 2000, eq 105 (really is natural log)
     double              CalculatePerturbationR(const double p_Mu, const double p_Mass, const double p_Radius, const double p_Rc) const;
     double              CalculatePerturbationS(const double p_Mu, const double p_Mass) const;
 

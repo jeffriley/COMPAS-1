@@ -224,7 +224,7 @@ public:
 
     EVOLUTION_STATUS Evolve(const long int p_Id);
 
-    void            EvolveOneTimestep(const double p_Dt);
+    STELLAR_TYPE    EvolveOneTimestep(const double p_Dt);
 
     double          InterpolateGeEtAlQCrit(const QCRIT_PRESCRIPTION p_qCritPrescription, 
                                          const double p_massTransferEfficiencyBeta)                                 { return m_Star->InterpolateGeEtAlQCrit(p_qCritPrescription, p_massTransferEfficiencyBeta); }
