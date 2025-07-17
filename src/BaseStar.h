@@ -586,7 +586,7 @@ protected:
                                                                                                                             double v = p_HDlimitfactor - 1.0;
                                                                                                                             return 0.1 * v * v * v * ((m_Luminosity / 6.0E5) - 1.0);
                                                                                                                         }
-    virtual double      CalculateMassLossRateMerritt2024();
+    virtual double      CalculateMassLossRateMerritt2025();
     double              CalculateMassLossRateNieuwenhuijzenDeJager() const;
     double              CalculateMassLossRateOB(const OB_MASS_LOSS_PRESCRIPTION p_OBMassLossPrescription);
     double              CalculateMassLossRateOBBjorklund2022() const;
