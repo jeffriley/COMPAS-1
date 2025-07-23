@@ -557,6 +557,7 @@ std::cout << "Processing ordinary timestep\n";
                         (void)m_Star->PrintPulsarEvolutionParameters(SSE_PULSAR_RECORD_TYPE::TIMESTEP_COMPLETED);   // log pulsar evolution parameters
                     } 
                 }
+std::cout << "Continue?\n"; std::string tmp; std::cin >> tmp;
             }
         }
 

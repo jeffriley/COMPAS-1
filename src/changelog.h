@@ -1608,13 +1608,13 @@
 // Version string format is MM.mm.rr, where
 //
 // MM is the MAJOR release number: this should be incremented whenever major new functionality is introduced
-// mm is the MINOR release number: this should be incremented whenever minor new functionality (e.g. small enhancemet) is introduced
+// mm is the MINOR release number: this should be incremented whenever minor new functionality (e.g. small enhancement) is introduced
 // rr is the fix RELEASE number:   this should be incremented whenever a defect repair is made
 //
 // if MM is incremented, set mm and rr to 00, even if defect repairs and minor enhancements were also made
 // if mm is incremented, set rr to 00, even if defect repairs were also made
 
-const std::string VERSION_STRING = "03.21.00";
+const std::string VERSION_STRING = "03.21.00 Modified";
 
 
 # endif // __changelog_h__
