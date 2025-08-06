@@ -83,8 +83,8 @@ public:
     inline double               COCoreMass() const                                              { return m_COCoreMass; }
     inline double               CoreMass() const                                                { return m_CoreMass; }
     inline int                  DominantMassLossRate() const                                    { return static_cast<int>(m_DominantMassLossRate); }
-    inline double               Dt() const                                                      { return m_Dt; }
-    inline double               DtPrev() const                                                  { return m_DtPrev; }
+    inline double               Dt() const                                                      { return m_dt; }
+    inline double               DtPrev() const                                                  { return m_dtPrev; }
     inline double               EddingtonParameter() const                                      { return m_Luminosity / CalculateEddingtonLuminosity(); }
     inline bool                 EnvelopeJustExpelledByPulsations() const                        { return m_EnvelopeJustExpelledByPulsations; }
     inline ERROR                Error() const                                                   { return m_Error; }
@@ -190,6 +190,14 @@ public:
     
     
     // setters
+    inline void                 AdvanceAgeAndTime(const double p_dt)                            {
+                                                                                                    if (p_dt > 0.0) {                                                               // Only if delta > 0.0 (don't use utils::Compare() here)
+                                                                                                        m_Age  += p_dt;                                                             // Advance age of star
+                                                                                                        m_Time += p_dt;                                                             // Advance simulation time
+                                                                                                    }
+                                                                                                };
+    inline void                 AdvanceAgeAndTime()                                             { AdvanceAgeAndTime(m_dt); }                                                        // Use class member variable
+
     inline void                 SetAngularMomentum(double p_AngularMomentum)                    { m_AngularMomentum = std::max(p_AngularMomentum, 0.0); }
     inline void                 SetInitialType(const STELLAR_TYPE p_InitialType)                { m_InitialStellarType = p_InitialType; }
     inline void                 SetError(const ERROR p_Error)                                   { m_Error = p_Error; }
@@ -202,20 +210,14 @@ public:
     inline void                 SetSNPastEvent(const SN_EVENT p_SNEvent)                        { m_SupernovaDetails.events.past |= p_SNEvent; }                                    // Set supernova primary event/state for any past timestep
     
     inline void                 SetEvolutionStatus(const EVOLUTION_STATUS p_EvolutionStatus)    { m_EvolutionStatus = p_EvolutionStatus; }                                          // Set evolution status (typically final outcome) for star
-    inline void                 UpdateComponentVelocity(const Vector3d p_NewVelocity)           { m_ComponentVelocity += p_NewVelocity; }
 
-    inline void                 UpdateDt(const double p_DeltaTime)                              {
-                                                                                                    if (p_DeltaTime > 0.0) {                                                        // only if delta > 0.0 (don't use utils::Compare() here)
-                                                                                                        m_Dt    = std::max(0.0, p_DeltaTime);                                       // set timestep
-                                                                                                        m_Age  += m_Dt;                                                             // advance age of star
-                                                                                                        m_Time += m_Dt;                                                             // advance  simulation time
-                                                                                                    }
-                                                                                                };
-    
+    inline void                 SetDt(const double p_dt)                                        { m_dt = std::max(0.0, p_dt); }                                                     // Set timestep - ensure >= 0.0
+    inline void                 SetPrevDt(const double p_dt)                                    { m_dtPrev = p_dt; }                                                                // Set previous timestep - don't clamp - preserve actuality
+
+    inline void                 UpdateComponentVelocity(const Vector3d p_NewVelocity)           { m_ComponentVelocity += p_NewVelocity; }
     void                        UpdateMassTransferDonorHistory();
-    inline void                 UpdatePreviousTimestepDuration()                                { m_DtPrev = m_Dt; }
     
-    
+    virtual void                UpdateEffectiveZAMSLandR() { }                                                                                                                      // NO-OP
     
     // (public) member functions - alphabetically
     inline void                 ApplyMassTransferRejuvenationFactor()                                           { m_Age *= CalculateMassTransferRejuvenationFactor(); }             // Apply age rejuvenation factor
@@ -262,7 +264,7 @@ public:
                                                             const double p_AccretorMassRate,
                                                             const bool   p_IsHeRich)                            { return CalculateMassAcceptanceRate(p_DonorMassRate, p_AccretorMassRate); } // Ignore the He content for non-WDs
     double                      CalculateMassAccretedForCO(const double p_Mass, const double p_CompanionMass, const double p_CompanionRadius, const double p_CompanionEnvelope) const;
-    inline double               CalculateMassChangeTimescale() const                                            { return CalculateMassChangeTimescale_Static(m_StellarType, m_StellarTypePrev, m_Mass, m_MassPrev, m_DtPrev); }  // Use class member variables
+    inline double               CalculateMassChangeTimescale() const                                            { return CalculateMassChangeTimescale_Static(m_StellarType, m_StellarTypePrev, m_Mass, m_MassPrev, m_dtPrev); }  // Use class member variables
     double                      CalculateMassLossValues(double p_Dt, const bool p_UpdateMDot = false);
 
     virtual double              CalculateMomentOfInertia() const                                                { return (0.1 * (m_Mass) * m_Radius * m_Radius); }                  // Defaults to MS. k2 = 0.1 as defined in Hurley et al. 2000, after eq 109
@@ -275,10 +277,10 @@ public:
     inline double               CalculateOpacity() const                                                        { return CalculateOpacity_Static(m_HeliumAbundanceSurface); }       // Use class member variables
 
     inline double               CalculateRadialChange() const                                                   { return (utils::Compare(m_RadiusPrev,0) <= 0)? 0 : std::abs(m_Radius - m_RadiusPrev) / m_RadiusPrev; } // Return fractional radial change (if previous radius is negative or zero, return 0 to avoid NaN
-    inline double               CalculateRadialExpansionTimescale() const                                       { return CalculateRadialExpansionTimescale_Static(m_StellarType, m_StellarTypePrev, m_Radius, m_RadiusPrev, m_DtPrev); } // Use class member variables
+    inline double               CalculateRadialExpansionTimescale() const                                       { return CalculateRadialExpansionTimescale_Static(m_StellarType, m_StellarTypePrev, m_Radius, m_RadiusPrev, m_dtPrev); } // Use class member variables
     double                      CalculateRadialExpansionTimescaleDuringMassTransfer();
     virtual double              CalculateRadialExtentConvectiveEnvelope() const                                 { return 0.0; }                                                     // Default for stars with no convective envelope
-    virtual double              CalculateRadiusOnMassChange(double p_dM)                                        { return Radius(); } // NO-OP
+    virtual double              CalculateRadiusOnMassChange(double p_dM)                                        { return Radius(); }                                                // NO-OP
     virtual double              CalculateRemnantRadius() const                                                  { return Radius(); }                                                // Relevant for MS stars, over-written for GB stars
 
     void                        CalculateSNAnomalies(const double p_Eccentricity);
@@ -305,7 +307,7 @@ public:
     virtual ENVELOPE            DetermineEnvelopeType() const                                                   { return ENVELOPE::REMNANT; }                                       // Default is REMNANT - but should never be called
     virtual MT_CASE             DetermineMassTransferTypeAsDonor() const                                        { return MT_CASE::OTHER; }                                          // Not A, B, C, or NONE
 
-    STELLAR_TYPE                EvolveOneTimestep(const double p_DeltaMass, const double p_DeltaMass0, const double p_DeltaTime, const bool p_ForceRecalculate = false);
+    STELLAR_TYPE                EvolveOneTimestep(const double p_dM, const double p_dM0, const double p_dt, const bool p_ForceRecalculate = false);
     
     inline void                 HaltWinds()                                                                     { m_Mdot = 0.0; }                                                   // Disable wind mass loss in current time step (e.g., if star is a donor or accretor in a RLOF episode)
 
@@ -323,7 +325,7 @@ public:
                                                                const double p_CompanionRadius   = 0.0,
                                                                const double p_CompanionEnvelope = 0.0)          { return p_FinalMass - Mass(); }                                    // Overwritten in NS.h; for now, no accretion on stars other than compact objects during CE
     virtual STELLAR_TYPE        ResolveEnvelopeLoss(bool p_Force = false)                                       { return m_StellarType; }
-    virtual void                ResolveMassLoss(double p_Dt);
+    virtual STELLAR_TYPE        ResolveMassLoss();
     virtual void                ResolveShellChange(const double p_AccretedMass) { }                                                                                                 // Default does nothing, use inheritance for WDs.
     virtual STELLAR_TYPE        ResolveSupernova()                                                              { return m_StellarType; }                                           // Default is NO-OP
        
@@ -406,7 +408,7 @@ protected:
     double                  m_AngularMomentum;                          // Angular Momentum (Msol * AU^2 / yr)
     double                  m_COCoreMass;                               // Current CO core mass (Msol)
     double                  m_CoreMass;                                 // Current core mass (Msol)
-    double                  m_Dt;                                       // Size of current timestep (Myr)
+    double                  m_dt;                                       // Size of current timestep (Myr)
     bool                    m_EnvelopeJustExpelledByPulsations;         // Flag to know if the convective envelope has just been expelled by pulsations
     double                  m_HeCoreMass;                               // Current He core mass (Msol)
     double                  m_HeliumAbundanceCore;                      // Helium abundance in the core
@@ -430,7 +432,7 @@ protected:
     double                  m_TotalMassLossRate;                        // Current mass loss/gain rate from mass transfer or winds (Msol per yr)
 
     // Previous timestep variables
-    double                  m_DtPrev;                                   // Previous timestep
+    double                  m_dtPrev;                                   // Previous timestep
     double                  m_MassPrev;                                 // Previous mass (Msol)
     double                  m_RadiusPrev;                               // Previous radius (Rsol)
     STELLAR_TYPE            m_StellarTypePrev;                          // Stellar type at previous timestep
@@ -677,7 +679,7 @@ protected:
     double              CalculateZetaAdiabaticHurley2002(const double p_CoreMass) const;
     double              CalculateZetaAdiabaticSPH(const double p_CoreMass) const;
 
-    virtual double      ChooseTimestep(const double p_Time) const                                                       { return m_Dt; }
+    virtual double      ChooseTimestep(const double p_Time) const                                                       { return m_dt; }
 
     double              DrawKickMagnitudeBrayEldridge(const double p_EjectaMass, const double p_RemnantMass, const double p_Alpha, const double p_Beta) const;
     double              DrawKickMagnitudeDistributionFlat(const double p_MaxVK, const double p_Rand) const;

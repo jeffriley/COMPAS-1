@@ -292,8 +292,6 @@ public:
                                                                                                                                                          p_Epsilon);}
 
     void            UpdateMainSequenceCoreMass(const double p_Dt, const double p_TotalMassLossRate)                 { m_Star->UpdateMainSequenceCoreMass(p_Dt, p_TotalMassLossRate); }
-
-    void            UpdatePreviousTimestepDuration()                                                                { m_Star->UpdatePreviousTimestepDuration(); }
     
     void            UpdateTotalMassLossRate(const double p_MassLossRate)                                            { m_Star->UpdateTotalMassLossRate(p_MassLossRate); }
     

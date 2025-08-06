@@ -128,6 +128,10 @@ protected:
 
     void            UpdateMainSequenceCoreMass(const double p_Dt, const double p_MassLossRate);
 
+    void            UpdateEffectiveZAMSLandR()                                              {
+                                                                                                m_LZAMS0 = CalculateLuminosityAtZAMS(m_Mass0);
+                                                                                                m_RZAMS0 = CalculateRadiusAtZAMS(m_Mass0);
+                                                                                            }
 };
 
 #endif // __MainSequence_h__

@@ -484,15 +484,6 @@ private:
         m_PrimarySwitching            = false;                                      // Star switching is primary star of binary - default false
         m_SwitchIsMerger              = false;                                      // Switchlog record records a merger (rather than a simple switch)
 
-/*
-        m_SSESupernovae_DelayedWrite.logRecordType       = 0;                       // delayed log record type for SSE_Supernovae file - initially 0 (set later)
-        m_SSESupernovae_DelayedWrite.logRecordString     = "";                      // delayed log record (string) for SSE_Supernovae file - initially empty
-        m_SSESupernovae_DelayedWrite.logRecordValues     = {};                      // delayed log record (property values) for SSE_Supernovae file - initially empty
-        m_SSESupernovae_DelayedWrite.logRecordProperties = {};                      // SSE Supernovae logfile record properties - initially empty
-        m_SSESupernovae_DelayedWrite.logRecordFmtVector  = {};                      // SSE Supernovae logfile format vector - initially empty
-        m_SSESupernovae_DelayedWrite.logFileAnnotations  = {};                      // SSE Supernovae annotations vector - initially empty
-*/
-
         m_OptionDetails = {};                                                       // option details retrieved from commandline - initially empty
     };
     Log(Log const&) = delete;                                                       // copy constructor does nothing, and not exposed publicly

@@ -1842,8 +1842,8 @@ double BaseBinaryStar::CalculateGammaAngularMomentumLoss_Static(const double p_D
 
 	double gamma;
     MT_ANGULAR_MOMENTUM_LOSS_PRESCRIPTION gammaPrescription = OPTIONS->MassTransferAngularMomentumLossPrescription();
-    if(p_IsCommonEnvelope)
-        gammaPrescription = OPTIONS->CommonEnvelopeSecondStageGammaPrescription();
+    
+    if (p_IsCommonEnvelope) gammaPrescription = OPTIONS->CommonEnvelopeSecondStageGammaPrescription();
 
 	switch (gammaPrescription) {                                                                                                    // which prescription?
 

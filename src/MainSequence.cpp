@@ -556,6 +556,7 @@ double MainSequence::CalculateRadiusAtPhaseEnd(const double p_Mass, const double
  * @return                                      Radius on the Main Sequence in Rsol
  */
 double MainSequence::CalculateRadiusOnPhase(const double p_Mass, const double p_Tau, const double p_RZAMS) const {
+if (OPTIONS->DebugLevel() > 0) std::cout << std::boolalpha << std::setprecision(15) << "Star::MainSequence::CalculateRadiusOnPhase(@entry), p_Mass = " << p_Mass << ", p_Tau = " << p_Tau << ", p_RZAMS = " << p_RZAMS << "\n";
 #define a m_AnCoefficients                                          // for convenience and readability - undefined at end of function
 
     // If BRCEK core prescription is used, return radius that smoothly connects the beginning of MS hook and the beginning of HG,
@@ -564,8 +565,6 @@ double MainSequence::CalculateRadiusOnPhase(const double p_Mass, const double p_
         if (utils::Compare(p_Tau, 0.99) > 0)                                                                                        // star in MS hook?
             return CalculateRadiusTransitionToHG(p_Mass, p_Tau, p_RZAMS);
     }
-    
-    double radius = m_Radius;
     
     const double epsilon = 0.01;
     double tBGB = CalculateLifetimeToBGB(p_Mass);
@@ -589,6 +588,7 @@ double MainSequence::CalculateRadiusOnPhase(const double p_Mass, const double p_
     double tau_40 = tau_10 < FLOAT_TOLERANCE_ABSOLUTE ? 0.0: tau_10 * tau_10 * tau_10 * tau_10;                                     // direct comparison, to avoid underflow
     double tau1_3 = tau1 * tau1 * tau1;
     double tau2_3 = tau2 * tau2 * tau2;
+if (OPTIONS->DebugLevel() > 0) std::cout << std::boolalpha << std::setprecision(15) << "Star::MainSequence::CalculateRadiusOnPhase(@0), tBGB = " << tBGB << ", tMS = " << tMS << ", RTMS = " << RTMS << ", alphaR = " << alphaR << ", betaR = " << betaR << ", deltaR = " << deltaR << ", gamma = " << gamma << "\n";
 
     double logRMS_RZAMS  = alphaR * p_Tau;                                                                                          // ibid, eq 13, part 1
            logRMS_RZAMS += betaR * tau_10;                                                                                          // ibid, eq 13, part 2
@@ -596,7 +596,8 @@ double MainSequence::CalculateRadiusOnPhase(const double p_Mass, const double p_
            logRMS_RZAMS += (log10(RTMS / p_RZAMS) - alphaR - betaR - gamma) * tau_3;                                                // ibid, eq 13, part 4
            logRMS_RZAMS -= deltaR * (tau1_3 - tau2_3);                                                                              // ibid, eq 13, part 5
 
-    radius = p_RZAMS * PPOW(10.0, logRMS_RZAMS);                                                                                    // rewrite Hurley et al. 2000, eq 13 for R(t)
+    double radius = p_RZAMS * PPOW(10.0, logRMS_RZAMS);                                                                             // rewrite Hurley et al. 2000, eq 13 for R(t)
+if (OPTIONS->DebugLevel() > 0) std::cout << std::boolalpha << std::setprecision(15) << "Star::MainSequence::CalculateRadiusOnPhase(@1), p_RZAMS = " << p_RZAMS << ", logRMS_RZAMS = " << logRMS_RZAMS << ", radius = " << radius << "\n";
     
     // If BRCEK prescription is used and star was stripped below its initial core mass, radius needs to be adjusted
     if (OPTIONS->MainSequenceCoreMassPrescription() == CORE_MASS_PRESCRIPTION::BRCEK && utils::Compare(m_MZAMS, BRCEK_LOWER_MASS_LIMIT) >= 0) {
@@ -609,7 +610,8 @@ double MainSequence::CalculateRadiusOnPhase(const double p_Mass, const double p_
         // Factor that scales radius based on surface helium abundance
         double surfaceAbundanceFactor = (utils::Compare(m_HeliumAbundanceCore, m_InitialHeliumAbundance) != 0) ? (heliumAbundanceSurface - m_InitialHeliumAbundance) / (m_HeliumAbundanceCore - m_InitialHeliumAbundance) : 0.0;
         
-        radius = radius + (p_RZAMS - radius) * surfaceAbundanceFactor;
+        radius += (p_RZAMS - radius) * surfaceAbundanceFactor;
+if (OPTIONS->DebugLevel() > 0) std::cout << std::boolalpha << std::setprecision(15) << "Star::MainSequence::CalculateRadiusOnPhase(@2), p_RZAMS = " << p_RZAMS << ", surfaceAbundanceFactor = " << surfaceAbundanceFactor << ", radius = " << radius << "\n";
     }
     
     return radius;
@@ -941,6 +943,7 @@ void MainSequence::UpdateMainSequenceCoreMass(const double p_Dt, const double p_
  */
 double MainSequence::CalculateTauOnPhase() const {
 #define timescales(x) m_Timescales[static_cast<int>(TIMESCALE::x)]  // for convenience and readability - undefined at end of function
+if (OPTIONS->DebugLevel() > 0) std::cout << std::boolalpha << std::setprecision(15) << "MainSequence::CalculateTauOnPhase(@entry), m_Age = " << m_Age << ", timescales(tMS) = " << timescales(tMS) << "\n";
     return std::max(0.0, std::min(1.0, m_Age / timescales(tMS)));
 #undef timescales
 }

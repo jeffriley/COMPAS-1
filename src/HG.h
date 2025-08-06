@@ -99,8 +99,6 @@ protected:
     double          CalculateHydrogenAbundanceSurfaceAtPhaseEnd() const             { return CalculateHydrogenAbundanceSurfaceOnPhase(); }
     double          CalculateHydrogenAbundanceSurfaceOnPhase() const                { return m_HydrogenAbundanceSurface; }                                                      // Use class member variables
     
-    
-    
     double          CalculateLambdaDewi() const;
     double          CalculateLambdaLoveridge(const double p_EnvMass, const bool p_IsMassLoss = false) const;
     double          CalculateLambdaNanjingStarTrack(const double p_Mass, const double p_Metallicity) const;
@@ -148,6 +146,7 @@ protected:
 
     void            UpdateInitialMass();                                                                                                                                        // Per Hurley et al. 2000, section 7.1
 
+    void            UpdateEffectiveZAMSLandR()                                      { BaseStar::UpdateEffectiveZAMSLandR(); }                                                   // Skip MainSequence
        
     /*
      * Functor for Mass0ToMatchDesiredCoreMass()

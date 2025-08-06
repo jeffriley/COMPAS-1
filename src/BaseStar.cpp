@@ -127,7 +127,7 @@ BaseStar::BaseStar(const unsigned long int p_RandomSeed,
 
     // Current timestep attributes
     m_Time                                     = DEFAULT_INITIAL_DOUBLE_VALUE;
-    m_Dt                                       = DEFAULT_INITIAL_DOUBLE_VALUE;
+    m_dt                                       = DEFAULT_INITIAL_DOUBLE_VALUE;
     m_Tau                                      = DEFAULT_INITIAL_DOUBLE_VALUE;
     m_Age                                      = 0.0;                                               // ensure age = 0.0 at construction (rather than default initial value)
     m_MainSequenceCoreMass                     = DEFAULT_INITIAL_DOUBLE_VALUE;
@@ -160,7 +160,7 @@ BaseStar::BaseStar(const unsigned long int p_RandomSeed,
     m_StellarTypePrev                          = m_StellarType;
     m_MassPrev                                 = m_MZAMS;
     m_RadiusPrev                               = m_RZAMS;
-    m_DtPrev                                   = DEFAULT_INITIAL_DOUBLE_VALUE;
+    m_dtPrev                                   = DEFAULT_INITIAL_DOUBLE_VALUE;
     
     // Supernova details
 
@@ -2499,23 +2499,29 @@ double BaseStar::CalculateMassLossValues(double p_Dt, const bool p_UpdateMDot) {
  * - updates angular momentum of mass-losing star
  *
  *
- * void ResolveMassLoss(double p_Dt))
- *
- * @param   [IN]    p_Dt                    time step
+ * STELLAR_TYPE ResolveMassLoss()
+ *  
+ * @return                                      New stellar type for star
  */
-void BaseStar::ResolveMassLoss(double p_Dt) {
+STELLAR_TYPE BaseStar::ResolveMassLoss() {
 
+    STELLAR_TYPE nextStellarType = m_StellarType;                                                   // default is no chamge
+    
     if (OPTIONS->UseMassLoss()) {
 
-        double mass = CalculateMassLossValues(p_Dt, true);                                          // calculate new values assuming mass loss applied
+        double mass = CalculateMassLossValues(m_dt, true);                                          // calculate new values assuming mass loss applied
 
         double angularMomentumChange = (2.0 / 3.0) * (mass - m_Mass) * m_Radius * RSOL_TO_AU * m_Radius * RSOL_TO_AU * Omega();
-                
+          
+        nextStellarType = EvolveOneTimestep(mass - m_Mass, 0.0, 0.0, false);    // apply mass loss, but don't age the star yet JR FIX THIS - NEW FUNC/NAME
+
         UpdateInitialMass();                                                                        // update effective initial mass (MS, HG & HeMS)
         UpdateAgeAfterMassLoss();                                                                   // update age (MS, HG & HeMS)
         ApplyMassTransferRejuvenationFactor();                                                      // apply age rejuvenation factor
         SetAngularMomentum(m_AngularMomentum + angularMomentumChange);
     }
+
+    return nextStellarType;
 }
 
 
@@ -3481,7 +3487,7 @@ double BaseStar::CalculateRadialExpansionTimescale_Static(const STELLAR_TYPE p_S
                                                           const double       p_Radius,
                                                           const double       p_RadiusPrev,
                                                           const double       p_DtPrev) {
-std::cout << "BaseStar::CalculateRadialExpansionTimescale_Static(), p_StellarType = " << (int)p_StellarType << ", p_StellarTypePrev = " << (int)p_StellarTypePrev << ", p_Radius = " << p_Radius << ", p_RadiusPrev = " << p_RadiusPrev << ", p_DtPrev = " << p_DtPrev << "\n";
+if (OPTIONS->DebugLevel() > 0) std::cout << std::boolalpha << std::setprecision(15) << "BaseStar::CalculateRadialExpansionTimescale_Static(), p_StellarType = " << (int)p_StellarType << ", p_StellarTypePrev = " << (int)p_StellarTypePrev << ", p_Radius = " << p_Radius << ", p_RadiusPrev = " << p_RadiusPrev << ", p_DtPrev = " << p_DtPrev << "\n";
 
     return (p_StellarTypePrev == p_StellarType && utils::Compare(p_RadiusPrev, p_Radius) != 0)
             ? (p_DtPrev * p_RadiusPrev) / fabs(p_Radius - p_RadiusPrev)
@@ -3506,7 +3512,7 @@ double BaseStar::CalculateRadialExpansionTimescaleDuringMassTransfer() {
     BaseStar *clone = Clone(OBJECT_PERSISTENCE::EPHEMERAL, false);                              // do not re-initialise the clone
 
     double timestep = std::max(1000.0 * NUCLEAR_MINIMUM_TIMESTEP, m_Age / 1.0E6);
-    clone->EvolveOneTimestep(0.0, 0.0, timestep, true);
+    (void)clone->EvolveOneTimestep(0.0, 0.0, timestep, true);
     double radiusAfterAging = clone->Radius();
     delete clone; clone = nullptr;                                                              // return the memory allocated for the clone
 
@@ -4019,18 +4025,19 @@ double BaseStar::CalculateConvectiveEnvelopeLambdaPicker(const DBL_DBL p_convect
  */
 double BaseStar::CalculateTimestep() {
     
+if (OPTIONS->DebugLevel() > 0) std::cout << std::boolalpha << std::setprecision(15) << "BaseStar::CalculateTimestep(@start), m_StellarType = " << (int)m_StellarType << ", m_StellarTypePrev = " << (int)m_StellarTypePrev << ", m_Radius = " << m_Radius << ", m_RadiusPrev = " << m_RadiusPrev << ", m_dtPrev = " << m_dtPrev << "\n";  
     double radialExpansionTimescale = CalculateRadialExpansionTimescale();
     double massChangeTimescale      = CalculateMassChangeTimescale();
     double dt                       = 0.0;
-std::cout << "BaseStar::CalculateTimestep(@0), massChangeTimescale = " << massChangeTimescale << ", radialExpansionTimescale = " << radialExpansionTimescale << "\n";  
+if (OPTIONS->DebugLevel() > 0) std::cout << std::boolalpha << std::setprecision(15) << "BaseStar::CalculateTimestep(@0), massChangeTimescale = " << massChangeTimescale << ", radialExpansionTimescale = " << radialExpansionTimescale << "\n";  
 
     if (massChangeTimescale > 0.0)                                                                           // non-positive means it could not be computed (e.g., just after stellar type change)
         dt = OPTIONS->MassChangeFraction() * massChangeTimescale;
-std::cout << "BaseStar::CalculateTimestep(@1), dt = " << dt << "\n";  
+if (OPTIONS->DebugLevel() > 0) std::cout << std::boolalpha << std::setprecision(15) << "BaseStar::CalculateTimestep(@1), dt = " << dt << "\n";  
 
     if (radialExpansionTimescale > 0.0)                                                                      // non-positive means it could not be computed (e.g., just after stellar type change)
         dt = dt <= 0.0 ? OPTIONS->RadialChangeFraction() * radialExpansionTimescale : min(dt, OPTIONS->RadialChangeFraction() * radialExpansionTimescale);
-std::cout << "BaseStar::CalculateTimestep(@2), dt = " << dt << "\n";  
+if (OPTIONS->DebugLevel() > 0) std::cout << std::boolalpha << std::setprecision(15) << "BaseStar::CalculateTimestep(@2), dt = " << dt << "\n";  
 
     // the GBParams and Timescale calculations need to be done
     // before the timestep calculation - since the binary code
@@ -4040,18 +4047,18 @@ std::cout << "BaseStar::CalculateTimestep(@2), dt = " << dt << "\n";
     CalculateTimescales();                                                                                  // calculate timescales
 
     dt = dt <= 0.0 ? ChooseTimestep(m_Age) : min(dt, ChooseTimestep(m_Age));
-std::cout << "BaseStar::CalculateTimestep(@3), dt = " << dt << "\n";  
+if (OPTIONS->DebugLevel() > 0) std::cout << std::boolalpha << std::setprecision(15) << "BaseStar::CalculateTimestep(@3), dt = " << dt << "\n";  
 
     // there is a chance that mass loss from winds is much faster than previously estimated if, say, LBV winds have turned on
     // we therefore precompute the mass loss rate to avoid taking an overly long timestep, despite the extra computational costs
     double massChangeWinds = m_Mass - CalculateMassLossValues(dt, false);
-    if(utils::Compare(massChangeWinds, 0.0) != 0)
+    if (utils::Compare(massChangeWinds, 0.0) != 0)
         dt = min(dt, OPTIONS->MassChangeFraction() * (dt * m_Mass / fabs(massChangeWinds)));
-std::cout << "BaseStar::CalculateTimestep(@4), dt = " << dt << "\n";  
+if (OPTIONS->DebugLevel() > 0) std::cout << std::boolalpha << std::setprecision(15) << "BaseStar::CalculateTimestep(@4), dt = " << dt << "\n";  
 
     dt = max(round(dt / TIMESTEP_QUANTUM) * TIMESTEP_QUANTUM, NUCLEAR_MINIMUM_TIMESTEP);
 
-std::cout << "BaseStar::CalculateTimestep(), returning dt = " << dt << "\n";    
+if (OPTIONS->DebugLevel() > 0) std::cout << std::boolalpha << std::setprecision(15) << std::boolalpha << std::setprecision(15) << "BaseStar::CalculateTimestep(), returning dt = " << dt << "\n";    
     return dt;
 }
 
@@ -4082,8 +4089,8 @@ std::cout << "BaseStar::CalculateTimestep(), returning dt = " << dt << "\n";
  *      Mass0 in Hurley et al. 2000 is overloaded by the introduction of mass loss (see section 7.1).
  *
  *    - if required, the star is aged by the amount passed as the p_DeltaTime parameter, and the simulation time
- *      is advanced by the same amount, before other attributes are updated.  The p_deltaTime parameter may be
- *      zero, in which case no change is made to the star's age or the simulation time attribute.
+ *      is advanced by the same amount, before other attributes are updated.  The p_dt parameter may be zero, in 
+ *      which case no change is made to the star's age or the simulation time attribute.
  *
  *
  * Before updating attributes we check whether the star:
@@ -4101,15 +4108,15 @@ std::cout << "BaseStar::CalculateTimestep(), returning dt = " << dt << "\n";
  *
  * STELLAR_TYPE EvolveOneTimestep(const double p_DeltaMass, const double p_DeltaMass0, const double p_DeltaTime, const bool p_ForceRecalculate)
  *
- * @param   [IN]    p_DeltaMass                 The change in mass to apply in Msol
- * @param   [IN]    p_DeltaMass0                The change in mass0 to apply in Msol
- * @param   [IN]    p_DeltaTime                 The timestep to evolve in Myr
+ * @param   [IN]    p_dM                        The change in mass to apply in Msol
+ * @param   [IN]    p_dM0                       The change in mass0 to apply in Msol
+ * @param   [IN]    p_dt                        The timestep to evolve in Myr
  * @param   [IN]    p_ForceRecalculate          Specifies whether the star's attributes should be recalculated even if the three deltas are 0.0
  *                                              (optional, default = false)
  * @return                                      Stellar type to which star should evolve
  */
-STELLAR_TYPE BaseStar::EvolveOneTimestep(const double p_DeltaMass, const double p_DeltaMass0, const double p_DeltaTime, const bool p_ForceRecalculate) {
-std::cout << std::boolalpha << "BaseStar::EvolveOneTimestep(@entry), p_DeltaMass = " << p_DeltaMass << ", p_DeltaMass0 = " << p_DeltaMass0 << ", p_DeltaTime = " << p_DeltaTime << ", p_ForceRecalculate = " << p_ForceRecalculate << "\n";
+STELLAR_TYPE BaseStar::EvolveOneTimestep(const double p_dM, const double p_dM0, const double p_dt, const bool p_ForceRecalculate) {
+if (OPTIONS->DebugLevel() > 0) std::cout << std::boolalpha << std::setprecision(15) << "BaseStar::EvolveOneTimestep(@entry), p_dM = " << p_dM << ", p_dM0 = " << p_dM0 << ", p_dt = " << p_dt << ", p_ForceRecalculate = " << p_ForceRecalculate << ", m_Mass = " << m_Mass << ", m_Radius = " << m_Radius << "\n";
 
     STELLAR_TYPE nextStellarType = m_StellarType;                                               // next stellar type - defaults to current
 
@@ -4121,14 +4128,14 @@ std::cout << std::boolalpha << "BaseStar::EvolveOneTimestep(@entry), p_DeltaMass
     bool recalc = p_ForceRecalculate;                                                           // need to recalculate attribute values?
     
     // update mass as required (only change if delta != 0) and prevent -ve
-    if (utils::Compare(p_DeltaMass,  0.0) != 0) { 
-        m_Mass = max(0.0, m_Mass  + p_DeltaMass);
+    if (utils::Compare(p_dM,  0.0) != 0) { 
+        m_Mass = max(0.0, m_Mass + p_dM);
         recalc = true;
     }
     
     // update mass0 as required (only change if delta != 0) and prevent -ve
-    if (utils::Compare(p_DeltaMass0, 0.0) != 0) {
-        m_Mass0 = max(0.0, m_Mass0 + p_DeltaMass0);
+    if (utils::Compare(p_dM0, 0.0) != 0) {
+        m_Mass0 = max(0.0, m_Mass0 + p_dM0);
         recalc  = true;
     }
     
@@ -4139,7 +4146,7 @@ std::cout << std::boolalpha << "BaseStar::EvolveOneTimestep(@entry), p_DeltaMass
     // record some current values before they are (possibly) changed by evolution
     // since these will be previous timestep values we only record them if dt > 0
     // (i.e. we are actually taking a timestep)
-    if (p_DeltaTime > 0.0) {                                                                    // don't use utils::Compare() here
+    if (p_dt > 0.0) {                                                                           // don't use utils::Compare() here
         m_StellarTypePrev = m_StellarType;
         m_MassPrev        = m_Mass;
         m_RadiusPrev      = m_Radius;
@@ -4149,16 +4156,18 @@ std::cout << std::boolalpha << "BaseStar::EvolveOneTimestep(@entry), p_DeltaMass
     // update attributes if necessary
     if (recalc) {                                                                               // need to update attributes?
                                                                                                 // yes
-        UpdateDt(p_DeltaTime);                                                                  // update timestep
+        SetDt(p_dt);                                                                            // set timestep
+        UpdateEffectiveZAMSLandR();                                                             // update effective ZAMS luminosity and radius if necessary
 
         // evolve the star one timestep
         if (ShouldSkipPhase()) nextStellarType = ResolveSkippedPhase();                         // skip phase if required - per stellar type
         else {                                                                                  // phase not skipped
-            nextStellarType = EvolveOnPhase(p_DeltaTime);                                       // evolve on phase
+            nextStellarType = EvolveOnPhase(m_dt);                                              // evolve on phase
             if (nextStellarType == m_StellarType) {                                             // need to switch to new stellar type?
                 nextStellarType = ResolveEndOfPhase();                                          // no - check for need to move off phase
             }   
         }
+if (OPTIONS->DebugLevel() > 0) std::cout << std::boolalpha << std::setprecision(15) << "BaseStar::EvolveOneTimestep(@1), m_Mass = " << m_Mass << ", m_Radius = " << m_Radius << "\n";
     }
 
     return nextStellarType;                                                                     // stellar type to which star should evolve
@@ -4174,20 +4183,23 @@ std::cout << std::boolalpha << "BaseStar::EvolveOneTimestep(@entry), p_DeltaMass
  * No change to stellar type is effected here, or as a result of the call to this function.  The caller of this
  * function is expected to check the stellar type returned and manage any stellar type switch required.
  *
- * STELLAR_TYPE EvolveOnPhase(const double p_DeltaTime)
+ * STELLAR_TYPE EvolveOnPhase(const double p_dt)
  *
- * @param   [IN]    p_DeltaTime                 Timestep in Myr
+ * @param   [IN]    p_dt                        Timestep in Myr
  * @return                                      Stellar Type to which star should evolve
  */
-STELLAR_TYPE BaseStar::EvolveOnPhase(const double p_DeltaTime) {
+STELLAR_TYPE BaseStar::EvolveOnPhase(const double p_dt) {
+if (OPTIONS->DebugLevel() > 0) std::cout << std::boolalpha << std::setprecision(15) << "BaseStar::EvolveOnPhase(@entry), p_dt = " << p_dt << ", m_Age= " << m_Age << ", m_Mass = " << m_Mass << ", m_radius = " << m_Radius << "\n";
     
     STELLAR_TYPE nextStellarType = m_StellarType;                                       // next stellar type - defaults to current
 
     if (ShouldEvolveOnPhase()) {                                                        // should evolve timestep on phase?
                                                                                         // yes
-        UpdateMainSequenceCoreMass(p_DeltaTime, -m_Mdot);                               // update core mass, relevant for MS stars
+        UpdateMainSequenceCoreMass(p_dt, -m_Mdot);                                      // update core mass, relevant for MS stars
 
+if (OPTIONS->DebugLevel() > 0) std::cout << std::boolalpha << std::setprecision(15) << "BaseStar::EvolveOnPhase(@1), p_dt = " << p_dt << ", m_Age= " << m_Age << ", m_Mass = " << m_Mass << ", m_radius = " << m_Radius << ", m_Tau = " << m_Tau << "\n";
         m_Tau        = CalculateTauOnPhase();
+if (OPTIONS->DebugLevel() > 0) std::cout << std::boolalpha << std::setprecision(15) << "BaseStar::EvolveOnPhase(@2), p_dt = " << p_dt << ", m_Age= " << m_Age << ", m_Mass = " << m_Mass << ", m_radius = " << m_Radius << ", m_Tau = " << m_Tau << "\n";
 
         m_COCoreMass = CalculateCOCoreMassOnPhase();
         m_CoreMass   = CalculateCoreMassOnPhase();
@@ -4200,8 +4212,10 @@ STELLAR_TYPE BaseStar::EvolveOnPhase(const double p_DeltaTime) {
         m_HeliumAbundanceSurface   = CalculateHeliumAbundanceSurfaceOnPhase();
         m_HydrogenAbundanceCore    = CalculateHydrogenAbundanceCoreOnPhase();
         m_HydrogenAbundanceSurface = CalculateHydrogenAbundanceSurfaceOnPhase();  
-        
+       
+if (OPTIONS->DebugLevel() > 0) std::cout << std::boolalpha << std::setprecision(15) << "BaseStar::EvolveOnPhase(@3), p_dt = " << p_dt << ", m_Mass = " << m_Mass << ", m_radius = " << m_Radius << ", m_Tau = " << m_Tau << "\n";
         std::tie(m_Radius, nextStellarType) = CalculateRadiusAndStellarTypeOnPhase();   // radius and possibly new stellar type
+if (OPTIONS->DebugLevel() > 0) std::cout << std::boolalpha << std::setprecision(15) << "BaseStar::EvolveOnPhase(@4), p_dt = " << p_dt << ", m_Mass = " << m_Mass << ", m_radius = " << m_Radius << ", m_Tau = " << m_Tau << "\n";
 
         m_Mu = CalculatePerturbationMuOnPhase();
 
@@ -4209,11 +4223,12 @@ STELLAR_TYPE BaseStar::EvolveOnPhase(const double p_DeltaTime) {
 
         m_Temperature = CalculateTemperatureOnPhase();
 
-        if (p_DeltaTime > 0.0) {
+        if (p_dt > 0.0) {
             STELLAR_TYPE thisStellarType = ResolveEnvelopeLoss();                       // resolve envelope loss if it occurs - possibly new stellar type
             if (thisStellarType != m_StellarType) {                                     // thisStellarType overrides stellarType (from CalculateRadiusAndStellarTypeOnPhase())
                 nextStellarType = thisStellarType;
             }
+            AdvanceAgeAndTime(p_dt);                                                    // advance age of star and simulation time
         }
     }
 
