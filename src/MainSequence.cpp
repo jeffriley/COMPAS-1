@@ -722,7 +722,7 @@ double MainSequence::CalculateConvectiveCoreRadius() const {
  * @return                                      Mass of convective core in Msol
  */
 double MainSequence::CalculateConvectiveCoreMass() const {
-    double finalConvectiveCoreMass   = TAMSCoreMass();                                          // core mass at TAMS
+    double finalConvectiveCoreMass   = CalculateTAMSCoreMass();                 // core mass at TAMS
     double initialConvectiveCoreMass = finalConvectiveCoreMass / 0.6;
     return (initialConvectiveCoreMass - m_Tau * (initialConvectiveCoreMass - finalConvectiveCoreMass));
 }
@@ -882,7 +882,7 @@ void MainSequence::UpdateMainSequenceCoreMass(const double p_Dt, const double p_
             // Calculate the minimum core mass of a main sequence star that loses mass through Case A mass transfer as the core mass of a TAMS star, scaled by the fractional age.
             // Only applied to donors as part of binary evolution, not applied to SSE
             if ((OPTIONS->RetainCoreMassDuringCaseAMassTransfer()) && (p_MassLossRate < 0.0) && (utils::Compare(p_MassLossRate, -m_Mdot) != 0))
-                mainSequenceCoreMass = std::max(m_MainSequenceCoreMass, CalculateTauOnPhase() * TAMSCoreMass());
+                mainSequenceCoreMass = std::max(m_MainSequenceCoreMass, CalculateTauOnPhase() * CalculateTAMSCoreMass());
             break;
         
         case CORE_MASS_PRESCRIPTION::BRCEK:
@@ -909,7 +909,7 @@ void MainSequence::UpdateMainSequenceCoreMass(const double p_Dt, const double p_
             else {
                 // Only applied to donors as part of binary evolution, not applied to SSE
                 if ((p_MassLossRate < 0.0) && (utils::Compare(p_MassLossRate, -m_Mdot) != 0))
-                    mainSequenceCoreMass = std::max(m_MainSequenceCoreMass, CalculateTauOnPhase() * TAMSCoreMass());
+                    mainSequenceCoreMass = std::max(m_MainSequenceCoreMass, CalculateTauOnPhase() * CalculateTAMSCoreMass());
             }
             break;
 
@@ -1093,15 +1093,15 @@ STELLAR_TYPE MainSequence::ResolveEnvelopeLoss(bool p_Force) {
 
 
 /*
- * Return the expected core mass at terminal age main sequence, i.e., at the start of the HG phase
+ * Calculate the expected core mass at terminal age main sequence, i.e., at the start of the HG phase
  *
- * double TAMSCoreMass() const
+ * double calculate TAMSCoreMass() const
  *
  *
  * @return                                      TAMS core Mass (Msol)
  *
  */
-double MainSequence::TAMSCoreMass() const {
+double MainSequence::CalculateTAMSCoreMass() const {
     // Since we are on the main sequence here, we can clone this object as an HG object
     // and, as long as it is initialised (to correctly set Tau to 0.0 on the HG phase),
     // we can query the cloned object for its core mass.

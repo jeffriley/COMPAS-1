@@ -551,31 +551,31 @@ private:
 
     bool PrintRLOFParameters(const RLOF_RECORD_TYPE p_RecordType = RLOF_RECORD_TYPE::DEFAULT);
     
-    bool PrintSystemParameters(const BSE_SYSPARMS_RECORD_TYPE p_RecordType = BSE_SYSPARMS_RECORD_TYPE::DEFAULT) const { 
+    inline bool PrintSystemParameters(const BSE_SYSPARMS_RECORD_TYPE p_RecordType = BSE_SYSPARMS_RECORD_TYPE::DEFAULT) const { 
         return LOGGING->LogBSESystemParameters(this, p_RecordType);
     }
     
-    bool PrintSystemSnapshotLog(const BSE_SYSTEM_SNAPSHOT_RECORD_TYPE p_RecordType = BSE_SYSTEM_SNAPSHOT_RECORD_TYPE::DEFAULT) const { 
+    inline bool PrintSystemSnapshotLog(const BSE_SYSTEM_SNAPSHOT_RECORD_TYPE p_RecordType = BSE_SYSTEM_SNAPSHOT_RECORD_TYPE::DEFAULT) const { 
         return LOGGING->LogBSESystemSnapshotLog(this, p_RecordType);
     }
     
-    bool PrintDetailedOutput(const long int p_Id, const BSE_DETAILED_RECORD_TYPE p_RecordType) const {
+    inline bool PrintDetailedOutput(const long int p_Id, const BSE_DETAILED_RECORD_TYPE p_RecordType) const {
         return OPTIONS->DetailedOutput() ? LOGGING->LogBSEDetailedOutput(this, p_Id, p_RecordType) : true;
     }
     
-    bool PrintDoubleCompactObjects(const DCO_RECORD_TYPE p_RecordType = DCO_RECORD_TYPE::DEFAULT) const {
+    inline bool PrintDoubleCompactObjects(const DCO_RECORD_TYPE p_RecordType = DCO_RECORD_TYPE::DEFAULT) const {
         return LOGGING->LogDoubleCompactObject(this, p_RecordType);
     }
     
-    bool PrintCommonEnvelope(const CE_RECORD_TYPE p_RecordType = CE_RECORD_TYPE::DEFAULT) const {
+    inline bool PrintCommonEnvelope(const CE_RECORD_TYPE p_RecordType = CE_RECORD_TYPE::DEFAULT) const {
         return LOGGING->LogCommonEnvelope(this, p_RecordType);
     }
     
-    bool PrintPulsarEvolutionParameters(const BSE_PULSAR_RECORD_TYPE p_RecordType = BSE_PULSAR_RECORD_TYPE::DEFAULT) const {
+    inline bool PrintPulsarEvolutionParameters(const BSE_PULSAR_RECORD_TYPE p_RecordType) const {
         return OPTIONS->EvolvePulsars() ? LOGGING->LogBSEPulsarEvolutionParameters(this, p_RecordType) : true;
     }
     
-    bool PrintSupernovaDetails(const BSE_SN_RECORD_TYPE p_RecordType = BSE_SN_RECORD_TYPE::DEFAULT) const {
+    inline bool PrintSupernovaDetails(const BSE_SN_RECORD_TYPE p_RecordType = BSE_SN_RECORD_TYPE::DEFAULT) const {
         return LOGGING->LogBSESupernovaDetails(this, p_RecordType);
     }
     

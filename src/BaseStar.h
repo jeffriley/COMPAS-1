@@ -335,7 +335,7 @@ public:
 
     virtual void                SpinDownIsolatedPulsar(const double p_Stepsize) { }                                                                                                 // Default is NO-OP
 
-    virtual double              TAMSCoreMass() const                                                            { return 0.0; }                                                     // Except MS stars
+    virtual double              CalculateTAMSCoreMass() const                                                   { return 0.0; }                                                     // Except MS stars
     
     virtual void                UpdateAfterMerger(double p_Mass, double p_HydrogenMass) { }                                                                                         // Default is NO-OP
     virtual void                UpdateAgeAfterMassLoss() { }                                                                                                                        // Default is NO-OP
@@ -349,7 +349,7 @@ public:
         return OPTIONS->DetailedOutput() ? LOGGING->LogSSEDetailedOutput(this, p_Id, p_RecordType) : true;                                                                          // Write record to SSE Detailed Output log file
     }
 
-    inline bool PrintPulsarEvolutionParameters(const SSE_PULSAR_RECORD_TYPE p_RecordType = SSE_PULSAR_RECORD_TYPE::DEFAULT) const {
+    inline bool PrintPulsarEvolutionParameters(const SSE_PULSAR_RECORD_TYPE p_RecordType) const {
         return OPTIONS->EvolvePulsars() ? LOGGING->LogSSEPulsarEvolutionParameters(this, p_RecordType) : true;
     }
 

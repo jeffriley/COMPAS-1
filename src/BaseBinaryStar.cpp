@@ -28,10 +28,8 @@ BaseBinaryStar::BaseBinaryStar(const unsigned long int p_Seed, const long int p_
     // check that the constituent stars are not touching
     // also check m2 > m2min
 
-    bool done                            = false;
-    bool merger                          = false;
-    bool rlof                            = false;
-    bool secondarySmallerThanMinimumMass = false;
+    bool done = false;
+    bool rlof = false;
 
     // determine if any if the initial conditions are sampled
     // we consider eccentricity distribution = ECCENTRICITY_DISTRIBUTION::ZERO to be not sampled!
@@ -203,16 +201,15 @@ BaseBinaryStar::BaseBinaryStar(const unsigned long int p_Seed, const long int p_
         m_Star1->SetCompanion(m_Star2);
         m_Star2->SetCompanion(m_Star1);
 
-        merger                          = (m_SemiMajorAxis * AU_TO_RSOL) < (m_Star1->Radius() + m_Star2->Radius());
-        secondarySmallerThanMinimumMass = utils::Compare(mass2, OPTIONS->MinimumMassSecondary()) < 0;
-
         // check whether our initial conditions are good
         // if they are - evolve the binary
         // if they are not ok:
         //    - if we sampled at least one of them, sample again
         //    - if all were user supplied, set error - Evolve() will show the error and return without evolving
 
-        bool ok = !((!OPTIONS->AllowRLOFAtBirth() && rlof) || (!OPTIONS->AllowTouchingAtBirth() && merger) || secondarySmallerThanMinimumMass);
+        bool ok = !((!OPTIONS->AllowRLOFAtBirth() && rlof) ||                                                                           // rolf?
+                    (!OPTIONS->AllowTouchingAtBirth() && (m_SemiMajorAxis * AU_TO_RSOL) < (m_Star1->Radius() + m_Star2->Radius())) ||   // merger?
+                    (utils::Compare(mass2, MINIMUM_INITIAL_MASS) < 0));                                                                 // M2 < minimum?
 
         done = ok;
         if (!sampled && !ok) {
@@ -1768,8 +1765,8 @@ ImmediateEventT BaseBinaryStar::ResolveMainSequenceMerger() {
     double tau1  = m_Star1->Tau();
     double tau2  = m_Star2->Tau();
 
-    double TAMSCoreMass1 = m_Star1->TAMSCoreMass();
-    double TAMSCoreMass2 = m_Star2->TAMSCoreMass();
+    double TAMSCoreMass1 = m_Star1->CalculateTAMSCoreMass();
+    double TAMSCoreMass2 = m_Star2->CalculateTAMSCoreMass();
     
     double q   = std::min(mass1 / mass2, mass2 / mass1);
     double phi = 0.3 * q / (1.0 + q) / (1.0 + q);                                               // fraction of mass lost in merger, Wang+ 2022, https://www.nature.com/articles/s41550-021-01597-5
@@ -1842,7 +1839,6 @@ double BaseBinaryStar::CalculateGammaAngularMomentumLoss_Static(const double p_D
 
 	double gamma;
     MT_ANGULAR_MOMENTUM_LOSS_PRESCRIPTION gammaPrescription = OPTIONS->MassTransferAngularMomentumLossPrescription();
-    
     if (p_IsCommonEnvelope) gammaPrescription = OPTIONS->CommonEnvelopeSecondStageGammaPrescription();
 
 	switch (gammaPrescription) {                                                                                                    // which prescription?
@@ -3532,8 +3528,8 @@ EVOLUTION_STATUS BaseBinaryStar::Evolve() {
                         //     emitting GWs the timestep is a function of gravitational radiation                    
                         if (OPTIONS->EmitGravitationalRadiation()) CalculateGravitationalRadiation();
 
-                        m_Star2->UpdatePreviousTimestepDuration();                                                                      // update stellar property for star2
-                        m_Star1->UpdatePreviousTimestepDuration();                                                                      // update stellar property for star1
+                        m_Star2->SetPrevDt(m_Star2->Dt());                                                                              // update stellar property for star2
+                        m_Star1->SetPrevDt(m_Star1->Dt());                                                                              // update stellar property for star1
                 
                         if (usingProvidedTimesteps) {                                                                                   // user-provided timesteps?
                             // select a timestep

@@ -133,105 +133,97 @@ public:
 
 
     // object identifiers - all classes have these
-    OBJECT_ID           ObjectId() const                                                { return m_ObjectId; }
-    OBJECT_TYPE         ObjectType() const                                              { return OBJECT_TYPE::BINARY_CONSTITUENT_STAR; }
-    OBJECT_PERSISTENCE  ObjectPersistence() const                                       { return m_ObjectPersistence; }
+    inline OBJECT_ID            ObjectId() const                                            { return m_ObjectId; }
+    inline OBJECT_TYPE          ObjectType() const                                          { return OBJECT_TYPE::BINARY_CONSTITUENT_STAR; }
+    inline OBJECT_PERSISTENCE   ObjectPersistence() const                                   { return m_ObjectPersistence; }
 
 
     // getters - alphabetically
-    double          BindingEnergyAtCEE() const                                          { return m_CEDetails.bindingEnergy; }
-    double          BindingEnergyPreCEE() const                                         { return m_CEDetails.preCEE.bindingEnergy; }
+    inline double       BindingEnergyAtCEE() const                                          { return m_CEDetails.bindingEnergy; }
+    inline double       BindingEnergyPreCEE() const                                         { return m_CEDetails.preCEE.bindingEnergy; }
 
-    double          COCoreMassAtCEE() const                                             { return m_CEDetails.COCoreMass; }
-    double          CoreMassAtCEE() const                                               { return m_CEDetails.CoreMass; }
+    inline double       COCoreMassAtCEE() const                                             { return m_CEDetails.COCoreMass; }
+    inline double       CoreMassAtCEE() const                                               { return m_CEDetails.CoreMass; }
 
-    double          DynamicalTimescalePostCEE() const                                   { return m_CEDetails.postCEE.dynamicalTimescale; }
-    double          DynamicalTimescalePreCEE() const                                    { return m_CEDetails.preCEE.dynamicalTimescale; }
+    inline double       DynamicalTimescalePostCEE() const                                   { return m_CEDetails.postCEE.dynamicalTimescale; }
+    inline double       DynamicalTimescalePreCEE() const                                    { return m_CEDetails.preCEE.dynamicalTimescale; }
 
-    bool            ExperiencedRecycledNS() const                                       { return m_Flags.recycledNS; }
-    bool            ExperiencedRLOF() const                                             { return m_RLOFDetails.experiencedRLOF; }
+    inline bool         ExperiencedRecycledNS() const                                       { return m_Flags.recycledNS; }
+    inline bool         ExperiencedRLOF() const                                             { return m_RLOFDetails.experiencedRLOF; }
 
-    double          HeCoreMassAtCEE() const                                             { return m_CEDetails.HeCoreMass; }
+    inline double       HeCoreMassAtCEE() const                                             { return m_CEDetails.HeCoreMass; }
 
-    bool            IsRLOF() const                                                      { return m_RLOFDetails.isRLOF; }
-    bool            IsSNevent() const                                                   { return IsCCSN() || IsECSN() || IsPISN() || IsPPISN() || IsAIC() || IsSNIA() || IsHeSD(); }
+    inline bool         IsRLOF() const                                                      { return m_RLOFDetails.isRLOF; }
+    inline bool         IsSNevent() const                                                   { return IsCCSN() || IsECSN() || IsPISN() || IsPPISN() || IsAIC() || IsSNIA() || IsHeSD(); }
 
-    double          LambdaAtCEE() const                                                 { return m_CEDetails.lambda; }
-    double          LuminosityPostCEE() const                                           { return m_CEDetails.postCEE.luminosity; }
-    double          LuminosityPreCEE() const                                            { return m_CEDetails.preCEE.luminosity; }
-    double          MassLossDiff() const                                                { return m_MassLossDiff; }
-    double          MassPostCEE() const                                                 { return m_CEDetails.postCEE.mass; }
-    double          MassPreCEE() const                                                  { return m_CEDetails.preCEE.mass; }
-    double          MassTransferDiff() const                                            { return m_MassTransferDiff; }
+    inline double       LambdaAtCEE() const                                                 { return m_CEDetails.lambda; }
+    inline double       LuminosityPostCEE() const                                           { return m_CEDetails.postCEE.luminosity; }
+    inline double       LuminosityPreCEE() const                                            { return m_CEDetails.preCEE.luminosity; }
+    inline double       MassLossDiff() const                                                { return m_MassLossDiff; }
+    inline double       MassPostCEE() const                                                 { return m_CEDetails.postCEE.mass; }
+    inline double       MassPreCEE() const                                                  { return m_CEDetails.preCEE.mass; }
+    inline double       MassTransferDiff() const                                            { return m_MassTransferDiff; }
 
-    double          OmegaTidesIndividualDiff() const                                    { return m_OmegaTidesIndividualDiff; }
-    double          OrbitalEnergyPostSN() const                                         { return m_OrbitalEnergyPostSN; };
-    double          OrbitalEnergyPreSN() const                                          { return m_OrbitalEnergyPreSN; };
+    inline double       OmegaTidesIndividualDiff() const                                    { return m_OmegaTidesIndividualDiff; }
+    inline double       OrbitalEnergyPostSN() const                                         { return m_OrbitalEnergyPostSN; };
+    inline double       OrbitalEnergyPreSN() const                                          { return m_OrbitalEnergyPreSN; };
 
-    double          RadialExpansionTimescalePostCEE() const                             { return m_CEDetails.postCEE.radialExpansionTimescale; }
-    double          RadialExpansionTimescalePreCEE() const                              { return m_CEDetails.preCEE.radialExpansionTimescale; }
-    double          RadiusPostCEE() const                                               { return m_CEDetails.postCEE.radius; }
-    double          RadiusPreCEE() const                                                { return m_CEDetails.preCEE.radius; }
-    bool            RLOFPostCEE() const                                                 { return m_RLOFDetails.RLOFPostCEE; }
-    double          StarToRocheLobeRadiusRatio(const double p_SemiMajorAxis, const double p_Eccentricity);
+    inline double       RadialExpansionTimescalePostCEE() const                             { return m_CEDetails.postCEE.radialExpansionTimescale; }
+    inline double       RadialExpansionTimescalePreCEE() const                              { return m_CEDetails.preCEE.radialExpansionTimescale; }
+    inline double       RadiusPostCEE() const                                               { return m_CEDetails.postCEE.radius; }
+    inline double       RadiusPreCEE() const                                                { return m_CEDetails.preCEE.radius; }
+    inline bool         RLOFPostCEE() const                                                 { return m_RLOFDetails.RLOFPostCEE; }
 
-    STELLAR_TYPE    StellarTypePostCEE() const                                          { return m_CEDetails.postCEE.stellarType; }
-    STELLAR_TYPE    StellarTypePreCEE() const                                           { return m_CEDetails.preCEE.stellarType; }
+    double              StarToRocheLobeRadiusRatio(const double p_SemiMajorAxis, const double p_Eccentricity);
 
-    double          TemperaturePostCEE() const                                          { return m_CEDetails.postCEE.temperature; }
-    double          TemperaturePreCEE() const                                           { return m_CEDetails.preCEE.temperature; }
-    double          ThermalTimescalePostCEE() const                                     { return m_CEDetails.postCEE.thermalTimescale; }
-    double          ThermalTimescalePreCEE() const                                      { return m_CEDetails.preCEE.thermalTimescale; }
+    inline STELLAR_TYPE StellarTypePostCEE() const                                          { return m_CEDetails.postCEE.stellarType; }
+    inline STELLAR_TYPE StellarTypePreCEE() const                                           { return m_CEDetails.preCEE.stellarType; }
+
+    inline double       TemperaturePostCEE() const                                          { return m_CEDetails.postCEE.temperature; }
+    inline double       TemperaturePreCEE() const                                           { return m_CEDetails.preCEE.temperature; }
+    inline double       ThermalTimescalePostCEE() const                                     { return m_CEDetails.postCEE.thermalTimescale; }
+    inline double       ThermalTimescalePreCEE() const                                      { return m_CEDetails.preCEE.thermalTimescale; }
 
 
     // setters
-    void            SetCompanion(BinaryConstituentStar* p_Companion)                    { m_Companion = p_Companion; }                              // this star's companion star
-    void            SetMassTransferDiffAndResolveWDShellChange(const double p_MassTransferDiff);
+    inline void         SetObjectId(const OBJECT_ID p_ObjectId)                             { m_ObjectId = p_ObjectId; }
+    inline void         SetPersistence(const OBJECT_PERSISTENCE p_Persistence)              { m_ObjectPersistence = p_Persistence; }
 
-    void            SetOrbitalEnergyPostSN(const double p_OrbitalEnergyPostSN)          { m_OrbitalEnergyPostSN = p_OrbitalEnergyPostSN; };
-    void            SetOrbitalEnergyPreSN(const double p_OrbitalEnergyPreSN)            { m_OrbitalEnergyPreSN = p_OrbitalEnergyPreSN; };
+    inline void         SetCompanion(BinaryConstituentStar* p_Companion)                    { m_Companion = p_Companion; }                              // this star's companion star
 
-    void            ClearRecycledNS()                                                   { m_Flags.recycledNS = false; }
-    void            SetRecycledNS()                                                     { m_Flags.recycledNS = true; }
+    inline void         SetMassLossDiff(const double p_MassLossDiff)                        { m_MassLossDiff = p_MassLossDiff; }                        // JR: todo: better way?  Sanity check?
+    void                SetMassTransferDiffAndResolveWDShellChange(const double p_MassTransferDiff);
+
+    inline void         SetOrbitalEnergyPostSN(const double p_OrbitalEnergyPostSN)          { m_OrbitalEnergyPostSN = p_OrbitalEnergyPostSN; };
+    inline void         SetOrbitalEnergyPreSN(const double p_OrbitalEnergyPreSN)            { m_OrbitalEnergyPreSN = p_OrbitalEnergyPreSN; };
+
+    void                SetPostCEEValues();
+    void                SetPreCEEValues();
+
+    inline void         ClearRecycledNS()                                                   { m_Flags.recycledNS = false; }
+    inline void         SetRecycledNS()                                                     { m_Flags.recycledNS = true; }
+
+    void                SetRocheLobeFlags(const bool p_CommonEnvelope, const double p_SemiMajorAxis, const double p_Eccentricity);
+
+    void                CalculateCommonEnvelopeValues();
+
+    double              CalculateCircularisationTimescale(const double p_SemiMajorAxis);
+
+    double              CalculateSynchronisationTimescale(const double p_SemiMajorAxis);
+
+    void                InitialiseMassTransfer(const bool p_CommonEnvelope, const double p_SemiMajorAxis, const double p_Eccentricity);
+
+    inline void         ResolveCommonEnvelopeAccretion(const double p_FinalMass, const double p_CompanionMass = 0.0, const double p_CompanionRadius = 0.0, const double p_CompanionEnvelope = 0.0) {
+                            m_MassTransferDiff = Star::ResolveCommonEnvelopeAccretion(p_FinalMass, m_Companion->Mass(), m_Companion->Radius(), m_Companion->MassPreCEE() - m_Companion->CoreMassAtCEE());
+                            ResolveAccretion(m_MassTransferDiff);
+                        }  
 
 
-    void            CalculateCommonEnvelopeValues();
+    COMPAS_VARIABLE     StellarPropertyValue(const T_ANY_PROPERTY p_Property) const;
 
-    double          CalculateCircularisationTimescale(const double p_SemiMajorAxis);
-
-    double          CalculateSynchronisationTimescale(const double p_SemiMajorAxis);
-
-    void            InitialiseMassTransfer(const bool p_CommonEnvelope, const double p_SemiMajorAxis, const double p_Eccentricity);
-
-    void            ResolveCommonEnvelopeAccretion(const double p_FinalMass,
-                                                   const double p_CompanionMass     = 0.0,
-                                                   const double p_CompanionRadius   = 0.0,
-                                                   const double p_CompanionEnvelope = 0.0) { m_MassTransferDiff = Star::ResolveCommonEnvelopeAccretion(p_FinalMass,
-                                                                                                                                                       m_Companion->Mass(),
-                                                                                                                                                       m_Companion->Radius(),
-                                                                                                                                                       m_Companion->MassPreCEE() - m_Companion->CoreMassAtCEE());
-                                                                                             ResolveAccretion(m_MassTransferDiff);
-                                                     
-                                                                                           }  
-
-    void            SetPostCEEValues();
-    void            SetPreCEEValues();
-
-    void            SetRocheLobeFlags(const bool p_CommonEnvelope, const double p_SemiMajorAxis, const double p_Eccentricity);
-
-    COMPAS_VARIABLE StellarPropertyValue(const T_ANY_PROPERTY p_Property) const;
-
-    void            UpdateMagneticFieldAndSpin(const bool   p_CommonEnvelope,
-                                               const double p_Stepsize,
-                                               const double p_Epsilon)                  { Star::UpdateMagneticFieldAndSpin(p_CommonEnvelope, 
-                                                                                                                           ExperiencedRecycledNS(), 
-                                                                                                                           p_Stepsize, 
-                                                                                                                           m_MassTransferDiff * MSOL_TO_G,
-                                                                                                                           p_Epsilon); }
-
-    void            SetMassLossDiff(const double p_MassLossDiff)                        { m_MassLossDiff = p_MassLossDiff; }                        // JR: todo: better way?  Sanity check?
-    void            SetObjectId(const OBJECT_ID p_ObjectId)                             { m_ObjectId = p_ObjectId; }
-    void            SetPersistence(const OBJECT_PERSISTENCE p_Persistence)              { m_ObjectPersistence = p_Persistence; }
+    inline void         UpdateMagneticFieldAndSpin(const bool p_CommonEnvelope, const double p_Stepsize, const double p_Epsilon) {
+                            Star::UpdateMagneticFieldAndSpin(p_CommonEnvelope, ExperiencedRecycledNS(), p_Stepsize, m_MassTransferDiff * MSOL_TO_G, p_Epsilon);
+                        }
 
 
 private:
