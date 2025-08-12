@@ -79,7 +79,7 @@ protected:
     double          CalculateLuminosityOnPhase(const double p_CoreMass) const;
     double          CalculateLuminosityOnPhase() const                                              { return CalculateLuminosityOnPhase(m_COCoreMass); }
 
-    double          CalculateMassLossRateHurley();
+    std::tuple<double, MASS_LOSS_TYPE> CalculateMassLossRateHurley();
 
     double          CalculateRadiusAtPhaseEnd(const double p_Mass, const double p_Luminosity) const { return CalculateRadiusOnPhase(p_Mass, p_Luminosity); }            // Same as on phase
     double          CalculateRadiusAtPhaseEnd() const                                               { return CalculateRadiusAtPhaseEnd(m_Mass, m_Luminosity); }         // Use class member variables

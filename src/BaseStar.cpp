@@ -1460,54 +1460,66 @@ double BaseStar::CalculateInitialEnvelopeMass_Static(const double p_Mass) {
 }
 
 
-/* CalculateMassLossRateVassiliadisWood
+/* 
+ * CalculateMassLossRateVassiliadisWood
  *
- * Calculate the mass loss rate on the AGB based on the Mira pulsation period (P0)
+ * Calculate the mass loss rate on the AGB based on the Mira pulsation period (P0),
+ * per Vassiliadis and Wood 1993
  *
- * Hurley et al. 2000, just after eq 106 (from Vassiliadis and Wood 1993)
+ * Hurley et al. 2000, just after eq 106
+ * Note: in in their fortran code, Hurley et al. take P0 to be min(p0, 2000.0) - implemented here as a minimum power
+ * 
+ * Uses current values of:
+ * 
+ *    - m_Luminosity
+ *    - m_Mass
+ *    - m_Radius
  *
  *
  * double CalculateMassLossRateVassiliadisWood()
  *
- * @return                                      Mass loss rate on AGB in Msol per year
+ * @return                                      Mass loss rate on AGB (Msol yr^-1)
  */
 double BaseStar::CalculateMassLossRateVassiliadisWood() const {
 
-    double logP0      = min(3.3, (-2.07 - (0.9 * log10(m_Mass)) + (1.94 * log10(m_Radius))));
-    double P0         = PPOW(10.0, (logP0));        // in their fortran code, Hurley et al. take P0 to be min(p0, 2000.0): implemented here as a minimum power
-    double logMdot_VW = -11.4 + (0.0125 * (P0 - 100.0 * max((m_Mass - 2.5), 0.0)));
-    double Mdot_VW    = PPOW(10.0, (logMdot_VW));
+    double logP0 = std::min(3.3, (-2.07 - (0.9 * log10(m_Mass)) + (1.94 * log10(m_Radius))));
+    double P0    = PPOW(10.0, (logP0));
+    double Mdot  = PPOW(10.0, (-11.4 + (0.0125 * (P0 - 100.0 * std::max((m_Mass - 2.5), 0.0)))));
 
-    return min(Mdot_VW, (1.36E-9 * m_Luminosity));
+    return std::min(Mdot, (1.36E-9 * m_Luminosity));
 }
 
 
 /*
  * CalculateMassLossRateNieuwenhuijzenDeJager
  *
- * Calculate the mass-loss rate for massive stars (L > 4000 L_sol) using the
- * Nieuwenhuijzen & de Jager 1990 prescription, modified by a metallicity
- * dependent factor (Kudritzki et al 1989).
+ * Calculate the mass loss rate for massive stars (L > 4000 Lsol) per Nieuwenhuijzen & de Jager 1990,
+ * modified by a metallicity dependent factor (Kudritzki et al 1989).
  *
  * Hurley et al. 2000, just after eq 106
+ * 
+ * Uses current values of:
+ * 
+ *    - m_Luminosity
+ *    - m_Mass
+ *    - m_Metallicity
+ *    - m_Radius
  *
  *
  * double CalculateMassLossRateNieuwenhuijzenDeJager()
  *
- * @return                                      Nieuwenhuijzen & de Jager mass-loss rate for massive stars (in Msol yr^-1)
+ * @return                                      Nieuwenhuijzen & de Jager mass loss rate for massive stars (Msol yr^-1)
  */
 double BaseStar::CalculateMassLossRateNieuwenhuijzenDeJager() const {
     
-    double rate = 0.0;
+    double Mdot = 0.0;                                                      // default return value
     
     if (utils::Compare(m_Luminosity, NJ_MINIMUM_LUMINOSITY) > 0) {          // check for minimum luminosity
         double smoothTaper = min(1.0, (m_Luminosity - 4000.0) / 500.0);     // smooth taper between no mass loss and mass loss
-        rate = std::sqrt((m_Metallicity / ZSOL_HURLEY)) * smoothTaper * 9.6E-15 * PPOW(m_Radius, 0.81) * PPOW(m_Luminosity, 1.24) * PPOW(m_Mass, 0.16);
-    } else {
-        rate = 0.0;
+        Mdot = std::sqrt((m_Metallicity / ZSOL_HURLEY)) * smoothTaper * 9.6E-15 * PPOW(m_Radius, 0.81) * PPOW(m_Luminosity, 1.24) * PPOW(m_Mass, 0.16);
     }
 
-    return rate;
+    return Mdot;
 }
 
 
@@ -1562,68 +1574,47 @@ double BaseStar::CalculateEddingtonLuminosity_Static(const double p_Mass, const 
 
 
 /*
- * CalculateMassLossRateBjorklundEddingtonFactor
- *
- * Calculate the Eddington factor (L/L_Edd) as required by CalculateMassLossRateBjorklund
- * see text surrounding Equation 6 in https://arxiv.org/abs/2203.08218
- * 
- * 
- * double CalculateMassLossRateBjorklundEddingtonFactor()
- *
- * @return                                      Eddington factor
- */
-double BaseStar::CalculateMassLossRateBjorklundEddingtonFactor() const {
-
-    const double YHe = 0.1;                                                 // assumed constant by Bjorklund et al.
-        
-    double Ledd      = CalculateEddingtonLuminosity_Static(m_Mass, YHe);    // W
-
-    double LoverLedd = (m_Luminosity * LSOLW) / Ledd;                       // Dimensionless
-
-    return LoverLedd;
-}
-
-
-/*
  * CalculateMassLossRateOBBjorklund2022
  *
- * Calculate the mass loss rate for massive OB stars according to the prescription from Bjorklund et al. 2022
+ * Calculate the mass loss rate for massive OB stars per Bjorklund et al. 2022
  * See Equation 7 and surrounding text in https://arxiv.org/abs/2203.08218
  * 
- * This prescription is calibrated to the following ranges:
- * 10^4.5 < L / Lsol < 10^6
- * 15,000 < Teff / K < 50,000
- * 15 < M / Msol < 80
- * Z Zsol, Z_LMC = 0.5 * Zsol and Z_SMC = 0.2 * Zsol, with Zsol = 0.014 
+ * This prescription is calibrated to the following ranges and values:
  * 
+ *    10^4.5 < L / Lsol < 10^6
+ *    15,000 < Teff / K < 50,000
+ *    15 < M / Msol < 80
+ * 
+ *    Zsol = 0.014
+ *    Zlmc = Zsol / 2.0
+ *    Zsmc = Zsol / 5.0
+ * 
+ * Uses current values of:
+ * 
+ *    - m_Luminosity
+ *    - m_Mass
+ *    - m_Metallicity
+ *    - m_Temperature
  *
  * double CalculateMassLossRateOBBjorklund2022()
  *
- * @return                                      Bjorklund mass-loss rate for massive stars (in Msol yr^-1)
+ * @return                                      Bjorklund mass loss rate for massive stars (Msol yr^-1)
  */
 double BaseStar::CalculateMassLossRateOBBjorklund2022() const {
 
-    double Gamma   = CalculateMassLossRateBjorklundEddingtonFactor();
+    // calculate the Eddington factor (L/L_Edd) as required to calculate the Bjorklund mass loss rate
+    // see text surrounding Equation 6 in https://arxiv.org/abs/2203.08218
+    double Gamma   = (m_Luminosity * LSOLW) / CalculateEddingtonLuminosity_Static(m_Mass, 0.1); // assumed constant by Bjorklund et al.
 
-    double logZ    = log10(m_Metallicity / 0.014);
+    double logZ    = log10(m_Metallicity / 0.014);                                              // Bjorklund et al. 2022 uses 0.014
     double logL    = log10(m_Luminosity / 1.0E6);
-    double Teff    = m_Temperature * TSOL;                                  // convert effective temperature to Kelvin
+    double Teff    = m_Temperature * TSOL;                                                      // Kelvin
     double logTeff = log10(Teff / 45000.0);           
-
     double Meff    = m_Mass * (1.0 - Gamma);
     double logMeff = log10(Meff / 45.0);
 
-    // Constants, q depends on logTeff
-    const double constC = -5.52;
-    const double m      = 2.39;
-    const double n      = -1.48;
-    const double p      = 2.12;
-    double q            = 0.75 - (1.87 * logTeff);
-
     // Equation 7 in Bjorklund et al. 2022
-    double logMdot = constC + (m * logL) + (n * logMeff) + (p * logTeff) + (q * logZ);
-
-    return PPOW(10.0, logMdot);
+    return PPOW(10.0, -5.52 + (2.39 * logL) + (-1.48 * logMeff) + (2.12 * logTeff) + ((0.75 - (1.87 * logTeff)) * logZ));
 }
 
 
@@ -1632,34 +1623,39 @@ double BaseStar::CalculateMassLossRateOBBjorklund2022() const {
  *
  * Calculate LBV-like mass loss rate for stars beyond the Humphreys-Davidson limit (Humphreys & Davidson 1994)
  *
- * Sets class member variable m_LBVphaseFlag if necessary
+ * Sets class member variable m_LBVphaseFlag if necessary <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< REMOVE <<<<<<<<<<<<<<<<<
  * 
  *  
- * double CalculateMassLossRateLBV(const LBV_MASS_LOSS_PRESCRIPTION p_LBVprescription)
+ * std::tuple<double, MASS_LOSS_TYPE> CalculateMassLossRateLBV(const LBV_MASS_LOSS_PRESCRIPTION p_LBVprescription)
  *
  * @param   [IN]    p_LBVprescription           Which LBV prescription to use
- * @return                                      LBV-like mass loss rate (in Msol yr^{-1})
+ * @return                                      Tuple containing:
+ *                                                   DOUBLE         LBV-like mass loss rate (Msol yr^-1)
+ *                                                   MASS_LOSS_TYPE dominant mass loss type (could be MASS_LOSS_TYPE::NONE)
  */
-double BaseStar::CalculateMassLossRateLBV(const LBV_MASS_LOSS_PRESCRIPTION p_LBVprescription) {
+std::tuple<double, MASS_LOSS_TYPE> BaseStar::CalculateMassLossRateLBV(const LBV_MASS_LOSS_PRESCRIPTION p_LBVprescription) {
 
-    double rate = 0.0;                                                                                                          // default return value
+    MASS_LOSS_TYPE dominantMassLossType = MASS_LOSS_TYPE::NONE;                                                                 // default dominant mass loss type
+    double         mDot                 = 0.0;                                                                                  // default mass loss rate - not an LBV star
 
     double HDlimitfactor = m_Radius * std::sqrt(m_Luminosity) * 1.0E-5;                                                         // calculate factor by which the star is above the HD limit
     if ((utils::Compare(m_Luminosity, LBV_LUMINOSITY_LIMIT_STARTRACK) > 0) && (utils::Compare(HDlimitfactor, 1.0) > 0)) {       // check if luminous blue variable
 		m_LBVphaseFlag         = true;                                                                                          // mark the star as LBV
         m_DominantMassLossRate = MASS_LOSS_TYPE::LBV;                                                                           // set the dominant mass loss rate
         
-        switch (p_LBVprescription) {                                                                                            // decide which LBV prescription to use
+        switch (p_LBVprescription) {                                                                                            // which LBV prescription?
 
-            case LBV_MASS_LOSS_PRESCRIPTION::ZERO:
-                rate = 0.0;
+            case LBV_MASS_LOSS_PRESCRIPTION::ZERO:                                                                              // ZERO
+                Mdot = 0.0;                                                                                                     // no mass loss
                 break;
-            case LBV_MASS_LOSS_PRESCRIPTION::HURLEY_ADD:
-            case LBV_MASS_LOSS_PRESCRIPTION::HURLEY:
-                rate = CalculateMassLossRateLBVHurley(HDlimitfactor);
+
+            case LBV_MASS_LOSS_PRESCRIPTION::HURLEY_ADD:                                                                        // HURLEY_ADD
+            case LBV_MASS_LOSS_PRESCRIPTION::HURLEY:                                                                            // HURLEY
+                Mdot = CalculateMassLossRateLBVHurley(HDlimitfactor);
                 break;
+            
             case LBV_MASS_LOSS_PRESCRIPTION::BELCZYNSKI:
-                rate = CalculateMassLossRateLBVBelczynski();
+                Mdot = CalculateMassLossRateLBVBelczynski();
                 break;
 
             default:                                                                                                            // unknown prescription
@@ -1675,11 +1671,10 @@ double BaseStar::CalculateMassLossRateLBV(const LBV_MASS_LOSS_PRESCRIPTION p_LBV
 
                 THROW_ERROR(ERROR::UNKNOWN_LBV_MASS_LOSS_PRESCRIPTION);                                                         // throw error
         }
-    } else {
-        rate = 0.0;                                                                                                             // no winds if it isn't an LBV star!
     }
 
-    return rate;
+    // NOTE: CALLER SHOULD SET m_LBVphaseFlag BASED ON dominantMassLossType - LBV vs NONE <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+    return std::make_tuple(Mdot, dominantMassLossType);
 }
 
 
@@ -2323,13 +2318,17 @@ double BaseStar::CalculateMassLossRateBelczynski2010() {
 
 
 /*
- * CalculateMassLossRateMerritt2024
+ * CalculateMassLossRateMerritt2025
  *
- * Calculate the mass loss rate according to the updated framework.
+ * Calculate the mass loss rate according to the framework in Merritt et al., 2025.
  *
  * The structure is similar to the CalculateMassLossRateBelczynski2010() wrapper (previous default).
- * Mass loss rates are divided into several classes: RSG winds, cool star winds,
- * very massive star (VMS) winds, OB star winds.
+ * Mass loss rates are divided into several classes:
+ *      RSG winds,
+ *      cool star winds,
+ *      very massive star (VMS) winds,
+ *      OB star winds
+ * 
  * Furthermore, LBV winds are computed separately, and, if non-zero, either replace other mass loss
  * or are added to other wind mass loss if LBV_MASS_LOSS_PRESCRIPTION::HURLEY_ADD is used.
  * 
@@ -2385,61 +2384,57 @@ double BaseStar::CalculateMassLossRateMerritt2025() {
  * Calls relevant mass loss function based on mass loss prescription given in program options (OPTIONS->massLossPrescription)
  *
  *
- * double CalculateMassLossRate()
+ * std::tuple<double, MASS_LOSS_TYPE> CalculateMassLossRate()
  *
- * @return                                      Mass loss rate
+ * @return                                      Tuple containing:
+ *                                                   DOUBLE         mass loss rate (Msol yr^-1)
+ *                                                   MASS_LOSS_TYPE dominant mass loss type (coule be MASS_LOSS_TYPE::NONE)
  */
-double BaseStar::CalculateMassLossRate() {
+std::tuple<double, MASS_LOSS_TYPE> BaseStar::CalculateMassLossRate() {
 
-    double mDot = 0.0;                                                                                          // default return value
+    MASS_LOSS_TYPE dominantMassLossType = MASS_LOSS_TYPE::NONE;                                                 // default dominant mass loss type
+    double         Mdot                 = 0.0;                                                                  // default mass loss rate
 
-    if (OPTIONS->MassLossPrescription() != MASS_LOSS_PRESCRIPTION::ZERO) {                                      // mass loss enabled?
-                                                                                                                // yes
-        double LBVRate;
-        double otherWindsRate;
+    switch (OPTIONS->MassLossPrescription()) {                                                                  // which mass loss prescription?
 
-        switch (OPTIONS->MassLossPrescription()) {                                                              // which prescription?
+        case MASS_LOSS_PRESCRIPTION::ZERO:                                                                      // ZERO
+            Mdot = 0.0;                                                                                         // no mass loss
+            break;
 
-            case MASS_LOSS_PRESCRIPTION::ZERO:
-                mDot = 0.0;
-                break;
+        case MASS_LOSS_PRESCRIPTION::HURLEY:                                                                    // HURLEY
+            double MdotHurley = CalculateMassLossRateHurley();                                                  // mass loss rate per Hurley et al., 2000
+            double MdotLBV    = CalculateMassLossRateLBV(LBV_MASS_LOSS_PRESCRIPTION::HURLEY_ADD);               // LBV mass loss rate (see CalculateMassLossRateLBV() for details)
+            Mdot              = MdotLBV + MdotHurley;                                                           // total rate
 
-            case MASS_LOSS_PRESCRIPTION::HURLEY:
-                LBVRate        = CalculateMassLossRateLBV(LBV_MASS_LOSS_PRESCRIPTION::HURLEY_ADD);
-                otherWindsRate = CalculateMassLossRateHurley();
-                if (utils::Compare(LBVRate, otherWindsRate) > 0) {
-                    m_DominantMassLossRate = MASS_LOSS_TYPE::LBV;
-                }
-                mDot = LBVRate + otherWindsRate;
-                break;
+            if (utils::Compare(MdotLBV, MdotHurley) > 0) dominantMassLossType = MASS_LOSS_TYPE::LBV;            // LBV mass loss dominant?
+            break;
 
-            case MASS_LOSS_PRESCRIPTION::BELCZYNSKI2010:
-                mDot = CalculateMassLossRateBelczynski2010();
-                break;
+        case MASS_LOSS_PRESCRIPTION::BELCZYNSKI2010:                                                            // BELCZYNSKI2010
+            Mdot = CalculateMassLossRateBelczynski2010();                                                       // mass loss rate per StarTrack
+            break;
 
-            case MASS_LOSS_PRESCRIPTION::MERRITT2025:
-                mDot = CalculateMassLossRateMerritt2025();
-                break;
+        case MASS_LOSS_PRESCRIPTION::MERRITT2025:                                                               // MERRITT2025
+            Mdot = CalculateMassLossRateMerritt2025();                                                          // mass loss rate per Merritt et al., 2025
+            break;
 
-            default:                                                                                                // unknown prescription
-                // the only way this can happen is if someone added a MASS_LOSS_PRESCRIPTION
-                // and it isn't accounted for in this code.  We should not default here, with or without a warning.
-                // We are here because the user chose a prescription this code doesn't account for, and that should
-                // be flagged as an error and result in termination of the evolution of the star or binary.
-                // The correct fix for this is to add code for the missing prescription or, if the missing
-                // prescription is superfluous, remove it from the option.
+        default:                                                                                                // unknown prescription
+            // the only way this can happen is if someone added a MASS_LOSS_PRESCRIPTION
+            // and it isn't accounted for in this code.  We should not default here, with or without a warning.
+            // We are here because the user chose a prescription this code doesn't account for, and that should
+            // be flagged as an error and result in termination of the evolution of the star or binary.
+            // The correct fix for this is to add code for the missing prescription or, if the missing
+            // prescription is superfluous, remove it from the option.
 
-                THROW_ERROR(ERROR::UNKNOWN_MASS_LOSS_PRESCRIPTION);                                                 // throw error
-        }
-
-        mDot *= OPTIONS->OverallWindMassLossMultiplier();                                                           // apply overall wind mass loss multiplier
+            THROW_ERROR(ERROR::UNKNOWN_MASS_LOSS_PRESCRIPTION);                                                 // throw error
     }
+
+    // apply overall wind mass loss multiplier and cap winds at a maximum mass loss rate
+    // (typically 0.1 solar masses per year) to avoid convergence issues
+    Mdot = std::min(Mdot * OPTIONS->OverallWindMassLossMultiplier(), MAXIMUM_WIND_MASS_LOSS_RATE);
     
-    mDot = min(mDot, MAXIMUM_WIND_MASS_LOSS_RATE);                                                                  // cap winds at a maximum mass loss rate (typically 0.1 solar masses per year) to avoid convergence issues
+    //UpdateTotalMassLossRate(-mDot);                                                                                 // update total mass loss rate
     
-    UpdateTotalMassLossRate(-mDot);                                                                                 // update total mass loss rate
-    
-    return mDot;
+    return std::make_tuple(Mdot, dominantMassLossType);
 }
 
 
@@ -2448,48 +2443,39 @@ double BaseStar::CalculateMassLossRate() {
  *
  * Calculate values for mDot and mass assuming mass loss is applied
  *
- * Class member variable m_Mdot is updated directly by this function if required (see parameters)
- * Class member variable m_Mass is not updated directly by this function - the calculated mass is returned as the functional return
- *
  * - calculates mass loss
  * - calculates new mass loss rate (mDot) to match (possibly limited) mass loss
  * - calculates new mass (mass) based on (possibly limited) mass loss
  * - returns existing value for mass if mass loss not being used (program option)
  *
  *
- * double CalculateMassLossValues(double p_Dt, const bool p_UpdateMDot)
+ * double CalculateMassLossValues(double p_dt)
  *
- * @param   [IN]    p_Dt                        time step (Myr)
- * @param   [IN]    p_UpdateMDot                flag to indicate whether the class member variable m_Mdot should be updated (default is false)
- * @return                                      calculated mass (mSol)
+ * @param   [IN]    p_dt                        time step (Myr)
+ * @return                                      Tuple containing:
+ *                                                   DOUBLE         mass loss rate (Msol yr^-1)
+ *                                                   MASS_LOSS_TYPE dominant mass loss type (coule be MASS_LOSS_TYPE::NONE)
+
  */
-double BaseStar::CalculateMassLossValues(double p_Dt, const bool p_UpdateMDot) {
+double BaseStar::CalculateMassLossValues(double p_dt) { // DONT'T NEED p_Dt HERE
 
-    double mass = m_Mass;
+// PLACEHOLDER U NTIL CODE CLEANED UP - DO SOMETHING WITH PHOTON TIRING LIMIT
 
-    if (OPTIONS->MassLossPrescription() != MASS_LOSS_PRESCRIPTION::ZERO) {      // mass loss enabled?
-                                                                                // yes
-        double mDot     = CalculateMassLossRate();                              // calculate mass loss rate
-        double massLoss = max(0.0, mDot * p_Dt * 1.0E6);                        // calculate mass loss; mass loss rate given in Msol per year, times are in Myr so need to multiply by 10^6
-        if (p_UpdateMDot) m_Mdot = mDot;                                        // update class member variable if necessary
+//        if (OPTIONS->CheckPhotonTiringLimit()) {
+//            double lim = m_Luminosity / (G_SOLAR_YEAR * m_Mass / m_Radius);     // calculate the photon tiring limit in Msol yr^-1 using Owocki & Gayley 1997, equation slightly clearer in Owocki+2004 Eq. 20
+//            massLoss   = std::min(massLoss, lim);                               // limit mass loss to the photon tiring limit
+//            if (p_UpdateMDot) m_Mdot = massLoss / p_dt / 1.0E6;                 // update class member variable if necessary
+//        }
 
-        if (OPTIONS->CheckPhotonTiringLimit()) {
-            double lim = m_Luminosity / (G_SOLAR_YEAR * m_Mass / m_Radius);     // calculate the photon tiring limit in Msol yr^-1 using Owocki & Gayley 1997, equation slightly clearer in Owocki+2004 Eq. 20
-            massLoss   = std::min(massLoss, lim);                               // limit mass loss to the photon tiring limit
-            if (p_UpdateMDot) m_Mdot = massLoss / p_Dt / 1.0E6;                 // update class member variable if necessary
-        }
 
-        mass -= massLoss;                                                       // new mass based on mass loss
-    }
-
-    return mass;
+    return CalculateMassLossRate();
 }
 
 
 /*
- * ResolveMassLoss
+ * ResolveMassLossHurley
  *
- * Resolve mass loss
+ * Resolve mass loss using Hurley et al., 2000
  *
  * - calculates mass loss rate
  * - calculates (and limits) mass loss
@@ -2499,15 +2485,18 @@ double BaseStar::CalculateMassLossValues(double p_Dt, const bool p_UpdateMDot) {
  * - updates angular momentum of mass-losing star
  *
  *
- * STELLAR_TYPE ResolveMassLoss()
+ * STELLAR_TYPE ResolveMassLossHurley(const double p_dt)
  *  
+ * @param   [IN]    p_dt                        time step (Myr)
  * @return                                      New stellar type for star
  */
-STELLAR_TYPE BaseStar::ResolveMassLoss() {
+STELLAR_TYPE BaseStar::ResolveMassLossHurley(const double p_dt) {
 
-    if (OPTIONS->MassLossPrescription() != MASS_LOSS_PRESCRIPTION::ZERO) {                          // mass loss enabled?
+    STELLAR_TYPE nextStellarType = m_StellarType;                                                   // next stellar type - defaults to current
+
+    if (OPTIONS->MassLossPrescriptionHurley() != MASS_LOSS_PRESCRIPTION::ZERO) {                    // mass loss enabled for Hurley?
                                                                                                     // yes
-        double mass = CalculateMassLossValues(p_Dt, true);                                          // calculate new values assuming mass loss applied
+        double mass = CalculateMassLossValues(p_dt, true);                                          // calculate new values assuming mass loss applied
 
         double angularMomentumChange = (2.0 / 3.0) * (mass - m_Mass) * m_Radius * RSOL_TO_AU * m_Radius * RSOL_TO_AU * Omega();
           
@@ -3469,13 +3458,13 @@ double BaseStar::CalculateThermalTimescale(const double p_Radius) const {
  *                                                 const STELLAR_TYPE p_StellarTypePrev,
  *                                                 const double       p_Radius,
  *                                                 const double       p_RadiusPrev,
- *                                                 const double       p_DtPrev)
+ *                                                 const double       p_dtPrev)
  *
  * @param   [IN]    p_StellarType               Current stellar type of star
  * @param   [IN]    p_StellarTypePrev           Previous stellar type of star
  * @param   [IN]    p_Radius                    Current radius of star in Rsol
  * @param   [IN]    p_RadiusPrev                Previous radius of star in Rsol
- * @param   [IN]    p_DtPrev                    Previous timestep in Myr
+ * @param   [IN]    p_dtPrev                    Previous timestep in Myr
  * @return                                      Radial expansion timescale in Myr
  *                                              Returns -1.0 if radial expansion timescale can't be calculated
  *                                              (i.e. stellar type has changed or radius has not changed)
@@ -3484,11 +3473,11 @@ double BaseStar::CalculateRadialExpansionTimescale_Static(const STELLAR_TYPE p_S
                                                           const STELLAR_TYPE p_StellarTypePrev,
                                                           const double       p_Radius,
                                                           const double       p_RadiusPrev,
-                                                          const double       p_DtPrev) {
-if (OPTIONS->DebugLevel() > 0) std::cout << std::boolalpha << std::setprecision(15) << "BaseStar::CalculateRadialExpansionTimescale_Static(), p_StellarType = " << (int)p_StellarType << ", p_StellarTypePrev = " << (int)p_StellarTypePrev << ", p_Radius = " << p_Radius << ", p_RadiusPrev = " << p_RadiusPrev << ", p_DtPrev = " << p_DtPrev << "\n";
+                                                          const double       p_dtPrev) {
+if (OPTIONS->DebugLevel() > 0) std::cout << std::boolalpha << std::setprecision(15) << "BaseStar::CalculateRadialExpansionTimescale_Static(), p_StellarType = " << (int)p_StellarType << ", p_StellarTypePrev = " << (int)p_StellarTypePrev << ", p_Radius = " << p_Radius << ", p_RadiusPrev = " << p_RadiusPrev << ", p_dtPrev = " << p_dtPrev << "\n";
 
     return (p_StellarTypePrev == p_StellarType && utils::Compare(p_RadiusPrev, p_Radius) != 0)
-            ? (p_DtPrev * p_RadiusPrev) / fabs(p_Radius - p_RadiusPrev)
+            ? (p_dtPrev * p_RadiusPrev) / fabs(p_Radius - p_RadiusPrev)
             : -1.0;
 }
 
@@ -3526,13 +3515,13 @@ double BaseStar::CalculateRadialExpansionTimescaleDuringMassTransfer() {
  *                                            const STELLAR_TYPE p_StellarTypePrev,
  *                                            const double       p_Mass,
  *                                            const double       p_MassPrev,
- *                                            const double       p_DtPrev)
+ *                                            const double       p_dtPrev)
  *
  * @param   [IN]    p_StellarType               Current stellar type of star
  * @param   [IN]    p_StellarTypePrev           Previous stellar type of star
  * @param   [IN]    p_Mass                      Current mass of star in Msol
  * @param   [IN]    p_MassPrev                  Previous radius of star in Msol
- * @param   [IN]    p_DtPrev                    Previous timestep in Myr
+ * @param   [IN]    p_dtPrev                    Previous timestep in Myr
  * @return                                      Mass change timescale in Myr
  *                                              Returns -1.0 if mass change timescale can't be calculated
  *                                              (i.e. stellar type has changed or mass has not changed)
@@ -3541,10 +3530,10 @@ double BaseStar::CalculateMassChangeTimescale_Static(const STELLAR_TYPE p_Stella
                                                      const STELLAR_TYPE p_StellarTypePrev,
                                                      const double       p_Mass,
                                                      const double       p_MassPrev,
-                                                     const double       p_DtPrev) {
+                                                     const double       p_dtPrev) {
 
     return p_StellarTypePrev == p_StellarType && utils::Compare(p_MassPrev, p_Mass) != 0
-            ? (p_DtPrev * p_MassPrev) / fabs(p_Mass - p_MassPrev)
+            ? (p_dtPrev * p_MassPrev) / fabs(p_Mass - p_MassPrev)
             : -1.0;
 }
 
@@ -4050,11 +4039,10 @@ if (OPTIONS->DebugLevel() > 0) std::cout << std::boolalpha << std::setprecision(
     // there is a chance that mass loss from winds is much faster than previously estimated if, say, LBV winds have turned on
     // we therefore precompute the mass loss rate to avoid taking an overly long timestep, despite the extra computational costs
     double massChangeWinds = m_Mass - CalculateMassLossValues(dt, false);
-    if (utils::Compare(massChangeWinds, 0.0) != 0)
-        dt = min(dt, OPTIONS->MassChangeFraction() * (dt * m_Mass / fabs(massChangeWinds)));
+    if (utils::Compare(massChangeWinds, 0.0) != 0) dt = min(dt, OPTIONS->MassChangeFraction() * (dt * m_Mass / fabs(massChangeWinds)));
 if (OPTIONS->DebugLevel() > 0) std::cout << std::boolalpha << std::setprecision(15) << "BaseStar::CalculateTimestep(@4), dt = " << dt << "\n";  
 
-    dt = max(round(dt / TIMESTEP_QUANTUM) * TIMESTEP_QUANTUM, NUCLEAR_MINIMUM_TIMESTEP);
+    dt = std::max(QUANTISE_DT(dt), NUCLEAR_MINIMUM_TIMESTEP);                                               // quantised; not less than nuclear minimum
 
 if (OPTIONS->DebugLevel() > 0) std::cout << std::boolalpha << std::setprecision(15) << std::boolalpha << std::setprecision(15) << "BaseStar::CalculateTimestep(), returning dt = " << dt << "\n";    
     return dt;
@@ -4233,6 +4221,187 @@ if (OPTIONS->DebugLevel() > 0) std::cout << std::boolalpha << std::setprecision(
     return nextStellarType;
 }
 
+
+
+
+
+
+STELLAR_TYPE BaseStar::EvolveOneTimestepNew(const double p_dt) {
+if (OPTIONS->DebugLevel() > 0) std::cout << std::boolalpha << std::setprecision(15) << "BaseStar::EvolveOneTimesteNew(@entry), p_dt = " << p_dt << "\n";
+    
+        STELLAR_TYPE nextStellarType = m_StellarType;                                               // next stellar type - defaults to current
+    
+        if (ShouldBeMasslessRemnant()) return STELLAR_TYPE::MASSLESS_REMNANT;                       // do not update the star if it has lost all of its mass
+    
+        if (IsSupernova()) return m_StellarType;                                                    // do nothing if supernova is pending (handled elsewhere)
+    
+
+nextStellarType = m_Star->ResolveMassLoss(p_dt);  
+
+        bool recalc = p_ForceRecalculate;                                                           // need to recalculate attribute values?
+        
+        // update mass as required (only change if delta != 0) and prevent -ve
+        if (utils::Compare(p_dM,  0.0) != 0) { 
+            m_Mass = max(0.0, m_Mass + p_dM);
+            recalc = true;
+        }
+        
+        // update mass0 as required (only change if delta != 0) and prevent -ve
+        if (utils::Compare(p_dM0, 0.0) != 0) {
+            m_Mass0 = max(0.0, m_Mass0 + p_dM0);
+            recalc  = true;
+        }
+        
+        // GBParams and Timescale calculations need to be done before taking the timestep
+        CalculateGBParams();
+        CalculateTimescales();
+    
+        // record some current values before they are (possibly) changed by evolution
+        // since these will be previous timestep values we only record them if dt > 0
+        // (i.e. we are actually taking a timestep)
+        if (p_dt > 0.0) {                                                                           // don't use utils::Compare() here
+            m_StellarTypePrev = m_StellarType;
+            m_MassPrev        = m_Mass;
+            m_RadiusPrev      = m_Radius;
+            recalc            = true;
+        }
+    
+        // update attributes if necessary
+        if (recalc) {                                                                               // need to update attributes?
+                                                                                                    // yes
+            SetDt(p_dt);                                                                            // set timestep
+            UpdateEffectiveZAMSLandR();                                                             // update effective ZAMS luminosity and radius if necessary
+    
+            // evolve the star one timestep
+            if (ShouldSkipPhase()) nextStellarType = ResolveSkippedPhase();                         // skip phase if required - per stellar type
+            else {                                                                                  // phase not skipped
+                nextStellarType = EvolveOnPhase(m_dt);                                              // evolve on phase
+                if (nextStellarType == m_StellarType) {                                             // need to switch to new stellar type?
+                    nextStellarType = ResolveEndOfPhase();                                          // no - check for need to move off phase
+                }   
+            }
+    if (OPTIONS->DebugLevel() > 0) std::cout << std::boolalpha << std::setprecision(15) << "BaseStar::EvolveOneTimestep(@1), m_Mass = " << m_Mass << ", m_Radius = " << m_Radius << "\n";
+        }
+    
+        return nextStellarType;                                                                     // stellar type to which star should evolve
+    }
+    
+    
+
+
+
+    /*
+     * Evolve the star on its current phase - take one timestep on the current phase
+     *
+     * If as a result of the evolution of the star it should change stellar type, the new stellar type is returned
+     * as the functional return (if no change to stellar type is required the star's current stellar type is returned). 
+     * 
+     * No change to stellar type is effected here, or as a result of the call to this function.  The caller of this
+     * function is expected to check the stellar type returned and manage any stellar type switch required.
+     *
+     * STELLAR_TYPE EvolveOnPhase(const double p_dt)
+     *
+     * @param   [IN]    p_dt                        Timestep in Myr
+     * @return                                      Stellar Type to which star should evolve
+     */
+    STELLAR_TYPE BaseStar::EvolveOnPhase(const double p_dt) {
+    if (OPTIONS->DebugLevel() > 0) std::cout << std::boolalpha << std::setprecision(15) << "BaseStar::EvolveOnPhase(@entry), p_dt = " << p_dt << ", m_Age= " << m_Age << ", m_Mass = " << m_Mass << ", m_radius = " << m_Radius << "\n";
+        
+        STELLAR_TYPE nextStellarType = m_StellarType;                                       // next stellar type - defaults to current
+    
+        if (ShouldEvolveOnPhase()) {                                                        // should evolve timestep on phase?
+                                                                                            // yes
+            UpdateMainSequenceCoreMass(p_dt, -m_Mdot);                                      // update core mass, relevant for MS stars
+    
+    if (OPTIONS->DebugLevel() > 0) std::cout << std::boolalpha << std::setprecision(15) << "BaseStar::EvolveOnPhase(@1), p_dt = " << p_dt << ", m_Age= " << m_Age << ", m_Mass = " << m_Mass << ", m_radius = " << m_Radius << ", m_Tau = " << m_Tau << "\n";
+            m_Tau        = CalculateTauOnPhase();
+    if (OPTIONS->DebugLevel() > 0) std::cout << std::boolalpha << std::setprecision(15) << "BaseStar::EvolveOnPhase(@2), p_dt = " << p_dt << ", m_Age= " << m_Age << ", m_Mass = " << m_Mass << ", m_radius = " << m_Radius << ", m_Tau = " << m_Tau << "\n";
+    
+            m_COCoreMass = CalculateCOCoreMassOnPhase();
+            m_CoreMass   = CalculateCoreMassOnPhase();
+            m_HeCoreMass = CalculateHeCoreMassOnPhase();
+    
+            m_Luminosity = CalculateLuminosityOnPhase();
+    
+            // Calculate abundances
+            m_HeliumAbundanceCore      = CalculateHeliumAbundanceCoreOnPhase();
+            m_HeliumAbundanceSurface   = CalculateHeliumAbundanceSurfaceOnPhase();
+            m_HydrogenAbundanceCore    = CalculateHydrogenAbundanceCoreOnPhase();
+            m_HydrogenAbundanceSurface = CalculateHydrogenAbundanceSurfaceOnPhase();  
+           
+    if (OPTIONS->DebugLevel() > 0) std::cout << std::boolalpha << std::setprecision(15) << "BaseStar::EvolveOnPhase(@3), p_dt = " << p_dt << ", m_Mass = " << m_Mass << ", m_radius = " << m_Radius << ", m_Tau = " << m_Tau << "\n";
+            std::tie(m_Radius, nextStellarType) = CalculateRadiusAndStellarTypeOnPhase();   // radius and possibly new stellar type
+    if (OPTIONS->DebugLevel() > 0) std::cout << std::boolalpha << std::setprecision(15) << "BaseStar::EvolveOnPhase(@4), p_dt = " << p_dt << ", m_Mass = " << m_Mass << ", m_radius = " << m_Radius << ", m_Tau = " << m_Tau << "\n";
+    
+            m_Mu = CalculatePerturbationMuOnPhase();
+    
+            PerturbLuminosityAndRadiusOnPhase();
+    
+            m_Temperature = CalculateTemperatureOnPhase();
+    
+            if (p_dt > 0.0) {
+                STELLAR_TYPE thisStellarType = ResolveEnvelopeLoss();                       // resolve envelope loss if it occurs - possibly new stellar type
+                if (thisStellarType != m_StellarType) {                                     // thisStellarType overrides stellarType (from CalculateRadiusAndStellarTypeOnPhase())
+                    nextStellarType = thisStellarType;
+                }
+                AdvanceAgeAndTime(p_dt);                                                    // advance age of star and simulation time
+            }
+        }
+    
+        return nextStellarType;
+    }
+
+    
+    STELLAR_TYPE BaseStar::EvolveOnPhaseNew(const double p_dt) {
+        if (OPTIONS->DebugLevel() > 0) std::cout << std::boolalpha << std::setprecision(15) << "BaseStar::EvolveOnPhase(@entry), p_dt = " << p_dt << ", m_Age= " << m_Age << ", m_Mass = " << m_Mass << ", m_radius = " << m_Radius << "\n";
+            
+            STELLAR_TYPE nextStellarType = m_StellarType;                                       // next stellar type - defaults to current
+        
+            if (ShouldEvolveOnPhase()) {                                                        // should evolve timestep on phase?
+                                                                                                // yes
+                UpdateMainSequenceCoreMass(p_dt, -m_Mdot);                                      // update core mass, relevant for MS stars
+        
+        if (OPTIONS->DebugLevel() > 0) std::cout << std::boolalpha << std::setprecision(15) << "BaseStar::EvolveOnPhase(@1), p_dt = " << p_dt << ", m_Age= " << m_Age << ", m_Mass = " << m_Mass << ", m_radius = " << m_Radius << ", m_Tau = " << m_Tau << "\n";
+                m_Tau        = CalculateTauOnPhase();
+        if (OPTIONS->DebugLevel() > 0) std::cout << std::boolalpha << std::setprecision(15) << "BaseStar::EvolveOnPhase(@2), p_dt = " << p_dt << ", m_Age= " << m_Age << ", m_Mass = " << m_Mass << ", m_radius = " << m_Radius << ", m_Tau = " << m_Tau << "\n";
+        
+                m_COCoreMass = CalculateCOCoreMassOnPhase();
+                m_CoreMass   = CalculateCoreMassOnPhase();
+                m_HeCoreMass = CalculateHeCoreMassOnPhase();
+        
+                m_Luminosity = CalculateLuminosityOnPhase();
+        
+                // Calculate abundances
+                m_HeliumAbundanceCore      = CalculateHeliumAbundanceCoreOnPhase();
+                m_HeliumAbundanceSurface   = CalculateHeliumAbundanceSurfaceOnPhase();
+                m_HydrogenAbundanceCore    = CalculateHydrogenAbundanceCoreOnPhase();
+                m_HydrogenAbundanceSurface = CalculateHydrogenAbundanceSurfaceOnPhase();  
+               
+        if (OPTIONS->DebugLevel() > 0) std::cout << std::boolalpha << std::setprecision(15) << "BaseStar::EvolveOnPhase(@3), p_dt = " << p_dt << ", m_Mass = " << m_Mass << ", m_radius = " << m_Radius << ", m_Tau = " << m_Tau << "\n";
+                std::tie(m_Radius, nextStellarType) = CalculateRadiusAndStellarTypeOnPhase();   // radius and possibly new stellar type
+        if (OPTIONS->DebugLevel() > 0) std::cout << std::boolalpha << std::setprecision(15) << "BaseStar::EvolveOnPhase(@4), p_dt = " << p_dt << ", m_Mass = " << m_Mass << ", m_radius = " << m_Radius << ", m_Tau = " << m_Tau << "\n";
+        
+                m_Mu = CalculatePerturbationMuOnPhase();
+        
+                PerturbLuminosityAndRadiusOnPhase();
+        
+                m_Temperature = CalculateTemperatureOnPhase();
+        
+                if (p_dt > 0.0) {
+                    STELLAR_TYPE thisStellarType = ResolveEnvelopeLoss();                       // resolve envelope loss if it occurs - possibly new stellar type
+                    if (thisStellarType != m_StellarType) {                                     // thisStellarType overrides stellarType (from CalculateRadiusAndStellarTypeOnPhase())
+                        nextStellarType = thisStellarType;
+                    }
+                    AdvanceAgeAndTime(p_dt);                                                    // advance age of star and simulation time
+                }
+            }
+        
+            return nextStellarType;
+        }
+
+
+
+    
 
 /*
  * Evolve the star onto the next phase if necessary

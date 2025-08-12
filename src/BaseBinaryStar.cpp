@@ -1449,7 +1449,7 @@ void BaseBinaryStar::ResolveSupernova() {
     m_IPrime    = m_ThetaE;                                                                                                     // inclination angle between preSN and postSN orbital planes 
     m_CosIPrime = cos(m_IPrime);
 
-std::cout << "Printing SN entry\n";
+if (OPTIONS->DebugLevel() > 0) std::cout << "Printing SN entry\n";
     (void)PrintSupernovaDetails();                                                                                              // log record to supernovae logfile
     m_Supernova->ClearCurrentSNEvent();
 
@@ -2514,7 +2514,7 @@ void BaseBinaryStar::CalculateEnergyAndAngularMomentum() {
  *
  */
 void BaseBinaryStar::ResolveMassChanges() {
-std::cout << "BaseBinaryStar::ResolveMassChanges(@1), ST1 = " << (int)m_Star1->StellarType() << ", ST2 = " << (int)m_Star2->StellarType() << "\n";
+if (OPTIONS->DebugLevel() > 0) std::cout << "BaseBinaryStar::ResolveMassChanges(@1), ST1 = " << (int)m_Star1->StellarType() << ", ST2 = " << (int)m_Star2->StellarType() << "\n";
 
     STELLAR_TYPE stellarType1 = m_Star1->StellarTypePrev();                                             // star 1 stellar type before updating attributes
     STELLAR_TYPE stellarType2 = m_Star2->StellarTypePrev();                                             // star 2 stellar type before updating attributes
@@ -2535,12 +2535,12 @@ std::cout << "BaseBinaryStar::ResolveMassChanges(@1), ST1 = " << (int)m_Star1->S
                 extraAngularMomentumChangeOrbit -= angularMomentumChangeStar;
                 // update mass of star according to mass loss and mass transfer, then update age accordingly
                 (void)m_Star1->UpdateAttributes(massChange, 0.0);// THIS MAY SWITCH                                      // update mass for star
-std::cout << "BaseBinaryStar::ResolveMassChanges(@2), ST1 = " << (int)m_Star1->StellarType() << ", ST2 = " << (int)m_Star2->StellarType() << "\n";
+if (OPTIONS->DebugLevel() > 0) std::cout << "BaseBinaryStar::ResolveMassChanges(@2), ST1 = " << (int)m_Star1->StellarType() << ", ST2 = " << (int)m_Star2->StellarType() << "\n";
                 m_Star1->UpdateInitialMass();                                                           // update effective initial mass of star (MS, HG & HeMS)
                 m_Star1->UpdateAgeAfterMassLoss();                                                      // update age of star
                 m_Star1->ApplyMassTransferRejuvenationFactor();                                         // apply age rejuvenation factor for star
                 (void)m_Star1->UpdateAttributes(0.0, 0.0, true);// THIS MAY SWITCH
-std::cout << "BaseBinaryStar::ResolveMassChanges(@3), ST1 = " << (int)m_Star1->StellarType() << ", ST2 = " << (int)m_Star2->StellarType() << "\n";
+if (OPTIONS->DebugLevel() > 0) std::cout << "BaseBinaryStar::ResolveMassChanges(@3), ST1 = " << (int)m_Star1->StellarType() << ", ST2 = " << (int)m_Star2->StellarType() << "\n";
                 m_Star1->SetAngularMomentum(m_Star1->AngularMomentum() + angularMomentumChangeStar);
             }
             
@@ -2562,12 +2562,12 @@ std::cout << "BaseBinaryStar::ResolveMassChanges(@3), ST1 = " << (int)m_Star1->S
                 extraAngularMomentumChangeOrbit -= angularMomentumChangeStar;
                 // update mass of star according to mass loss and mass transfer, then update age accordingly
                 (void)m_Star2->UpdateAttributes(massChange, 0.0);// THIS MAY SWITCH                                       // update mass for star
-std::cout << "BaseBinaryStar::ResolveMassChanges(@1), ST4 = " << (int)m_Star1->StellarType() << ", ST2 = " << (int)m_Star2->StellarType() << "\n";
+if (OPTIONS->DebugLevel() > 0) std::cout << "BaseBinaryStar::ResolveMassChanges(@1), ST4 = " << (int)m_Star1->StellarType() << ", ST2 = " << (int)m_Star2->StellarType() << "\n";
                 m_Star2->UpdateInitialMass();                                                           // update effective initial mass of star (MS, HG & HeMS)
                 m_Star2->UpdateAgeAfterMassLoss();                                                      // update age of star
                 m_Star2->ApplyMassTransferRejuvenationFactor();                                         // apply age rejuvenation factor for star
                 (void)m_Star2->UpdateAttributes(0.0, 0.0, true);// THIS MAY SWITCH
-std::cout << "BaseBinaryStar::ResolveMassChanges(@1), ST5 = " << (int)m_Star1->StellarType() << ", ST2 = " << (int)m_Star2->StellarType() << "\n";
+if (OPTIONS->DebugLevel() > 0) std::cout << "BaseBinaryStar::ResolveMassChanges(@1), ST5 = " << (int)m_Star1->StellarType() << ", ST2 = " << (int)m_Star2->StellarType() << "\n";
                 m_Star2->SetAngularMomentum(m_Star2->AngularMomentum() + angularMomentumChangeStar);
             }
             
@@ -2959,28 +2959,29 @@ double BaseBinaryStar::OmegaAfterSynchronisation(const double p_M1, const double
  * m_DaDtGW and m_DeDtGW are updated so that they can be used to calculate the timestep dynamically.
  * 
  *
- * void CalculateGravitationalRadiation()
+ * DBL_DBL  CalculateGravitationalRadiation()
  */
-void BaseBinaryStar::CalculateGravitationalRadiation() {
+DBL_DBL  BaseBinaryStar::CalculateGravitationalRadiation() {
 
-    // Useful values
     double eccentricitySquared = m_Eccentricity * m_Eccentricity;
     double oneMinusESq         = 1.0 - eccentricitySquared;
     double oneMinusESq_5       = oneMinusESq * oneMinusESq * oneMinusESq * oneMinusESq * oneMinusESq;
     double G_AU_Msol_yr_3      = G_AU_Msol_yr * G_AU_Msol_yr * G_AU_Msol_yr;
     double C_AU_Yr_5           = C_AU_yr * C_AU_yr * C_AU_yr * C_AU_yr * C_AU_yr;
-    double m_SemiMajorAxis_3   = m_SemiMajorAxis * m_SemiMajorAxis * m_SemiMajorAxis;
-    double massAndGAndCTerm    = G_AU_Msol_yr_3 * m_Star1->Mass() * m_Star2->Mass() * (m_Star1->Mass() + m_Star2->Mass()) / C_AU_Yr_5;              // G^3 * m1 * m2(m1 + m2) / c^5 in units of Msol, AU and yr
+    double massAndGAndCTerm    = G_AU_Msol_yr_3 * m_Star1->Mass() * m_Star2->Mass() * (m_Star1->Mass() + m_Star2->Mass()) / C_AU_Yr_5;  // G^3 * m1 * m2(m1 + m2) / c^5 in units of Msol, AU and yr
+    double semiMajorAxis_3     = m_SemiMajorAxis * m_SemiMajorAxis * m_SemiMajorAxis;
 
-    // Approximate rate of change in semimajor axis
+    // approximate rate of change in semimajor axis in units of AU Myr^-1
     double numeratorA   = -64.0 * massAndGAndCTerm;
-    double denominatorA = 5.0 * m_SemiMajorAxis_3 * std::sqrt(oneMinusESq_5 * oneMinusESq * oneMinusESq);
-    m_DaDtGW            = (numeratorA / denominatorA) * (1.0 + (73.0 / 24.0) * eccentricitySquared + (37.0 / 96.0) * eccentricitySquared * eccentricitySquared) * MYR_TO_YEAR;  // units of AU Myr^-1
+    double denominatorA = 5.0 * semiMajorAxis_3 * std::sqrt(oneMinusESq_5 * oneMinusESq * oneMinusESq);
+    double dadt         = (numeratorA / denominatorA) * (1.0 + (73.0 / 24.0) * eccentricitySquared + (37.0 / 96.0) * eccentricitySquared * eccentricitySquared) * MYR_TO_YEAR;
 
-    // Approximate rate of change in eccentricity
+    // Approximate rate of change in eccentricity in units of Myr^-1
     double numeratorE   = -304.0 * m_Eccentricity * massAndGAndCTerm;
-    double denominatorE = 15.0 * m_SemiMajorAxis_3 * m_SemiMajorAxis * std::sqrt(oneMinusESq_5);
-    m_DeDtGW            = (numeratorE / denominatorE) * (1.0 + (121.0 / 304.0) * eccentricitySquared) * YEAR_TO_MYR;                                // units of Myr^-1
+    double denominatorE = 15.0 * semiMajorAxis_3 * m_SemiMajorAxis * std::sqrt(oneMinusESq_5);
+    double dedt         = (numeratorE / denominatorE) * (1.0 + (121.0 / 304.0) * eccentricitySquared) * YEAR_TO_MYR;
+
+    return std::make_tuple(dadt, dedt);
 }
 
 
@@ -3082,9 +3083,9 @@ double BaseBinaryStar::ChooseTimestep(const double p_Factor) {
         }
     }
 
-    dt *= OPTIONS->TimestepMultiplier() * p_Factor;
+    dt = QUANTISE_DT(dt * OPTIONS->TimestepMultiplier() * p_Factor);                        // factors and multipliers applied; quantised
 
-    return std::max(std::round(dt / TIMESTEP_QUANTUM) * TIMESTEP_QUANTUM, TIDES_MINIMUM_FRACTIONAL_NUCLEAR_TIME * NUCLEAR_MINIMUM_TIMESTEP); // quantised and not less than minimum
+    return std::max(dt, TIDES_MINIMUM_FRACTIONAL_NUCLEAR_TIME * NUCLEAR_MINIMUM_TIMESTEP);  // not less than minimum
 }
 
 
@@ -3106,17 +3107,17 @@ double BaseBinaryStar::ChooseTimestep(const double p_Factor) {
  * @param   [in]        p_Dt                    Timestep (in Myr)
  */
 ImmediateEventT BaseBinaryStar::EvaluateBinary(const double p_Dt) {
-std::cout << "BaseBinaryStar::EvaluateBinary(@1), ST1 = " << (int)m_Star1->StellarType() << ", ST2 = " << (int)m_Star2->StellarType() << "\n";
+if (OPTIONS->DebugLevel() > 0) std::cout << "BaseBinaryStar::EvaluateBinary(@1), ST1 = " << (int)m_Star1->StellarType() << ", ST2 = " << (int)m_Star2->StellarType() << "\n";
 
     ImmediateEventT result = { IMMEDIATE_EVENT::NONE, STELLAR_TYPE::NONE, STELLAR_TYPE::NONE };                           // default result
 
     CalculateMassTransfer(p_Dt);                                                                                        // calculate mass transfer if necessary
-std::cout << "BaseBinaryStar::EvaluateBinary(@2), ST1 = " << (int)m_Star1->StellarType() << ", ST2 = " << (int)m_Star2->StellarType() << "\n";
+if (OPTIONS->DebugLevel() > 0) std::cout << "BaseBinaryStar::EvaluateBinary(@2), ST1 = " << (int)m_Star1->StellarType() << ", ST2 = " << (int)m_Star2->StellarType() << "\n";
 
     (void)PrintDetailedOutput(m_Id, BSE_DETAILED_RECORD_TYPE::POST_MT);                                                 // print (log) detailed output
 
     CalculateWindsMassLoss(p_Dt);                                                                                       // calculate mass loss dues to winds
-std::cout << "BaseBinaryStar::EvaluateBinary(@3), ST1 = " << (int)m_Star1->StellarType() << ", ST2 = " << (int)m_Star2->StellarType() << "\n";
+if (OPTIONS->DebugLevel() > 0) std::cout << "BaseBinaryStar::EvaluateBinary(@3), ST1 = " << (int)m_Star1->StellarType() << ", ST2 = " << (int)m_Star2->StellarType() << "\n";
 
     (void)PrintDetailedOutput(m_Id, BSE_DETAILED_RECORD_TYPE::POST_WINDS);                                              // print (log) detailed output
 
@@ -3125,11 +3126,11 @@ std::cout << "BaseBinaryStar::EvaluateBinary(@3), ST1 = " << (int)m_Star1->Stell
         && !HasOneOf({STELLAR_TYPE::MASSLESS_REMNANT}) ) {                                                              // yes - avoid CEE if CH+CH or one star is a massless remnant
 
         (void)ResolveCommonEnvelopeEvent();                                                                                   // resolve CEE - immediate event
-std::cout << "BaseBinaryStar::EvaluateBinary(@4), ST1 = " << (int)m_Star1->StellarType() << ", ST2 = " << (int)m_Star2->StellarType() << "\n";
+if (OPTIONS->DebugLevel() > 0) std::cout << "BaseBinaryStar::EvaluateBinary(@4), ST1 = " << (int)m_Star1->StellarType() << ", ST2 = " << (int)m_Star2->StellarType() << "\n";
         (void)PrintDetailedOutput(m_Id, BSE_DETAILED_RECORD_TYPE::POST_CEE);                                            // print (log) detailed output
     }
     else if (m_Star1->IsSNevent() || m_Star2->IsSNevent()) {
-std::cout << "BaseBinaryStar::EvaluateBinary(@a), SN flagged, ST1 = " << (int)m_Star1->StellarType() << ", ST2 = " << (int)m_Star2->StellarType() << "\n";
+if (OPTIONS->DebugLevel() > 0) std::cout << "BaseBinaryStar::EvaluateBinary(@a), SN flagged, ST1 = " << (int)m_Star1->StellarType() << ", ST2 = " << (int)m_Star2->StellarType() << "\n";
         result = { IMMEDIATE_EVENT::SUPERNOVA, STELLAR_TYPE::NONE, STELLAR_TYPE::NONE };
         //EvaluateSupernovae();                                                                                  // evaluate supernovae (both stars) - immediate event
         //(void)PrintDetailedOutput(m_Id, BSE_DETAILED_RECORD_TYPE::POST_SN);                                             // print (log) detailed output
@@ -3138,9 +3139,9 @@ std::cout << "BaseBinaryStar::EvaluateBinary(@a), SN flagged, ST1 = " << (int)m_
         //}
     }
     else {
-std::cout << "BaseBinaryStar::EvaluateBinary(@5.1), ST1 = " << (int)m_Star1->StellarType() << ", ST2 = " << (int)m_Star2->StellarType() << "\n";
+if (OPTIONS->DebugLevel() > 0) std::cout << "BaseBinaryStar::EvaluateBinary(@5.1), ST1 = " << (int)m_Star1->StellarType() << ", ST2 = " << (int)m_Star2->StellarType() << "\n";
         ResolveMassChanges();                                                                                           // apply mass loss and mass transfer as necessary
-std::cout << "BaseBinaryStar::EvaluateBinary(@5.2), ST1 = " << (int)m_Star1->StellarType() << ", ST2 = " << (int)m_Star2->StellarType() << "\n";
+if (OPTIONS->DebugLevel() > 0) std::cout << "BaseBinaryStar::EvaluateBinary(@5.2), ST1 = " << (int)m_Star1->StellarType() << ", ST2 = " << (int)m_Star2->StellarType() << "\n";
         (void)PrintDetailedOutput(m_Id, BSE_DETAILED_RECORD_TYPE::POST_MASS_RESOLUTION);                                // print (log) detailed output
 
         if (HasStarsTouching()) {                                                                                       // if stars emerged from mass transfer as touching, it's a merger
@@ -3157,7 +3158,7 @@ std::cout << "BaseBinaryStar::EvaluateBinary(@5.2), ST1 = " << (int)m_Star1->Ste
     if (!StellarMerger() || (HasOneOf({STELLAR_TYPE::MASSLESS_REMNANT}) && OPTIONS->EvolveMainSequenceMergers())) {     // check stellar merger or evolving MS mergers
                                                                                                                         // continue evolution
         if ((m_Star1->IsSNevent() || m_Star2->IsSNevent())) {
-std::cout << "BaseBinaryStar::EvaluateBinary(@b), SN flagged, ST1 = " << (int)m_Star1->StellarType() << ", ST2 = " << (int)m_Star2->StellarType() << "\n";
+if (OPTIONS->DebugLevel() > 0) std::cout << "BaseBinaryStar::EvaluateBinary(@b), SN flagged, ST1 = " << (int)m_Star1->StellarType() << ", ST2 = " << (int)m_Star2->StellarType() << "\n";
             result = { IMMEDIATE_EVENT::SUPERNOVA, STELLAR_TYPE::NONE, STELLAR_TYPE::NONE };
             //EvaluateSupernovae();                                                                                  // evaluate supernovae (both stars) - immediate event
             //(void)PrintDetailedOutput(m_Id, BSE_DETAILED_RECORD_TYPE::POST_SN);                                         // print (log) detailed output
@@ -3328,7 +3329,7 @@ EVOLUTION_STATUS BaseBinaryStar::Evolve() {
                 //     - note that this is placed before the call to ChooseTimestep() because when
                 //       emitting GWs the timestep is a function of gravitational radiation
                 if (OPTIONS->EmitGravitationalRadiation()) {
-                    CalculateGravitationalRadiation();
+                    std::tie(m_DaDtGW, m_DeDtGW) = CalculateGravitationalRadiation();
                 }
 
                 // we want the first timestep to be small - calculate timestep and divide by 1000.0
@@ -3341,7 +3342,7 @@ EVOLUTION_STATUS BaseBinaryStar::Evolve() {
 
                 // do we have an immediate event that needs to be processed?
                 if (m_ImmediateEvent.eventType != IMMEDIATE_EVENT::NONE) {                                                              // immediate event requiring processing?
-                    std::cout << "Have immediate event\n";
+if (OPTIONS->DebugLevel() > 0) std::cout << "Have immediate event\n";
                     dt = ABSOLUTE_MINIMUM_TIMESTEP;                                                                                     // yes - set minimum timestep
 
                     switch (m_ImmediateEvent.eventType) {                                                                               // which immediate event?
@@ -3350,21 +3351,21 @@ EVOLUTION_STATUS BaseBinaryStar::Evolve() {
                             break;
                             
                         case IMMEDIATE_EVENT::SWITCH:                                                                      // stellar type switch
-                            std::cout << "before processing SWITCH, ST1 = " << (int)m_Star1->StellarType() << ", ST2 = " << (int)m_Star2->StellarType() << "\n";
+if (OPTIONS->DebugLevel() > 0) std::cout << "before processing SWITCH, ST1 = " << (int)m_Star1->StellarType() << ", ST2 = " << (int)m_Star2->StellarType() << "\n";
                             if (utils::IsOneOf(m_ImmediateEvent.stellarType1, EVOLVABLE_TYPES)) (void)m_Star1->SwitchTo(m_ImmediateEvent.stellarType1);
                             if (utils::IsOneOf(m_ImmediateEvent.stellarType2, EVOLVABLE_TYPES)) (void)m_Star2->SwitchTo(m_ImmediateEvent.stellarType2);
 
-                            std::cout << "after  processing SWITCH, ST1 = " << (int)m_Star1->StellarType() << ", ST2 = " << (int)m_Star2->StellarType() << "\n";
+if (OPTIONS->DebugLevel() > 0) std::cout << "after  processing SWITCH, ST1 = " << (int)m_Star1->StellarType() << ", ST2 = " << (int)m_Star2->StellarType() << "\n";
                             break;
 
                         case IMMEDIATE_EVENT::SUPERNOVA:                                                                                // supernova
-                            std::cout << "before processing SN, ST1 = " << (int)m_Star1->StellarType() << ", ST2 = " << (int)m_Star2->StellarType() << "\n";
+if (OPTIONS->DebugLevel() > 0) std::cout << "before processing SN, ST1 = " << (int)m_Star1->StellarType() << ", ST2 = " << (int)m_Star2->StellarType() << "\n";
                             EvaluateSupernovae();
                             (void)PrintDetailedOutput(m_Id, BSE_DETAILED_RECORD_TYPE::POST_SN);                                         // print (log) detailed output
                             if (HasOneOf({ STELLAR_TYPE::NEUTRON_STAR })) {
                                 (void)PrintPulsarEvolutionParameters(BSE_PULSAR_RECORD_TYPE::POST_SN);                                  // print (log) pulsar evolution parameters 
                             }
-                            std::cout << "after  processing SN, ST1 = " << (int)m_Star1->StellarType() << ", ST2 = " << (int)m_Star2->StellarType() << "\n";
+if (OPTIONS->DebugLevel() > 0) std::cout << "after  processing SN, ST1 = " << (int)m_Star1->StellarType() << ", ST2 = " << (int)m_Star2->StellarType() << "\n";
                             break;
 
                         default:                                                                                                        // unknown immediate event
@@ -3526,7 +3527,7 @@ EVOLUTION_STATUS BaseBinaryStar::Evolve() {
                         // if user selects to emit GWs, calculate the effects of radiation
                         //   - note that this is placed before the call to ChooseTimestep() because when
                         //     emitting GWs the timestep is a function of gravitational radiation                    
-                        if (OPTIONS->EmitGravitationalRadiation()) CalculateGravitationalRadiation();
+                        if (OPTIONS->EmitGravitationalRadiation()) std::tie(m_DaDtGW, m_DeDtGW) = CalculateGravitationalRadiation();
 
                         m_Star2->SetPrevDt(m_Star2->Dt());                                                                              // update stellar property for star2
                         m_Star1->SetPrevDt(m_Star1->Dt());                                                                              // update stellar property for star1

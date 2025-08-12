@@ -436,7 +436,7 @@ private:
 
     double  CalculateAngularMomentum() const                                    { return CalculateAngularMomentum(m_SemiMajorAxis, m_Eccentricity, m_Star1->Mass(), m_Star2->Mass(), m_Star1->Omega(), m_Star2->Omega(), m_Star1->CalculateMomentOfInertiaAU(), m_Star2->CalculateMomentOfInertiaAU()); }
 
-    void    CalculateGravitationalRadiation();
+    DBL_DBL CalculateGravitationalRadiation();
     void    EmitGravitationalWave(const double p_Dt);
 
     double  ChooseTimestep(const double p_Factor = 1.0);

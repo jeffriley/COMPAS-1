@@ -115,7 +115,8 @@ protected:
     void            ResolveEnvelopeMassAtPhaseEnd(const double p_Tau) const                                     { ResolveEnvelopeMassOnPhase(p_Tau); }                                  // Same as on phase
     void            ResolveEnvelopeMassOnPhase(const double p_Tau) const { }                                                                                                            // NO-OP
 
-    STELLAR_TYPE    ResolveMassLoss()                                                                           { return m_StellarType; }                                               // NO-OP                                                                                                                                    // NO-OP
+    STELLAR_TYPE    ResolveMassLoss(const double p_dt)                                                          { return m_StellarType; }                                               // NO-OP                                                                                                                                    // NO-OP
+    STELLAR_TYPE    ResolveMassLossHurley(const double p_dt)                                                    { return ResolveMassLoss(p_Dt); }                                                                                                                                   // NO-OP
 
     STELLAR_TYPE    ResolveSkippedPhase()                                                                       { return BaseStar::ResolveSkippedPhase(); }                             // Default to BaseStar
                                                                                                                                                                                         //

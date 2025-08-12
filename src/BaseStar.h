@@ -325,7 +325,8 @@ public:
                                                                const double p_CompanionRadius   = 0.0,
                                                                const double p_CompanionEnvelope = 0.0)          { return p_FinalMass - Mass(); }                                    // Overwritten in NS.h; for now, no accretion on stars other than compact objects during CE
     virtual STELLAR_TYPE        ResolveEnvelopeLoss(bool p_Force = false)                                       { return m_StellarType; }
-    virtual STELLAR_TYPE        ResolveMassLoss();
+    virtual STELLAR_TYPE        ResolveMassLoss(const double p_dt);
+    virtual STELLAR_TYPE        ResolveMassLossHurley(const double p_dt);
     virtual void                ResolveShellChange(const double p_AccretedMass) { }                                                                                                 // Default does nothing, use inheritance for WDs.
     virtual STELLAR_TYPE        ResolveSupernova()                                                              { return m_StellarType; }                                           // Default is NO-OP
        
@@ -566,9 +567,8 @@ protected:
     
     void                CalculateMassCutoffs(const double p_Metallicity, const double p_LogMetallicityXi, DBL_VECTOR &p_MassCutoffs);
 
-    virtual double      CalculateMassLossRate();
+    virtual std::tuple<double, MASS_LOSS_TYPE> CalculateMassLossRate();
     virtual double      CalculateMassLossRateBelczynski2010();
-    double              CalculateMassLossRateBjorklundEddingtonFactor() const;
 
     // CalculateMassLossRateEnhancementRotation
     // The exponent originally comes from Bjorkman & Cassinelli 1993 (https://ui.adsabs.harvard.edu/abs/1993ApJ...409..429B/abstract),
@@ -579,7 +579,7 @@ protected:
                                                                                                                             double logMdot = -13.3 + (1.36 * log10(m_Luminosity)) + (0.61 * LogMetallicityXiAnders()); // Vink 2017 Eq. 1.
                                                                                                                             return PPOW(10.0, logMdot);
                                                                                                                         }
-    virtual double      CalculateMassLossRateHurley()                                                                   { return CalculateMassLossRateNieuwenhuijzenDeJager(); }                    // Hurley et al. 2000
+    virtual std::tuple<double, MASS_LOSS_TYPE> CalculateMassLossRateHurley() { return CalculateMassLossRateNieuwenhuijzenDeJager(); }                    // Hurley et al. 2000
     inline double       CalculateMassLossRateKudritzkiReimers() const                                                   { return 4.0E-13 * (MASS_LOSS_ETA * m_Luminosity * m_Radius / m_Mass); }    // Hurley et al. 2000, eq 106 (based on a prescription taken from Kudritzki and Reimers 1978). Note: shouldn't be eta squared like in paper!}
 
     double              CalculateMassLossRateLBV(const LBV_MASS_LOSS_PRESCRIPTION p_LBVprescription);

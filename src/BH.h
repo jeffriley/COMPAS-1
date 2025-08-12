@@ -62,7 +62,7 @@ protected:
     double  CalculateConvergedMassStepZetaNuclear() const                           { return 0.0; }
     double  CalculateEddingtonCriticalRate() const                                  { return 2.6E-8 * m_Mass * MYR_TO_YEAR; }                           // E.g., Marchant+, 2017, Eq. 3, assuming accretion efficiency of 10%
     double  CalculateLuminosityOnPhase() const                                      { return CalculateLuminosityOnPhase_Static(); }
-    double  CalculateMassLossRate()                                                 { return 0.0; }                                                     // Ensure that BHs don't lose mass in winds
+    std::tuple<double, MASS_LOSS_TYPE> CalculateMassLossRate() { return std::make_tuple(0.0, MASS_LOSS_TYPE::NONE); } // Ensure that NSs don't lose mass in winds
     double  CalculateMomentOfInertia() const                                        { return (2.0 / 5.0) * m_Mass * m_Radius * m_Radius; }
     double  CalculateRadiusOnPhase() const                                          { return CalculateRadiusOnPhase_Static(m_Mass); }                   // Use class member variables - returns radius in Rsol
     double  CalculateRadiusOnPhase(double p_Mass, double p_Luminosity) const        { return CalculateRadiusOnPhase(); }        // not a meaningful calculation for BH, ignore arguments

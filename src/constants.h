@@ -30,6 +30,10 @@ typedef std::vector<std::tuple<DBL_VECTOR, DBL_VECTOR>>                 GE_QCRIT
 typedef std::tuple<DBL_VECTOR, GE_QCRIT_RADII_QCRIT_VECTOR_HE>          GE_QCRIT_TABLE_HE; 
 
 
+// global #define for quantising timestep
+#define QUANTISE_DT(dt) (std::round(dt / TIMESTEP_QUANTUM) * TIMESTEP_QUANTUM)
+
+
 // the defaults size of the boost list that handles variant types is 20 - so only 20 variant types are allowed
 // we've exceeded that number - we're at 21 currently - so the size of the boost list needs to be increased
 // we have to set the size of the list before we include the boost headers - otherwise boost redefines it

@@ -368,13 +368,11 @@ STELLAR_TYPE Star::AgeOneTimestep(const double p_DeltaTime, bool p_Switch) {
  *
  * STELLAR_TYPE EvolveOneTimestep(const double p_Dt)
  *
- * @param   [IN]    p_Dt                        The timestep duration (MYr)
- * 
+ * @param   [IN]    p_dt                        The timestep duration (MYr)
  * @return                                      New stellar type for star
- *
  */
-STELLAR_TYPE Star::EvolveOneTimestep(const double p_Dt) {
-if (OPTIONS->DebugLevel() > 0) std::cout << std::boolalpha << std::setprecision(15) << "Star::EvolveOneTimestep(@entry), p_Dt = " << p_Dt << ", m_Star->Mass() = " << m_Star->Mass() << ", m_Star->Radius() = " << m_Star->Radius() << "\n";
+STELLAR_TYPE Star::EvolveOneTimestep(const double p_dt) {
+if (OPTIONS->DebugLevel() > 0) std::cout << std::boolalpha << std::setprecision(15) << "Star::EvolveOneTimestep(@entry), p_dt = " << p_dt << ", m_Star->Mass() = " << m_Star->Mass() << ", m_Star->Radius() = " << m_Star->Radius() << "\n";
 
     STELLAR_TYPE nextStellarType;
 
@@ -382,12 +380,12 @@ if (OPTIONS->DebugLevel() > 0) std::cout << std::boolalpha << std::setprecision(
     
     (void)m_Star->PrintDetailedOutput(m_Id, SSE_DETAILED_RECORD_TYPE::PRE_MASS_LOSS);                           // log record - pre mass loss
     
-    nextStellarType = m_Star->ResolveMassLoss();                                                                // apply wind mass loss if required
-if (OPTIONS->DebugLevel() > 0) std::cout << std::boolalpha << std::setprecision(15) << "Star::EvolveOneTimestep(@1), p_Dt = " << p_Dt << ", m_Star->Mass() = " << m_Star->Mass() << ", m_Star->Radius() = " << m_Star->Radius() << "\n";
+    nextStellarType = m_Star->ResolveMassLoss(p_dt);                                                            // apply wind mass loss if required
+if (OPTIONS->DebugLevel() > 0) std::cout << std::boolalpha << std::setprecision(15) << "Star::EvolveOneTimestep(@1), p_dt = " << p_dt << ", m_Star->Mass() = " << m_Star->Mass() << ", m_Star->Radius() = " << m_Star->Radius() << "\n";
 
     if (nextStellarType == m_Star->StellarType())                                                               // need to switch stellar type?
-        nextStellarType = m_Star->EvolveOneTimestep(0.0, 0.0, p_Dt, false);                                     // no - age the star one time step - modify stellar attributes as appropriate
-if (OPTIONS->DebugLevel() > 0) std::cout << std::boolalpha << std::setprecision(15) << "Star::EvolveOneTimestep(@2), p_Dt = " << p_Dt << ", m_Star->Mass() = " << m_Star->Mass() << ", m_Star->Radius() = " << m_Star->Radius() << "\n";
+        nextStellarType = m_Star->EvolveOneTimestep(0.0, 0.0, p_dt, false);                                     // no - age the star one time step - modify stellar attributes as appropriate
+if (OPTIONS->DebugLevel() > 0) std::cout << std::boolalpha << std::setprecision(15) << "Star::EvolveOneTimestep(@2), p_dt = " << p_dt << ", m_Star->Mass() = " << m_Star->Mass() << ", m_Star->Radius() = " << m_Star->Radius() << "\n";
 
     (void)m_Star->PrintDetailedOutput(m_Id, SSE_DETAILED_RECORD_TYPE::POST_MASS_LOSS);                          // log record - post mass loss
 
@@ -509,17 +507,15 @@ if (OPTIONS->DebugLevel() > 0) std::cout << "Processing ordinary timestep\n";
                         dt = timesteps[stepNum];
                     }
                     else {                                                                                          // not using user-provided timesteps
-                        dt = m_Star->CalculateTimestep() * OPTIONS->TimestepMultiplier() * OPTIONS->TimestepMultipliers(static_cast<int>(StellarType())); // calculate new timestep   
+                        dt = QUANTISE_DT(m_Star->CalculateTimestep() * OPTIONS->TimestepMultiplier() * OPTIONS->TimestepMultipliers(static_cast<int>(StellarType()))); // new timestep; quantised
 if (OPTIONS->DebugLevel() > 0) std::cout << "Star::Evolve(@1), dt = " << dt << "\n";   
-                        dt = std::round(dt / TIMESTEP_QUANTUM) * TIMESTEP_QUANTUM;                                  // quantised
-if (OPTIONS->DebugLevel() > 0) std::cout << "Star::Evolve(@2), dt = " << dt << "\n";   
                     }
                     stepNum++;                                                                                      // increment step number                                                      
 
-if (OPTIONS->DebugLevel() > 0) std::cout << "Star::Evolve(@3), dt = " << dt << "\n";   
+if (OPTIONS->DebugLevel() > 0) std::cout << "Star::Evolve(@2), dt = " << dt << "\n";   
                     nextStellarType = EvolveOneTimestep(dt);                                                        // evolve for timestep
                     UpdateAttributes(0.0, 0.0, true);                                                               // keeps SSE in sync with BSE
-if (OPTIONS->DebugLevel() > 0) std::cout << "Star::Evolve(@4), m_Star->Dt() = " << m_Star->Dt() << "\n";   
+if (OPTIONS->DebugLevel() > 0) std::cout << "Star::Evolve(@3), m_Star->Dt() = " << m_Star->Dt() << "\n";   
 
     //(void)SwitchTo(stellarType);                                                                                // switch phase if required
 

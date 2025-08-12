@@ -892,32 +892,34 @@ double EAGB::CalculateCOCoreMassOnPhase(const double p_Time) const {
 
 
 /*
- * Calculate the dominant mass loss mechanism and associated rate for the star
- * at the current evolutionary phase.
+ * CalculateMassLossRateHurley
  *
- * According to Hurley et al. 2000
+ * Calculate the dominant mass loss type and associated mass loss rate per Hurley et al. 2000
+ * 
+ * Uses current value of m_Mu
  *
+ * 
  * double CalculateMassLossRateHurley()
  *
- * @return                                      Mass loss rate in Msol per year
+ * @return                                      Tuple containing:
+ *                                                   DOUBLE         mass loss rate (Msol yr^-1)
+ *                                                   MASS_LOSS_TYPE dominant mass loss type
+ *                                                                  (will be MASS_LOSS_TYPE::GB or MASS_LOSS_TYPE::WR)
  */
-double EAGB::CalculateMassLossRateHurley() {
+std::tuple<double, MASS_LOSS_TYPE> EAGB::CalculateMassLossRateHurley() {
+   
+    // calculate max GB mass loss rate - default rate
+    double mDot = std::max(CalculateMassLossRateVassiliadisWood(), std::max(CalculateMassLossRateNieuwenhuijzenDeJager(), CalculateMassLossRateKudritzkiReimers()));
 
-    double rateNJ = CalculateMassLossRateNieuwenhuijzenDeJager();
-    double rateKR = CalculateMassLossRateKudritzkiReimers();
-    double rateVW = CalculateMassLossRateVassiliadisWood();
-    double rateWR = CalculateMassLossRateWolfRayet(m_Mu);
-    
-    m_DominantMassLossRate = MASS_LOSS_TYPE::GB;
-    double dominantRate    = std::max(rateNJ, rateKR);
-           dominantRate    = std::max(rateVW, dominantRate);
+    MASS_LOSS_TYPE dominantMassLossType = MASS_LOSS_TYPE::GB;           // default dominant mass loss type is GB
 
-    if (utils::Compare(rateWR, dominantRate) > 0) {
-        dominantRate           = rateWR;
-        m_DominantMassLossRate = MASS_LOSS_TYPE::WR;
+    double mDotWR = CalculateMassLossRateWolfRayet(m_Mu);               // WR mass loss rate
+    if (utils::Compare(rateWR, mDot) > 0) {                             // WR rate > max GB rate?
+        dominantMassLossType = MASS_LOSS_TYPE::WR;                      // yes - set dominant type to WR
+        mDot                 = mDotWR;                                  // and rate to WR rate
     }
 
-    return dominantRate;
+    return std::make_tuple(mDot, dominantMassLossType);
 }
 
 
