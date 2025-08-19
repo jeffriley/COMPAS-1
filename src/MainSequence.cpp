@@ -74,10 +74,8 @@ double MainSequence::CalculateHydrogenAbundanceCoreOnPhase(const double p_Tau) c
  * @param   [IN/OUT]    p_Timescales            Timescales
  */
 void MainSequence::CalculateTimescales(const double p_Mass, DBL_VECTOR &p_Timescales) {
-#define timescales(x) p_Timescales[static_cast<int>(TIMESCALE::x)]  // for convenience and readability - undefined at end of function
     timescales(tBGB) = CalculateLifetimeToBGB(p_Mass);
     timescales(tMS)  = CalculateLifetimeOnPhase(p_Mass, timescales(tBGB));
-#undef timescales
 }
 
 
@@ -100,27 +98,25 @@ void MainSequence::CalculateTimescales(const double p_Mass, DBL_VECTOR &p_Timesc
  * @return                                      Luminosity perturbation (delta_L in Hurley et al. 2000)
  */
 double MainSequence::CalculateDeltaL(const double p_Mass) const {
-#define a m_AnCoefficients                                              // for convenience and readability - undefined at end of function
-#define massCutoffs(x) m_MassCutoffs[static_cast<int>(MASS_CUTOFF::x)]  // for convenience and readability - undefined at end of function
+#define an m_AnCoefficients                                              // for convenience and readability - undefined at end of function
 
     double deltaL;
 
     if (utils::Compare(p_Mass, massCutoffs(MHook)) <= 0) {              // per Hurley et al. 2000, eq 16
         deltaL = 0.0;                                                   // this really is supposed to be zero
     }
-    else if (utils::Compare(p_Mass, a[33]) < 0) {
+    else if (utils::Compare(p_Mass, an[33]) < 0) {
         double top    = p_Mass - massCutoffs(MHook);
-        double bottom = a[33] - massCutoffs(MHook);
+        double bottom = an[33] - massCutoffs(MHook);
         deltaL        = m_LConstants[static_cast<int>(L_CONSTANTS::B_DELTA_L)] * PPOW((top / bottom), 0.4);
     }
     else {
-        deltaL = std::min((a[34] / PPOW(p_Mass, a[35])), (a[36] / PPOW(p_Mass, a[37])));
+        deltaL = std::min((an[34] / PPOW(p_Mass, an[35])), (an[36] / PPOW(p_Mass, an[37])));
     }
 
     return deltaL;
 
-#undef massCutoffs
-#undef a
+#undef an
 }
 
 
@@ -138,11 +134,11 @@ double MainSequence::CalculateDeltaL(const double p_Mass) const {
 double MainSequence::CalculateBetaL(const double p_Mass) const {
 #define a m_AnCoefficients    // for convenience and readability - undefined at end of function
 
-    double betaL  = std::max(0.0, (a[54] - (a[55] * PPOW(p_Mass, a[56]))));
-    if ((utils::Compare(p_Mass, a[57]) > 0) && (utils::Compare(betaL, 0.0) > 0)) {
+    double betaL  = std::max(0.0, (an[54] - (an[55] * PPOW(p_Mass, an[56]))));
+    if ((utils::Compare(p_Mass, an[57]) > 0) && (utils::Compare(betaL, 0.0) > 0)) {
         double bBetaL = m_LConstants[static_cast<int>(L_CONSTANTS::B_BETA_L)];
 
-        betaL = std::max(0.0, (bBetaL - 10.0 * (p_Mass - a[57]) * bBetaL));
+        betaL = std::max(0.0, (bBetaL - 10.0 * (p_Mass - an[57]) * bBetaL));
     }
 
     return betaL;
@@ -171,12 +167,12 @@ double MainSequence::CalculateAlphaL(const double p_Mass) const {
 
     double alphaL  = 0.0;
 
-         if (utils::Compare(p_Mass, 0.5)   < 0) alphaL = a[49];
-    else if (utils::Compare(p_Mass, 0.7)   < 0) alphaL = a[49] + (5.0 * (0.3 - a[49]) * (p_Mass - 0.5));
-    else if (utils::Compare(p_Mass, a[52]) < 0) alphaL = 0.3 + ((a[50] - 0.3) * (p_Mass - 0.7) / (a[52] - 0.7));
-    else if (utils::Compare(p_Mass, a[53]) < 0) alphaL = a[50] + ((a[51] - a[50]) * (p_Mass - a[52]) / (a[53] - a[52]));
-    else if (utils::Compare(p_Mass, 2.0)   < 0) alphaL = a[51] + ((m_LConstants[static_cast<int>(L_CONSTANTS::B_ALPHA_L)] - a[51]) * (p_Mass - a[53]) / (2.0 - a[53]));
-    else                                        alphaL = (a[45] + (a[46] * PPOW(p_Mass, a[48]))) / (PPOW(p_Mass, 0.4) + (a[47] * PPOW(p_Mass, 1.9)));
+         if (utils::Compare(p_Mass, 0.5)   < 0) alphaL = an[49];
+    else if (utils::Compare(p_Mass, 0.7)   < 0) alphaL = an[49] + (5.0 * (0.3 - an[49]) * (p_Mass - 0.5));
+    else if (utils::Compare(p_Mass, an[52]) < 0) alphaL = 0.3 + ((an[50] - 0.3) * (p_Mass - 0.7) / (an[52] - 0.7));
+    else if (utils::Compare(p_Mass, an[53]) < 0) alphaL = an[50] + ((an[51] - an[50]) * (p_Mass - an[52]) / (an[53] - an[52]));
+    else if (utils::Compare(p_Mass, 2.0)   < 0) alphaL = an[51] + ((m_LConstants[static_cast<int>(L_CONSTANTS::B_ALPHA_L)] - an[51]) * (p_Mass - an[53]) / (2.0 - an[53]));
+    else                                        alphaL = (an[45] + (an[46] * PPOW(p_Mass, an[48]))) / (PPOW(p_Mass, 0.4) + (an[47] * PPOW(p_Mass, 1.9)));
 
     return alphaL;
 
@@ -230,9 +226,9 @@ double MainSequence::CalculateGamma(const double p_Mass) const {
 
     double gamma;
 
-         if (utils::Compare(p_Mass,  1.0)          <= 0) gamma = a[76] + (a[77] * PPOW(p_Mass - a[78], a[79]));
-    else if (utils::Compare(p_Mass,  a[75])        <= 0) gamma = B_GAMMA + (a[80] - B_GAMMA) * PPOW((p_Mass - 1.0) / (a[75] - 1.0), a[81]);
-    else if (utils::Compare(p_Mass, (a[75] + 0.1)) <= 0) gamma = C_GAMMA - (10.0 * (p_Mass - a[75]) * C_GAMMA);                                                             // included = case, missing from Hurley+ 2000
+         if (utils::Compare(p_Mass,  1.0)          <= 0) gamma = an[76] + (an[77] * PPOW(p_Mass - an[78], an[79]));
+    else if (utils::Compare(p_Mass,  an[75])        <= 0) gamma = B_GAMMA + (an[80] - B_GAMMA) * PPOW((p_Mass - 1.0) / (an[75] - 1.0), an[81]);
+    else if (utils::Compare(p_Mass, (an[75] + 0.1)) <= 0) gamma = C_GAMMA - (10.0 * (p_Mass - an[75]) * C_GAMMA);                                                             // included = case, missing from Hurley+ 2000
     else                                                 gamma = 0.0;           // this really is zero
 
     return gamma;
@@ -262,8 +258,8 @@ double MainSequence::CalculateLuminosityAtPhaseEnd(const double p_Mass) const {
     double m_4 = m_3 * p_Mass;
     double m_5 = m_4 * p_Mass;
 
-    double top    = (a[11] * m_3) + (a[12] * m_4) + (a[13] * PPOW(p_Mass, (a[16] + 1.8)));
-    double bottom = a[14] + (a[15] * m_5) + PPOW(p_Mass, a[16]);
+    double top    = (an[11] * m_3) + (an[12] * m_4) + (an[13] * PPOW(p_Mass, (an[16] + 1.8)));
+    double bottom = an[14] + (an[15] * m_5) + PPOW(p_Mass, an[16]);
 
     return top / bottom;
 
@@ -285,17 +281,15 @@ double MainSequence::CalculateLuminosityAtPhaseEnd(const double p_Mass) const {
  * @return                                      Luminosity on the Main Sequence as a function of time
  */
 double MainSequence::CalculateLuminosityOnPhase(const double p_Time, const double p_Mass, const double p_LZAMS) const {
-#define a m_AnCoefficients                                          // for convenience and readability - undefined at end of function
-#define timescales(x) m_Timescales[static_cast<int>(TIMESCALE::x)]  // for convenience and readability - undefined at end of function
     
     // If BRCEK core prescription is used, return luminosity from Shikauchi et al. (2024) during core hydrogen burning (valid for MZAMS >= 15 Msol) or
     // luminosity that smoothly connects MS and HG during MS hook (valid for MZAMS >= BRCEK_LOWER_MASS_LIMIT); do not use Shikauchi luminosity
     // prescription during CHE
     if ((OPTIONS->MainSequenceCoreMassPrescription() == CORE_MASS_PRESCRIPTION::BRCEK) && (utils::Compare(m_MZAMS, BRCEK_LOWER_MASS_LIMIT) >= 0) && !m_CHE) {
-        if (utils::Compare(p_Time, 0.99 * timescales(tMS)) > 0)                                                                 // star in MS hook?
+        if (utils::Compare(p_Time, 0.99 * timescales(tMS)) > 0)                                                                         // star in MS hook?
             return CalculateLuminosityTransitionToHG(p_Mass, p_Time, p_LZAMS);
         else {
-            if (utils::Compare(m_MZAMS, 15.0) >= 0)                                                                             // use Shikauchi luminosity if MZAMS >= 15 Msun
+            if (utils::Compare(m_MZAMS, 15.0) >= 0)                                                                                     // use Shikauchi luminosity if MZAMS >= 15 Msun
                 return CalculateLuminosityShikauchi(m_MainSequenceCoreMass, m_HeliumAbundanceCore);
         }
     }
@@ -308,22 +302,19 @@ double MainSequence::CalculateLuminosityOnPhase(const double p_Time, const doubl
     double deltaL = CalculateDeltaL(p_Mass);
     double eta    = CalculateEta(p_Mass);
 
-    double mu     = std::max(0.5, (1.0 - (0.01 * std::max((a[6] / PPOW(p_Mass, a[7])), (a[8] + (a[9] / PPOW(p_Mass, a[10]))))))); // Hurley et al. 2000, eq 7
-    double tHook  = mu * timescales(tBGB);                                                                                      // Hurley et al. 2000, just after eq 5
-    double tau    = p_Time / timescales(tMS);                                                                                   // Hurley et al. 2000, eq 11
-    double tau1   = std::min(1.0, (p_Time / tHook));                                                                            // Hurley et al. 2000, eq 14
-    double tau2   = std::max(0.0, std::min(1.0, (p_Time - ((1.0 - epsilon) * tHook)) / (epsilon * tHook)));                     // Hurley et al. 2000, eq 15
+    double mu     = std::max(0.5, (1.0 - (0.01 * std::max((an[6] / PPOW(p_Mass, an[7])), (an[8] + (an[9] / PPOW(p_Mass, an[10])))))));   // Hurley et al. 2000, eq 7
+    double tHook  = mu * timescales(tBGB);                                                                                              // Hurley et al. 2000, just after eq 5
+    double tau    = p_Time / timescales(tMS);                                                                                           // Hurley et al. 2000, eq 11
+    double tau1   = std::min(1.0, (p_Time / tHook));                                                                                    // Hurley et al. 2000, eq 14
+    double tau2   = std::max(0.0, std::min(1.0, (p_Time - ((1.0 - epsilon) * tHook)) / (epsilon * tHook)));                             // Hurley et al. 2000, eq 15
 
     // pow() is slow - use multipliaction where it makes sense
-    double logLMS_LZAMS  = alphaL * tau;                                                                                        // Hurley et al. 2000, eq 12, part 1
-           logLMS_LZAMS += betaL * PPOW(tau, eta);                                                                              // Hurley et al. 2000, eq 12, part 2
-           logLMS_LZAMS += (log10(LTMS / p_LZAMS) - alphaL - betaL) * tau * tau;                                                // Hurley et al. 2000, eq 12, part 3
-           logLMS_LZAMS -= deltaL * ((tau1 * tau1) - (tau2 * tau2));                                                            // Hurley et al. 2000, eq 12, part 4
+    double logLMS_LZAMS  = alphaL * tau;                                                                                                // Hurley et al. 2000, eq 12, part 1
+           logLMS_LZAMS += betaL * PPOW(tau, eta);                                                                                      // Hurley et al. 2000, eq 12, part 2
+           logLMS_LZAMS += (log10(LTMS / p_LZAMS) - alphaL - betaL) * tau * tau;                                                        // Hurley et al. 2000, eq 12, part 3
+           logLMS_LZAMS -= deltaL * ((tau1 * tau1) - (tau2 * tau2));                                                                    // Hurley et al. 2000, eq 12, part 4
 
-    return p_LZAMS * PPOW(10.0, logLMS_LZAMS);                                                                                  // rewrite Hurley et al. 2000, eq 12 for L(t)
-
-#undef timescales
-#undef a
+    return p_LZAMS * PPOW(10.0, logLMS_LZAMS);                                                                                          // rewrite Hurley et al. 2000, eq 12 for L(t)
 }
 
 
@@ -370,7 +361,6 @@ double MainSequence::CalculateLuminosityShikauchi(const double p_CoreMass, const
  * @return                                      Luminosity on the Main Sequence (for age between tHook and tMS)
  */
 double MainSequence::CalculateLuminosityTransitionToHG(const double p_Mass, const double p_Age, double const p_LZAMS) const {
-#define timescales(x) m_Timescales[static_cast<int>(TIMESCALE::x)]  // for convenience and readability - undefined at end of function
 
     HG *clone = HG::Clone(static_cast<HG&>(const_cast<MainSequence&>(*this)), OBJECT_PERSISTENCE::EPHEMERAL);
     double luminosityTAMS = clone->Luminosity();                                                                                // Get luminosity from clone (with updated Mass0)
@@ -386,8 +376,6 @@ double MainSequence::CalculateLuminosityTransitionToHG(const double p_Mass, cons
     
     // Linear interpolation
     return (luminosityAtHookStart * (timescales(tMS) - p_Age) + luminosityTAMS * (p_Age - ageAtHookStart)) / (timescales(tMS) - ageAtHookStart);
-    
-#undef timescales
 }
 
 
@@ -413,12 +401,12 @@ double MainSequence::CalculateAlphaR(const double p_Mass) const {
 
     double alphaR = 0.0;
 
-         if (utils::Compare(p_Mass,   0.5) <  0) alphaR = a[62];
-    else if (utils::Compare(p_Mass,  0.65) <  0) alphaR = a[62] + (a[63] - a[62]) * (p_Mass - 0.5) / 0.15;
-    else if (utils::Compare(p_Mass, a[68]) <  0) alphaR = a[63] + (a[64] - a[63]) * (p_Mass - 0.65) / (a[68] - 0.65);
-    else if (utils::Compare(p_Mass, a[66]) <  0) alphaR = a[64] + (m_RConstants[static_cast<int>(R_CONSTANTS::B_ALPHA_R)] - a[64]) * (p_Mass - a[68]) / (a[66] - a[68]);
-    else if (utils::Compare(p_Mass, a[67]) <= 0) alphaR = a[58] * PPOW(p_Mass, a[60]) / (a[59] + PPOW(p_Mass, a[61]));
-    else                                         alphaR = m_RConstants[static_cast<int>(R_CONSTANTS::C_ALPHA_R)] + a[65] * (p_Mass - a[67]);
+         if (utils::Compare(p_Mass,   0.5) <  0) alphaR = an[62];
+    else if (utils::Compare(p_Mass,  0.65) <  0) alphaR = an[62] + (an[63] - an[62]) * (p_Mass - 0.5) / 0.15;
+    else if (utils::Compare(p_Mass, an[68]) <  0) alphaR = an[63] + (an[64] - an[63]) * (p_Mass - 0.65) / (an[68] - 0.65);
+    else if (utils::Compare(p_Mass, an[66]) <  0) alphaR = an[64] + (m_RConstants[static_cast<int>(R_CONSTANTS::B_ALPHA_R)] - an[64]) * (p_Mass - an[68]) / (an[66] - an[68]);
+    else if (utils::Compare(p_Mass, an[67]) <= 0) alphaR = an[58] * PPOW(p_Mass, an[60]) / (an[59] + PPOW(p_Mass, an[61]));
+    else                                         alphaR = m_RConstants[static_cast<int>(R_CONSTANTS::C_ALPHA_R)] + an[65] * (p_Mass - an[67]);
 
     return alphaR;
 
@@ -443,10 +431,10 @@ double MainSequence::CalculateBetaR(const double p_Mass) const {
     double betaRPrime = 0.0;
 
          if (utils::Compare(p_Mass, 1.0)   <= 0) betaRPrime = 1.06;
-    else if (utils::Compare(p_Mass, a[74]) <  0) betaRPrime = 1.06 + (a[72] - 1.06) * (p_Mass - 1.0) / (a[74] - 1.06);
-    else if (utils::Compare(p_Mass, 2.0)   <  0) betaRPrime = a[72] + (m_RConstants[static_cast<int>(R_CONSTANTS::B_BETA_R)] - a[72]) * (p_Mass - a[74]) / (2.0 - a[74]);
-    else if (utils::Compare(p_Mass, 16.0)  <= 0) betaRPrime = (a[69] * p_Mass * p_Mass * p_Mass * std::sqrt(p_Mass)) / (a[70] + PPOW(p_Mass, a[71]));  // pow()is slow - use multiplication (sqrt() is faster than pow())
-    else                                         betaRPrime = m_RConstants[static_cast<int>(R_CONSTANTS::C_BETA_R)] + a[73] * (p_Mass - 16.0);
+    else if (utils::Compare(p_Mass, an[74]) <  0) betaRPrime = 1.06 + (an[72] - 1.06) * (p_Mass - 1.0) / (an[74] - 1.06);
+    else if (utils::Compare(p_Mass, 2.0)   <  0) betaRPrime = an[72] + (m_RConstants[static_cast<int>(R_CONSTANTS::B_BETA_R)] - an[72]) * (p_Mass - an[74]) / (2.0 - an[74]);
+    else if (utils::Compare(p_Mass, 16.0)  <= 0) betaRPrime = (an[69] * p_Mass * p_Mass * p_Mass * std::sqrt(p_Mass)) / (an[70] + PPOW(p_Mass, an[71]));  // pow()is slow - use multiplication (sqrt() is faster than pow())
+    else                                         betaRPrime = m_RConstants[static_cast<int>(R_CONSTANTS::C_BETA_R)] + an[73] * (p_Mass - 16.0);
 
     return betaRPrime - 1.0;
 
@@ -466,25 +454,23 @@ double MainSequence::CalculateBetaR(const double p_Mass) const {
  * @return                                      The radius perturbation DeltaR
  */
 double MainSequence::CalculateDeltaR(const double p_Mass) const {
-#define a m_AnCoefficients                                              // for convenience and readability - undefined at end of function
-#define massCutoffs(x) m_MassCutoffs[static_cast<int>(MASS_CUTOFF::x)]  // for convenience and readability - undefined at end of function
+#define an m_AnCoefficients                                              // for convenience and readability - undefined at end of function
 
     double deltaR;
 
     if (utils::Compare(p_Mass, massCutoffs(MHook)) <= 0) deltaR = 0.0;   // this really is supposed to be 0
-    else if (utils::Compare(p_Mass, a[42])         <= 0) deltaR = a[43] * std::sqrt((p_Mass - massCutoffs(MHook)) / (a[42] - massCutoffs(MHook)));
-    else if (utils::Compare(p_Mass, 2.0)            < 0) deltaR = a[43] + ((m_RConstants[static_cast<int>(R_CONSTANTS::B_DELTA_R)] - a[43]) * PPOW(((p_Mass - a[42]) / (2.0 - a[42])), a[44]));
+    else if (utils::Compare(p_Mass, an[42])         <= 0) deltaR = an[43] * std::sqrt((p_Mass - massCutoffs(MHook)) / (an[42] - massCutoffs(MHook)));
+    else if (utils::Compare(p_Mass, 2.0)            < 0) deltaR = an[43] + ((m_RConstants[static_cast<int>(R_CONSTANTS::B_DELTA_R)] - an[43]) * PPOW(((p_Mass - an[42]) / (2.0 - an[42])), an[44]));
     else {
         // pow() is slow - use multiplication (sqrt() is faster than pow())
-        double top    = a[38] + (a[39] * p_Mass * p_Mass * p_Mass * std::sqrt(p_Mass));
-        double bottom = (a[40] * p_Mass * p_Mass * p_Mass) + PPOW(p_Mass, a[41]);
+        double top    = an[38] + (an[39] * p_Mass * p_Mass * p_Mass * std::sqrt(p_Mass));
+        double bottom = (an[40] * p_Mass * p_Mass * p_Mass) + PPOW(p_Mass, an[41]);
         deltaR = (top / bottom) - 1.0;
     }
 
     return deltaR;
 
-#undef massCutoffs
-#undef a
+#undef an
 }
 
 
@@ -504,10 +490,10 @@ double MainSequence::CalculateRadiusAtPhaseEnd(const double p_Mass, const double
 #define a m_AnCoefficients    // for convenience and readability - undefined at end of function
 
     double RTMS;
-    double mAsterisk = a[17] + 0.1;
+    double mAsterisk = an[17] + 0.1;
 
-    if (utils::Compare(p_Mass, a[17]) <= 0) {
-        RTMS = (a[18] + (a[19] * PPOW(p_Mass, a[21]))) / (a[20] + PPOW(p_Mass, a[22]));
+    if (utils::Compare(p_Mass, an[17]) <= 0) {
+        RTMS = (an[18] + (an[19] * PPOW(p_Mass, an[21]))) / (an[20] + PPOW(p_Mass, an[22]));
 
         if (utils::Compare(p_Mass, 0.5) < 0) {
             RTMS = std::max(RTMS, 1.5 * p_RZAMS);
@@ -518,7 +504,7 @@ double MainSequence::CalculateRadiusAtPhaseEnd(const double p_Mass, const double
         double m_3 = p_Mass * p_Mass * p_Mass;
         double m_5 = m_3 * p_Mass * p_Mass;
 
-        RTMS = ((C_COEFF.at(1) * m_3) + (a[23] * PPOW(p_Mass, a[26])) + (a[24] * PPOW(p_Mass, a[26] + 1.5))) / (a[25] + m_5);
+        RTMS = ((C_COEFF.at(1) * m_3) + (an[23] * PPOW(p_Mass, an[26])) + (an[24] * PPOW(p_Mass, an[26] + 1.5))) / (an[25] + m_5);
     }
     else {
         // for stars with masses between a17, a17 + 0.1 interpolate between the end points (y = mx + c)
@@ -527,11 +513,11 @@ double MainSequence::CalculateRadiusAtPhaseEnd(const double p_Mass, const double
         double mA_3 = mAsterisk * mAsterisk * mAsterisk;
         double mA_5 = mA_3 * mAsterisk * mAsterisk;
 
-        double y2   = ((C_COEFF.at(1) * mA_3) + (a[23] * PPOW(mAsterisk, a[26])) + (a[24] * PPOW(mAsterisk, a[26] + 1.5))) / (a[25] + mA_5);    // RTMS(mAsterisk)
-        double y1   = (a[18] + (a[19] * PPOW(a[17], a[21]))) / (a[20] + PPOW(a[17], a[22]));                                                    // RTMS(a17)
+        double y2   = ((C_COEFF.at(1) * mA_3) + (an[23] * PPOW(mAsterisk, an[26])) + (an[24] * PPOW(mAsterisk, an[26] + 1.5))) / (an[25] + mA_5);    // RTMS(mAsterisk)
+        double y1   = (an[18] + (an[19] * PPOW(an[17], an[21]))) / (an[20] + PPOW(an[17], an[22]));                                                    // RTMS(a17)
 
         double gradient  = (y2 - y1) / 0.1;
-        double intercept = y1 - (gradient * a[17]);
+        double intercept = y1 - (gradient * an[17]);
 
         RTMS = (gradient * p_Mass) + intercept;
     }
@@ -556,7 +542,6 @@ double MainSequence::CalculateRadiusAtPhaseEnd(const double p_Mass, const double
  * @return                                      Radius on the Main Sequence in Rsol
  */
 double MainSequence::CalculateRadiusOnPhase(const double p_Mass, const double p_Tau, const double p_RZAMS) const {
-if (OPTIONS->DebugLevel() > 0) std::cout << std::boolalpha << std::setprecision(15) << "Star::MainSequence::CalculateRadiusOnPhase(@entry), p_Mass = " << p_Mass << ", p_Tau = " << p_Tau << ", p_RZAMS = " << p_RZAMS << "\n";
 #define a m_AnCoefficients                                          // for convenience and readability - undefined at end of function
 
     // If BRCEK core prescription is used, return radius that smoothly connects the beginning of MS hook and the beginning of HG,
@@ -576,7 +561,7 @@ if (OPTIONS->DebugLevel() > 0) std::cout << std::boolalpha << std::setprecision(
     double deltaR = CalculateDeltaR(p_Mass);
     double gamma  = CalculateGamma(p_Mass);
 
-    double mu     = std::max(0.5, (1.0 - (0.01 * std::max((a[6] / PPOW(p_Mass, a[7])), (a[8] + (a[9] / PPOW(p_Mass, a[10])))))));   // Hurley et al. 2000, eq 7
+    double mu     = std::max(0.5, (1.0 - (0.01 * std::max((an[6] / PPOW(p_Mass, an[7])), (an[8] + (an[9] / PPOW(p_Mass, an[10])))))));   // Hurley et al. 2000, eq 7
     double tHook  = mu * tBGB;                                                                                                      // ibid, just after eq 5
     double time   = tMS * p_Tau;
     double tau1   = std::min(1.0, (time / tHook));                                                                                  // ibid, eq 14
@@ -588,7 +573,6 @@ if (OPTIONS->DebugLevel() > 0) std::cout << std::boolalpha << std::setprecision(
     double tau_40 = tau_10 < FLOAT_TOLERANCE_ABSOLUTE ? 0.0: tau_10 * tau_10 * tau_10 * tau_10;                                     // direct comparison, to avoid underflow
     double tau1_3 = tau1 * tau1 * tau1;
     double tau2_3 = tau2 * tau2 * tau2;
-if (OPTIONS->DebugLevel() > 0) std::cout << std::boolalpha << std::setprecision(15) << "Star::MainSequence::CalculateRadiusOnPhase(@0), tBGB = " << tBGB << ", tMS = " << tMS << ", RTMS = " << RTMS << ", alphaR = " << alphaR << ", betaR = " << betaR << ", deltaR = " << deltaR << ", gamma = " << gamma << "\n";
 
     double logRMS_RZAMS  = alphaR * p_Tau;                                                                                          // ibid, eq 13, part 1
            logRMS_RZAMS += betaR * tau_10;                                                                                          // ibid, eq 13, part 2
@@ -597,7 +581,6 @@ if (OPTIONS->DebugLevel() > 0) std::cout << std::boolalpha << std::setprecision(
            logRMS_RZAMS -= deltaR * (tau1_3 - tau2_3);                                                                              // ibid, eq 13, part 5
 
     double radius = p_RZAMS * PPOW(10.0, logRMS_RZAMS);                                                                             // rewrite Hurley et al. 2000, eq 13 for R(t)
-if (OPTIONS->DebugLevel() > 0) std::cout << std::boolalpha << std::setprecision(15) << "Star::MainSequence::CalculateRadiusOnPhase(@1), p_RZAMS = " << p_RZAMS << ", logRMS_RZAMS = " << logRMS_RZAMS << ", radius = " << radius << "\n";
     
     // If BRCEK prescription is used and star was stripped below its initial core mass, radius needs to be adjusted
     if (OPTIONS->MainSequenceCoreMassPrescription() == CORE_MASS_PRESCRIPTION::BRCEK && utils::Compare(m_MZAMS, BRCEK_LOWER_MASS_LIMIT) >= 0) {
@@ -611,7 +594,6 @@ if (OPTIONS->DebugLevel() > 0) std::cout << std::boolalpha << std::setprecision(
         double surfaceAbundanceFactor = (utils::Compare(m_HeliumAbundanceCore, m_InitialHeliumAbundance) != 0) ? (heliumAbundanceSurface - m_InitialHeliumAbundance) / (m_HeliumAbundanceCore - m_InitialHeliumAbundance) : 0.0;
         
         radius += (p_RZAMS - radius) * surfaceAbundanceFactor;
-if (OPTIONS->DebugLevel() > 0) std::cout << std::boolalpha << std::setprecision(15) << "Star::MainSequence::CalculateRadiusOnPhase(@2), p_RZAMS = " << p_RZAMS << ", surfaceAbundanceFactor = " << surfaceAbundanceFactor << ", radius = " << radius << "\n";
     }
     
     return radius;
@@ -867,7 +849,6 @@ double MainSequence::CalculateInitialMainSequenceCoreMass(const double p_Mass, c
  * @param   [IN]      p_MassLossRate            Mass loss rate either from stellar winds or mass transfer in Msol yr-1
  */
 void MainSequence::UpdateMainSequenceCoreMass(const double p_Dt, const double p_MassLossRate) {
-#define timescales(x) m_Timescales[static_cast<int>(TIMESCALE::x)]  // for convenience and readability - undefined at end of function
 
     double mainSequenceCoreMass = m_MainSequenceCoreMass;                                                                               // default is no change
     double heliumAbundanceCore  = m_HeliumAbundanceCore;                                                                                // default is no change
@@ -919,8 +900,6 @@ void MainSequence::UpdateMainSequenceCoreMass(const double p_Dt, const double p_
     m_MainSequenceCoreMass = mainSequenceCoreMass;                                                                                      // update core mass
     m_HeliumAbundanceCore  = heliumAbundanceCore;                                                                                       // update core helium abundance
     m_Age                  = age;                                                                                                       // update age
-
-#undef timescales
 }
 
 
@@ -942,10 +921,7 @@ void MainSequence::UpdateMainSequenceCoreMass(const double p_Dt, const double p_
  * @return                                      MS relative age, clamped to [0, 1]
  */
 double MainSequence::CalculateTauOnPhase() const {
-#define timescales(x) m_Timescales[static_cast<int>(TIMESCALE::x)]  // for convenience and readability - undefined at end of function
-if (OPTIONS->DebugLevel() > 0) std::cout << std::boolalpha << std::setprecision(15) << "MainSequence::CalculateTauOnPhase(@entry), m_Age = " << m_Age << ", timescales(tMS) = " << timescales(tMS) << "\n";
     return std::max(0.0, std::min(1.0, m_Age / timescales(tMS)));
-#undef timescales
 }
 
 
@@ -966,7 +942,7 @@ double MainSequence::CalculateLifetimeOnPhase(const double p_Mass, const double 
 
     // Calculate time to Hook
     // Hurley et al. 2000, eqs 5, 6 & 7
-    double mu    = std::max(0.5, (1.0 - (0.01 * std::max((a[6] / PPOW(p_Mass, a[7])), (a[8] + (a[9] / PPOW(p_Mass, a[10])))))));
+    double mu    = std::max(0.5, (1.0 - (0.01 * std::max((an[6] / PPOW(p_Mass, an[7])), (an[8] + (an[9] / PPOW(p_Mass, an[10])))))));
     double tHook = mu * p_TBGB;
 
     // For mass < Mhook, x > mu (i.e. for stars without a hook)
@@ -1037,7 +1013,6 @@ double MainSequence::CalculateZetaEquilibrium() {
  * @return                                      Suggested timestep (dt)
  */
 double MainSequence::ChooseTimestep(const double p_Time) const {
-#define timescales(x) m_Timescales[static_cast<int>(TIMESCALE::x)]  // for convenience and readability - undefined at end of function
 
     double dtk = 1.0E-2 * timescales(tMS);  // 0.01 of MS timescale (sse uses 0.05)
     double dte = timescales(tMS) - p_Time;  // time remaining on MS
@@ -1047,8 +1022,6 @@ double MainSequence::ChooseTimestep(const double p_Time) const {
     }
 
     return std::max(std::min(dtk, dte), NUCLEAR_MINIMUM_TIMESTEP);
-
-#undef timescales
 }
 
 
@@ -1130,7 +1103,6 @@ double MainSequence::CalculateTAMSCoreMass() const {
  *
  */
 void MainSequence::UpdateAfterMerger(double p_Mass, double p_HydrogenMass) {
-    #define timescales(x) m_Timescales[static_cast<int>(TIMESCALE::x)]  // for convenience and readability - undefined at end of function
 
     m_Mass                 = p_Mass;
     m_Mass0                = m_Mass;
@@ -1157,8 +1129,6 @@ void MainSequence::UpdateAfterMerger(double p_Mass, double p_HydrogenMass) {
     }
     
     EvolveOneTimestep(0.0, 0.0, 0.0, true);
-    
-    #undef timescales
 }
 
 

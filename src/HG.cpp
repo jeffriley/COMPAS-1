@@ -427,7 +427,7 @@ double HG::CalculateLambdaNanjingEnhanced(const int p_MassIndex, const STELLAR_P
             double x4 = x2 * x2;
             double x5 = x3 * x2;
 
-            double y1 = a[0] + (a[1] * x) + (a[2] * x2) + (a[3] * x3) + (a[4] * x4) + (a[5] * x5);
+            double y1 = an[0] + (an[1] * x) + (an[2] * x2) + (an[3] * x3) + (an[4] * x4) + (an[5] * x5);
             double y2 = b[0] + (b[1] * x) + (b[2] * x2) + (b[3] * x3) + (b[4] * x4) + (b[5] * x5);
 
             lambdaBG = { 1.0 / y1, 1.0 / y2 };
@@ -439,7 +439,7 @@ double HG::CalculateLambdaNanjingEnhanced(const int p_MassIndex, const STELLAR_P
             double x4 = x2 * x2;
             double x5 = x3 * x2;
 
-            double y1 = a[0] + (a[1] * x) + (a[2] * x2) + (a[3] * x3) + (a[4] * x4) + (a[5] * x5);
+            double y1 = an[0] + (an[1] * x) + (an[2] * x2) + (an[3] * x3) + (an[4] * x4) + (an[5] * x5);
             double y2 = b[0] + (b[1] * x) + (b[2] * x2) + (b[3] * x3) + (b[4] * x4) + (b[5] * x5);
 
             lambdaBG = { y1, y2 };
@@ -755,7 +755,7 @@ double HG::CalculateLambdaNanjingStarTrack(const double p_Mass, const double p_M
             double x4 = x2 * x2;
             double x5 = x3 * x2;
 
-            double y1 = a[0] + (a[1] * x) + (a[2] * x2) + (a[3] * x3) + (a[4] * x4) + (a[5] * x5);
+            double y1 = an[0] + (an[1] * x) + (an[2] * x2) + (an[3] * x3) + (an[4] * x4) + (an[5] * x5);
             double y2 = b[0] + (b[1] * x) + (b[2] * x2) + (b[3] * x3) + (b[4] * x4) + (b[5] * x5);
 
             lambdaBG = { 1.0 / y1, 1.0 / y2 };
@@ -767,7 +767,7 @@ double HG::CalculateLambdaNanjingStarTrack(const double p_Mass, const double p_M
             double x4 = x2 * x2;
             double x5 = x3 * x2;
 
-            double y1 = a[0] + (a[1] * x) + (a[2] * x2) + (a[3] * x3) + (a[4] * x4) + (a[5] * x5);
+            double y1 = an[0] + (an[1] * x) + (an[2] * x2) + (an[3] * x3) + (an[4] * x4) + (an[5] * x5);
             double y2 = b[0] + (b[1] * x) + (b[2] * x2) + (b[3] * x3) + (b[4] * x4) + (b[5] * x5);
 
             lambdaBG = { y1, y2 };
@@ -804,13 +804,9 @@ double HG::CalculateLambdaNanjingStarTrack(const double p_Mass, const double p_M
  * @return                                      Luminosity at the end of the Hertzsprung Gap in Lsol
  */
 double HG::CalculateLuminosityAtPhaseEnd(const double p_Mass) const {
-#define massCutoffs(x) m_MassCutoffs[static_cast<int>(MASS_CUTOFF::x)]  // for convenience and readability - undefined at end of function
-
     return (utils::Compare(p_Mass, massCutoffs(MFGB)) < 0)
             ? GiantBranch::CalculateLuminosityAtPhaseBase_Static(p_Mass, m_AnCoefficients)
             : GiantBranch::CalculateLuminosityAtHeIgnition_Static(p_Mass, m_Alpha1, massCutoffs(MHeF), m_BnCoefficients);
-
-#undef massCutoffs
 }
 
 
@@ -827,7 +823,6 @@ double HG::CalculateLuminosityAtPhaseEnd(const double p_Mass) const {
  * @return                                      Luminosity on the HG in Lsol
  */
 double HG::CalculateLuminosityOnPhase(const double p_Age, const double p_Mass) const {
-#define timescales(x) m_Timescales[static_cast<int>(TIMESCALE::x)]  // for convenience and readability - undefined at end of function
 
     double LTMS = MainSequence::CalculateLuminosityAtPhaseEnd(p_Mass);
     double LEHG = CalculateLuminosityAtPhaseEnd(p_Mass);
@@ -836,8 +831,6 @@ double HG::CalculateLuminosityOnPhase(const double p_Age, const double p_Mass) c
     double tau  = (p_Age - tMS) / (tBGB - tMS);
 
     return LTMS * PPOW((LEHG / LTMS), tau);
-
-#undef timescales
 }
 
 
@@ -860,13 +853,9 @@ double HG::CalculateLuminosityOnPhase(const double p_Age, const double p_Mass) c
  * @return                                      Radius at the end of the Hertzsprung Gap in Rsol
  */
 double HG::CalculateRadiusAtPhaseEnd(const double p_Mass) const {
-#define massCutoffs(x) m_MassCutoffs[static_cast<int>(MASS_CUTOFF::x)]  // for convenience and readability - undefined at end of function
-
     return (utils::Compare(p_Mass, massCutoffs(MFGB)) < 0)
             ? GiantBranch::CalculateRadiusOnPhase(p_Mass, GiantBranch::CalculateLuminosityAtPhaseBase_Static(p_Mass, m_AnCoefficients))
             : GiantBranch::CalculateRadiusAtHeIgnition(p_Mass);
-
-#undef massCutoffs
 }
 
 
@@ -887,9 +876,6 @@ double HG::CalculateRadiusAtPhaseEnd(const double p_Mass) const {
  * @return                                      Radius on the Hertzsprung Gap in Rsol
  */
 double HG::CalculateRadiusOnPhase(const double p_Mass, const double p_Tau, const double p_RZAMS) const {
-#define b m_BnCoefficients                                              // for convenience and readability - undefined at end of function
-#define massCutoffs(x) m_MassCutoffs[static_cast<int>(MASS_CUTOFF::x)]  // for convenience and readability - undefined at end of function
-#define timescales(x) m_Timescales[static_cast<int>(TIMESCALE::x)]      // for convenience and readability - undefined at end of function
 
     double RTMS;  
     if ((OPTIONS->MainSequenceCoreMassPrescription() == CORE_MASS_PRESCRIPTION::BRCEK) && (utils::Compare(m_MZAMS, BRCEK_LOWER_MASS_LIMIT) >= 0))
@@ -936,10 +922,6 @@ double HG::CalculateRadiusOnPhase(const double p_Mass, const double p_Tau, const
     }
 
     return RTMS * PPOW(rx / RTMS, p_Tau);
-
-#undef timescales
-#undef massCutoffs
-#undef b
 }
 
 
@@ -963,8 +945,6 @@ double HG::CalculateRadiusOnPhase(const double p_Mass, const double p_Tau, const
  * @return                                      Core mass at the end of the Hertzsprung Gap (Base of the Giant Branch) in Msol
  */
 double HG::CalculateCoreMassAtPhaseEnd(const double p_Mass) const {
-#define gbParams(x) m_GBParams[static_cast<int>(GBP::x)]                // for convenience and readability - undefined at end of function
-#define massCutoffs(x) m_MassCutoffs[static_cast<int>(MASS_CUTOFF::x)]  // for convenience and readability - undefined at end of function
 
     double coreMass;
 
@@ -980,9 +960,6 @@ double HG::CalculateCoreMassAtPhaseEnd(const double p_Mass) const {
     }
 
     return coreMass;
-
-#undef massCutoffs
-#undef gbParams
 }
 
 
@@ -1005,29 +982,31 @@ double HG::CalculateCoreMassOnPhase(const double p_Mass, const double p_Time) co
 
 
 /*
- * Calculate core mass on the Hertzsprung Gap without accounting for previous core mass
+ * CalculateCoreMassOnPhaseIgnoringPreviousCoreMass
  *
- * This ignores the previous core mass constraint (see section 7 of Hurley et al. 2000) when computing the expected core mass,
- * and just follows eq. 30.  This is useful for asking what the core mass would be for the given mass without considering
- * that the core mass should not be allowed to drop -- used, e.g., in HG::UpdateInitialMass().
+ * Calculate core mass on the Hertzsprung Gap without accounting for previous core mass.
+ *
+ * This ignores the previous core mass constraint (see section 7 of Hurley et al. 2000)
+ * when computing the expected core mass, and just follows eq. 30.  This is useful for
+ * asking what the core mass would be for the given mass without considering that the
+ * core mass should not be allowed to drop.
+ * 
+ * This function is used, e.g., in HG::CalculateEffectiveInitialMass().
  *
  *
- * double CalculateCoreMassOnPhaseIgnoringPreviousCoreMass(const double p_Mass, const double p_Time)
+ * double CalculateCoreMassOnPhaseIgnoringPreviousCoreMass(const double p_Mass, const double p_Time) const
  *
- * @param   [IN]    p_Mass                      Mass in Msol
- * @param   [IN]    p_Time                      Time after ZAMS in Myr (tBGB <= time <= tHeI)
- * @return                                      Core mass on the Hertzsprung Gap in Msol
+ * @param   [IN]    p_Mass                      Mass (Msol)
+ * @param   [IN]    p_Time                      Time after ZAMS (Myr) (tBGB <= time <= tHeI)
+ * @return                                      Core mass on the Hertzsprung Gap (Msol)
  */
 double HG::CalculateCoreMassOnPhaseIgnoringPreviousCoreMass(const double p_Mass, const double p_Time) const {
-#define timescales(x) m_Timescales[static_cast<int>(TIMESCALE::x)]  // for convenience and readability - undefined at end of function
     
     double McEHG = CalculateCoreMassAtPhaseEnd(p_Mass);
     double rhoHG = CalculateRho(p_Mass);
     double tau   = (p_Time - timescales(tMS)) / (timescales(tBGB) - timescales(tMS));
     
     return (((1.0 - tau) * rhoHG) + tau) * McEHG;
-    
-#undef timescales
 }
 
 
@@ -1074,9 +1053,7 @@ double HG::CalculateCriticalMassRatioClaeys14(const bool p_AccretorIsDegenerate)
  * @return                                      HG relative age, clamped to [0, 1]
  */
 double HG::CalculateTauOnPhase() const {
-#define timescales(x) m_Timescales[static_cast<int>(TIMESCALE::x)]  // for convenience and readability - undefined at end of function
     return std::max(0.0, std::min(1.0, (m_Age - timescales(tMS)) / (timescales(tBGB) - timescales(tMS))));
-#undef timescales
 }
 
 
@@ -1178,14 +1155,11 @@ ENVELOPE HG::DetermineEnvelopeType() const {
  * @return                                      Suggested timestep (dt)
  */
 double HG::ChooseTimestep(const double p_Time) const {
-#define timescales(x) m_Timescales[static_cast<int>(TIMESCALE::x)]  // for convenience and readability - undefined at end of function
 
     double dtk = 0.05 * (timescales(tBGB) - timescales(tMS));
     double dte = timescales(tBGB) - p_Time;    
 
     return std::max(std::min(dtk, dte), NUCLEAR_MINIMUM_TIMESTEP);
-
-#undef timescales
 }
 
 
@@ -1217,8 +1191,6 @@ double HG::ChooseTimestep(const double p_Time) const {
  * @return                                      Stellar Type to which star should evolve after losing envelope
  */
 STELLAR_TYPE HG::ResolveEnvelopeLoss(bool p_Force) {
-#define timescales(x) m_Timescales[static_cast<int>(TIMESCALE::x)]              // for convenience and readability - undefined at end of function
-#define massCutoffs(x) m_MassCutoffs[static_cast<int>(MASS_CUTOFF::x)]          // for convenience and readability - undefined at end of function
 
     STELLAR_TYPE stellarType = m_StellarType;
 
@@ -1245,9 +1217,6 @@ STELLAR_TYPE HG::ResolveEnvelopeLoss(bool p_Force) {
     }
 
     return stellarType;
-
-#undef massCutoffs
-#undef timescales
 }
 
 
@@ -1260,7 +1229,6 @@ STELLAR_TYPE HG::ResolveEnvelopeLoss(bool p_Force) {
  * @return                                      Stellar Type for next phase
  */
 STELLAR_TYPE HG::EvolveToNextPhase() {
-#define massCutoffs(x) m_MassCutoffs[static_cast<int>(MASS_CUTOFF::x)]  // for convenience and readability - undefined at end of function
 
     STELLAR_TYPE stellarType;
 
@@ -1272,26 +1240,5 @@ STELLAR_TYPE HG::EvolveToNextPhase() {
     }    
 
     return stellarType;
-
-#undef massCutoffs
 }
 
-/*
- * Update effective initial mass
- *
- * Per Hurley et al. 2000, section 7.1, the effective initial mass on the HG tracks the stellar mass -- unless it would yield an unphysical decrease in the core mass
- *
- *
- * void UpdateInitialMass()
- *
- */
-void HG::UpdateInitialMass() {
-    // only update mass0 on mass loss if the current mass would yield a core mass larger than or equal to the current core mass
-    // i.e., no unphysical core mass decrease would ensue
-    // (we do not update mass0 on mass gain on the HG -- there is no instruction for doing so in Hurley; adding this
-    // check also avoid difficulties for the BRCEK rejuvenation prescription, when mass0 may be set to enforce a core mass
-    // that is lower than would be expected for the current mass value according to the Hurley prescription)
-    if (utils::Compare(m_Mass0, m_Mass) > 0 && utils::Compare(m_CoreMass, HG::CalculateCoreMassOnPhaseIgnoringPreviousCoreMass(m_Mass, m_Age)) <= 0) {
-        m_Mass0 = m_Mass;
-    }
-}

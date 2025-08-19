@@ -20,8 +20,6 @@
  * @param   [IN/OUT]    p_Timescales            Timescales
  */
 void HeHG::CalculateTimescales(const double p_Mass, DBL_VECTOR &p_Timescales) {
-#define timescales(x) p_Timescales[static_cast<int>(TIMESCALE::x)]  // for convenience and readability - undefined at end of function
-#define gbParams(x) m_GBParams[static_cast<int>(GBP::x)]            // for convenience and readability - undefined at end of function
 
     HeMS::CalculateTimescales(p_Mass, p_Timescales);    // calculate common values
 
@@ -35,9 +33,6 @@ void HeHG::CalculateTimescales(const double p_Mass, DBL_VECTOR &p_Timescales) {
     timescales(tinf1_HeGB) = timescales(tHeMS) + (1.0 / ((p1 * gbParams(AHe) * gbParams(D))) * PPOW((gbParams(D) / LTHe), p1_p));
     timescales(tx_HeGB)    = timescales(tinf1_HeGB) - (timescales(tinf1_HeGB) - timescales(tHeMS)) * PPOW((LTHe / gbParams(Lx)), p1_p);
     timescales(tinf2_HeGB) = timescales(tx_HeGB) + ((1.0 / (q1 * gbParams(AHe) * gbParams(B))) * PPOW((gbParams(B) / gbParams(Lx)), q1_q));
-
-#undef gbParams
-#undef timescales
 }
 
 
@@ -97,7 +92,7 @@ void HeHG::CalculateGBParams(const double p_Mass, DBL_VECTOR &p_GBParams) {
  *
  * @param   [IN]        p_Mass0                 Mass0 in Msol
  * @param   [IN]        p_Mass                  Mass in Msol
- * @param   [IN]        p_LogMetallicityXi      log10(Metallicity / Zsol) - called xi in Hurley et al 2000
+ * @param   [IN]        p_LogMetallicityXi      log10(Metallicity / Zsol) - called xi in Hurley et al. 2000
  * @param   [IN]        p_MassCutoffs           Mass cutoffs
  * @param   [IN]        p_AnCoefficients        a(n) coefficients
  * @param   [IN]        p_BnCoefficients        b(n) coefficients
@@ -110,8 +105,6 @@ void HeHG::CalculateGBParams_Static(const double      p_Mass0,
                                     const DBL_VECTOR &p_AnCoefficients, 
                                     const DBL_VECTOR &p_BnCoefficients, 
                                           DBL_VECTOR &p_GBParams) {
-
-#define gbParams(x) p_GBParams[static_cast<int>(GBP::x)]    // for convenience and readability - undefined at end of function
     
     GiantBranch::CalculateGBParams_Static(p_Mass, p_LogMetallicityXi, p_MassCutoffs, p_AnCoefficients, p_BnCoefficients, p_GBParams);                                     // calculate common values (actually, all)
 
@@ -131,8 +124,6 @@ void HeHG::CalculateGBParams_Static(const double      p_Mass0,
     
 	gbParams(McBAGB) = p_Mass0;
 	gbParams(McBGB)  = GiantBranch::CalculateCoreMassAtBGB_Static(p_Mass, p_MassCutoffs, p_AnCoefficients, p_GBParams);
-
-#undef gbParams
 }
 
 
@@ -218,11 +209,7 @@ std::tuple <double, STELLAR_TYPE> HeHG::CalculateRadiusAndStellarTypeOnPhase(con
  * @return                                      HeHG CoCoreMass in Msol
  */
 double HeHG::CalculateCOCoreMassOnPhase() const {
-#define timescales(x) m_Timescales[static_cast<int>(TIMESCALE::x)]  // for convenience and readability - undefined at end of function
-
     return HeGB::CalculateCoreMassOnPhase_Static(m_Mass0, m_Age, timescales(tHeMS), m_GBParams);
-
-#undef timescales
 }
 
 
@@ -385,7 +372,6 @@ double HeHG::CalculateCriticalMassRatioClaeys14(const bool p_AccretorIsDegenerat
  * @return                                      Suggested timestep (dt)
  */
 double HeHG::ChooseTimestep(const double p_Time) const {
-#define timescales(x) m_Timescales[static_cast<int>(TIMESCALE::x)]  // for convenience and readability - undefined at end of function
 
     // Implementation of timestep recommendation from Section 8 of Hurley et al., 2000
     double dt = utils::Compare(p_Time, timescales(tx_HeGB)) > 0
@@ -393,8 +379,6 @@ double HeHG::ChooseTimestep(const double p_Time) const {
                     : 0.02 * (timescales(tinf1_HeGB) - p_Time);
 
     return std::max(dt, NUCLEAR_MINIMUM_TIMESTEP);
-
-#undef timescales
 }
 
 

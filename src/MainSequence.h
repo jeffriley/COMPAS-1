@@ -120,7 +120,7 @@ protected:
     
     double          CalculateTAMSCoreMass() const;
 
-    void            UpdateInitialMass()                                                     { m_Mass0 = m_Mass; }                                                   // Per Hurley et al. 2000, section 7.1
+    double          CalculateEffectiveInitialMass()                                                     { return m_Mass; }                                  // Per Hurley et al. 2000, section 7.1
    
     void            UpdateAfterMerger(double p_Mass, double p_HydrogenMass);
     

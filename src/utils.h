@@ -2,14 +2,26 @@
 #define __utils_h__
 
 #include <memory>
-
-#include <boost/version.hpp>
-#include <boost/filesystem.hpp>
-#include "hdf5.h"
+#include <iostream>
+#include <stdarg.h>
+#include <algorithm>
+#include <cstring>
+#include <iomanip>
+#include <execinfo.h>
+#include <cxxabi.h>
 
 #include "constants.h"
 #include "typedefs.h"
+#include "profiling.h"
+#include "utils.h"
+#include "changelog.h"
+#include "hdf5.h"
+
+#include "Rand.h"
 #include "ErrorCatalog.h"
+
+#include <boost/version.hpp>
+#include <boost/filesystem.hpp>
 
 
 namespace utils {

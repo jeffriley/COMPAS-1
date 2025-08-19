@@ -46,8 +46,8 @@ public:
     static double   CalculateLuminosityOnPhase_Static(const double p_Mass, const double p_Tau);
     static double   CalculateLuminosityAtPhaseEnd_Static(const double p_Mass);
 
-           double   CalculateMassLossRateBelczynski2010();
-           double   CalculateMassLossRateMerritt2025();
+    std::tuple<double, MASS_LOSS_TYPE> HeMS::CalculateMassLossRateBelczynski2010() const;
+           double   CalculateMassLossRateMerritt2025 const();
 
     static DBL_DBL  CalculateRadiusAtPhaseEnd_Static(const double p_Mass, const double p_Luminosity);
     static double   CalculateRadiusAtZAMS_Static(const double p_Mass);
@@ -178,7 +178,7 @@ protected:
             bool            ShouldEvolveOnPhase() const                                                             { return (utils::Compare(m_Tau, 0.0) >= 0 && utils::Compare(m_Tau, 1.0) < 0); } // Evolve on HeMS phase if 0 <= tau < 1.0
             bool            ShouldSkipPhase() const                                                                 { return false; }                                                               // Never skip HeMS phase
 
-            void            UpdateInitialMass()                                                                     { m_Mass0 = m_Mass; }                                                           // Per Hurley et al. 2000, section 7.1
+            double          CalculateEffectiveInitialMass()                                                         { return m_Mass; }              // Per Hurley et al. 2000, section 7.1
             void            UpdateAgeAfterMassLoss();                                                                                                                                               // Per Hurley et al. 2000, section 7.1
 };
 

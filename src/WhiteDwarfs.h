@@ -31,7 +31,7 @@ public:
 
     MT_CASE          DetermineMassTransferTypeAsDonor() const                                                   { return MT_CASE::OTHER; }                                      // Not A, B, C, or NONE
 
-    ACCRETION_REGIME DetermineAccretionRegime(const double p_DonorThermalMassLossRate, const bool p_HeRich);                                                                    // Get the current accretion regime. Can also change m_HeShellDetonation and m_OffCenterIgnition flags.
+    ACCRETION_REGIME DetermineAccretionRegime(const double p_DonorThermalMassLossRate, const bool p_HeRich);                                                                    // Get the current accretion regime. Can also change m_HeShellDetonation and m_OffCentreIgnition flags.
     
     void             ResolveShellChange(const double p_AccretedMass);
 
@@ -44,7 +44,7 @@ protected:
             double           m_HShell;                                                                                                                                          // Current WD H-shell size (Msol). Increases through accretion.
             double           m_L0Ritter;                                                                                                                                        // Parameter from numerical calculations, see Ritter 1999, section 3. Eqs 10 and 12, as well as table 2. Corresponds to L0.
             double           m_LambdaRitter;                                                                                                                                    // Parameter from numerical calculations, see Ritter 1999, section 3. Eqs 10 and 12, as well as table 2.
-            bool             m_OffCenterIgnition;                                                                                                                               // Flag for CO WD evolution into ONe WD
+            bool             m_OffCentreIgnition;                                                                                                                               // Flag for CO WD evolution into ONe WD
             bool             m_ShouldRejuvenate;                                                                                                                                // Flag for evolution of HeWD back into HeMS
             bool             m_IsSubChandrasekharTypeIa;                                                                                                                        // Flag for SubCh SN of HeWD
             double           m_XRitter;                                                                                                                                         // Assumed hydrogen-mass fraction of material being accreted by He WD, as in Ritter 1999, table 2.
@@ -57,7 +57,7 @@ protected:
                                                       const double p_MassLostByDonor);
 
             double           CalculateCriticalMassRatio(const bool   p_AccretorIsDegenerate,
-                                                        const double p_massTransferEfficiencyBeta)              { return CalculateCriticalMassRatioHurleyHjellmingWebbink(); }
+                                                        const double p_massTransferEfficiencyBeta) const        { return CalculateCriticalMassRatioHurleyHjellmingWebbink(); }
             double           CalculateCriticalMassRatioClaeys14(const bool p_AccretorIsDegenerate) const        { return CalculateCriticalMassRatioHurleyHjellmingWebbink(); }
             double           CalculateCriticalMassRatioGeEtAl(const QCRIT_PRESCRIPTION p_qCritPrescription,
                                                               const double             p_massTransferEfficiencyBeta) { return CalculateCriticalMassRatioHurleyHjellmingWebbink(); }

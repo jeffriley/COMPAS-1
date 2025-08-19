@@ -118,7 +118,7 @@ double WhiteDwarfs::CalculateEtaPTY(const double p_MassTransferRate) {
         etaPTY = -WD_PIERSANTI_M102_G0 + WD_PIERSANTI_M102_G1 * massRate - WD_PIERSANTI_M102_G2 * massRate_2 + WD_PIERSANTI_M102_G3 * massRate_3;
     }
 
-    return etaPTY;
+    return std::min(std::max(etaPTY, 0.0), 1.0);    // clamp eta to [0.0, 1.0]
 }
 
 
@@ -209,8 +209,8 @@ double WhiteDwarfs::CalculateRadiusOnPhase_Static(const double p_Mass) {
 
 /* 
  * Determine the WD accretion regime based on the MT rate and whether the donor is He rich. Also,
- * initialize He-Shell detonation or Off-center ignition when necessary, by changing the value
- * of m_HeShellDetonation or m_OffCenterIgnition (respectively).
+ * initialize He-Shell detonation or Off-centre ignition when necessary, by changing the value
+ * of m_HeShellDetonation or m_OffCentreIgnition (respectively).
  *
  * The accretion regime is one of the options listed in enum ACCRETION_REGIME (constants.h)
  *
@@ -248,8 +248,8 @@ ACCRETION_REGIME WhiteDwarfs::DetermineAccretionRegime(const double p_DonorMassL
         } 
         else {
             regime = ACCRETION_REGIME::HELIUM_STABLE_BURNING;
-            if ((utils::Compare(logMdot, COWD_LOG_MDOT_MIN_OFF_CENTER_IGNITION) > 0) && (utils::Compare(m_Mass, COWD_MASS_MIN_OFF_CENTER_IGNITION) > 0)) {
-                m_OffCenterIgnition = true;
+            if ((utils::Compare(logMdot, COWD_LOG_MDOT_MIN_OFF_CENTRE_IGNITION) > 0) && (utils::Compare(m_Mass, COWD_MASS_MIN_OFF_CENTRE_IGNITION) > 0)) {
+                m_OffCentreIgnition = true;
             }
         }
     } 

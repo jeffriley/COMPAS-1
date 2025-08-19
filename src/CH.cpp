@@ -238,7 +238,6 @@ double CH::CalculateLuminosityAtPhaseEnd(const double p_Mass) const {
  * @param   [IN/OUT]    p_Timescales            Timescales
  */
 void CH::CalculateTimescales(const double p_Mass, DBL_VECTOR &p_Timescales) {
-#define timescales(x) p_Timescales[static_cast<int>(TIMESCALE::x)]  // for convenience and readability - undefined at end of function
 
     // Calculate the standard lifetimes in the normal way
     timescales(tBGB)  = CalculateLifetimeToBGB(p_Mass);
@@ -251,7 +250,6 @@ void CH::CalculateTimescales(const double p_Mass, DBL_VECTOR &p_Timescales) {
     timescales(tBGB) *= lifetimeRatio;
     timescales(tMS)  *= lifetimeRatio;
 
-#undef timescales
 }
 
 

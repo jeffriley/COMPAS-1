@@ -229,7 +229,7 @@ public:
 
     inline double               CalculateTimestep()                                                                                 { return m_Star->CalculateTimestep(); }
 
-    inline double               CalculateZetaAdiabatic()                                                                            { return m_Star->CalculateZetaAdiabatic(); }
+    inline double               CalculateZetaAdiabatic() const                                                                      { return m_Star->CalculateZetaAdiabatic(); }
     inline double               CalculateZetaConstantsByEnvelope(ZETA_PRESCRIPTION p_ZetaPrescription)                              { return m_Star->CalculateZetaConstantsByEnvelope(p_ZetaPrescription); }
     inline double               CalculateZetaEquilibrium()                                                                          { return m_Star->CalculateZetaEquilibrium(); }
 

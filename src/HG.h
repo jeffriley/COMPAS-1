@@ -144,7 +144,31 @@ protected:
     void            UpdateAfterMerger(double p_Mass, double p_HydrogenMass) { }                                                                                                 // Nothing to do for stars beyond the Main Sequence for now
     void            UpdateAgeAfterMassLoss();                                                                                                                                   // Per Hurley et al. 2000, section 7.1
 
-    void            UpdateInitialMass();                                                                                                                                        // Per Hurley et al. 2000, section 7.1
+    /*
+     * CalculateEffectiveInitialMass
+     *
+     * Calculate effective initial mass per Hurley et al. 2000, section 7.1.
+     * 
+     * The effective initial mass on the HG tracks the stellar mass, unless it would yield an
+     * unphysical decrease in the core mass.
+     * 
+     * Only update mass0 on mass loss if the current mass would yield a core mass larger than
+     * or equal to the current core mass (i.e., no unphysical core mass decrease would ensue).
+     * 
+     * Do not update mass0 on mass gain on the HG - there is no instruction for doing so in Hurley.
+     * This check also avoids difficulties for the BRCEK rejuvenation prescription, when mass0 may
+     * be set to enforce a core mass that is lower than would be expected for the current mass value
+     * according to the Hurley prescription).
+     *
+     * 
+     * void CalculateEffectiveInitialMass() const
+     *
+     * @return                                      Calculate effective initial mass (may be unchanged)
+     */
+    double HG::CalculateEffectiveInitialMass() const {
+        return utils::Compare(m_Mass0, m_Mass) > 0 && utils::Compare(m_CoreMass, HG::CalculateCoreMassOnPhaseIgnoringPreviousCoreMass(m_Mass, m_Age)) <= 0 ? m_Mass : m_Mass0;
+    }
+
 
     void            UpdateEffectiveZAMSLandR()                                      { BaseStar::UpdateEffectiveZAMSLandR(); }                                                   // Skip MainSequence
        

@@ -841,8 +841,7 @@ int main(int argc, char * argv[]) {
 
     PROGRAM_STATUS programStatus = PROGRAM_STATUS::CONTINUE;                                        // status - initially ok
 
-    RAND->Initialise();                                                                             // initialise the random number service
-    RAND->Seed(0l);                                                                                 // set seed to 0 - ensures repeatable results
+    RAND->Seed(0l);                                                                                 // set random number generator seed to 0 - ensures repeatable results
 
     bool ok = OPTIONS->Initialise(argc, argv);                                                      // get the program options from the commandline
     if (!ok) {                                                                                      // have commandline options ok?
@@ -932,7 +931,7 @@ int main(int argc, char * argv[]) {
         }
     }
 
-    RAND->Free();                                                                                   // release gsl dynamically allocated memory
+    RAND->Free();                                                                                   // release gsl dynamically allocated memory (not strictly necessary, but neat)
 
     return static_cast<int>(programStatus);                                                         // we're done
 }

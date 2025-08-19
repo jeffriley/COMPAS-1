@@ -6,12 +6,14 @@
 // the COMPAS looging functionality (including the definition of the default record composition
 // for the various log files) - those are listed in LogTypedefs.h
 
-
-#include "EnumHash.h"
-#include "LogTypedefs.h"
-#include "ErrorCatalog.h"
 #include <boost/math/tools/roots.hpp>
 #include <boost/numeric/odeint.hpp>
+
+//#include "EnumHash.h"
+#include "LogTypedefs.h"
+#include "ErrorCatalog.h"
+
+#define COMPASUnorderedMap std::unordered_map   // since c++17
 
 
 // JR: todo: clean this up and document it better
@@ -430,9 +432,9 @@ const COMPASUnorderedMap<ENVELOPE, std::string> ENVELOPE_LABEL = {
 // envelope state prescriptions
 enum class ENVELOPE_STATE_PRESCRIPTION: int { LEGACY, HURLEY, FIXED_TEMPERATURE, CONVECTIVE_MASS_FRACTION };
 const COMPASUnorderedMap<ENVELOPE_STATE_PRESCRIPTION, std::string> ENVELOPE_STATE_PRESCRIPTION_LABEL = {
-    { ENVELOPE_STATE_PRESCRIPTION::LEGACY,            "LEGACY" },
-    { ENVELOPE_STATE_PRESCRIPTION::HURLEY,            "HURLEY" },
-    { ENVELOPE_STATE_PRESCRIPTION::FIXED_TEMPERATURE, "FIXED_TEMPERATURE" },
+    { ENVELOPE_STATE_PRESCRIPTION::LEGACY,                   "LEGACY" },
+    { ENVELOPE_STATE_PRESCRIPTION::HURLEY,                   "HURLEY" },
+    { ENVELOPE_STATE_PRESCRIPTION::FIXED_TEMPERATURE,        "FIXED_TEMPERATURE" },
     { ENVELOPE_STATE_PRESCRIPTION::CONVECTIVE_MASS_FRACTION, "CONVECTIVE_MASS_FRACTION"}
 };
 
@@ -483,11 +485,11 @@ const COMPASUnorderedMap<EVOLUTION_STATUS, std::string> EVOLUTION_STATUS_LABEL =
     { EVOLUTION_STATUS::STARTED,                 "Simulation started" }
 };
 
-// evolution mode (SSE or BSE)
-enum class EVOLUTION_MODE: int { SSE, BSE };
+// evolution mode (SSE_HURLEY or BSE_HURLEY)
+enum class EVOLUTION_MODE: int { SSE_HURLEY, BSE_HURLEY };
 const COMPASUnorderedMap<EVOLUTION_MODE, std::string> EVOLUTION_MODE_LABEL = {
-    { EVOLUTION_MODE::SSE, "SSE" },
-    { EVOLUTION_MODE::BSE, "BSE" }
+    { EVOLUTION_MODE::SSE_HURLEY, "SSE_HURLEY" },
+    { EVOLUTION_MODE::BSE_HURLEY, "BSE_HURLEY" }
 };
 
 // floating-point error handling mode
@@ -501,10 +503,10 @@ const COMPASUnorderedMap<FP_ERROR_MODE, std::string> FP_ERROR_MODE_LABEL = {
     { FP_ERROR_MODE::DEBUG, "DEBUG" }
 };
 
-// symbolic names for the Gamma Constants
+// symbolic names for the Hurley gamma constants
 // these must be left as default values - their order can be changed with the caveat that the sentinel "COUNT" must stay at the end
-// it's a bit of a hack, but it lets me calculate the number of GAMMA_CONSTANTS
-enum class GAMMA_CONSTANTS: int { B_GAMMA, C_GAMMA, COUNT };
+// it's a bit of a hack, but it lets me calculate the number of HURLEY_GAMMA_CONSTANTS
+enum class HURLEY_GAMMA_CONSTANTS: int { B_GAMMA, C_GAMMA, COUNT };
 
 // symbolic names for Giant Branch Parameters
 // these must be left as default values - their order can be changed with the caveat that the sentinel "COUNT" must stay at the end
@@ -576,10 +578,10 @@ const COMPASUnorderedMap<KICK_DIRECTION_DISTRIBUTION, std::string> KICK_DIRECTIO
     { KICK_DIRECTION_DISTRIBUTION::POLES,         "POLES" }
 };
 
-// symbolic names for the Luminosity Constants
+// symbolic names for the Hurley luminosity constants
 // these must be left as default values - their order can be changed with the caveat that the sentinel "COUNT" must stay at the end
-// it's a bit of a hack, but it lets me calculate the number of L_CONSTANTS
-enum class L_CONSTANTS: int { B_ALPHA_L, B_BETA_L, B_DELTA_L, COUNT };
+// it's a bit of a hack, but it lets me calculate the number of HURLEY_L_CONSTANTS
+enum class HURLEY_L_CONSTANTS: int { B_ALPHA_L, B_BETA_L, B_DELTA_L, COUNT };
 
 // LBV mass loss prescriptions
 enum class LBV_MASS_LOSS_PRESCRIPTION: int { ZERO, HURLEY_ADD, HURLEY, BELCZYNSKI };
@@ -604,11 +606,10 @@ const COMPASUnorderedMap<LOVERIDGE_GROUP, std::string> LOVERIDGE_GROUP_LABEL = {
 // symbolic names for mass cutoffs
 // these must be left as default values - their order can be changed with the caveat that the sentinel "COUNT" must stay at the end
 // it's a bit of a hack, but it lets me calculate the number of Timescales
-enum class MASS_CUTOFF: int {
+enum class HURLEY_MASS_CUTOFF: int {
     MHook,                  // Mass above which hook appears on MS (in Msol)
     MHeF,                   // Maximum initial mass for which helium ignites degenerately in a Helium Flash (HeF)
     MFGB,                   // Maximum initial mass for which helium ignites on the First Giant Branch (FGB)
-    MCHE,                   // Mass cutoff for calculation of initial angular frequency to determine if CHE occurs
 
     COUNT                   // Sentinel for entry count
 };
@@ -813,10 +814,10 @@ const COMPASUnorderedMap<PULSAR_BIRTH_SPIN_PERIOD_DISTRIBUTION, std::string> PUL
     { PULSAR_BIRTH_SPIN_PERIOD_DISTRIBUTION::NORMAL,  "NORMAL" }
 };
 
-// symbolic names for the Radius Constants
+// symbolic names for the Hurley radius constants
 // these must be left as default values - their order can be changed with the caveat that the sentinel "COUNT" must stay at the end
-// it's a bit of a hack, but it lets me calculate the number of R_CONSTANTS
-enum class R_CONSTANTS: int { B_ALPHA_R, C_ALPHA_R, B_BETA_R, C_BETA_R, B_DELTA_R, COUNT };
+// it's a bit of a hack, but it lets me calculate the number of HURLEY_R_CONSTANTS
+enum class HURLEY_R_CONSTANTS: int { B_ALPHA_R, C_ALPHA_R, B_BETA_R, C_BETA_R, B_DELTA_R, COUNT };
 
 // remnant mass prescriptions
 enum class REMNANT_MASS_PRESCRIPTION: int { HURLEY2000, BELCZYNSKI2002, FRYER2012, FRYER2022, MULLER2016, MULLERMANDEL, SCHNEIDER2020, SCHNEIDER2020ALT, MALTSEV2024};

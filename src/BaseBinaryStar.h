@@ -7,17 +7,18 @@
 #include "utils.h"
 #include "vector3d.h"
 
+#include "Rand.h"
 #include "Log.h"
 #include "Star.h"
 #include "BinaryConstituentStar.h"
 
+#include <tuple>
+#include <fenv.h>
+
+#include <gsl/gsl_poly.h>
+
 #include <boost/math/tools/roots.hpp>
 #include <boost/numeric/odeint.hpp>
-
-//#include <boost/math/special_functions/next.hpp>    // For float_distance.
-//#include <boost/math/special_functions/cbrt.hpp>    // For boost::math::cbrt.
-
-#include <tuple>                                    // for std::tuple and std::make_tuple.
 
 
 class Log;
@@ -379,7 +380,7 @@ private:
     double              m_SynchronizationTimescale1;
     double              m_SynchronizationTimescale2;
 
-    Vector3d            m_SystemicVelocity;                                                 // Systemic velocity vector, relative to ZAMS Center of Mass
+    Vector3d            m_SystemicVelocity;                                                 // Systemic velocity vector, relative to ZAMS centre of mass
     Vector3d            m_NormalizedOrbitalAngularMomentumVector;                           // Orbital AM vector postSN, in preSN frame
     double              m_ThetaE;                                                           // Euler Theta
     double              m_PhiE;                                                             // Euler Phi                

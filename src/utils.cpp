@@ -1,15 +1,4 @@
-#include <iostream>
-#include <stdarg.h>
-#include <algorithm>
-#include <cstring>
-#include <iomanip>
-#include <execinfo.h>
-#include <cxxabi.h>
-
-#include "profiling.h"
 #include "utils.h"
-#include "Rand.h"
-#include "changelog.h"
 
 
 /*
@@ -910,7 +899,7 @@ namespace utils {
                 } while (eccentricity < p_Min or eccentricity > p_Max);                                 // JR: don't use utils::Compare() here
                 break;
 
-            case ECCENTRICITY_DISTRIBUTION::SANA2012:                                                   // Sana et al 2012
+            case ECCENTRICITY_DISTRIBUTION::SANA2012:                                                   // Sana et al. 2012
                 // (http://science.sciencemag.org/content/sci/337/6093/444.full.pdf) distribution of eccentricities.
                 // Taken from table S3 in http://science.sciencemag.org/content/sci/suppl/2012/07/25/337.6093.444.DC1/1223344.Sana.SM.pdf
                 // See also de Mink and Belczynski 2015 http://arxiv.org/pdf/1506.03573v2.pdf
@@ -1118,7 +1107,7 @@ namespace utils {
                 } while (q < p_Min || q > p_Max);                                                               // JR: don't use utils::Compare() here
                 break;
 
-            case MASS_RATIO_DISTRIBUTION::SANA2012:                                                             // Sana et al 2012 (http://science.sciencemag.org/content/sci/337/6093/444.full.pdf) distribution of eccentricities.
+            case MASS_RATIO_DISTRIBUTION::SANA2012:                                                             // Sana et al. 2012 (http://science.sciencemag.org/content/sci/337/6093/444.full.pdf) distribution of eccentricities.
                 // Taken from table S3 in http://science.sciencemag.org/content/sci/suppl/2012/07/25/337.6093.444.DC1/1223344.Sana.SM.pdf
                 // See also de Mink and Belczynski 2015 http://arxiv.org/pdf/1506.03573v2.pdf
 
@@ -1254,7 +1243,7 @@ namespace utils {
             case SEMI_MAJOR_AXIS_DISTRIBUTION::DUQUENNOYMAYOR1991: {                                                            // Duquennoy & Mayor (1991) period distribution
                 // http://adsabs.harvard.edu/abs/1991A%26A...248..485D
                 // See also the period distribution (Figure 1) of M35 in Geller+ 2013 https://arxiv.org/abs/1210.1575
-                // See also the period distribution (Figure 13) of local solar type binaries from Raghavan et al 2010 https://arxiv.org/abs/1007.0414
+                // See also the period distribution (Figure 13) of local solar type binaries from Raghavan et al. 2010 https://arxiv.org/abs/1007.0414
                 // They have log-normal distribution with a mean of 5.03 and a standard deviation of 2.28, with a minimum period of around 0.1 days
                 // Sampling function taken from binpop.f in NBODY6
 
@@ -1267,9 +1256,9 @@ namespace utils {
                 if (samples >= SEMI_MAJOR_AXIS_SAMPLES) error = ERROR::NO_CONVERGENCE;                                          // check for non-comvergence - set error value
                 } break;
 
-            case SEMI_MAJOR_AXIS_DISTRIBUTION::SANA2012: {                                                                      // Sana et al 2012
+            case SEMI_MAJOR_AXIS_DISTRIBUTION::SANA2012: {                                                                      // Sana et al. 2012
                 // http://science.sciencemag.org/content/sci/337/6093/444.full.pdf
-                // distribution of semi-major axes. Sana et al fit for the orbital period, which we sample in here, before returning the semi major axis
+                // distribution of semi-major axes. Sana et al. fit for the orbital period, which we sample in here, before returning the semi major axis
                 // Taken from table S3 in http://science.sciencemag.org/content/sci/suppl/2012/07/25/337.6093.444.DC1/1223344.Sana.SM.pdf
                 // See also de Mink and Belczynski 2015 http://arxiv.org/pdf/1506.03573v2.pdf
 

@@ -55,7 +55,6 @@ SOURCES :=						\
 	yaml.cpp                   	\
 	vector3d.cpp                \
 								\
-	Rand.cpp                    \
 	Options.cpp                 \
 	Log.cpp                     \
 	Errors.cpp                  \

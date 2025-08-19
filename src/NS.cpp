@@ -1,4 +1,3 @@
-#include "Rand.h"
 #include "NS.h"
 
 
@@ -149,8 +148,8 @@ double NS::CalculateBirthSpinPeriod() {
 
     switch (OPTIONS->PulsarBirthSpinPeriodDistribution()) {                                                     // which distribution?
 
-        case PULSAR_BIRTH_SPIN_PERIOD_DISTRIBUTION::UNIFORM: {                                                  // UNIFORM distribution between minimum and maximum value as in Oslowski et al 2011 https://arxiv.org/abs/0903.3538 (default Pmin = and Pmax = )
-                                                                                                                // and also Kiel et al 2008 https://arxiv.org/abs/0805.0059 (default Pmin = 10 ms and Pmax 100 ms, section 3.4)
+        case PULSAR_BIRTH_SPIN_PERIOD_DISTRIBUTION::UNIFORM: {                                                  // UNIFORM distribution between minimum and maximum value as in Oslowski et al. 2011 https://arxiv.org/abs/0903.3538 (default Pmin = and Pmax = )
+                                                                                                                // and also Kiel et al. 2008 https://arxiv.org/abs/0805.0059 (default Pmin = 10 ms and Pmax 100 ms, section 3.4)
             double maximum = OPTIONS->PulsarBirthSpinPeriodDistributionMax();
             double minimum = OPTIONS->PulsarBirthSpinPeriodDistributionMin();
 
@@ -199,7 +198,7 @@ double NS::CalculateBirthMagneticField() {
 
     switch (OPTIONS->PulsarBirthMagneticFieldDistribution()) {                                                  // which distribution?
 
-        case PULSAR_BIRTH_MAGNETIC_FIELD_DISTRIBUTION::FLATINLOG: {                                             // FLAT IN LOG distribution from Oslowski et al 2011 https://arxiv.org/abs/0903.3538 (log10B0min = , log10B0max = )
+        case PULSAR_BIRTH_MAGNETIC_FIELD_DISTRIBUTION::FLATINLOG: {                                             // FLAT IN LOG distribution from Oslowski et al. 2011 https://arxiv.org/abs/0903.3538 (log10B0min = , log10B0max = )
 
             double maximum = OPTIONS->PulsarBirthMagneticFieldDistributionMax();
             double minimum = OPTIONS->PulsarBirthMagneticFieldDistributionMin();
@@ -208,7 +207,7 @@ double NS::CalculateBirthMagneticField() {
 
             } break;
 
-        case PULSAR_BIRTH_MAGNETIC_FIELD_DISTRIBUTION::UNIFORM: {                                               // UNIFORM flat distribution used in Kiel et al 2008 https://arxiv.org/abs/0805.0059 (log10B0min = 11, log10B0max = 13.5 see section 3.4 and Table 1.)
+        case PULSAR_BIRTH_MAGNETIC_FIELD_DISTRIBUTION::UNIFORM: {                                               // UNIFORM flat distribution used in Kiel et al. 2008 https://arxiv.org/abs/0805.0059 (log10B0min = 11, log10B0max = 13.5 see section 3.4 and Table 1.)
             
             double maximum = PPOW(10.0, OPTIONS->PulsarBirthMagneticFieldDistributionMax());
             double minimum = PPOW(10.0, OPTIONS->PulsarBirthMagneticFieldDistributionMin());

@@ -6,6 +6,7 @@
 #include "profiling.h"
 #include "utils.h"
 
+#include "Rand.h"
 #include "Remnants.h"
 #include "BH.h"
 

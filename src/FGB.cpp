@@ -24,8 +24,6 @@
  * @return                                      Luminosity on the First Giant Branch in Lsol
  */
 double FGB::CalculateLuminosityOnPhase(const double p_Time) const {
-#define timescales(x) m_Timescales[static_cast<int>(TIMESCALE::x)]  // for convenience and readability - undefined at end of function
-#define gbParams(x) m_GBParams[static_cast<int>(GBP::x)]            // for convenience and readability - undefined at end of function
 
     // The following declarations are for convenience and readability
     // (could be changed to #defines if performance is an issue - but the optimiser should optimise this away)
@@ -42,9 +40,6 @@ double FGB::CalculateLuminosityOnPhase(const double p_Time) const {
                         : PPOW(((q - 1.0) * AH * B * (timescales(tinf2_FGB) - p_Time)), (1.0 / (1.0 - q)));
 
     return std::min((B * PPOW(coreMass, q)), (D * PPOW(coreMass, p)));
-
-#undef gbParams
-#undef timescales
 }
 
 
@@ -68,9 +63,6 @@ double FGB::CalculateLuminosityOnPhase(const double p_Time) const {
  * @return                                      Core mass on the First Giant Branch in Msol
  */
 double FGB::CalculateCoreMassOnPhase(const double p_Mass, const double p_Time) const {
-#define timescales(x) m_Timescales[static_cast<int>(TIMESCALE::x)]      // for convenience and readability - undefined at end of function
-#define gbParams(x) m_GBParams[static_cast<int>(GBP::x)]                // for convenience and readability - undefined at end of function
-#define massCutoffs(x) m_MassCutoffs[static_cast<int>(MASS_CUTOFF::x)]  // for convenience and readability - undefined at end of function
 
     double McGB  = utils::Compare(p_Time, timescales(tMx_FGB)) <= 0
                     ? PPOW(((gbParams(p) - 1.0) * gbParams(AH) * gbParams(D) * (timescales(tinf1_FGB) - p_Time)), (1.0 / (1.0 - gbParams(p))))
@@ -79,10 +71,6 @@ double FGB::CalculateCoreMassOnPhase(const double p_Mass, const double p_Time) c
     double tau   = std::max(0.0, std::min(1.0, (p_Time - timescales(tBGB)) / (timescales(tHeI) - timescales(tBGB))));
 
     return utils::Compare(p_Mass, massCutoffs(MHeF)) < 0 ? McGB : gbParams(McBGB) + ((CalculateCoreMassAtHeIgnition(p_Mass) - gbParams(McBGB)) * tau);
-
-#undef massCutOffs
-#undef gbParams
-#undef timescales
 }
 
 
@@ -105,9 +93,7 @@ double FGB::CalculateCoreMassOnPhase(const double p_Mass, const double p_Time) c
  */
 
 double FGB::CalculateTauOnPhase() const {
-#define timescales(x) m_Timescales[static_cast<int>(TIMESCALE::x)]  // for convenience and readability - undefined at end of function
     return std::max(0.0, std::min(1.0, (m_Age - timescales(tBGB)) / (timescales(tHeI) - timescales(tBGB))));
-#undef timescales
 }
 
 
@@ -130,7 +116,6 @@ double FGB::CalculateTauOnPhase() const {
  * @return                                      Suggested timestep (dt)
  */
 double FGB::ChooseTimestep(const double p_Time) const {
-#define timescales(x) m_Timescales[static_cast<int>(TIMESCALE::x)]      // for convenience and readability - undefined at end of function
 
     double dtk = utils::Compare(p_Time, timescales(tMx_FGB)) <= 0       // ah because timescales[4,5,6] are not calculated yet   JR: todo: ?but... timescales[4] is used if this is true...? (and 5 if not) 
             ? 0.02 * (timescales(tinf1_FGB) - p_Time)
@@ -139,8 +124,6 @@ double FGB::ChooseTimestep(const double p_Time) const {
     double dte = timescales(tHeI) - p_Time;
 
     return std::max(std::min(dtk, dte), NUCLEAR_MINIMUM_TIMESTEP);
-
-#undef timescales
 }
 
 
@@ -172,8 +155,6 @@ double FGB::ChooseTimestep(const double p_Time) const {
  * @return                                      Stellar Type to which star should evolve after losing envelope
  */
 STELLAR_TYPE FGB::ResolveEnvelopeLoss(bool p_Force) {
-#define timescales(x) m_Timescales[static_cast<int>(TIMESCALE::x)]                                  // for convenience and readability - undefined at end of function
-#define massCutoffs(x) m_MassCutoffs[static_cast<int>(MASS_CUTOFF::x)]                              // for convenience and readability - undefined at end of function
 
     STELLAR_TYPE stellarType = m_StellarType;
 
@@ -202,9 +183,6 @@ STELLAR_TYPE FGB::ResolveEnvelopeLoss(bool p_Force) {
     }
 
     return stellarType;
-
-#undef massCutoffs
-#undef timescales
 }
 
 
@@ -217,15 +195,10 @@ STELLAR_TYPE FGB::ResolveEnvelopeLoss(bool p_Force) {
  * Deletermine if Helium Flash occurs, and if so set m_Mass0 equal to current mass as described in Hurley+ (2000), last paragraph before start of 7.1.1.
  */
 void FGB::ResolveHeliumFlash() {
-#define timescales(x) m_Timescales[static_cast<int>(TIMESCALE::x)]      // for convenience and readability - undefined at end of function
-#define massCutoffs(x) m_MassCutoffs[static_cast<int>(MASS_CUTOFF::x)]  // for convenience and readability - undefined at end of function
 
     if (utils::Compare(m_Mass0, massCutoffs(MHeF)) < 0) {               // Helium flash if initial mass < Helium Flash cutoff
         m_Mass0 = m_Mass;                                               // for LM star at ZAHB (end of GB/beginning of CHeB) due to helium flash when doing mass loss
     }
-
-#undef massCutoffs
-#undef timescales
 }
 
 

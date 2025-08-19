@@ -40,8 +40,6 @@ double CHeB::CalculateHeliumAbundanceCoreOnPhase(const double p_Tau) const {
  * @param   [IN/OUT]    p_Timescales            Timescales - calculated here
  */
 void CHeB::CalculateTimescales(const double p_Mass, DBL_VECTOR &p_Timescales) {
-#define timescales(x) p_Timescales[static_cast<int>(TIMESCALE::x)]                      // for convenience and readability - undefined at end of function
-#define massCutoffs(x) m_MassCutoffs[static_cast<int>(MASS_CUTOFF::x)]                  // for convenience and readability - undefined at end of function
 
     GiantBranch::CalculateTimescales(p_Mass, p_Timescales);                             // calculate common values
 
@@ -78,9 +76,6 @@ void CHeB::CalculateTimescales(const double p_Mass, DBL_VECTOR &p_Timescales) {
 	timescales(tauY_BL) = utils::Compare(p_Mass, massCutoffs(MFGB)) >= 0
                             ? timescales(tau_BL)                                        // high mass stars
                             : 1.0;                                                      // intermediate and low mass stars
-
-#undef massCutoffs
-#undef timescales
 }
 
 
@@ -866,14 +861,14 @@ double CHeB::CalculateMinimumLuminosityOnPhase(const double      p_Mass,
                                                const double      p_MHeF,
                                                const double      p_MFGB,
                                                const DBL_VECTOR &p_BnCoefficients) const {
-#define b p_BnCoefficients  // for convenience and readability - undefined at end of function
+#define bn p_BnCoefficients     // for convenience and readability - undefined at end of function
 
     double LHeI = GiantBranch::CalculateLuminosityAtHeIgnition_Static(p_Mass, p_Alpha1, p_MHeF, p_BnCoefficients);
-    double c    = (b[17] / PPOW(p_MFGB, 0.1)) + (((b[16] * b[17]) - b[14]) / (PPOW(p_MFGB, (b[15] + 0.1))));
+    double c    = (bn[17] / PPOW(p_MFGB, 0.1)) + (((bn[16] * bn[17]) - bn[14]) / (PPOW(p_MFGB, (bn[15] + 0.1))));
 
-    return LHeI * ((b[14] + (c * PPOW(p_Mass, (b[15] + 0.1)))) / (b[16] + PPOW(p_Mass, b[15])));
+    return LHeI * ((bn[14] + (c * PPOW(p_Mass, (bn[15] + 0.1)))) / (bn[16] + PPOW(p_Mass, bn[15])));
 
-#undef b
+#undef bn
 }
 
 
@@ -889,7 +884,6 @@ double CHeB::CalculateMinimumLuminosityOnPhase(const double      p_Mass,
  * @return                                      Luminosity at the start of the blue phase of core helium burning in Lsol
  */
 double CHeB::CalculateLuminosityAtBluePhaseStart(const double p_Mass) const {
-#define massCutoffs(x) m_MassCutoffs[static_cast<int>(MASS_CUTOFF::x)]  // for convenience and readability - undefined at end of function
 
     double Lx;
     if (utils::Compare(p_Mass, massCutoffs(MHeF)) < 0) {
@@ -903,8 +897,6 @@ double CHeB::CalculateLuminosityAtBluePhaseStart(const double p_Mass) const {
     }
 
     return Lx;
-
-#undef massCutoffs
 }
 
 
@@ -920,8 +912,6 @@ double CHeB::CalculateLuminosityAtBluePhaseStart(const double p_Mass) const {
  * @return                                      Luminosity at the end of the blue phase of Core Helium Burning in Lsol
  */
 double CHeB::CalculateLuminosityAtBluePhaseEnd(const double p_Mass) const {
-#define timescales(x) m_Timescales[static_cast<int>(TIMESCALE::x)]      // for convenience and readability - undefined at end of function
-#define massCutoffs(x) m_MassCutoffs[static_cast<int>(MASS_CUTOFF::x)]  // for convenience and readability - undefined at end of function
 
     double Ly;
 
@@ -945,9 +935,6 @@ double CHeB::CalculateLuminosityAtBluePhaseEnd(const double p_Mass) const {
     }
 
     return Ly;
-
-#undef massCutoffs
-#undef timescales
 }
 
 
@@ -964,8 +951,6 @@ double CHeB::CalculateLuminosityAtBluePhaseEnd(const double p_Mass) const {
  * @return                                      Luminosity during Core Helium Burning in Lsol
  */
 double CHeB::CalculateLuminosityOnPhase(const double p_Mass, const double p_Tau) const {
-#define timescales(x) m_Timescales[static_cast<int>(TIMESCALE::x)]      // for convenience and readability - undefined at end of function
-#define massCutoffs(x) m_MassCutoffs[static_cast<int>(MASS_CUTOFF::x)]  // for convenience and readability - undefined at end of function
 
     double lCHeB;
 
@@ -995,9 +980,6 @@ double CHeB::CalculateLuminosityOnPhase(const double p_Mass, const double p_Tau)
     }
 
     return lCHeB;
-
-#undef masCutoffs
-#undef timescales
 }
 
 
@@ -1025,9 +1007,7 @@ double CHeB::CalculateRemnantLuminosity() const {
 
 
 double CHeB::CalculateRadiusAtPhaseEnd(const double p_Mass, const double p_Luminosity) const {
-#define massCutoffs(x) m_MassCutoffs[static_cast<int>(MASS_CUTOFF::x)]  // for convenience and readability - undefined at end of function
     return EAGB::CalculateRadiusOnPhase_Static(p_Mass, p_Luminosity, massCutoffs(MHeF), m_BnCoefficients);
-#undef massCutoffs
 }
 
 
@@ -1062,20 +1042,20 @@ double CHeB::CalculateMinimumRadiusOnPhase_Static(const double      p_Mass,
                                                   const double      p_MFGB,
                                                   const double      p_MinimumLuminosityOnPhase,
                                                   const DBL_VECTOR &p_BnCoefficients) {
-#define b p_BnCoefficients  // for convenience and readability - undefined at end of function
+#define bn p_BnCoefficients     // for convenience and readability - undefined at end of function
 
     double minR = 0.0;                              // Minimum radius
 
     if (utils::Compare(p_MHeF, p_Mass) < 0) {
-        double m_b28 = PPOW(p_Mass, b[28]);         // pow() is slow - do it once only
-        minR = ((b[24] * p_Mass) + (PPOW((b[25] * p_Mass), b[26]) * m_b28)) / (b[27] + m_b28);
+        double m_b28 = PPOW(p_Mass, bn[28]);        // pow() is slow - do it once only
+        minR = ((bn[24] * p_Mass) + (PPOW((bn[25] * p_Mass), bn[26]) * m_b28)) / (bn[27] + m_b28);
     }
     else {
         double LZAHB_MHeF = GiantBranch::CalculateLuminosityOnZAHB_Static(p_MHeF, p_CoreMass, p_Alpha1, p_MHeF, p_MFGB, p_MinimumLuminosityOnPhase, p_BnCoefficients);
         double LZAHB      = GiantBranch::CalculateLuminosityOnZAHB_Static(p_Mass, p_CoreMass, p_Alpha1, p_MHeF, p_MFGB, p_MinimumLuminosityOnPhase, p_BnCoefficients);
         double mu         = p_Mass / p_MHeF;
-        double MHeF_b28   = PPOW(p_MHeF, b[28]);    // pow() is slow - do it once only
-        double top        = ((b[24] * p_MHeF) + (PPOW((b[25] * p_MHeF), b[26]) * MHeF_b28)) / (b[27] + MHeF_b28);
+        double MHeF_b28   = PPOW(p_MHeF, bn[28]);   // pow() is slow - do it once only
+        double top        = ((b[24] * p_MHeF) + (PPOW((bn[25] * p_MHeF), bn[26]) * MHeF_b28)) / (bn[27] + MHeF_b28);
         double bottom     = GiantBranch::CalculateRadiusOnPhase_Static(p_MHeF, LZAHB_MHeF, p_BnCoefficients);
 
         minR = GiantBranch::CalculateRadiusOnPhase_Static(p_Mass, LZAHB, p_BnCoefficients) * PPOW(top / bottom, mu);
@@ -1083,7 +1063,7 @@ double CHeB::CalculateMinimumRadiusOnPhase_Static(const double      p_Mass,
 
     return minR;
 
-#undef b
+#undef bn
 }
 
 
@@ -1099,7 +1079,6 @@ double CHeB::CalculateMinimumRadiusOnPhase_Static(const double      p_Mass,
  * @return                                      Radius at the start of the blue phase of Core Helium Burning in Rsol
  */
 double CHeB::CalculateRadiusAtBluePhaseStart(const double p_Mass) const {
-#define massCutoffs(x) m_MassCutoffs[static_cast<int>(MASS_CUTOFF::x)]  // for convenience and readability - undefined at end of function
 
     double Rx;
 
@@ -1115,8 +1094,6 @@ double CHeB::CalculateRadiusAtBluePhaseStart(const double p_Mass) const {
     }
 
     return Rx;
-
-#undef massCutoffs
 }
 
 
@@ -1132,11 +1109,7 @@ double CHeB::CalculateRadiusAtBluePhaseStart(const double p_Mass) const {
  * @return                                      Radius at the end of the blue phase of Core Helium Burning in Rsol
  */
 double CHeB::CalculateRadiusAtBluePhaseEnd(const double p_Mass) const {
-#define massCutoffs(x) m_MassCutoffs[static_cast<int>(MASS_CUTOFF::x)]  // for convenience and readability - undefined at end of function
-
     return EAGB::CalculateRadiusOnPhase_Static(p_Mass, CalculateLuminosityAtBluePhaseEnd(m_Mass0), massCutoffs(MHeF), m_BnCoefficients);
-
-#undef massCutoffs
 }
 
 
@@ -1153,8 +1126,6 @@ double CHeB::CalculateRadiusAtBluePhaseEnd(const double p_Mass) const {
  * @return                                      Rho
  */
 double CHeB::CalculateRadiusRho(const double p_Mass, const double p_Tau) const {
-#define timescales(x) m_Timescales[static_cast<int>(TIMESCALE::x)]      // for convenience and readability - undefined at end of function
-#define massCutoffs(x) m_MassCutoffs[static_cast<int>(MASS_CUTOFF::x)]  // for convenience and readability - undefined at end of function
 
     double tx    = timescales(tauX_BL);
     double ty    = timescales(tauY_BL);
@@ -1172,9 +1143,6 @@ double CHeB::CalculateRadiusRho(const double p_Mass, const double p_Tau) const {
     double four  = (ty - p_Tau) / ty_tx;
 
     return (one * two) - (three * four);
-
-#undef massCutoffs
-#undef timescales
 }
 
 
@@ -1192,8 +1160,6 @@ double CHeB::CalculateRadiusRho(const double p_Mass, const double p_Tau) const {
  * @return                                      Radius during Core Helium Burning in Rsol
  */
 double CHeB::CalculateRadiusOnPhase(const double p_Mass, const double p_Luminosity, const double p_Tau) const {
-#define timescales(x) m_Timescales[static_cast<int>(TIMESCALE::x)]      // for convenience and readability - undefined at end of function
-#define massCutoffs(x) m_MassCutoffs[static_cast<int>(MASS_CUTOFF::x)]  // for convenience and readability - undefined at end of function
 
     double RCHeB;
 
@@ -1217,9 +1183,6 @@ double CHeB::CalculateRadiusOnPhase(const double p_Mass, const double p_Luminosi
     }
 
     return RCHeB;
-
-#undef massCutoffs
-#undef timescales
 }
 
 
@@ -1283,9 +1246,7 @@ double CHeB::CalculateCoreMassOnPhase(const double p_Mass, const double p_Tau) c
  */
 
 double CHeB::CalculateTauOnPhase() const {
-#define timescales(x) m_Timescales[static_cast<int>(TIMESCALE::x)]  // for convenience and readability - undefined at end of function
     return std::max(0.0, std::min(1.0, (m_Age - timescales(tHeI)) / timescales(tHe)));
-#undef timescales
 }
 
 
@@ -1301,9 +1262,7 @@ double CHeB::CalculateTauOnPhase() const {
  * @return                                      Lifetime of Core Helium Burning in Myr (tHe)
  */
 double CHeB::CalculateLifetimeOnPhase(const double p_Mass) {
-#define b m_BnCoefficients                                              // for convenience and readability - undefined at end of function
-#define timescales(x) m_Timescales[static_cast<int>(TIMESCALE::x)]      // for convenience and readability - undefined at end of function
-#define massCutoffs(x) m_MassCutoffs[static_cast<int>(MASS_CUTOFF::x)]  // for convenience and readability - undefined at end of function
+#define bn m_BnCoefficients     // for convenience and readability - undefined at end of function
 
     double tHe;
 
@@ -1311,19 +1270,17 @@ double CHeB::CalculateLifetimeOnPhase(const double p_Mass) {
         double tHeMS = HeMS::CalculateLifetimeOnPhase_Static(m_CoreMass);   // can't use Timescales here - calculated using Mass not CoreMass
         double mu    = p_Mass / massCutoffs(MHeF);
 
-        tHe = (b[39] + ((tHeMS - b[39]) * PPOW((1.0 - mu), b[40]))) * (1.0 + (m_Alpha4 * exp(15.0 * (p_Mass - massCutoffs(MHeF)))));
+        tHe = (bn[39] + ((tHeMS - bn[39]) * PPOW((1.0 - mu), bn[40]))) * (1.0 + (m_Alpha4 * exp(15.0 * (p_Mass - massCutoffs(MHeF)))));
     }
     else {
         double m_5 = p_Mass * p_Mass * p_Mass * p_Mass * p_Mass;            // pow() is slow - use multiplication (sqrt() is much faster than pow())
 
-        tHe = timescales(tBGB) * (((b[41] * PPOW(p_Mass, b[42])) + (b[43] * m_5)) / (b[44] + m_5));
+        tHe = timescales(tBGB) * (((bn[41] * PPOW(p_Mass, bn[42])) + (bn[43] * m_5)) / (bn[44] + m_5));
     }
 
     return tHe;
 
-#undef massCutoffs
-#undef timescales
-#undef b
+#undef bn
 }
 
 
@@ -1339,12 +1296,11 @@ double CHeB::CalculateLifetimeOnPhase(const double p_Mass) {
  * @return                                      Blue phase fbl - see Hurley et al. 2000, eq 58 and just after
  */
 double CHeB::CalculateBluePhaseFBL(const double p_Mass) {
-#define b m_BnCoefficients                                              // for convenience and readability - undefined at end of function
-#define massCutoffs(x) m_MassCutoffs[static_cast<int>(MASS_CUTOFF::x)]  // for convenience and readability - undefined at end of function
+#define bn m_BnCoefficients     // for convenience and readability - undefined at end of function
 
     // Calculate RmHe for M > MFGB > MHeF
     double m_b28 = PPOW(p_Mass, b[28]);  // pow() is slow - do it once only
-    double top   = ((b[24] * p_Mass) + (PPOW((b[25] * p_Mass), b[26]) * m_b28)) / (b[27] + m_b28);
+    double top   = ((bn[24] * p_Mass) + (PPOW((bn[25] * p_Mass), bn[26]) * m_b28)) / (bn[27] + m_b28);
 
     // Might be that we are supposed to use min(RmHe, Rx=RHeI)
     double RHeI = CalculateRadiusAtHeIgnition(p_Mass);
@@ -1356,10 +1312,9 @@ double CHeB::CalculateBluePhaseFBL(const double p_Mass) {
     double bottom   = EAGB::CalculateRadiusOnPhase_Static(p_Mass, LHeI, massCutoffs(MHeF), b);
     double brackets = 1.0 - (top / bottom);
 
-    return PPOW(p_Mass, b[48]) * PPOW(brackets, b[49]);
+    return PPOW(p_Mass, bn[48]) * PPOW(brackets, bn[49]);
 
-#undef massCutoffs
-#undef b
+#undef bn
 }
 
 
@@ -1375,8 +1330,7 @@ double CHeB::CalculateBluePhaseFBL(const double p_Mass) {
  * @return                                      Relative lifetime of blue phase of Core Helium Burning, clamped to [0, 1]
  */
 double CHeB::CalculateLifetimeOnBluePhase(const double p_Mass) {                                          
-#define b m_BnCoefficients                                              // for convenience and readability - undefined at end of function
-#define massCutoffs(x) m_MassCutoffs[static_cast<int>(MASS_CUTOFF::x)]  // for convenience and readability - undefined at end of function
+#define bn m_BnCoefficients     // for convenience and readability - undefined at end of function
 
     double tbl;
 
@@ -1385,20 +1339,19 @@ double CHeB::CalculateLifetimeOnBluePhase(const double p_Mass) {
     }
     else if (utils::Compare(p_Mass, massCutoffs(MFGB)) <= 0) {
         double mass_MFGB = p_Mass / massCutoffs(MFGB);
-        double firstTerm = (b[45] * PPOW(mass_MFGB, 0.414));
-        tbl              = firstTerm + ((1.0 - firstTerm) * PPOW((log10(mass_MFGB) / log10(massCutoffs(MHeF) / massCutoffs(MFGB))), b[46]));
+        double firstTerm = (bn[45] * PPOW(mass_MFGB, 0.414));
+        tbl              = firstTerm + ((1.0 - firstTerm) * PPOW((log10(mass_MFGB) / log10(massCutoffs(MHeF) / massCutoffs(MFGB))), bn[46]));
     }
     else {
         double fblM    = CalculateBluePhaseFBL(p_Mass);
         double fblMFGB = CalculateBluePhaseFBL(massCutoffs(MFGB));
 
-        tbl = (1.0 - b[47]) * (fblM / fblMFGB);
+        tbl = (1.0 - bn[47]) * (fblM / fblMFGB);
     }
 
     return std::min(1.0, std::max(0.0, tbl));
 
-#undef massCutoffs
-#undef b
+#undef bn
 }
 
 
@@ -1411,7 +1364,6 @@ double CHeB::CalculateLifetimeOnBluePhase(const double p_Mass) {
  * @return         true if evolution should continue on phase, false otherwise
  */
 bool CHeB::ShouldEvolveOnPhase() const {
-#define timescales(x) m_Timescales[static_cast<int>(TIMESCALE::x)]  // for convenience and readability - undefined at end of function
 
     bool afterHeIgnition      = m_Age >= timescales(tHeI);
     bool beforeEndOfHeBurning = m_Age < (timescales(tHeI) + timescales(tHe));
@@ -1419,8 +1371,6 @@ bool CHeB::ShouldEvolveOnPhase() const {
 
     // Evolve on CHeB phase if age after He Ign and while He Burning and He core mass does not exceed total mass (could happen due to mass loss)
     return (afterHeIgnition && beforeEndOfHeBurning && coreIsNotTooMassive && !ShouldEnvelopeBeExpelledByPulsations());
-
-#undef timescales
 }
 
 
@@ -1490,14 +1440,11 @@ ENVELOPE CHeB::DetermineEnvelopeType() const {
  * @return                                      Suggested timestep (dt)
  */
 double CHeB::ChooseTimestep(const double p_Time) const {
-#define timescales(x) m_Timescales[static_cast<int>(TIMESCALE::x)]  // for convenience and readability - undefined at end of function
 
     double dtk = 2.0E-3 * timescales(tHe);
     double dte = timescales(tHeI) + timescales(tHe) - p_Time;
 
     return std::max(std::min(dtk, dte), NUCLEAR_MINIMUM_TIMESTEP);
-
-#undef timescales
 }
 
 
@@ -1530,7 +1477,7 @@ double CHeB::ChooseTimestep(const double p_Time) const {
  * @return                                      Stellar Type to which star should evolve after losing envelope
  */
 STELLAR_TYPE CHeB::ResolveEnvelopeLoss(bool p_Force) {
-#define timescales(x) m_Timescales[static_cast<int>(TIMESCALE::x)]  // for convenience and readability - undefined at end of function
+
     STELLAR_TYPE stellarType = m_StellarType;
     
     if (ShouldEnvelopeBeExpelledByPulsations()) m_EnvelopeJustExpelledByPulsations = true;
@@ -1559,8 +1506,6 @@ STELLAR_TYPE CHeB::ResolveEnvelopeLoss(bool p_Force) {
     }
 
     return stellarType;
-
-#undef timescales
 }
 
 

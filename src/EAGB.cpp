@@ -26,23 +26,18 @@
  * @param   [IN/OUT]    p_Timescales            Timescales
  */
 void EAGB::CalculateTimescales(const double p_Mass, DBL_VECTOR &p_Timescales) {
-#define timescales(x) p_Timescales[static_cast<int>(TIMESCALE::x)]  // for convenience and readability - undefined at end of function
-#define gbParams(x) m_GBParams[static_cast<int>(GBP::x)]            // for convenience and readability - undefined at end of function
 
-    double p1   = gbParams(p) - 1.0;
-    double q1   = gbParams(q) - 1.0;
-    double p1_p = p1 / gbParams(p);
-    double q1_q = q1 / gbParams(q);
+    double p1   = mGBparams(p) - 1.0;
+    double q1   = mGBparams(q) - 1.0;
+    double p1_p = p1 / mGBparams(p);
+    double q1_q = q1 / mGBparams(q);
 
-    double tBAGB = CalculateLifetimeToBAGB(timescales(tHeI), timescales(tHe));
+    double tBAGB = CalculateLifetimeToBAGB(pTimescales(tHeI), pTimescales(tHe));
     double LBAGB = CalculateLuminosityAtBAGB(p_Mass);
 
-    timescales(tinf1_FAGB) = tBAGB + ((1.0 / (p1 * gbParams(AHe) * gbParams(D))) * PPOW((gbParams(D) / LBAGB), p1_p));
-    timescales(tMx_FAGB)   = timescales(tinf1_FAGB) - ((timescales(tinf1_FAGB) - tBAGB) * PPOW((LBAGB / gbParams(Lx)), p1_p));
-    timescales(tinf2_FAGB) = timescales(tMx_FAGB) + ((1.0 / (q1 * gbParams(AHe) * gbParams(B))) * PPOW((gbParams(B) / gbParams(Lx)), q1_q));
-
-#undef gbParams
-#undef timescales
+    pTimescales(tinf1_FAGB) = tBAGB + ((1.0 / (p1 * mGBparams(AHe) * mGBparams(D))) * PPOW((mGBparams(D) / LBAGB), p1_p));
+    pTimescales(tMx_FAGB)   = pTimescales(tinf1_FAGB) - ((pTimescales(tinf1_FAGB) - tBAGB) * PPOW((LBAGB / mGBparams(Lx)), p1_p));
+    pTimescales(tinf2_FAGB) = pTimescales(tMx_FAGB) + ((1.0 / (q1 * mGBparams(AHe) * mGBparams(B))) * PPOW((mGBparams(B) / mGBparams(Lx)), q1_q));
 }
 
 
@@ -346,7 +341,7 @@ double EAGB::CalculateLambdaNanjingEnhanced(const int p_MassIndex, const STELLAR
             double x4 = x2 * x2;
             double x5 = x3 * x2;
 
-            double y1 = a[0] + (a[1] * x) + (a[2] * x2) + (a[3] * x3) + (a[4] * x4) + (a[5] * x5);
+            double y1 = an[0] + (an[1] * x) + (an[2] * x2) + (an[3] * x3) + (an[4] * x4) + (an[5] * x5);
             double y2 = b[0] + (b[1] * x) + (b[2] * x2) + (b[3] * x3) + (b[4] * x4) + (b[5] * x5);
 
             lambdaBG = { 1.0 / y1, 1.0 / y2 };
@@ -358,7 +353,7 @@ double EAGB::CalculateLambdaNanjingEnhanced(const int p_MassIndex, const STELLAR
             double x4 = x2 * x2;
             double x5 = x3 * x2;
 
-            double y1 = a[0] + (a[1] * x) + (a[2] * x2) + (a[3] * x3) + (a[4] * x4) + (a[5] * x5);
+            double y1 = an[0] + (an[1] * x) + (an[2] * x2) + (an[3] * x3) + (an[4] * x4) + (an[5] * x5);
             double y2 = b[0] + (b[1] * x) + (b[2] * x2) + (b[3] * x3) + (b[4] * x4) + (b[5] * x5);
 
             lambdaBG = { y1, y2 };
@@ -681,7 +676,7 @@ double EAGB::CalculateLambdaNanjingStarTrack(const double p_Mass, const double p
             double x4 = x2 * x2;
             double x5 = x3 * x2;
 
-            double y1 = a[0] + (a[1] * x) + (a[2] * x2) + (a[3] * x3) + (a[4] * x4) + (a[5] * x5);
+            double y1 = an[0] + (an[1] * x) + (an[2] * x2) + (an[3] * x3) + (an[4] * x4) + (an[5] * x5);
             double y2 = b[0] + (b[1] * x) + (b[2] * x2) + (b[3] * x3) + (b[4] * x4) + (b[5] * x5);
 
             lambdaBG = { 1.0 / y1, 1.0 / y2 };
@@ -694,7 +689,7 @@ double EAGB::CalculateLambdaNanjingStarTrack(const double p_Mass, const double p
             double x4 = x2 * x2;
             double x5 = x3 * x2;
 
-            double y1 = a[0] + (a[1] * x) + (a[2] * x2) + (a[3] * x3) + (a[4] * x4) + (a[5] * x5);
+            double y1 = an[0] + (an[1] * x) + (an[2] * x2) + (an[3] * x3) + (an[4] * x4) + (an[5] * x5);
             double y2 = b[0] + (b[1] * x) + (b[2] * x2) + (b[3] * x3) + (b[4] * x4) + (b[5] * x5);
 
             lambdaBG = { pow(10.0, y1), y2 };
@@ -706,7 +701,7 @@ double EAGB::CalculateLambdaNanjingStarTrack(const double p_Mass, const double p
             double x4 = x2 * x2;
             double x5 = x3 * x2;
 
-            double y1 = a[0] + (a[1] * x) + (a[2] * x2) + (a[3] * x3) + (a[4] * x4) + (a[5] * x5);
+            double y1 = an[0] + (an[1] * x) + (an[2] * x2) + (an[3] * x3) + (an[4] * x4) + (an[5] * x5);
             double y2 = b[0] + (b[1] * x) + (b[2] * x2) + (b[3] * x3) + (b[4] * x4) + (b[5] * x5);
 
             lambdaBG = { y1, y2 };
@@ -759,9 +754,7 @@ double EAGB::CalculateLuminosityOnPhase(const double p_CoreMass) const {
  * @return                                      Luminosity of remnant core in Lsol
  */
 double EAGB::CalculateRemnantLuminosity() const {
-#define gbParams(x) m_GBParams[static_cast<int>(GBP::x)]    // for convenience and readability - undefined at end of function
     return HeGB::CalculateLuminosityOnPhase_Static(m_COCoreMass, gbParams(B), gbParams(D));
-#undef gbParams
 }
 
 
@@ -795,7 +788,7 @@ double EAGB::CalculateRadiusOnPhase_Static(const double      p_Mass,
                                            const double      p_Luminosity,
                                            const double      p_MHeF,
                                            const DBL_VECTOR &p_BnCoefficients) {
-#define b p_BnCoefficients  // for convenience and readability - undefined at end of function
+#define bn p_BnCoefficients     // for convenience and readability - undefined at end of function
 
     // sanity check for mass and luminosity - just return 0.0 if mass or luminosity <= 0
     // doing this will save some compute cycles
@@ -808,35 +801,35 @@ double EAGB::CalculateRadiusOnPhase_Static(const double      p_Mass,
     double b50;
 
     if (utils::Compare(p_Mass, p_MHeF) >= 0) {
-        A = std::min((b[51] * PPOW(p_Mass, -b[52])), (b[53] * PPOW(p_Mass, -b[54])));
-        b50 = b[55] * b[3];
+        A   = std::min((bn[51] * PPOW(p_Mass, -bn[52])), (bn[53] * PPOW(p_Mass, -bn[54])));
+        b50 = bn[55] * bn[3];
     }
     else if (utils::Compare(p_Mass, (p_MHeF - 0.2)) <= 0) {
-        A = b[56] + (b[57] * p_Mass);
-        b50 = b[3];
+        A   = bn[56] + (bn[57] * p_Mass);
+        b50 = bn[3];
     }
     else {  // Linear interpolation between end points
         double x1        = p_MHeF - 0.2;
         double x2        = p_MHeF;
         double x2_x1     = x2 - x1;
 
-        double y1        = b[56] + (b[57] * x1);
-        double y2        = std::min((b[51] * PPOW(x2, -b[52])), (b[53] * PPOW(x2, -b[54])));
+        double y1        = bn[56] + (bn[57] * x1);
+        double y2        = std::min((bn[51] * PPOW(x2, -bn[52])), (bn[53] * PPOW(x2, -bn[54])));
         double gradient  = (y2 - y1) / x2_x1;
         double intercept = y2 - (gradient * x2);
                A         = (gradient * p_Mass) + intercept;
 
-               y1        = b[3];
-               y2        = b[55] * b[3];
+               y1        = bn[3];
+               y2        = bn[55] * bn[3];
                gradient  = (y2 - y1) / x2_x1;
                intercept = y2 - (gradient * x2);
                b50       = (gradient * p_Mass) + intercept;
     }
 
     // now calculate the radius
-    return A * (PPOW(p_Luminosity, b[1]) + (b[2] * PPOW(p_Luminosity, b50)));
+    return A * (PPOW(p_Luminosity, bn[1]) + (bn[2] * PPOW(p_Luminosity, b50)));
 
-#undef b
+#undef bn
 }
 
 
@@ -879,15 +872,10 @@ double EAGB::CalculateRemnantRadius() const {
  * @return                                      Core mass on the Early Asymptotic Giant Branch in Msol
  */
 double EAGB::CalculateCOCoreMassOnPhase(const double p_Time) const {
-#define timescales(x) m_Timescales[static_cast<int>(TIMESCALE::x)]  // for convenience and readability - undefined at end of function
-#define gbParams(x) m_GBParams[static_cast<int>(GBP::x)]            // for convenience and readability - undefined at end of function
 
     return utils::Compare(p_Time, timescales(tMx_FAGB)) <= 0
             ? PPOW((gbParams(p) - 1.0) * gbParams(AHe) * gbParams(D) * (timescales(tinf1_FAGB) - p_Time), 1.0 / (1.0 - gbParams(p)))
             : PPOW((gbParams(q) - 1.0) * gbParams(AHe) * gbParams(B) * (timescales(tinf2_FAGB) - p_Time), 1.0 / (1.0 - gbParams(q)));
-
-#undef gbParams
-#undef timescales
 }
 
 
@@ -896,7 +884,9 @@ double EAGB::CalculateCOCoreMassOnPhase(const double p_Time) const {
  *
  * Calculate the dominant mass loss type and associated mass loss rate per Hurley et al. 2000
  * 
- * Uses current value of m_Mu
+ * Uses current values of:
+ * 
+ *    - m_Mu
  *
  * 
  * double CalculateMassLossRateHurley()
@@ -944,7 +934,6 @@ std::tuple<double, MASS_LOSS_TYPE> EAGB::CalculateMassLossRateHurley() {
  * @return                                      Lifetime to second dredge up (tDU)
  */
 double EAGB::CalculateLifetimeTo2ndDredgeUp(const double p_Tinf1_FAGB, const double p_Tinf2_FAGB) const {
-#define gbParams(x) m_GBParams[static_cast<int>(GBP::x)]    // for convenience and readability - undefined at end of function
 
     double p1  = gbParams(p) - 1.0;
     double q1  = gbParams(q) - 1.0;
@@ -954,8 +943,6 @@ double EAGB::CalculateLifetimeTo2ndDredgeUp(const double p_Tinf1_FAGB, const dou
     return utils::Compare(LDU, gbParams(Lx)) <= 0
             ? p_Tinf1_FAGB - (1.0 / (p1 * gbParams(AHe) * gbParams(D))) * PPOW((gbParams(D) / LDU), (p1 / gbParams(p)))
             : p_Tinf2_FAGB - (1.0 / (q1 * gbParams(AHe) * gbParams(B))) * PPOW((gbParams(B) / LDU), (q1 / gbParams(q)));
-
-#undef gbParams
 }
 
 
@@ -978,15 +965,12 @@ double EAGB::CalculateLifetimeTo2ndDredgeUp(const double p_Tinf1_FAGB, const dou
  * @return                                      Suggested timestep (dt)
  */
 double EAGB::ChooseTimestep(const double p_Time) const {
-#define timescales(x) m_Timescales[static_cast<int>(TIMESCALE::x)]  // for convenience and readability - undefined at end of function
 
     double dtk = utils::Compare(p_Time, timescales(tMx_FAGB)) <= 0
                     ? 0.02 * (timescales(tinf1_FAGB) - p_Time)
                     : 0.02 * (timescales(tinf2_FAGB) - p_Time);
 
     return std::max(dtk, NUCLEAR_MINIMUM_TIMESTEP);
-
-#undef timescales
 }
 
 
@@ -1019,8 +1003,6 @@ double EAGB::ChooseTimestep(const double p_Time) const {
  * @return                                      Stellar Type to which star should evolve after losing envelope
  */
 STELLAR_TYPE EAGB::ResolveEnvelopeLoss(bool p_Force) {
-#define timescales(x) m_Timescales[static_cast<int>(TIMESCALE::x)]  // for convenience and readability - undefined at end of function
-#define gbParams(x) m_GBParams[static_cast<int>(GBP::x)]            // for convenience and readability - undefined at end of function
 
     STELLAR_TYPE stellarType = m_StellarType;
 
@@ -1064,9 +1046,6 @@ STELLAR_TYPE EAGB::ResolveEnvelopeLoss(bool p_Force) {
     }
 
     return stellarType;
-
-#undef gbParams
-#undef timescales
 }
 
 
@@ -1079,14 +1058,11 @@ STELLAR_TYPE EAGB::ResolveEnvelopeLoss(bool p_Force) {
  * @return                                      Boolean flag: true if this phase should be skipped, false if not
  */
 bool EAGB::ShouldSkipPhase() const {
-#define timescales(x) m_Timescales[static_cast<int>(TIMESCALE::x)]  // for convenience and readability - undefined at end of function
 
     double McCOBAGB = CalculateCOCoreMassOnPhase(timescales(tHeI) + timescales(tHe));
     double McSN     = std::max(CalculateCoreMassAtSupernova_Static(MCH, m_GBParams[static_cast<int>(GBP::McBAGB)]), 1.05 * McCOBAGB);                       // hack from Hurley fortran code, doesn't seem to be in the paper
 
     return (utils::Compare(McSN, m_COCoreMass) < 0);                                            // skip phase if core is heavy enough to go supernova
-
-#undef timescales
 }
 
 
@@ -1100,14 +1076,9 @@ bool EAGB::ShouldSkipPhase() const {
  * @return                                      Boolean flag: true if evolution on this phase should continue, false if not
  */
 bool EAGB::ShouldEvolveOnPhase() const {
-#define timescales(x) m_Timescales[static_cast<int>(TIMESCALE::x)]  // for convenience and readability - undefined at end of function
-#define gbParams(x) m_GBParams[static_cast<int>(GBP::x)]            // for convenience and readability - undefined at end of function
 
 	double tDU = CalculateLifetimeTo2ndDredgeUp(timescales(tinf1_FAGB), timescales(tinf2_FAGB));
     return ((utils::Compare(m_Age, tDU) < 0 || utils::Compare(gbParams(McBAGB), MCBUR2) >= 0) && !ShouldEnvelopeBeExpelledByPulsations());
-
-#undef gbParams
-#undef timescales
 }
 
 
@@ -1120,14 +1091,11 @@ bool EAGB::ShouldEvolveOnPhase() const {
  * @return                                      Boolean flag: true if star has gone Supernova, false if not
  */
 bool EAGB::IsSupernova() const {
-#define timescales(x) m_Timescales[static_cast<int>(TIMESCALE::x)]  // for convenience and readability - undefined at end of function
 
     double McCOBAGB = CalculateCOCoreMassOnPhase(timescales(tHeI) + timescales(tHe));
     double McSN     = std::max(CalculateCoreMassAtSupernova_Static(MCH, m_GBParams[static_cast<int>(GBP::McBAGB)]), 1.05 * McCOBAGB);                                // hack from Hurley fortran code, doesn't seem to be in the paper   JR: do we know why? **Ilya**
 
     return (utils::Compare(McSN, m_COCoreMass) <= 0);                                           // core is heavy enough to go Supernova
-
-#undef timescales
 }
 
 

@@ -22,6 +22,7 @@
 #include "profiling.h"
 #include "utils.h"
 
+#include "Rand.h"
 #include "Options.h"
 #include "LogMacros.h"
 

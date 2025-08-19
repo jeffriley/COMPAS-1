@@ -5,8 +5,8 @@
 #include "typedefs.h"
 #include "profiling.h"
 #include "utils.h"
-#include "Rand.h"
 
+#include "Rand.h"
 #include "MainSequence.h"
 
 
@@ -135,7 +135,7 @@ protected:
     
             void            UpdateAgeAfterMassLoss() { }                                                                                                                        // NO-OP for most stellar types
 
-            void            UpdateInitialMass() { }                                                                                                                             // NO-OP for most stellar types
+            double            CalculateEffectiveInitialMass()                                               { return m_Mass0; }                                                 // NO-OP for most stellar types
     
             void            UpdateMainSequenceCoreMass(const double p_Dt, const double p_TotalMassLossRate) { }                                                                 // NO-OP for most stellar types
 

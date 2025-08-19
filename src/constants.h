@@ -30,8 +30,13 @@ typedef std::vector<std::tuple<DBL_VECTOR, DBL_VECTOR>>                 GE_QCRIT
 typedef std::tuple<DBL_VECTOR, GE_QCRIT_RADII_QCRIT_VECTOR_HE>          GE_QCRIT_TABLE_HE; 
 
 
-// global #define for quantising timestep
-#define QUANTISE_DT(dt) (std::round(dt / TIMESTEP_QUANTUM) * TIMESTEP_QUANTUM)
+// global #defines
+
+#define COMPASUnorderedMap std::unordered_map   // since c++17
+
+#define massCutoffs(x) m_MassCutoffs[static_cast<int>(MASS_CUTOFF::x)]
+
+#define QUANTISE_DT(dt)     (std::round(dt / TIMESTEP_QUANTUM) * TIMESTEP_QUANTUM)      // for quantising timestep
 
 
 // the defaults size of the boost list that handles variant types is 20 - so only 20 variant types are allowed
@@ -221,6 +226,8 @@ constexpr double EDDINGTON_PARAMETER_FACTOR             = HE_RATE_CONSTANT * 0.3
 
 constexpr double BLACK_HOLE_LUMINOSITY                  = 1.0E-10;                                                  // Black Hole luminosity
 
+constexpr double MANDEL_BUTLER_CHE_MASS_BREAK           = 100.0;                                                    // CHE mass break from Mandel's fits to Butler 2018
+
 constexpr double NEUTRON_STAR_MASS                      = 1.4;                                                      // Canonical NS mass in Msol
 constexpr double NEUTRON_STAR_RADIUS                    = (1.0 / 7.0) * 1.0E-4;                                     // 10km in Rsol.  Hurley et al. 2000, just after eq 93
 
@@ -336,8 +343,11 @@ constexpr int    HDF5_MINIMUM_CHUNK_SIZE                = 1000;                 
 constexpr double MINIMUM_INITIAL_MASS                   = 0.00007;                                                  // Minimum initial mass (Msol) (~theoretical minimum? How low does COMPAS actually tolerate?)
 constexpr double MAXIMUM_INITIAL_MASS                   = 150.0;                                                    // Maximum initial mass (Msol) (should actually be 100Msol?)
 
-constexpr double MINIMUM_METALLICITY                    = 0.0001;                                                   // Minimum metallicity - Hurley equations known to fail for Z < 0.0001
-constexpr double MAXIMUM_METALLICITY                    = 0.03;                                                     // Maximum metallicity (~> super-metal-rich?)
+constexpr double MINIMUM_METALLICITY_HURLEY             = 0.0001;                                                   // Minimum metallicity for HURLEY - Hurley equations known to fail for Z < 0.0001
+constexpr double MAXIMUM_METALLICITY_HURLEY             = 0.03;                                                     // Maximum metallicity for HURLEY (~> super-metal-rich?)
+
+constexpr double MINIMUM_METALLICITY                    = MINIMUM_METALLICITY_HURLEY;                               // Minimum metallicity - same as Hurley for the moment
+constexpr double MAXIMUM_METALLICITY                    = MAXIMUM_METALLICITY_HURLEY;                               // Maximum metallicity - same as Hurley for the moment
 
 
 // IMF constants
@@ -434,8 +444,8 @@ constexpr double MALTSEV2024_M3AZ01                     = 13.7;
 
 // Constants for WD evolution 
 
-constexpr double COWD_LOG_MDOT_MIN_OFF_CENTER_IGNITION  = -5.688246139;                                             // Minimum log mass accretion rate for off center ignition in a CO WD. From Wang+ 2017. Log( 2.05 x 10^-6). 
-constexpr double COWD_MASS_MIN_OFF_CENTER_IGNITION      = 1.33;                                                     // Minimum mass required for off center ignition, as shown in Wang, Podsiadlowski & Han (2017), sect 3.2.
+constexpr double COWD_LOG_MDOT_MIN_OFF_CENTRE_IGNITION  = -5.688246139;                                             // Minimum log mass accretion rate for off centre ignition in a CO WD. From Wang+ 2017. Log( 2.05 x 10^-6). 
+constexpr double COWD_MASS_MIN_OFF_CENTRE_IGNITION      = 1.33;                                                     // Minimum mass required for off centre ignition, as shown in Wang, Podsiadlowski & Han (2017), sect 3.2.
 constexpr double HEWD_HE_MDOT_CRIT                      = 2.0E-8;                                                   // Critical accretion rate for He WD accreting He-rich material. From Belczynski+ 2008, Mdot_crit2 in section 5.7.1.
 constexpr double HEWD_MINIMUM_MASS_IGNITION             = 0.35;                                                     // Minimum mass for HeMS burning
 constexpr double MASS_DOUBLE_DETONATION_CO              = 0.9;                                                      // Minimum mass for detonation which would yield something similar to SN Ia. Ruiter+ 2014.
@@ -503,35 +513,35 @@ const COMPASUnorderedMap<STELLAR_TYPE, double> WD_Baryon_Number = {
     {STELLAR_TYPE::OXYGEN_NEON_WHITE_DWARF,   17.0}
 };
 
-// symbolic names for term coefficients for Luminosity & Radius coefficients from Tout et al. 1996
-enum class LR_TCoeff: int { a, b, c, d, e };
-#define A LR_TCoeff::a
-#define B LR_TCoeff::b
-#define C LR_TCoeff::c
-#define D LR_TCoeff::d
-#define E LR_TCoeff::e
+// symbolic names for term coefficients for Hurley L (luminosity) and R (radius) coefficients from Tout et al. 1996
+enum class HURLEY_LR_TCoeff: int { a, b, c, d, e };
+#define A HURLEY_LR_TCoeff::a
+#define B HURLEY_LR_TCoeff::b
+#define C HURLEY_LR_TCoeff::c
+#define D HURLEY_LR_TCoeff::d
+#define E HURLEY_LR_TCoeff::e
 
-// symbolic names for luminosity coefficients (from Tout et al. 1996)
-enum class L_Coeff: int { ALPHA, BETA, GAMMA, DELTA, EPSILON, ZETA, ETA };
-#define ALPHA   L_Coeff::ALPHA
-#define BETA    L_Coeff::BETA
-#define GAMMA   L_Coeff::GAMMA
-#define DELTA   L_Coeff::DELTA
-#define EPSILON L_Coeff::EPSILON
-#define ZETA    L_Coeff::ZETA
-#define ETA     L_Coeff::ETA
+// symbolic names for Hurley L (luminosity) coefficients (from Tout et al. 1996)
+enum class HURLEY_L_Coeff: int { ALPHA, BETA, GAMMA, DELTA, EPSILON, ZETA, ETA };
+#define ALPHA   HURLEY_L_Coeff::ALPHA
+#define BETA    HURLEY_L_Coeff::BETA
+#define GAMMA   HURLEY_L_Coeff::GAMMA
+#define DELTA   HURLEY_L_Coeff::DELTA
+#define EPSILON HURLEY_L_Coeff::EPSILON
+#define ZETA    HURLEY_L_Coeff::ZETA
+#define ETA     HURLEY_L_Coeff::ETA
 
-// L (Luminosity) coefficients
-// Table 1 in Tout et al 1996
-// Key to map is L_Coeff.  Map element is unordered_map of term coefficient values.
-const std::map<int, COMPASUnorderedMap<LR_TCoeff, double>> L_COEFF = {
-    {static_cast<int>(ALPHA),   {{A, 0.39704170}, {B,  -0.32913574}, {C,  0.34776688}, {D,  0.37470851}, {E, 0.09011915}}},
-    {static_cast<int>(BETA),    {{A, 8.52762600}, {B, -24.41225973}, {C, 56.43597107}, {D, 37.06152575}, {E, 5.45624060}}},
-    {static_cast<int>(GAMMA),   {{A, 0.00025546}, {B,  -0.00123461}, {C, -0.00023246}, {D,  0.00045519}, {E, 0.00016176}}},
-    {static_cast<int>(DELTA),   {{A, 5.43288900}, {B,  -8.62157806}, {C, 13.44202049}, {D, 14.51584135}, {E, 3.39793084}}},
-    {static_cast<int>(EPSILON), {{A, 5.56357900}, {B, -10.32345224}, {C, 19.44322980}, {D, 18.97361347}, {E, 4.16903097}}},
-    {static_cast<int>(ZETA),    {{A, 0.78866060}, {B,  -2.90870942}, {C,  6.54713531}, {D,  4.05606657}, {E, 0.53287322}}},
-    {static_cast<int>(ETA),     {{A, 0.00586685}, {B,  -0.01704237}, {C,  0.03872348}, {D,  0.02570041}, {E, 0.00383376}}}
+// Hurley L (luminosity) coefficients
+// Values from table 1 in Tout et al. 1996
+// Key to map is HURLEY_L_Coeff.  Map element is unordered_map of term coefficient values.
+const std::map<HURLEY_L_Coeff, COMPASUnorderedMap<HURLEY_LR_TCoeff, double>> HURLEY_L_COEFF = {
+    {HURLEY_L_Coeff::ALPHA,   {{a, 0.39704170}, {b,  -0.32913574}, {c,  0.34776688}, {d,  0.37470851}, {e, 0.09011915}}},
+    {HURLEY_L_Coeff::BETA,    {{a, 8.52762600}, {b, -24.41225973}, {c, 56.43597107}, {d, 37.06152575}, {e, 5.45624060}}},
+    {HURLEY_L_Coeff::GAMMA,   {{a, 0.00025546}, {b,  -0.00123461}, {c, -0.00023246}, {d,  0.00045519}, {e, 0.00016176}}},
+    {HURLEY_L_Coeff::DELTA,   {{a, 5.43288900}, {b,  -8.62157806}, {c, 13.44202049}, {d, 14.51584135}, {e, 3.39793084}}},
+    {HURLEY_L_Coeff::EPSILON, {{a, 5.56357900}, {b, -10.32345224}, {c, 19.44322980}, {d, 18.97361347}, {e, 4.16903097}}},
+    {HURLEY_L_Coeff::ZETA,    {{a, 0.78866060}, {b,  -2.90870942}, {c,  6.54713531}, {d,  4.05606657}, {e, 0.53287322}}},
+    {HURLEY_L_Coeff::ETA,     {{a, 0.00586685}, {b,  -0.01704237}, {c,  0.03872348}, {d,  0.02570041}, {e, 0.00383376}}}
 };
 
 #undef ALPHA
@@ -542,31 +552,31 @@ const std::map<int, COMPASUnorderedMap<LR_TCoeff, double>> L_COEFF = {
 #undef ZETA
 #undef ETA
 
-// symbolic names for radius coefficients from Tout et al. 1996
-enum class R_Coeff: int { THETA, IOTA, KAPPA, LAMBDA, MU, NU, XI, OMICRON, PI };
-#define THETA   R_Coeff::THETA
-#define IOTA    R_Coeff::IOTA
-#define KAPPA   R_Coeff::KAPPA
-#define LAMBDA  R_Coeff::LAMBDA
-#define MU      R_Coeff::MU
-#define NU      R_Coeff::NU
-#define XI      R_Coeff::XI
-#define OMICRON R_Coeff::OMICRON
-#define Pi      R_Coeff::PI
+// symbolic names for Hurley R (radius) coefficients from Tout et al. 1996
+enum class HURLEY_R_Coeff: int { THETA, IOTA, KAPPA, LAMBDA, MU, NU, XI, OMICRON, PI };
+#define THETA   HURLEY_R_Coeff::THETA
+#define IOTA    HURLEY_R_Coeff::IOTA
+#define KAPPA   HURLEY_R_Coeff::KAPPA
+#define LAMBDA  HURLEY_R_Coeff::LAMBDA
+#define MU      HURLEY_R_Coeff::MU
+#define NU      HURLEY_R_Coeff::NU
+#define XI      HURLEY_R_Coeff::XI
+#define OMICRON HURLEY_R_Coeff::OMICRON
+#define Pi      HURLEY_R_Coeff::PI
 
-// R (Radius) coefficients
-// Table 2 in Tout et al. 1996
-// Key to map is L_Coeff.  Map element is unordered_map of term coefficient values.
-const std::map<int, COMPASUnorderedMap<LR_TCoeff, double>> R_COEFF = {
-    {static_cast<int>(THETA),   {{A,  1.71535900}, {B,  0.62246212}, {C,  -0.92557761}, {D,  -1.16996966}, {E, -0.30631491}}},
-    {static_cast<int>(IOTA),    {{A,  6.59778800}, {B, -0.42450044}, {C, -12.13339427}, {D, -10.73509484}, {E, -2.51487077}}},
-    {static_cast<int>(KAPPA),   {{A, 10.08855000}, {B, -7.11727086}, {C, -31.67119479}, {D, -24.24848322}, {E, -5.33608972}}},
-    {static_cast<int>(LAMBDA),  {{A,  1.01249500}, {B,  0.32699690}, {C,  -0.00923418}, {D,  -0.03876858}, {E, -0.00412750}}},
-    {static_cast<int>(MU),      {{A,  0.07490166}, {B,  0.02410413}, {C,   0.07233664}, {D,   0.03040467}, {E,  0.00197741}}},
-    {static_cast<int>(NU),      {{A,  0.01077422}, {B,  0.00000000}, {C,   0.00000000}, {D,   0.00000000}, {E,  0.00000000}}},
-    {static_cast<int>(XI),      {{A,  3.08223400}, {B,  0.94472050}, {C,  -2.15200882}, {D,  -2.49219496}, {E, -0.63848738}}},
-    {static_cast<int>(OMICRON), {{A, 17.84778000}, {B, -7.45345690}, {C, -48.96066856}, {D, -40.05386135}, {E, -9.09331816}}},
-    {static_cast<int>(Pi),      {{A,  0.00022582}, {B, -0.00186899}, {C,   0.00388783}, {D,   0.00142402}, {E, -0.00007671}}}
+// Hurley R (radius) coefficients
+// Values given in table 2 in Tout et al. 1996
+// Key to map is HURLEY_R_Coeff.  Map element is unordered_map of term coefficient values.
+const std::map<HURLEY_R_Coeff, COMPASUnorderedMap<HURLEY_LR_TCoeff, double>> HURLEY_R_COEFF = {
+    {HURLEY_R_Coeff::THETA,   {{a,  1.71535900}, {b,  0.62246212}, {c,  -0.92557761}, {d,  -1.16996966}, {e, -0.30631491}}},
+    {HURLEY_R_Coeff::IOTA,    {{a,  6.59778800}, {b, -0.42450044}, {c, -12.13339427}, {d, -10.73509484}, {e, -2.51487077}}},
+    {HURLEY_R_Coeff::KAPPA,   {{a, 10.08855000}, {b, -7.11727086}, {c, -31.67119479}, {d, -24.24848322}, {e, -5.33608972}}},
+    {HURLEY_R_Coeff::LAMBDA,  {{a,  1.01249500}, {b,  0.32699690}, {c,  -0.00923418}, {d,  -0.03876858}, {e, -0.00412750}}},
+    {HURLEY_R_Coeff::MU,      {{a,  0.07490166}, {b,  0.02410413}, {c,   0.07233664}, {d,   0.03040467}, {e,  0.00197741}}},
+    {HURLEY_R_Coeff::NU,      {{a,  0.01077422}, {b,  0.00000000}, {c,   0.00000000}, {d,   0.00000000}, {e,  0.00000000}}},
+    {HURLEY_R_Coeff::XI,      {{a,  3.08223400}, {b,  0.94472050}, {c,  -2.15200882}, {d,  -2.49219496}, {e, -0.63848738}}},
+    {HURLEY_R_Coeff::OMICRON, {{a, 17.84778000}, {b, -7.45345690}, {c, -48.96066856}, {d, -40.05386135}, {e, -9.09331816}}},
+    {HURLEY_R_Coeff::Pi,      {{a,  0.00022582}, {b, -0.00186899}, {c,   0.00388783}, {d,   0.00142402}, {e, -0.00007671}}}
 };
 
 #undef THETA
@@ -585,18 +595,19 @@ const std::map<int, COMPASUnorderedMap<LR_TCoeff, double>> R_COEFF = {
 #undef D
 #undef E
 
-// symbolic names for term coefficients for A & B coefficients from Hurley et al. 2000
-enum class AB_TCoeff: int { ALPHA, BETA, GAMMA, ETA, MU };
-#define ALPHA AB_TCoeff::ALPHA
-#define BETA  AB_TCoeff::BETA
-#define GAMMA AB_TCoeff::GAMMA
-#define ETA   AB_TCoeff::ETA
-#define MU    AB_TCoeff::MU
+// symbolic names for term coefficients for Hurley A & B coefficients from Hurley et al. 2000
+enum class HURLEY_AB_TCoeff: int { ALPHA, BETA, GAMMA, ETA, MU };
+#define ALPHA HURLEY_AB_TCoeff::ALPHA
+#define BETA  HURLEY_AB_TCoeff::BETA
+#define GAMMA HURLEY_AB_TCoeff::GAMMA
+#define ETA   HURLEY_AB_TCoeff::ETA
+#define MU    HURLEY_AB_TCoeff::MU
 
-// A coefficients
-// Table in Appendix A of Hurley et al. 2000
+// Hurley A coefficients
+// Values given in table in Appendix A of Hurley et al. 2000
 // Key to map is n (A(n)).  Map element is unordered_map of term coefficient values.
-const std::map<int, COMPASUnorderedMap<AB_TCoeff, double>> A_COEFF = {
+// The key is expected to start at 1 and increase monotonically by 1 - any other behaviour will cause problems in the code
+const std::map<int, COMPASUnorderedMap<HURLEY_AB_TCoeff, double>> HURLEY_A_COEFF = {
     { 1, {{ALPHA,  1.593890E3 }, {BETA,  2.053038E3 }, {GAMMA,  1.231226E3 }, {ETA,  2.327785E2 }, {MU,  0.000000E0 }}},
     { 2, {{ALPHA,  2.706708E3 }, {BETA,  1.483131E3 }, {GAMMA,  5.772723E2 }, {ETA,  7.411230E1 }, {MU,  0.000000E0 }}},
     { 3, {{ALPHA,  1.466143E2 }, {BETA, -1.048442E2 }, {GAMMA, -6.795374E1 }, {ETA, -1.391127E1 }, {MU,  0.000000E0 }}},
@@ -687,6 +698,88 @@ const std::map<int, COMPASUnorderedMap<AB_TCoeff, double>> A_COEFF = {
 
     {81, {{ALPHA,  2.493000E0 }, {BETA,  1.147500E0 }, {GAMMA,  0.000000E0 }, {ETA,  0.000000E0 }, {MU,  0.000000E0 }}}
 };
+
+// Hurley B coefficients
+// Values given in table in Appendix A of Hurley et al. 2000
+// Key to map is n (B(n)).  Map element is unordered_map of term coefficient values.
+// The key is expected to start at 1 and increase monotonically by 1 - any other behaviour will cause problems in the code
+const std::map<int, COMPASUnorderedMap<HURLEY_AB_TCoeff, double>> HURLEY_B_COEFF = {
+    { 1, {{ALPHA,  3.970000E-1}, {BETA,  2.882600E-1}, {GAMMA,  5.293000E-1}, {ETA,  0.000000E0 }, {MU,  0.000000E0 }}},
+    { 2, {{ALPHA,  0.000000E0 }, {BETA,  0.000000E0 }, {GAMMA,  0.000000E0 }, {ETA,  0.000000E0 }, {MU,  0.000000E0 }}},
+    { 3, {{ALPHA,  0.000000E0 }, {BETA,  0.000000E0 }, {GAMMA,  0.000000E0 }, {ETA,  0.000000E0 }, {MU,  0.000000E0 }}},
+    { 4, {{ALPHA,  9.960283E-1}, {BETA,  8.164393E-1}, {GAMMA,  2.383830E0 }, {ETA,  2.223436E0 }, {MU,  8.638115E-1}}},
+    { 5, {{ALPHA,  2.561062E-1}, {BETA,  7.072646E-2}, {GAMMA, -5.444596E-2}, {ETA, -5.798167E-2}, {MU, -1.349129E-2}}},
+    { 6, {{ALPHA,  1.157338E0 }, {BETA,  1.467883E0 }, {GAMMA,  4.299661E0 }, {ETA,  3.130500E0 }, {MU,  6.992080E-1}}},
+    { 7, {{ALPHA,  4.022765E-1}, {BETA,  3.050010E-1}, {GAMMA,  9.962137E-1}, {ETA,  7.914079E-1}, {MU,  1.728098E-1}}},
+    { 8, {{ALPHA,  0.000000E0 }, {BETA,  0.000000E0 }, {GAMMA,  0.000000E0 }, {ETA,  0.000000E0 }, {MU,  0.000000E0 }}},
+    { 9, {{ALPHA,  2.751631E3 }, {BETA,  3.557098E2 }, {GAMMA,  0.000000E0 }, {ETA,  0.000000E0 }, {MU,  0.000000E0 }}},
+    {10, {{ALPHA, -3.820831E-2}, {BETA,  5.872664E-2}, {GAMMA,  0.000000E0 }, {ETA,  0.000000E0 }, {MU,  0.000000E0 }}},
+
+    {11, {{ALPHA,  1.071738E2 }, {BETA, -8.970339E1 }, {GAMMA, -3.949739E1 }, {ETA,  0.000000E0 }, {MU,  0.000000E0 }}},
+    {12, {{ALPHA,  7.348793E2 }, {BETA, -1.531020E2 }, {GAMMA, -3.793700E1 }, {ETA,  0.000000E0 }, {MU,  0.000000E0 }}},
+    {13, {{ALPHA,  9.219293E0 }, {BETA, -2.005865E0 }, {GAMMA, -5.561309E-1}, {ETA,  0.000000E0 }, {MU,  0.000000E0 }}},
+    {14, {{ALPHA,  2.917412E0 }, {BETA,  1.575290E0 }, {GAMMA,  5.751814E-1}, {ETA,  0.000000E0 }, {MU,  0.000000E0 }}},
+    {15, {{ALPHA,  3.629118E0 }, {BETA, -9.112722E-1}, {GAMMA,  1.042291E0 }, {ETA,  0.000000E0 }, {MU,  0.000000E0 }}},
+    {16, {{ALPHA,  4.916389E0 }, {BETA,  2.862149E0 }, {GAMMA,  7.844850E-1}, {ETA,  0.000000E0 }, {MU,  0.000000E0 }}},
+    {17, {{ALPHA,  0.000000E0 }, {BETA,  0.000000E0 }, {GAMMA,  0.000000E0 }, {ETA,  0.000000E0 }, {MU,  0.000000E0 }}},
+    {18, {{ALPHA,  5.496045E1 }, {BETA, -1.289968E1 }, {GAMMA,  6.385758E0 }, {ETA,  0.000000E0 }, {MU,  0.000000E0 }}},
+    {19, {{ALPHA,  1.832694E0 }, {BETA, -5.766608E-2}, {GAMMA,  5.696128E-2}, {ETA,  0.000000E0 }, {MU,  0.000000E0 }}},
+    {20, {{ALPHA,  1.211104E2 }, {BETA,  0.000000E0 }, {GAMMA,  0.000000E0 }, {ETA,  0.000000E0 }, {MU,  0.000000E0 }}},
+
+    {21, {{ALPHA,  2.214088E2 }, {BETA,  2.187113E2 }, {GAMMA,  1.170177E1 }, {ETA, -2.635340E1 }, {MU,  0.000000E0 }}},
+    {22, {{ALPHA,  2.063983E0 }, {BETA,  7.363827E-1}, {GAMMA,  2.654323E-1}, {ETA, -6.140719E-2}, {MU,  0.000000E0 }}},
+    {23, {{ALPHA,  2.003160E0 }, {BETA,  9.388871E-1}, {GAMMA,  9.656450E-1}, {ETA,  2.362266E-1}, {MU,  0.000000E0 }}},
+    {24, {{ALPHA,  1.609901E1 }, {BETA,  7.391573E0 }, {GAMMA,  2.277010E1 }, {ETA,  8.334227E0 }, {MU,  0.000000E0 }}},
+    {25, {{ALPHA,  1.747500E-1}, {BETA,  6.271202E-2}, {GAMMA, -2.324229E-2}, {ETA, -1.844559E-2}, {MU,  0.000000E0 }}},
+    {26, {{ALPHA,  0.000000E0 }, {BETA,  0.000000E0 }, {GAMMA,  0.000000E0 }, {ETA,  0.000000E0 }, {MU,  0.000000E0 }}},
+    {27, {{ALPHA,  2.752869E0 }, {BETA,  2.729201E-2}, {GAMMA,  4.996927E-1}, {ETA,  2.496551E-1}, {MU,  0.000000E0 }}},
+    {28, {{ALPHA,  3.518506E0 }, {BETA,  1.112440E0 }, {GAMMA, -4.556216E-1}, {ETA, -2.179426E-1}, {MU,  0.000000E0 }}},
+    {29, {{ALPHA,  1.626062E2 }, {BETA, -1.168838E1 }, {GAMMA, -5.498343E0 }, {ETA,  0.000000E0 }, {MU,  0.000000E0 }}},
+    {30, {{ALPHA,  3.336833E-1}, {BETA, -1.458043E-1}, {GAMMA, -2.011751E-2}, {ETA,  0.000000E0 }, {MU,  0.000000E0 }}},
+
+    {31, {{ALPHA,  7.425137E1 }, {BETA,  1.790236E1 }, {GAMMA,  3.033910E1 }, {ETA,  1.018259E1 }, {MU,  0.000000E0 }}},
+    {32, {{ALPHA,  9.268325E2 }, {BETA, -9.739859E1 }, {GAMMA, -7.702152E1 }, {ETA, -3.158268E1 }, {MU,  0.000000E0 }}},
+    {33, {{ALPHA,  2.474401E0 }, {BETA,  3.892972E-1}, {GAMMA,  0.000000E0 }, {ETA,  0.000000E0 }, {MU,  0.000000E0 }}},
+    {34, {{ALPHA,  1.127018E1 }, {BETA,  1.622158E0 }, {GAMMA, -1.443664E0 }, {ETA, -9.474699E-1}, {MU,  0.000000E0 }}},
+    {35, {{ALPHA,  0.000000E0 }, {BETA,  0.000000E0 }, {GAMMA,  0.000000E0 }, {ETA,  0.000000E0 }, {MU,  0.000000E0 }}},
+    {36, {{ALPHA,  1.445216E-1}, {BETA, -6.180219E-2}, {GAMMA,  3.093878E-2}, {ETA,  1.567090E-2}, {MU,  0.000000E0 }}},
+    {37, {{ALPHA,  1.304129E0 }, {BETA,  1.395919E-1}, {GAMMA,  4.142455E-3}, {ETA, -9.732503E-3}, {MU,  0.000000E0 }}},
+    {38, {{ALPHA,  5.114149E-1}, {BETA, -1.160850E-2}, {GAMMA,  0.000000E0 }, {ETA,  0.000000E0 }, {MU,  0.000000E0 }}},
+    {39, {{ALPHA,  1.314955E2 }, {BETA,  2.009258E1 }, {GAMMA, -5.143082E-1}, {ETA, -1.379140E0 }, {MU,  0.000000E0 }}},
+    {40, {{ALPHA,  1.823973E1 }, {BETA, -3.074559E0 }, {GAMMA, -4.307878E0 }, {ETA,  0.000000E0 }, {MU,  0.000000E0 }}},
+
+    {41, {{ALPHA,  2.327037E0 }, {BETA,  2.403445E0 }, {GAMMA,  1.208407E0 }, {ETA,  2.087263E-1}, {MU,  0.000000E0 }}},
+    {42, {{ALPHA,  1.997378E0 }, {BETA, -8.126205E-1}, {GAMMA,  0.000000E0 }, {ETA,  0.000000E0 }, {MU,  0.000000E0 }}},
+    {43, {{ALPHA,  1.079113E-1}, {BETA,  1.762409E-2}, {GAMMA,  1.096601E-2}, {ETA,  3.058818E-3}, {MU,  0.000000E0 }}},
+    {44, {{ALPHA,  2.327409E0 }, {BETA,  6.901582E-1}, {GAMMA, -2.158431E-1}, {ETA, -1.084117E-1}, {MU,  0.000000E0 }}},
+    {45, {{ALPHA,  0.000000E0 }, {BETA,  0.000000E0 }, {GAMMA,  0.000000E0 }, {ETA,  0.000000E0 }, {MU,  0.000000E0 }}},
+    {46, {{ALPHA,  2.214315E0 }, {BETA, -1.975747E0 }, {GAMMA,  0.000000E0 }, {ETA,  0.000000E0 }, {MU,  0.000000E0 }}},
+    {47, {{ALPHA,  0.000000E0 }, {BETA,  0.000000E0 }, {GAMMA,  0.000000E0 }, {ETA,  0.000000E0 }, {MU,  0.000000E0 }}},
+    {48, {{ALPHA,  5.072525E0 }, {BETA,  1.146189E1 }, {GAMMA,  6.961724E0 }, {ETA,  1.316965E0 }, {MU,  0.000000E0 }}},
+    {49, {{ALPHA,  5.139740E0 }, {BETA,  0.000000E0 }, {GAMMA,  0.000000E0 }, {ETA,  0.000000E0 }, {MU,  0.000000E0 }}},
+    {50, {{ALPHA,  0.000000E0 }, {BETA,  0.000000E0 }, {GAMMA,  0.000000E0 }, {ETA,  0.000000E0 }, {MU,  0.000000E0 }}},
+
+    {51, {{ALPHA,  1.125124E0 }, {BETA,  1.306486E0 }, {GAMMA,  3.622359E0 }, {ETA,  2.601976E0 }, {MU,  3.031270E-1}}},
+    {52, {{ALPHA,  3.349489E-1}, {BETA,  4.531269E-3}, {GAMMA,  1.131793E-1}, {ETA,  2.300156E-1}, {MU,  7.632745E-2}}},
+    {53, {{ALPHA,  1.467794E0 }, {BETA,  2.798142E0 }, {GAMMA,  9.455580E0 }, {ETA,  8.963904E0 }, {MU,  3.339719E0 }}},
+    {54, {{ALPHA,  4.658512E-1}, {BETA,  2.597451E-1}, {GAMMA,  9.048179E-1}, {ETA,  7.394505E-1}, {MU,  1.607092E-1}}},
+    {55, {{ALPHA,  1.042200E0 }, {BETA,  1.315600E-1}, {GAMMA,  4.500000E-2}, {ETA,  0.000000E0 }, {MU,  0.000000E0 }}},
+    {56, {{ALPHA,  1.110866E0 }, {BETA,  9.623856E-1}, {GAMMA,  2.735487E0 }, {ETA,  2.445602E0 }, {MU,  8.826352E-1}}},
+    {57, {{ALPHA, -1.584333E-1}, {BETA, -1.728865E-1}, {GAMMA, -4.461431E-1}, {ETA, -3.925259E-1}, {MU, -1.276203E-1}}}
+};
+
+#undef ALPHA
+#undef BETA
+#undef GAMMA
+#undef ETA
+#undef MU
+
+// Hurley C coefficients
+// Values given in Hurley et al. 2000, p6, sec 5.1
+// Key to map is n (C(n)).  Map element is unordered_map of term coefficient values.
+// The key is expected to start at 1 and increase monotonically by 1 - any other behaviour will cause problems in the code
+const std::unordered_map<int, double> HURLEY_C_COEFF = {{1, -8.672073E-2}, {2, 9.301992E0}, {3, 4.637345E0}};
+
 
 // Critial mass ratios for a grid of masses and radii. These come from the team of Hongwei Ge, in a series of papers 
 // titled "Adiabatic Mass Loss". The first two tables below are a subset of Tables A3 and A4 from Ge et al. 2024 
@@ -843,85 +936,8 @@ const GE_QCRIT_TABLE_HE QCRIT_GE_HE_STAR = {
     }
 };
 
-// B coefficients
-// Table in Appendix A of Hurley et al. 2000
-// Key to map is n (B(n)).  Map element is unordered_map of term coefficient values.
-const std::map<int, COMPASUnorderedMap<AB_TCoeff, double>> B_COEFF = {
-    { 1, {{ALPHA,  3.970000E-1}, {BETA,  2.882600E-1}, {GAMMA,  5.293000E-1}, {ETA,  0.000000E0 }, {MU,  0.000000E0 }}},
-    { 2, {{ALPHA,  0.000000E0 }, {BETA,  0.000000E0 }, {GAMMA,  0.000000E0 }, {ETA,  0.000000E0 }, {MU,  0.000000E0 }}},
-    { 3, {{ALPHA,  0.000000E0 }, {BETA,  0.000000E0 }, {GAMMA,  0.000000E0 }, {ETA,  0.000000E0 }, {MU,  0.000000E0 }}},
-    { 4, {{ALPHA,  9.960283E-1}, {BETA,  8.164393E-1}, {GAMMA,  2.383830E0 }, {ETA,  2.223436E0 }, {MU,  8.638115E-1}}},
-    { 5, {{ALPHA,  2.561062E-1}, {BETA,  7.072646E-2}, {GAMMA, -5.444596E-2}, {ETA, -5.798167E-2}, {MU, -1.349129E-2}}},
-    { 6, {{ALPHA,  1.157338E0 }, {BETA,  1.467883E0 }, {GAMMA,  4.299661E0 }, {ETA,  3.130500E0 }, {MU,  6.992080E-1}}},
-    { 7, {{ALPHA,  4.022765E-1}, {BETA,  3.050010E-1}, {GAMMA,  9.962137E-1}, {ETA,  7.914079E-1}, {MU,  1.728098E-1}}},
-    { 8, {{ALPHA,  0.000000E0 }, {BETA,  0.000000E0 }, {GAMMA,  0.000000E0 }, {ETA,  0.000000E0 }, {MU,  0.000000E0 }}},
-    { 9, {{ALPHA,  2.751631E3 }, {BETA,  3.557098E2 }, {GAMMA,  0.000000E0 }, {ETA,  0.000000E0 }, {MU,  0.000000E0 }}},
-    {10, {{ALPHA, -3.820831E-2}, {BETA,  5.872664E-2}, {GAMMA,  0.000000E0 }, {ETA,  0.000000E0 }, {MU,  0.000000E0 }}},
 
-    {11, {{ALPHA,  1.071738E2 }, {BETA, -8.970339E1 }, {GAMMA, -3.949739E1 }, {ETA,  0.000000E0 }, {MU,  0.000000E0 }}},
-    {12, {{ALPHA,  7.348793E2 }, {BETA, -1.531020E2 }, {GAMMA, -3.793700E1 }, {ETA,  0.000000E0 }, {MU,  0.000000E0 }}},
-    {13, {{ALPHA,  9.219293E0 }, {BETA, -2.005865E0 }, {GAMMA, -5.561309E-1}, {ETA,  0.000000E0 }, {MU,  0.000000E0 }}},
-    {14, {{ALPHA,  2.917412E0 }, {BETA,  1.575290E0 }, {GAMMA,  5.751814E-1}, {ETA,  0.000000E0 }, {MU,  0.000000E0 }}},
-    {15, {{ALPHA,  3.629118E0 }, {BETA, -9.112722E-1}, {GAMMA,  1.042291E0 }, {ETA,  0.000000E0 }, {MU,  0.000000E0 }}},
-    {16, {{ALPHA,  4.916389E0 }, {BETA,  2.862149E0 }, {GAMMA,  7.844850E-1}, {ETA,  0.000000E0 }, {MU,  0.000000E0 }}},
-    {17, {{ALPHA,  0.000000E0 }, {BETA,  0.000000E0 }, {GAMMA,  0.000000E0 }, {ETA,  0.000000E0 }, {MU,  0.000000E0 }}},
-    {18, {{ALPHA,  5.496045E1 }, {BETA, -1.289968E1 }, {GAMMA,  6.385758E0 }, {ETA,  0.000000E0 }, {MU,  0.000000E0 }}},
-    {19, {{ALPHA,  1.832694E0 }, {BETA, -5.766608E-2}, {GAMMA,  5.696128E-2}, {ETA,  0.000000E0 }, {MU,  0.000000E0 }}},
-    {20, {{ALPHA,  1.211104E2 }, {BETA,  0.000000E0 }, {GAMMA,  0.000000E0 }, {ETA,  0.000000E0 }, {MU,  0.000000E0 }}},
-
-    {21, {{ALPHA,  2.214088E2 }, {BETA,  2.187113E2 }, {GAMMA,  1.170177E1 }, {ETA, -2.635340E1 }, {MU,  0.000000E0 }}},
-    {22, {{ALPHA,  2.063983E0 }, {BETA,  7.363827E-1}, {GAMMA,  2.654323E-1}, {ETA, -6.140719E-2}, {MU,  0.000000E0 }}},
-    {23, {{ALPHA,  2.003160E0 }, {BETA,  9.388871E-1}, {GAMMA,  9.656450E-1}, {ETA,  2.362266E-1}, {MU,  0.000000E0 }}},
-    {24, {{ALPHA,  1.609901E1 }, {BETA,  7.391573E0 }, {GAMMA,  2.277010E1 }, {ETA,  8.334227E0 }, {MU,  0.000000E0 }}},
-    {25, {{ALPHA,  1.747500E-1}, {BETA,  6.271202E-2}, {GAMMA, -2.324229E-2}, {ETA, -1.844559E-2}, {MU,  0.000000E0 }}},
-    {26, {{ALPHA,  0.000000E0 }, {BETA,  0.000000E0 }, {GAMMA,  0.000000E0 }, {ETA,  0.000000E0 }, {MU,  0.000000E0 }}},
-    {27, {{ALPHA,  2.752869E0 }, {BETA,  2.729201E-2}, {GAMMA,  4.996927E-1}, {ETA,  2.496551E-1}, {MU,  0.000000E0 }}},
-    {28, {{ALPHA,  3.518506E0 }, {BETA,  1.112440E0 }, {GAMMA, -4.556216E-1}, {ETA, -2.179426E-1}, {MU,  0.000000E0 }}},
-    {29, {{ALPHA,  1.626062E2 }, {BETA, -1.168838E1 }, {GAMMA, -5.498343E0 }, {ETA,  0.000000E0 }, {MU,  0.000000E0 }}},
-    {30, {{ALPHA,  3.336833E-1}, {BETA, -1.458043E-1}, {GAMMA, -2.011751E-2}, {ETA,  0.000000E0 }, {MU,  0.000000E0 }}},
-
-    {31, {{ALPHA,  7.425137E1 }, {BETA,  1.790236E1 }, {GAMMA,  3.033910E1 }, {ETA,  1.018259E1 }, {MU,  0.000000E0 }}},
-    {32, {{ALPHA,  9.268325E2 }, {BETA, -9.739859E1 }, {GAMMA, -7.702152E1 }, {ETA, -3.158268E1 }, {MU,  0.000000E0 }}},
-    {33, {{ALPHA,  2.474401E0 }, {BETA,  3.892972E-1}, {GAMMA,  0.000000E0 }, {ETA,  0.000000E0 }, {MU,  0.000000E0 }}},
-    {34, {{ALPHA,  1.127018E1 }, {BETA,  1.622158E0 }, {GAMMA, -1.443664E0 }, {ETA, -9.474699E-1}, {MU,  0.000000E0 }}},
-    {35, {{ALPHA,  0.000000E0 }, {BETA,  0.000000E0 }, {GAMMA,  0.000000E0 }, {ETA,  0.000000E0 }, {MU,  0.000000E0 }}},
-    {36, {{ALPHA,  1.445216E-1}, {BETA, -6.180219E-2}, {GAMMA,  3.093878E-2}, {ETA,  1.567090E-2}, {MU,  0.000000E0 }}},
-    {37, {{ALPHA,  1.304129E0 }, {BETA,  1.395919E-1}, {GAMMA,  4.142455E-3}, {ETA, -9.732503E-3}, {MU,  0.000000E0 }}},
-    {38, {{ALPHA,  5.114149E-1}, {BETA, -1.160850E-2}, {GAMMA,  0.000000E0 }, {ETA,  0.000000E0 }, {MU,  0.000000E0 }}},
-    {39, {{ALPHA,  1.314955E2 }, {BETA,  2.009258E1 }, {GAMMA, -5.143082E-1}, {ETA, -1.379140E0 }, {MU,  0.000000E0 }}},
-    {40, {{ALPHA,  1.823973E1 }, {BETA, -3.074559E0 }, {GAMMA, -4.307878E0 }, {ETA,  0.000000E0 }, {MU,  0.000000E0 }}},
-
-    {41, {{ALPHA,  2.327037E0 }, {BETA,  2.403445E0 }, {GAMMA,  1.208407E0 }, {ETA,  2.087263E-1}, {MU,  0.000000E0 }}},
-    {42, {{ALPHA,  1.997378E0 }, {BETA, -8.126205E-1}, {GAMMA,  0.000000E0 }, {ETA,  0.000000E0 }, {MU,  0.000000E0 }}},
-    {43, {{ALPHA,  1.079113E-1}, {BETA,  1.762409E-2}, {GAMMA,  1.096601E-2}, {ETA,  3.058818E-3}, {MU,  0.000000E0 }}},
-    {44, {{ALPHA,  2.327409E0 }, {BETA,  6.901582E-1}, {GAMMA, -2.158431E-1}, {ETA, -1.084117E-1}, {MU,  0.000000E0 }}},
-    {45, {{ALPHA,  0.000000E0 }, {BETA,  0.000000E0 }, {GAMMA,  0.000000E0 }, {ETA,  0.000000E0 }, {MU,  0.000000E0 }}},
-    {46, {{ALPHA,  2.214315E0 }, {BETA, -1.975747E0 }, {GAMMA,  0.000000E0 }, {ETA,  0.000000E0 }, {MU,  0.000000E0 }}},
-    {47, {{ALPHA,  0.000000E0 }, {BETA,  0.000000E0 }, {GAMMA,  0.000000E0 }, {ETA,  0.000000E0 }, {MU,  0.000000E0 }}},
-    {48, {{ALPHA,  5.072525E0 }, {BETA,  1.146189E1 }, {GAMMA,  6.961724E0 }, {ETA,  1.316965E0 }, {MU,  0.000000E0 }}},
-    {49, {{ALPHA,  5.139740E0 }, {BETA,  0.000000E0 }, {GAMMA,  0.000000E0 }, {ETA,  0.000000E0 }, {MU,  0.000000E0 }}},
-    {50, {{ALPHA,  0.000000E0 }, {BETA,  0.000000E0 }, {GAMMA,  0.000000E0 }, {ETA,  0.000000E0 }, {MU,  0.000000E0 }}},
-
-    {51, {{ALPHA,  1.125124E0 }, {BETA,  1.306486E0 }, {GAMMA,  3.622359E0 }, {ETA,  2.601976E0 }, {MU,  3.031270E-1}}},
-    {52, {{ALPHA,  3.349489E-1}, {BETA,  4.531269E-3}, {GAMMA,  1.131793E-1}, {ETA,  2.300156E-1}, {MU,  7.632745E-2}}},
-    {53, {{ALPHA,  1.467794E0 }, {BETA,  2.798142E0 }, {GAMMA,  9.455580E0 }, {ETA,  8.963904E0 }, {MU,  3.339719E0 }}},
-    {54, {{ALPHA,  4.658512E-1}, {BETA,  2.597451E-1}, {GAMMA,  9.048179E-1}, {ETA,  7.394505E-1}, {MU,  1.607092E-1}}},
-    {55, {{ALPHA,  1.042200E0 }, {BETA,  1.315600E-1}, {GAMMA,  4.500000E-2}, {ETA,  0.000000E0 }, {MU,  0.000000E0 }}},
-    {56, {{ALPHA,  1.110866E0 }, {BETA,  9.623856E-1}, {GAMMA,  2.735487E0 }, {ETA,  2.445602E0 }, {MU,  8.826352E-1}}},
-    {57, {{ALPHA, -1.584333E-1}, {BETA, -1.728865E-1}, {GAMMA, -4.461431E-1}, {ETA, -3.925259E-1}, {MU, -1.276203E-1}}}
-};
-
-#undef ALPHA
-#undef BETA
-#undef GAMMA
-#undef ETA
-#undef MU
-
-// C coefficients
-// Key to map is n (C(n)).  Map element is unordered_map of term coefficient values.
-const std::unordered_map<int, double> C_COEFF = {{1, -8.672073E-2}, {2, 9.301992E0}, {3, 4.637345E0}};
-
-// CDF from Table 7 in Dufton et al 2013 https://arxiv.org/abs/1212.2424
+// CDF from Table 7 in Dufton et al. 2013 https://arxiv.org/abs/1212.2424
 // There is an assumption in the code that this function is monitonically increasing - it is now
 // and should remain so if the map is modified.
 const std::map<double, double> BStarRotationalVelocityCDFTable = {
@@ -939,7 +955,7 @@ const std::map<double, double> BStarRotationalVelocityCDFTable = {
 // their website http://xtreme.as.arizona.edu/NeutronStars/
 //
 // for now we choose one example EOS ARP3 from
-// Akmal et al 1998 https://arxiv.org/abs/nucl-th/9804027
+// Akmal et al. 1998 https://arxiv.org/abs/nucl-th/9804027
 const std::map<double, double> ARP3MassRadiusRelation = {
     {0.184 , 16.518}, {0.188 , 16.292}, {0.192 , 16.067}, {0.195 , 15.857}, {0.199 , 15.658}, {0.203 , 15.46 }, {0.207 , 15.277}, {0.212, 15.102}, {0.216, 14.933},
     {0.221 , 14.774}, {0.225 , 14.619}, {0.23  , 14.473}, {0.235 , 14.334}, {0.24  , 14.199}, {0.245 , 14.073}, {0.251 , 13.951}, {0.256, 13.834}, {0.262, 13.725},

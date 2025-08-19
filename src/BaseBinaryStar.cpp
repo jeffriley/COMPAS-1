@@ -1,10 +1,4 @@
 #include "BaseBinaryStar.h"
-#include <fenv.h>
-
-#include "vector3d.h"
-
-// gsl includes
-#include <gsl/gsl_poly.h>
 
 
 /* Constructor
@@ -1178,7 +1172,7 @@ double BaseBinaryStar::CalculateDSemiMajorAxisTidalDt(const DBL_DBL_DBL_DBL p_Im
  *  
  *     else: (Intact before SN)
  *  
- *         Evolve binary according to vector algebra to determine centerofmass velocity, h', e', a', and whether bound or unbound.
+ *         Evolve binary according to vector algebra to determine centre-of-mass velocity, h', e', a', and whether bound or unbound.
  *         Update binary systemic velocity (even if disrupted, just for consistency) - rotate into previous reference frame if needed.
  *   
  *         if now unbound:
@@ -1292,8 +1286,8 @@ void BaseBinaryStar::ResolveSupernova() {
         double dm1       = (m1Prev - m1);                                                                                       // mass difference of supernova (Msol)
         double dm2       = (m2Prev - m2);                                                                                       // mass difference of companion (Msol)
 
-        Vector3d centerOfMassVelocity   = (-m2Prev * dm1 / fact2 + m1Prev * dm2 / fact2) * relativeVelocityVectorPrev + 
-                                          (m1 / totalMass) * natalKickVector + (m2 / totalMass) * companionRecoilVector;        // post-SN center of mass velocity vector (km/s)
+        Vector3d centreOfMassVelocity   = (-m2Prev * dm1 / fact2 + m1Prev * dm2 / fact2) * relativeVelocityVectorPrev + 
+                                          (m1 / totalMass) * natalKickVector + (m2 / totalMass) * companionRecoilVector;        // post-SN centre of mass velocity vector (km/s)
 
         Vector3d relativeVelocityVector = relativeVelocityVectorPrev + (natalKickVector - companionRecoilVector);               // post-SN relative velocity vector (km/s)
 
@@ -1313,7 +1307,7 @@ void BaseBinaryStar::ResolveSupernova() {
         //    eccentricityVector defines the X'-axis, and
         //    (orbitalAngularMomentumVector x eccentricityVector) defines the Y'-axis
          
-        UpdateSystemicVelocity(centerOfMassVelocity.ChangeBasis(m_ThetaE, m_PhiE, m_PsiE));                                     // update the system velocity with the new center of mass velocity
+        UpdateSystemicVelocity(centreOfMassVelocity.ChangeBasis(m_ThetaE, m_PhiE, m_PsiE));                                     // update the system velocity with the new centre of mass velocity
         double reducedMass = m_Supernova->Mass() * m_Companion->Mass() / totalMass;                                             // reduced Mass
         m_Supernova->SetOrbitalEnergyPostSN(CalculateOrbitalEnergy(reducedMass, totalMass, m_SemiMajorAxis));                   // orbital energy
 
@@ -1323,14 +1317,14 @@ void BaseBinaryStar::ResolveSupernova() {
                                                                                                                                 // yes, unbound            
             m_Unbound = true;
 
-            // calculate the asymptotic Center of Mass velocity 
+            // calculate the asymptotic centre of mass velocity 
             double   relativeVelocityAtInfinity       = (G_km_Msol_s*totalMass/orbitalAngularMomentum) * std::sqrt(eccSquared - 1.0);
             Vector3d relativeVelocityVectorAtInfinity = relativeVelocityAtInfinity 
                                                         * (-1.0 * (eccentricityVector.hat / m_Eccentricity) + std::sqrt(1.0 - 1.0 / eccSquared) * cross(orbitalAngularMomentumVector.hat, eccentricityVector.hat));
 
             // calculate the asymptotic velocities of Star1 (SN) and Star2 (CP)
-            Vector3d component1VelocityVectorAtInfinity =  (m2 / totalMass) * relativeVelocityVectorAtInfinity + centerOfMassVelocity;
-            Vector3d component2VelocityVectorAtInfinity = -(m1 / totalMass) * relativeVelocityVectorAtInfinity + centerOfMassVelocity;
+            Vector3d component1VelocityVectorAtInfinity =  (m2 / totalMass) * relativeVelocityVectorAtInfinity + centreOfMassVelocity;
+            Vector3d component2VelocityVectorAtInfinity = -(m1 / totalMass) * relativeVelocityVectorAtInfinity + centreOfMassVelocity;
 
             // update the component velocities 
             m_Supernova->UpdateComponentVelocity(component1VelocityVectorAtInfinity.ChangeBasis(m_ThetaE, m_PhiE, m_PsiE));
@@ -1344,8 +1338,8 @@ void BaseBinaryStar::ResolveSupernova() {
         else {                                                                                                                  // no - binary still bound
             // set the component velocites to the system velocity. System velocity was already correctly set above.
              
-            m_Supernova->UpdateComponentVelocity(centerOfMassVelocity.ChangeBasis(m_ThetaE, m_PhiE, m_PsiE));
-            m_Companion->UpdateComponentVelocity(centerOfMassVelocity.ChangeBasis(m_ThetaE, m_PhiE, m_PsiE));
+            m_Supernova->UpdateComponentVelocity(centreOfMassVelocity.ChangeBasis(m_ThetaE, m_PhiE, m_PsiE));
+            m_Companion->UpdateComponentVelocity(centrrOfMassVelocity.ChangeBasis(m_ThetaE, m_PhiE, m_PsiE));
 
             // calculate Euler angles - see ChangeBasis() in vector.cpp for details
             m_ThetaE = angleBetween(orbitalAngularMomentumVector, orbitalAngularMomentumVectorPrev);                            // angle between the angular momentum unit vectors, always well defined

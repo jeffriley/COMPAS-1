@@ -12,7 +12,7 @@
 // tuple containing the ERROR_SCOPE associated with the error (see below), and the error string.
 
 #include "constants.h"
-#include "EnumHash.h"
+//#include "EnumHash.h"
 
 #define ERR_MSG(x) std::get<1>(ERROR_CATALOG.at(x))                 // for convenience
 

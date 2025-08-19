@@ -93,7 +93,7 @@ protected:
     bool            ShouldSkipPhase() const                                                         { return (utils::Compare(m_Mass0, m_MassCutoffs[static_cast<int>(MASS_CUTOFF::MFGB)]) >= 0); }  // Skip phase if mass >= FGB mass cutoff
 
     void            UpdateAgeAfterMassLoss()                                                        { GiantBranch::UpdateAgeAfterMassLoss(); }                                                      // Skip HG
-    void            UpdateInitialMass()                                                             { GiantBranch::UpdateInitialMass(); }                                                           // Skip HG
+    double            CalculateEffectiveInitialMass()                                                             { return GiantBranch::CalculateEffectiveInitialMass(); }                          // Skip HG
 
 };
 

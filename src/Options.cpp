@@ -96,7 +96,8 @@
 /*                                                                                        */
 /******************************************************************************************/
 
-#include <string_view>
+#include "Options.h"
+
 
 template <typename T>
 constexpr auto type_name() {
@@ -119,9 +120,6 @@ constexpr auto type_name() {
   return name;
 }
 
-
-#include "Options.h"
-#include "changelog.h"
 
 Options* Options::m_Instance = nullptr;
 
@@ -231,7 +229,7 @@ void Options::OptionValues::Initialise() {
 
 
     // Evolution mode: SSE or BSE
-    m_EvolutionMode.type                                            = EVOLUTION_MODE::BSE;
+    m_EvolutionMode.type                                            = EVOLUTION_MODE::BSE_HURLEY;
     m_EvolutionMode.typeString                                      = EVOLUTION_MODE_LABEL.at(m_EvolutionMode.type);
 
     // Population synthesis variables
@@ -1855,7 +1853,7 @@ bool Options::AddOptions(OptionValues *p_Options, po::options_description *p_Opt
         (
             "fryer-supernova-engine",                                      
             po::value<std::string>(&p_Options->m_FryerSupernovaEngine.typeString)->default_value(p_Options->m_FryerSupernovaEngine.typeString),                                                                  
-            ("If using Fryer et al 2012 fallback prescription (" + AllowedOptionValuesFormatted("fryer-supernova-engine") + ", default = '" + p_Options->m_FryerSupernovaEngine.typeString + "')").c_str()
+            ("If using Fryer et al. 2012 fallback prescription (" + AllowedOptionValuesFormatted("fryer-supernova-engine") + ", default = '" + p_Options->m_FryerSupernovaEngine.typeString + "')").c_str()
         )
 
         (

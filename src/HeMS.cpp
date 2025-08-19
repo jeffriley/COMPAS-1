@@ -41,13 +41,10 @@ double HeMS::CalculateHeliumAbundanceCoreOnPhase(const double p_Tau) const {
  * @param   [IN/OUT]    p_Timescales            Timescales
  */
 void HeMS::CalculateTimescales(const double p_Mass, DBL_VECTOR &p_Timescales) {
-#define timescales(x) p_Timescales[static_cast<int>(TIMESCALE::x)]  // for convenience and readability - undefined at end of function
 
     TPAGB::CalculateTimescales(p_Mass, p_Timescales);               // calculate common values
 
     timescales(tHeMS) = CalculateLifetimeOnPhase_Static(p_Mass);    // recalculate tHeMS
-
-#undef timescales
 }
 
 
@@ -66,7 +63,6 @@ void HeMS::CalculateTimescales(const double p_Mass, DBL_VECTOR &p_Timescales) {
  * @param   [IN/OUT]    p_GBParams              Giant Branch Parameters - calculated here
  */
 void HeMS::CalculateGBParams(const double p_Mass, DBL_VECTOR &p_GBParams) {
-#define gbParams(x) p_GBParams[static_cast<int>(GBP::x)]    // for convenience and readability - undefined at end of function
 
     GiantBranch::CalculateGBParams(p_Mass, p_GBParams);                                 // calculate common values (actually, all)
 
@@ -80,8 +76,6 @@ void HeMS::CalculateGBParams(const double p_Mass, DBL_VECTOR &p_GBParams) {
     
     gbParams(Mx) = GiantBranch::CalculateCoreMass_Luminosity_Mx_Static(p_GBParams);      // depends on B, D, p & q - recalculate if any of those are changed
     gbParams(Lx) = GiantBranch::CalculateCoreMass_Luminosity_Lx_Static(p_GBParams);      // depends on B, D, p, q & Mx - recalculate if any of those are changed
-
-#undef gbParams
 }
 
 
@@ -350,60 +344,61 @@ double HeMS::CalculateMassLossRateHurley() {
 
 
 /*
- * Calculate the dominant mass loss mechanism and associated rate for the star at the current evolutionary phase
+ * CalculateMassLossRateBelczynski2010
  *
- * According to Vink - based on implementation in StarTrack
+ * Calculate the dominant mass loss type, and associated mass loss rate, for the
+ * star at the current evolutionary phase, per the StarTrack implementation (Vink)
  *
- * double CalculateMassLossRateBelczynski2010()
  *
- * @return                                      Mass loss rate in Msol per year
+ * std::tuple<double, MASS_LOSS_TYPE> CalculateMassLossRateBelczynski2010() const
+ *
+ * @return                                      Tuple containing:
+ *                                                   DOUBLE         mass loss rate (Msol yr^-1)
+ *                                                   MASS_LOSS_TYPE dominant mass loss type (will be MASS_LOSS_TYPE::WR)
  */
-double HeMS::CalculateMassLossRateBelczynski2010() {
-    m_DominantMassLossRate = MASS_LOSS_TYPE::WR;
-    return OPTIONS->WolfRayetFactor() * CalculateMassLossRateWolfRayetZDependent(0.0);  
+std::tuple<double, MASS_LOSS_TYPE> HeMS::CalculateMassLossRateBelczynski2010() const {
+    return std::make_tuple(CalculateMassLossRateWolfRayetZDependent(0.0), MASS_LOSS_TYPE::WR);
 }
 
 
 /*
- * Calculate the mass-loss rate for Wolf--Rayet stars according to the
- * prescription of Shenar et al. 2019 (https://ui.adsabs.harvard.edu/abs/2019A%26A...627A.151S/abstract)
+ * CalculateMassLossRateWolfRayetShenar2019
+ *
+ * Calculate the mass-loss rate for Wolf--Rayet stars per Shenar et al. 2019
+ * https://ui.adsabs.harvard.edu/abs/2019A%26A...627A.151S/abstract
  * 
- * See their Eq. 6 and Table 5
+ * See their eq 6 and table 5
  * 
  * We use the fitting coefficients for hydrogen poor WR stars 
  * The C4 (X_He) term is = 0 and is omitted
  * 
- * double CalculateMassLossRateWolfRayetShenar2019()
+ * 
+ * double CalculateMassLossRateWolfRayetShenar2019() const
  *
  *
- * @return                                      Mass loss rate (in Msol yr^{-1})
+ * @return                                      Mass loss rate (Msol yr^-1)
  */
 double HeMS::CalculateMassLossRateWolfRayetShenar2019() const {
 
-    double logMdot = 0.0;
-    double Teff    = m_Temperature * TSOL;
+    // for H-poor WR stars (X_H < 0.05)
+    constexpr double C1 = -7.99;
+    constexpr double C2 =  0.97;
+    constexpr double C3 = -0.07;
+    constexpr double C5 =  0.89;
 
-    // For H-poor WR stars (X_H < 0.05)
-    const double C1 = -7.99;
-    const double C2 =  0.97;
-    const double C3 = -0.07;
-    const double C5 =  0.89;
-
-    logMdot = C1 + (C2 * log10(m_Luminosity)) + (C3 * log10(Teff)) + (C5 * m_Log10Metallicity); 
-
-    return PPOW(10.0, logMdot); // Mdot 
+    return PPOW(10.0, C1 + (C2 * log10(m_Luminosity)) + (C3 * log10(m_Temperature * TSOL)) + (C5 * m_Log10Metallicity)); 
 }
 
 
 /*
  * Calculate the mass loss rate for helium stars in the updated prescription
- * Uses Sander & Vink 2020 for Wolf--Rayet stars
+ * Uses Sander & Vink 2020 for Wolf-Rayet stars
  * 
- * double CalculateMassLossRateMerritt2025()
+ * double CalculateMassLossRateMerritt2025() const
  *
- * @return                                      Mass loss rate in Msol per year
+ * @return                                      Mass loss rate {Msol yr^-1)
  */
-double HeMS::CalculateMassLossRateMerritt2025() {
+double HeMS::CalculateMassLossRateMerritt2025() const {
 
     double MdotWR = 0.0;
 
@@ -411,41 +406,54 @@ double HeMS::CalculateMassLossRateMerritt2025() {
 
     switch (OPTIONS->WRMassLossPrescription()) {                                                                // which WR mass loss prescription?
 
-        case WR_MASS_LOSS_PRESCRIPTION::ZERO: {
-            MdotWR = 0.0;   // No mass loss for WR stars
-        } break;
+        case WR_MASS_LOSS_PRESCRIPTION::ZERO:                                                                   // ZERO
+            dMdt = 0.0;                                                                                         // no mass loss
+            break;
 
-        case WR_MASS_LOSS_PRESCRIPTION::SANDERVINK2023: {
-            // calculate Sander & Vink 2020 mass-loss rate
-            double MdotSanderVink2020 = CalculateMassLossRateWolfRayetSanderVink2020(0.0);
+        case WR_MASS_LOSS_PRESCRIPTION::SANDERVINK2023:                                                         // SANDERVINK2023
+            
+            dMdt = CalculateMassLossRateWolfRayetSanderVink2020(0.0);                                           // start with Sander & Vink 2020
 
-            // apply the Sander et al. 2023 temperature correction to the Sander & Vink 2020 rate
-            double MdotSander2023     = CalculateMassLossRateWolfRayetTemperatureCorrectionSander2023(MdotSanderVink2020);
+            // apply the Sander et al. 2023 temperature correction to the Sander & Vink 2020
+            // rate if necessary - gives the Sander & Vink 2023 rate
+            // https://arxiv.org/abs/2301.01785
+            // 
+            // use the correction given in eq 18, with the effective temperature
+            // (what they refer to as T_\star in eq 1) as T_eff,crit
 
-            // calculate Vink 2017 mass-loss rate
-            double MdotVink2017       = CalculateMassLossRateHeliumStarVink2017();
+            // only apply the correction for positive mass loss rates 
+            if (dMdt > 0.0) {                                                                                   // don't use utils::Compare() for thresholds
+    
+                // only apply the correction to sufficiently hot stars
+                double teff = m_Temperature * TSOL;                                                             // effective temperature in Kelvin
 
-            // use whichever gives the highest mass loss rate -- will typically be Vink 2017 for
-            // low Mass or Luminosity, and Sander & Vink 2020 for high Mass or Luminosity
+                constexpr double teffMin = 100.0E3;                                                             // minimum effective temperature in Kelvin for which correction applies
+                if (utils::Compare(teff, teffMin) > 0) {                                                        // effective temperatue above minimum applicable?
+                                                                                                                // yes
+                    constexpr double teffRef = 141.0E3;                                                         // reference effective temperature in Kelvin
+                    dMdt = PPOW(10.0, log10(dMdtSanderVink2020) - 6.0 * log10(teff / teffRef));                 // apply correction - gives Sander & Vink 2023 mass loss rate
+                }
+            }
 
-            MdotWR = OPTIONS->WolfRayetFactor() * std::max(MdotSander2023, MdotVink2017);
+            // compare Sander & Vink 2020/2023 mass loss rate to Vink 2017, and clamp to a minimum of
+            // Vink 2017 - will typically result in Vink 2017 mass loss rate for low mass or luminosity,
+            // and Sander & Vink 2020/2023 for high mass or luminosity
 
-        } break;
+            dMdt = std::max(dMdt, CalculateMassLossRateHeliumStarVink2017());
+            break;
 
-        case WR_MASS_LOSS_PRESCRIPTION::SHENAR2019: {
-            // mass loss rate for WR stars from Shenar+ 2019
-            double MdotShenar2019 = CalculateMassLossRateWolfRayetShenar2019();                                 // OPTIONS->WolfRayetFactor()  is applied in Shenar2019 function
+        case WR_MASS_LOSS_PRESCRIPTION::SHENAR2019:                                                             // SHENAR2019
+            
+            dMdt = CalculateMassLossRateWolfRayetShenar2019();                                                  // start with Shenar+ 2019
 
-            // calculate Vink 2017 mass-loss rate
-            double MdotVink2017   = CalculateMassLossRateHeliumStarVink2017();
+            // compare Shenar+ 2019 mass loss rate to Vink 2017, and clamp to a minimum
+            // of Vink 2017 to avoid extrapolating to low luminosity
 
-            // apply a minimum of Vink 2017 mass-loss rate to avoid extrapolating to low luminosity
-            MdotWR = OPTIONS->WolfRayetFactor() * std::max(MdotShenar2019, MdotVink2017);
+            dMdt = std::max(dMdt, CalculateMassLossRateHeliumStarVink2017());
+            break;
 
-        } break;
-
-        case WR_MASS_LOSS_PRESCRIPTION::BELCZYNSKI2010:
-            MdotWR = CalculateMassLossRateBelczynski2010(); // OPTIONS->WolfRayetFactor() is applied in Belczynski2010 function
+        case WR_MASS_LOSS_PRESCRIPTION::BELCZYNSKI2010:                                                         // BELCZYNSKI2010
+            dMdt = CalculateMassLossRateBelczynski2010();
             break;
 
         default:                                                                                                // unknown prescription
@@ -459,7 +467,7 @@ double HeMS::CalculateMassLossRateMerritt2025() {
             THROW_ERROR(ERROR::UNKNOWN_WR_MASS_LOSS_PRESCRIPTION);                                              // throw error
     }
 
-    return MdotWR;
+    return MdotWR * OPTIONS->WolfRayetFactor();                                                                 // apply user supplied WR factor
 }
 
 
@@ -558,14 +566,11 @@ void HeMS::UpdateAgeAfterMassLoss() {
  * @return                                      Suggested timestep (dt)
  */
 double HeMS::ChooseTimestep(const double p_Time) const {
-#define timescales(x) m_Timescales[static_cast<int>(TIMESCALE::x)]  // for convenience and readability - undefined at end of function
 
     double dtk = 0.05 * timescales(tHeMS);
     double dte = timescales(tHeMS) - p_Time;
 
     return std::max(std::min(dtk, dte), NUCLEAR_MINIMUM_TIMESTEP);
-
-#undef timescales
 }
 
 
@@ -618,13 +623,10 @@ STELLAR_TYPE HeMS::ResolveEnvelopeLoss(bool p_Force) {
  * @return                                      Stellar Type for next phase
  */
 STELLAR_TYPE HeMS::EvolveToNextPhase() {
-#define timescales(x) m_Timescales[static_cast<int>(TIMESCALE::x)]  // for convenience and readability - undefined at end of function
 
     m_Age = timescales(tHeMS);
 
     return STELLAR_TYPE::NAKED_HELIUM_STAR_HERTZSPRUNG_GAP;
-
-#undef timescales
 }
 
 

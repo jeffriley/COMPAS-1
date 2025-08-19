@@ -26,8 +26,6 @@
  * @param   [IN/OUT]    p_Timescales            Timescales
  */
 void TPAGB::CalculateTimescales(const double p_Mass, DBL_VECTOR &p_Timescales) {
-#define timescales(x) p_Timescales[static_cast<int>(TIMESCALE::x)]  // for convenience and readability - undefined at end of function
-#define gbParams(x) m_GBParams[static_cast<int>(GBP::x)]            // for convenience and readability - undefined at end of function
 
     EAGB::CalculateTimescales(p_Mass, p_Timescales);    // calculate common values
 
@@ -50,9 +48,6 @@ void TPAGB::CalculateTimescales(const double p_Mass, DBL_VECTOR &p_Timescales) {
         timescales(tMx_SAGB)   = timescales(tinf1_SAGB) - ((timescales(tinf1_SAGB) - timescales(tP)) * PPOW((LDU / gbParams(Lx)), p1_p));
         timescales(tinf2_SAGB) = timescales(tMx_SAGB) + ((1.0 / (q1 * gbParams(AHHe) * gbParams(B))) * PPOW((gbParams(B) / gbParams(Lx)), q1_q));
     }
-
-#undef gbParams
-#undef timescales
 }
 
 
@@ -364,7 +359,7 @@ double TPAGB::CalculateLambdaNanjingEnhanced(const int p_MassIndex, const STELLA
             double x4 = x2 * x2;
             double x5 = x3 * x2;
 
-            double y1 = a[0] + (a[1] * x) + (a[2] * x2) + (a[3] * x3) + (a[4] * x4) + (a[5] * x5);
+            double y1 = an[0] + (an[1] * x) + (an[2] * x2) + (an[3] * x3) + (an[4] * x4) + (an[5] * x5);
             double y2 = b[0] + (b[1] * x) + (b[2] * x2) + (b[3] * x3) + (b[4] * x4) + (b[5] * x5);
 
             lambdaBG = { 1.0 / y1, 1.0 / y2 };
@@ -376,7 +371,7 @@ double TPAGB::CalculateLambdaNanjingEnhanced(const int p_MassIndex, const STELLA
             double x4 = x2 * x2;
             double x5 = x3 * x2;
 
-            double y1 = a[0] + (a[1] * x) + (a[2] * x2) + (a[3] * x3) + (a[4] * x4) + (a[5] * x5);
+            double y1 = an[0] + (an[1] * x) + (an[2] * x2) + (an[3] * x3) + (an[4] * x4) + (an[5] * x5);
             double y2 = b[0] + (b[1] * x) + (b[2] * x2) + (b[3] * x3) + (b[4] * x4) + (b[5] * x5);
 
             lambdaBG = { y1, y2 };
@@ -692,7 +687,7 @@ double TPAGB::CalculateLambdaNanjingStarTrack(const double p_Mass, const double 
             double x4 = x2 * x2;
             double x5 = x3 * x2;
 
-            double y1 = a[0] + (a[1] * x) + (a[2] * x2) + (a[3] * x3) + (a[4] * x4) + (a[5] * x5);
+            double y1 = an[0] + (an[1] * x) + (an[2] * x2) + (an[3] * x3) + (an[4] * x4) + (an[5] * x5);
             double y2 = b[0] + (b[1] * x) + (b[2] * x2) + (b[3] * x3) + (b[4] * x4) + (b[5] * x5);
 
             lambdaBG = { 1.0 / y1, 1.0 / y2 };
@@ -705,7 +700,7 @@ double TPAGB::CalculateLambdaNanjingStarTrack(const double p_Mass, const double 
             double x4 = x2 * x2;
             double x5 = x3 * x2;
 
-            double y1 = a[0] + (a[1] * x) + (a[2] * x2) + (a[3] * x3) + (a[4] * x4) + (a[5] * x5);
+            double y1 = an[0] + (an[1] * x) + (an[2] * x2) + (an[3] * x3) + (an[4] * x4) + (an[5] * x5);
             double y2 = b[0] + (b[1] * x) + (b[2] * x2) + (b[3] * x3) + (b[4] * x4) + (b[5] * x5);
 
             lambdaBG = { pow(10.0, y1), y2 };
@@ -717,7 +712,7 @@ double TPAGB::CalculateLambdaNanjingStarTrack(const double p_Mass, const double 
             double x4 = x2 * x2;
             double x5 = x3 * x2;
 
-            double y1 = a[0] + (a[1] * x) + (a[2] * x2) + (a[3] * x3) + (a[4] * x4) + (a[5] * x5);
+            double y1 = an[0] + (an[1] * x) + (an[2] * x2) + (an[3] * x3) + (an[4] * x4) + (an[5] * x5);
             double y2 = b[0] + (b[1] * x) + (b[2] * x2) + (b[3] * x3) + (b[4] * x4) + (b[5] * x5);
 
             lambdaBG = { y1, y2 };
@@ -758,15 +753,9 @@ double TPAGB::CalculateLambdaNanjingStarTrack(const double p_Mass, const double 
  * but there must be an elegant way of calculating once and using twice...
  */
 double TPAGB::CalculateMcPrime(const double p_Time) const {
-#define timescales(x) m_Timescales[static_cast<int>(TIMESCALE::x)]  // for convenience and readability - undefined at end of function
-#define gbParams(x) m_GBParams[static_cast<int>(GBP::x)]            // for convenience and readability - undefined at end of function
-
     return utils::Compare(p_Time, timescales(tMx_SAGB)) <= 0
             ? PPOW((gbParams(p) - 1.0) * gbParams(AHHe) * gbParams(D) * (timescales(tinf1_SAGB) - p_Time), 1.0 / (1.0 - gbParams(p)))
             : PPOW((gbParams(q) - 1.0) * gbParams(AHHe) * gbParams(B) * (timescales(tinf2_SAGB) - p_Time), 1.0 / (1.0 - gbParams(q)));
-
-#undef gbParams
-#undef timescales
 }
 
 
@@ -955,7 +944,6 @@ STELLAR_TYPE TPAGB::ResolveEnvelopeLoss(bool p_Force) {
  * @return                                      Suggested timestep (dt)
  */
 double TPAGB::ChooseTimestep(const double p_Time) const {
-#define timescales(x) m_Timescales[static_cast<int>(TIMESCALE::x)]  // for convenience and readability - undefined at end of function
 
     double dtk = utils::Compare(p_Time, timescales(tMx_SAGB)) <= 0
                     ? 0.02 * (timescales(tinf1_SAGB) - p_Time)
@@ -964,8 +952,6 @@ double TPAGB::ChooseTimestep(const double p_Time) const {
     double dte = 5.0E-3;
 
     return std::max(std::min(dtk, dte), NUCLEAR_MINIMUM_TIMESTEP);
-
-#undef timescales
 }
 
 

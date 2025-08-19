@@ -54,8 +54,6 @@ double GiantBranch::CalculateHRateConstant_Static(const double p_Mass) {
  * @param   [IN/OUT]    p_Timescales            Timescales
  */
 void GiantBranch::CalculateTimescales(const double p_Mass, DBL_VECTOR &p_Timescales) {
-#define timescales(x) p_Timescales[static_cast<int>(TIMESCALE::x)]      // for convenience and readability - undefined at end of function
-#define gbParams(x) m_GBParams[static_cast<int>(GBP::x)]                // for convenience and readability - undefined at end of function
 
     double p1   = gbParams(p) - 1.0;
     double q1   = gbParams(q) - 1.0;
@@ -72,9 +70,6 @@ void GiantBranch::CalculateTimescales(const double p_Mass, DBL_VECTOR &p_Timesca
 
     timescales(tHeI)      = CalculateLifetimeToHeIgnition(p_Mass, timescales(tinf1_FGB), timescales(tinf2_FGB));
     timescales(tHeMS)     = HeMS::CalculateLifetimeOnPhase_Static(p_Mass);
-
-#undef gbParams
-#undef timescales
 }
 
 
@@ -103,12 +98,11 @@ double GiantBranch::CalculateCoreMass_Luminosity_B_Static(const double p_Mass) {
  * double CalculateCoreMass_Luminosity_D_Static(const double p_Mass, const double p_LogMetallicityXi, DBL_VECTOR &p_MassCutoffs)
  *
  * @param   [IN]    p_Mass                      Mass in Msol
- * @param   [IN]    p_LogMetallicityXi          log10(Metallicity / Zsol) - called xi in Hurley et al 2000
+ * @param   [IN]    p_LogMetallicityXi          log10(Metallicity / Zsol) - called xi in Hurley et al. 2000
  * @param   [IN]    p_MassCutoffs               Mass cutoffs vector
  * @return                                      Core mass - Luminosity relation parameter D
  */
 double GiantBranch::CalculateCoreMass_Luminosity_D_Static(const double p_Mass, const double p_LogMetallicityXi, const DBL_VECTOR &p_MassCutoffs) {
-#define massCutoffs(x) p_MassCutoffs[static_cast<int>(MASS_CUTOFF::x)]  // for convenience and readability - undefined at end of function
 
     double D0   = 5.37 + (0.135 * p_LogMetallicityXi);
     double D1   = (0.975 * D0) - (0.18 * p_Mass);
@@ -127,8 +121,6 @@ double GiantBranch::CalculateCoreMass_Luminosity_D_Static(const double p_Mass, c
     }
 
     return PPOW(10.0, logD);
-
-#undef massCutoffs
 }
 
 
@@ -145,7 +137,6 @@ double GiantBranch::CalculateCoreMass_Luminosity_D_Static(const double p_Mass, c
  * @return                                      Core mass - Luminosity relation parameter p
  */
 double GiantBranch::CalculateCoreMass_Luminosity_p_Static(const double p_Mass, const DBL_VECTOR &p_MassCutoffs) {
-#define massCutoffs(x) p_MassCutoffs[static_cast<int>(MASS_CUTOFF::x)]  // for convenience and readability - undefined at end of function
 
     double p = 6.0;
 
@@ -161,8 +152,6 @@ double GiantBranch::CalculateCoreMass_Luminosity_p_Static(const double p_Mass, c
     }
 
     return p;
-
-#undef massCutoffs
 }
 
 
@@ -179,7 +168,6 @@ double GiantBranch::CalculateCoreMass_Luminosity_p_Static(const double p_Mass, c
  * @return                                      Core mass - Luminosity relation parameter q
  */
 double GiantBranch::CalculateCoreMass_Luminosity_q_Static(const double p_Mass, const DBL_VECTOR &p_MassCutoffs) {
-#define massCutoffs(x) p_MassCutoffs[static_cast<int>(MASS_CUTOFF::x)]  // for convenience and readability - undefined at end of function
 
     double q = 3.0;
 
@@ -195,8 +183,6 @@ double GiantBranch::CalculateCoreMass_Luminosity_q_Static(const double p_Mass, c
     }
 
     return q;
-
-#undef massCutoffs
 }
 
 
@@ -214,11 +200,11 @@ double GiantBranch::CalculateCoreMass_Luminosity_q_Static(const double p_Mass, c
  * @return                                      Core mass - Luminosity relation parameter Mx
  */
 double GiantBranch::CalculateCoreMass_Luminosity_Mx_Static(const DBL_VECTOR &p_GBParams) {
-#define gbParams(x) p_GBParams[static_cast<int>(GBP::x)]    // for convenience and readability - undefined at end of function
+#define p_GBParams(x) p_GBParams[static_cast<int>(GBP::x)]    // for convenience and readability - undefined at end of function
 
-    return PPOW((gbParams(B) / gbParams(D)), (1.0 / (gbParams(p) - gbParams(q))));
+    return PPOW((p_GBParams(B) / p_GBParams(D)), (1.0 / (p_GBParams(p) - p_GBParams(q))));
 
-#undef gbParams
+#undef p_GBParams
 }
 
 
@@ -234,12 +220,12 @@ double GiantBranch::CalculateCoreMass_Luminosity_Mx_Static(const DBL_VECTOR &p_G
  * @return                                      Core mass - Luminosity relation parameter Lx
  */
 double GiantBranch::CalculateCoreMass_Luminosity_Lx_Static(const DBL_VECTOR &p_GBParams) {
-#define gbParams(x) p_GBParams[static_cast<int>(GBP::x)]    // for convenience and readability - undefined at end of function
+#define p_GBParams(x) p_GBParams[static_cast<int>(GBP::x)]    // for convenience and readability - undefined at end of function
     // since the mass used here is the mass at crossover (Mx), these
     // should give the same answer - but we'll take the minimum anyway
-    return std::min((gbParams(B) * PPOW(gbParams(Mx), gbParams(q))), (gbParams(D) * PPOW(gbParams(Mx), gbParams(p))));
+    return std::min((p_GBParams(B) * PPOW(p_GBParams(Mx), p_GBParams(q))), (p_GBParams(D) * PPOW(p_GBParams(Mx), p_GBParams(p))));
 
-#undef gbParams
+#undef p_GBParams
 }
 
 
@@ -258,25 +244,26 @@ double GiantBranch::CalculateCoreMass_Luminosity_Lx_Static(const DBL_VECTOR &p_G
  * @param   [IN/OUT]    p_GBParams              Giant Branch Parameters - calculated here
  */
 void GiantBranch::CalculateGBParams(const double p_Mass, DBL_VECTOR &p_GBParams) {
-#define gbParams(x) p_GBParams[static_cast<int>(GBP::x)]    // for convenience and readability - undefined at end of function
+#define p_GBParams(x) p_GBParams[static_cast<int>(GBP::x)]    // for convenience and readability - undefined at end of function
 
-    gbParams(AH)     = CalculateHRateConstant_Static(p_Mass);
-    gbParams(AHHe)   = CalculateHHeRateConstant_Static();
-    gbParams(AHe)    = CalculateHeRateConstant_Static();
+    p_GBParams(AH)     = CalculateHRateConstant_Static(p_Mass);
+    p_GBParams(AHHe)   = CalculateHHeRateConstant_Static();
+    p_GBParams(AHe)    = CalculateHeRateConstant_Static();
 
-    gbParams(B)      = CalculateCoreMass_Luminosity_B_Static(p_Mass);
-    gbParams(D)      = CalculateCoreMass_Luminosity_D_Static(p_Mass, LogMetallicityXiHurley(), m_MassCutoffs);
+    p_GBParams(B)      = CalculateCoreMass_Luminosity_B_Static(p_Mass);
+    p_GBParams(D)      = CalculateCoreMass_Luminosity_D_Static(p_Mass, LogMetallicityXiHurley(), m_MassCutoffs);
 
-    gbParams(p)      = CalculateCoreMass_Luminosity_p_Static(p_Mass, m_MassCutoffs);
-    gbParams(q)      = CalculateCoreMass_Luminosity_q_Static(p_Mass, m_MassCutoffs);
+    p_GBParams(p)      = CalculateCoreMass_Luminosity_p_Static(p_Mass, m_MassCutoffs);
+    p_GBParams(q)      = CalculateCoreMass_Luminosity_q_Static(p_Mass, m_MassCutoffs);
 
-    gbParams(Mx)     = CalculateCoreMass_Luminosity_Mx_Static(p_GBParams);      // depends on B, D, p & q - recalculate if any of those are changed
-    gbParams(Lx)     = CalculateCoreMass_Luminosity_Lx_Static(p_GBParams);      // depends on B, D, p, q & Mx - recalculate if any of those are changed
+    p_GBParams(Mx)     = CalculateCoreMass_Luminosity_Mx_Static(p_GBParams);        // depends on B, D, p & q - recalculate if any of those are changed
+    p_GBParams(Lx)     = CalculateCoreMass_Luminosity_Lx_Static(p_GBParams);        // depends on B, D, p, q & Mx - recalculate if any of those are changed
 
-    gbParams(McBAGB) = CalculateCoreMassAtBAGB(p_Mass);
-    gbParams(McDU)   = CalculateCoreMassAt2ndDredgeUp_Static(gbParams(McBAGB));
-    gbParams(McBGB)  = CalculateCoreMassAtBGB(p_Mass, p_GBParams);
-#undef gbParams
+    p_GBParams(McBAGB) = CalculateCoreMassAtBAGB(p_Mass);
+    p_GBParams(McDU)   = CalculateCoreMassAt2ndDredgeUp_Static(p_GBParams(McBAGB));
+    p_GBParams(McBGB)  = CalculateCoreMassAtBGB(p_Mass, p_GBParams);
+
+#undef p_GBParams
 }
 
 
@@ -301,44 +288,43 @@ void GiantBranch::CalculateGBParams(const double p_Mass, DBL_VECTOR &p_GBParams)
  * void CalculateGBParams_Static(const double      p_Mass, 
  *                               const double      p_LogMetallicityXi, 
  *                               const DBL_VECTOR &p_MassCutoffs, 
- *                               const DBL_VECTOR &p_AnCoefficients, 
- *                               const DBL_VECTOR &p_BnCoefficients,* 
- *                                     DBL_VECTOR &p_GBParams)
+ *                               const DBL_VECTOR &p_An, 
+ *                               const DBL_VECTOR &p_Bn, 
+ *                                     DBL_VECTOR &p_GBParams) const
  *
  * @param   [IN]        p_Mass                  Mass in Msol
- * @param   [IN]        p_LogMetallicityXi      log10(Metallicity / Zsol) - called xi in Hurley et al 2000
+ * @param   [IN]        p_LogMetallicityXi      log10(Metallicity / Zsol) - called xi in Hurley et al. 2000
  * @param   [IN]        p_MassCutoffs           Mass cutoffs
- * @param   [IN]        p_AnCoefficients        a(n) coefficients
- * @param   [IN]        p_BnCoefficients        b(n) coefficients
+ * @param   [IN]        p_An                    a(n) coefficients
+ * @param   [IN]        p_Bn                    b(n) coefficients
  * @param   [IN/OUT]    p_GBParams              Giant Branch Parameters - calculated here
  */
 void GiantBranch::CalculateGBParams_Static(const double      p_Mass, 
                                            const double      p_LogMetallicityXi, 
                                            const DBL_VECTOR &p_MassCutoffs, 
-                                           const DBL_VECTOR &p_AnCoefficients, 
-                                           const DBL_VECTOR &p_BnCoefficients, 
-                                                 DBL_VECTOR &p_GBParams) {
+                                           const DBL_VECTOR &p_An, 
+                                           const DBL_VECTOR &p_Bn, 
+                                                 DBL_VECTOR &p_GBParams) const {
+#define p_GBParams(x) p_GBParams[static_cast<int>(GBP::x)]    // for convenience and readability - undefined at end of function
 
-#define gbParams(x) p_GBParams[static_cast<int>(GBP::x)]    // for convenience and readability - undefined at end of function
+    p_GBParams(AH)     = CalculateHRateConstant_Static(p_Mass);
+    p_GBParams(AHHe)   = CalculateHHeRateConstant_Static();
+    p_GBParams(AHe)    = CalculateHeRateConstant_Static();
 
-    gbParams(AH)     = CalculateHRateConstant_Static(p_Mass);
-    gbParams(AHHe)   = CalculateHHeRateConstant_Static();
-    gbParams(AHe)    = CalculateHeRateConstant_Static();
+    p_GBParams(B)      = CalculateCoreMass_Luminosity_B_Static(p_Mass);
+    p_GBParams(D)      = CalculateCoreMass_Luminosity_D_Static(p_Mass, p_LogMetallicityXi, p_MassCutoffs);
 
-    gbParams(B)      = CalculateCoreMass_Luminosity_B_Static(p_Mass);
-    gbParams(D)      = CalculateCoreMass_Luminosity_D_Static(p_Mass, p_LogMetallicityXi, p_MassCutoffs);
+    p_GBParams(p)      = CalculateCoreMass_Luminosity_p_Static(p_Mass, p_MassCutoffs);
+    p_GBParams(q)      = CalculateCoreMass_Luminosity_q_Static(p_Mass, p_MassCutoffs);
 
-    gbParams(p)      = CalculateCoreMass_Luminosity_p_Static(p_Mass, p_MassCutoffs);
-    gbParams(q)      = CalculateCoreMass_Luminosity_q_Static(p_Mass, p_MassCutoffs);
+    p_GBParams(Mx)     = CalculateCoreMass_Luminosity_Mx_Static(p_GBParams);        // depends on B, D, p & q - recalculate if any of those are changed
+    p_GBParams(Lx)     = CalculateCoreMass_Luminosity_Lx_Static(p_GBParams);        // depends on B, D, p, q & Mx - recalculate if any of those are changed
 
-    gbParams(Mx)     = CalculateCoreMass_Luminosity_Mx_Static(p_GBParams);      // depends on B, D, p & q - recalculate if any of those are changed
-    gbParams(Lx)     = CalculateCoreMass_Luminosity_Lx_Static(p_GBParams);      // depends on B, D, p, q & Mx - recalculate if any of those are changed
+    p_GBParams(McDU)   = CalculateCoreMassAt2ndDredgeUp_Static(p_GBParams(McBAGB));
+    p_GBParams(McBAGB) = CalculateCoreMassAtBAGB_Static(p_Mass, p_Bn);
+    p_GBParams(McBGB)  = CalculateCoreMassAtBGB_Static(p_Mass, p_MassCutoffs, p_An, p_GBParams);
 
-    gbParams(McDU)   = CalculateCoreMassAt2ndDredgeUp_Static(gbParams(McBAGB));
-    gbParams(McBAGB) = CalculateCoreMassAtBAGB_Static(p_Mass, p_BnCoefficients);
-    gbParams(McBGB)  = CalculateCoreMassAtBGB_Static(p_Mass, p_MassCutoffs, p_AnCoefficients, p_GBParams);
-
-#undef gbParams
+#undef p_GBParams
 }
 
 
@@ -412,23 +398,20 @@ void GiantBranch::PerturbLuminosityAndRadius() { }
  * Hurley et al. 2000, eq 10
  *
  *
- * double CalculateLuminosityAtPhaseBase_Static(const double p_Mass, const DBL_VECTOR &p_AnCoefficients)
+ * double CalculateLuminosityAtPhaseBase_Static(const double p_Mass, const DBL_VECTOR &p_An)
  *
  * @param   [IN]    p_Mass                      Mass in Msol
- * @param   [IN]    p_AnCoefficients            a(n) coefficients
+ * @param   [IN]    p_An                        a(n) coefficients
  * @return                                      Luminosity at the Base of the Giant Branch in Lsol
  *
- * p_AnCoefficients passed as parameter so function can be declared static
+ * p_An passed as parameter so function can be declared static
  */
-double GiantBranch::CalculateLuminosityAtPhaseBase_Static(const double p_Mass, const DBL_VECTOR &p_AnCoefficients) {
-#define a p_AnCoefficients  // for convenience and readability - undefined at end of function
+double GiantBranch::CalculateLuminosityAtPhaseBase_Static(const double p_Mass, const DBL_VECTOR &p_An) {
 
-    double top    = (a[27] * PPOW(p_Mass, a[31])) + (a[28] * PPOW(p_Mass, C_COEFF.at(2)));
-    double bottom = a[29] + (a[30] * PPOW(p_Mass, C_COEFF.at(3))) + PPOW(p_Mass, a[32]);
+    double top    = (p_An[27] * PPOW(p_Mass, p_An[31])) + (p_An[28] * PPOW(p_Mass, C_COEFF.at(2)));
+    double bottom = p_An[29] + (p_An[30] * PPOW(p_Mass, C_COEFF.at(3))) + PPOW(p_Mass, p_An[32]);
 
     return top / bottom;
-
-#undef a
 }
 
 
@@ -445,17 +428,18 @@ double GiantBranch::CalculateLuminosityAtPhaseBase_Static(const double p_Mass, c
  *                                         const double      p_MHeF,
  *                                         const double      p_MFGB,
  *                                         const double      p_MinimumLuminosityOnPhase,
- *                                         const DBL_VECTOR &p_BnCoefficients)
+ *                                         const DBL_VECTOR &p_Bn)
  *
  * @param   [IN]    p_Mass                      Mass in Msol
  * @param   [IN]    p_CoreMass                  Core Mass in Msol
  * @param   [IN]    p_Alpha1                    alpha1 in Hurly et al. 2000 (just after eq 49)
  * @param   [IN]    p_MHeF                      Maximum initial mass for which helium ignites degenerately in a Helium Flash
  * @param   [IN]    p_MFGB                      Maximum initial mass for which helium ignites on the First Giant Branch
- * @param   [IN]    p_BnCoefficients            b(n) coefficients
+ * @param   [IN]    p_MinimumLuminosityOnPhase  Minimum luminosity on phase
+ * @param   [IN]    p_Bn                        b(n) coefficients
  * @return                                      Luminosity on the Zero Age Horizontal Branch in Lsol
  *
- * p_Alpha1, p_MHeF, p_MFGB and p_BnCoefficients passed as parameters so function can be declared static
+ * p_Alpha1, p_MHeF, p_MFGB and p_Bn passed as parameters so function can be declared static
  */
 double GiantBranch::CalculateLuminosityOnZAHB_Static(const double      p_Mass,
                                                      const double      p_CoreMass,
@@ -463,21 +447,18 @@ double GiantBranch::CalculateLuminosityOnZAHB_Static(const double      p_Mass,
                                                      const double      p_MHeF,
                                                      const double      p_MFGB,
                                                      const double      p_MinimumLuminosityOnPhase,
-                                                     const DBL_VECTOR &p_BnCoefficients) {
-#define b p_BnCoefficients  // for convenience and readability - undefined at end of function
+                                                     const DBL_VECTOR &p_Bn) {
 
     double LZHe   = HeMS::CalculateLuminosityAtZAMS_Static(p_CoreMass);
     double LminHe = p_MinimumLuminosityOnPhase;
 
     double mu     = (p_Mass - p_CoreMass) / (p_MHeF - p_CoreMass);
-    double alpha2 = (b[18] + LZHe - LminHe) / (LminHe - LZHe);
+    double alpha2 = (p_Bn[18] + LZHe - LminHe) / (LminHe - LZHe);
 
     double first  = (1.0 + b[20]) / (1.0 + (b[20] * PPOW(mu, 1.6479)));
-    double second = (b[18] * PPOW(mu, b[19])) / (1.0 + alpha2 * exp(15.0 * (p_Mass - p_MHeF)));
+    double second = (p_Bn[18] * PPOW(mu, p_Bn[19])) / (1.0 + alpha2 * exp(15.0 * (p_Mass - p_MHeF)));
 
     return LZHe + (first * second);
-
-#undef b
 }
 
 
@@ -490,27 +471,23 @@ double GiantBranch::CalculateLuminosityOnZAHB_Static(const double      p_Mass,
  * double CalculateLuminosityAtHeIgnition_Static(const double      p_Mass,
  *                                               const double      p_Alpha1,
  *                                               const double      p_MHeF,
- *                                               const DBL_VECTOR &p_BnCoefficients)
+ *                                               const DBL_VECTOR &p_Bn)
  *
  * @param   [IN]    p_Mass                      Mass in Msol
  * @param   [IN]    p_Alpha1                    alpha1 in Hurley et al. 2000 (just after eq 49)
  * @param   [IN]    p_MHeF                      Maximum initial mass for which helium ignites degenerately in a Helium Flash
- * @param   [IN]    p_BnCoefficients            b(n) coefficients
+ * @param   [IN]    p_Bn                        b(n) coefficients
  * @return                                      Luminosity at Helium Ignition in Lsol
  *
- * p_Alpha1, p_MHeF and p_BnCoefficients passed as parameter so function can be declared static
+ * p_Alpha1, p_MHeF and p_Bn passed as parameter so function can be declared static
  */
 double GiantBranch::CalculateLuminosityAtHeIgnition_Static(const double      p_Mass,
                                                            const double      p_Alpha1,
                                                            const double      p_MHeF,
-                                                           const DBL_VECTOR &p_BnCoefficients) {
-#define b p_BnCoefficients  // for convenience and readability - undefined at end of function
-
+                                                           const DBL_VECTOR &p_Bn) {
     return (utils::Compare(p_Mass, p_MHeF) < 0)
-            ? (b[9] * PPOW(p_Mass, b[10])) / (1.0 + (p_Alpha1 * exp(15.0 * (p_Mass - p_MHeF))))
-            : (b[11] + (b[12] * PPOW(p_Mass, 3.8))) / (b[13] + (p_Mass * p_Mass));
-
-#undef b
+            ? (p_Bn[9] * PPOW(p_Mass, p_Bn[10])) / (1.0 + (p_Alpha1 * exp(15.0 * (p_Mass - p_MHeF))))
+            : (p_Bn[11] + (p_Bn[12] * PPOW(p_Mass, 3.8))) / (p_Bn[13] + (p_Mass * p_Mass));
 }
 
 
@@ -521,18 +498,14 @@ double GiantBranch::CalculateLuminosityAtHeIgnition_Static(const double      p_M
  * Hurley et al. 2000, just after eq 105
  *
  *
- * double CalculateRemnantLuminosity()
+ * double CalculateRemnantLuminosity() const
  *
  * @return                                      Luminosity of remnant core in Lsol
  */
 double GiantBranch::CalculateRemnantLuminosity() const {
-#define massCutoffs(x) m_MassCutoffs[static_cast<int>(MASS_CUTOFF::x)]  // for convenience and readability - undefined at end of function
-
     return (utils::Compare(m_Mass0, massCutoffs(MHeF)) > 0)
             ? HeMS::CalculateLuminosityAtZAMS_Static(m_CoreMass)
             : WhiteDwarfs::CalculateLuminosityOnPhase_Static(m_CoreMass, 0.0, m_Metallicity, WD_Baryon_Number.at(STELLAR_TYPE::HELIUM_WHITE_DWARF));
-
-#undef massCutoffs
 }
 
 
@@ -549,23 +522,19 @@ double GiantBranch::CalculateRemnantLuminosity() const {
  * Hurley et al. 2000, eq 46
  *
  *
- * double CalculateRadiusOnPhase_Static(const double p_Mass, const double p_Luminosity, const DBL_VECTOR &p_BnCoefficients)
+ * double CalculateRadiusOnPhase_Static(const double p_Mass, const double p_Luminosity, const DBL_VECTOR &p_Bn)
  *
  * @param   [IN]    p_Mass                      Mass in Msol
  * @param   [IN]    p_Luminosity                Luminosity in Lsol
- * @param   [IN]    p_BnCoefficients            b(n) coefficients
+ * @param   [IN]    p_Bn                        b(n) coefficients
  * @return                                      Radius on the First Giant Branch in Rsol
  *
- * p_BnCoefficients passed as parameter so function can be declared static
+ * p_Bn passed as parameter so function can be declared static
  */
-double GiantBranch::CalculateRadiusOnPhase_Static(const double p_Mass, const double p_Luminosity, const DBL_VECTOR &p_BnCoefficients) {
-#define b p_BnCoefficients  // for convenience and readability - undefined at end of function
+double GiantBranch::CalculateRadiusOnPhase_Static(const double p_Mass, const double p_Luminosity, const DBL_VECTOR &p_Bn) {
 
-    double A = std::min((b[4] * PPOW(p_Mass, -b[5])), (b[6] * PPOW(p_Mass, -b[7])));  // Hurley et al. 2000, just before eq 47
-
-    return A * (PPOW(p_Luminosity, b[1]) + (b[2] * PPOW(p_Luminosity, b[3])));        // Hurley et al. 2000, eq 46
-
-#undef b
+    double A = std::min((p_Bn[4] * PPOW(p_Mass, -p_Bn[5])), (bn[6] * PPOW(p_Mass, -p_Bn[7])));      // Hurley et al. 2000, just before eq 47
+    return A * (PPOW(p_Luminosity, p_Bn[1]) + (p_Bn[2] * PPOW(p_Luminosity, p_Bn[3])));             // Hurley et al. 2000, eq 46
 }
 
 
@@ -581,7 +550,7 @@ double GiantBranch::CalculateRadiusOnPhase_Static(const double p_Mass, const dou
  *                                     const double      p_MHeF,
  *                                     const double      p_MFGB,
  *                                     const double      p_MinimumLuminosityOnPhase,
- *                                     const DBL_VECTOR &p_BnCoefficients)
+ *                                     const DBL_VECTOR &p_Bn)
  *
  * @param   [IN]    p_Mass                      Mass in Msol
  * @param   [IN]    p_CoreMass                  Core Mass in Msol
@@ -589,10 +558,10 @@ double GiantBranch::CalculateRadiusOnPhase_Static(const double p_Mass, const dou
  * @param   [IN]    p_MHeF                      Maximum initial mass for which helium ignites degenerately in a Helium Flash
  * @param   [IN]    p_MFGB                      Maximum initial mass for which helium ignites don the First Giant Branch
  * @param   [IN]    p_MinimumLuminosityOnPhase  Minimum luminosity on phase (only required for CHeB stars) - calculated once per star
- * @param   [IN]    p_BnCoefficients            b(n) coefficients
+ * @param   [IN]    p_Bn                        b(n) coefficients
  * @return                                      Radius on the Zero Age Horizontal Branch in Rsol
  *
- * p_Alpha1, p_MHeF and p_BnCoefficients passed as parameters so function can be declared static
+ * p_Alpha1, p_MHeF and p_Bn passed as parameters so function can be declared static
  */
 double GiantBranch::CalculateRadiusOnZAHB_Static(const double      p_Mass,
                                                  const double      p_CoreMass,
@@ -600,19 +569,16 @@ double GiantBranch::CalculateRadiusOnZAHB_Static(const double      p_Mass,
                                                  const double      p_MHeF,
                                                  const double      p_MFGB,
                                                  const double      p_MinimumLuminosityOnPhase,
-                                                 const DBL_VECTOR &p_BnCoefficients) {
-#define b p_BnCoefficients  // for convenience and readability - undefined at end of function
+                                                 const DBL_VECTOR &p_Bn) {
 
     double RZHe  = HeMS::CalculateRadiusAtZAMS_Static(p_CoreMass);
-    double LZAHB = CalculateLuminosityOnZAHB_Static(p_Mass, p_CoreMass, p_Alpha1, p_MHeF, p_MFGB, p_MinimumLuminosityOnPhase, p_BnCoefficients);
-    double RGB   = GiantBranch::CalculateRadiusOnPhase_Static(p_Mass, LZAHB, p_BnCoefficients);
+    double LZAHB = CalculateLuminosityOnZAHB_Static(p_Mass, p_CoreMass, p_Alpha1, p_MHeF, p_MFGB, p_MinimumLuminosityOnPhase, p_Bn);
+    double RGB   = GiantBranch::CalculateRadiusOnPhase_Static(p_Mass, LZAHB, p_Bn);
 
     double mu    = (p_Mass - p_CoreMass) / (p_MHeF - p_CoreMass);
-    double f     = ((1.0 + b[21]) * PPOW(mu, b[22])) / (1.0 + b[21] * PPOW(mu, b[23]));
+    double f     = ((1.0 + p_Bn[21]) * PPOW(mu, p_Bn[22])) / (1.0 + p_Bn[21] * PPOW(mu, p_Bn[23]));
 
     return ((1.0 - f)) * RZHe + (f * RGB);
-
-#undef b
 }
 
 
@@ -622,19 +588,18 @@ double GiantBranch::CalculateRadiusOnZAHB_Static(const double      p_Mass,
  * Hurley et al. 2000, eq 50
  *
  *
- * double CalculateRadiusAtHeIgnition(const double p_Mass)
+ * double CalculateRadiusAtHeIgnition(const double p_Mass) const
  *
  * @param   [IN]    p_Mass                      Mass in Msol
  * @return                                      Radius at Helium Ignition in Rsol
  */
 double GiantBranch::CalculateRadiusAtHeIgnition(const double p_Mass) const {
-#define massCutoffs(x) m_MassCutoffs[static_cast<int>(MASS_CUTOFF::x)]  // for convenience and readability - undefined at end of function
 
     double RHeI = 0.0;                                                      // Radius at Helium Ignition
 
-    double LHeI      = CalculateLuminosityAtHeIgnition_Static(p_Mass, m_Alpha1, massCutoffs(MHeF), m_BnCoefficients);
-    double RmHe      = CHeB::CalculateMinimumRadiusOnPhase_Static(p_Mass, m_CoreMass, m_Alpha1, massCutoffs(MHeF), massCutoffs(MFGB), m_MinimumLuminosityOnPhase, m_BnCoefficients);
-    double RGB_LHeI  = CalculateRadiusOnPhase(p_Mass, LHeI);
+    double LHeI    = CalculateLuminosityAtHeIgnition_Static(p_Mass, m_Alpha1, massCutoffs(MHeF), m_BnCoefficients);
+    double RmHe    = CHeB::CalculateMinimumRadiusOnPhase_Static(p_Mass, m_CoreMass, m_Alpha1, massCutoffs(MHeF), massCutoffs(MFGB), m_MinimumLuminosityOnPhase, m_BnCoefficients);
+    double RGB_LHeI = CalculateRadiusOnPhase(p_Mass, LHeI);
 
     if (utils::Compare(p_Mass, massCutoffs(MFGB)) <= 0) {
         RHeI = RGB_LHeI;
@@ -649,8 +614,6 @@ double GiantBranch::CalculateRadiusAtHeIgnition(const double p_Mass) const {
     }
 
     return RHeI;
-
-#undef massCutoffs
 }
 
 
@@ -661,7 +624,7 @@ double GiantBranch::CalculateRadiusAtHeIgnition(const double p_Mass) const {
  * Hurley et al. 2000, just after eq 105
  *
  *
- * double CalculateRemnantRadius()
+ * double CalculateRemnantRadius() const
  *
  * @return                                      Radius of remnant core in Rsol
  */
@@ -673,20 +636,26 @@ double GiantBranch::CalculateRemnantRadius() const {
 
 
 /*
+ * CalculateRadialExtentConvectiveEnvelope
+
  * Calculate the radial extent of the convective outer envelope
  *
  * Combination of Hurley et al. 2000, end of sec. 7.2, and Hurley et al. 2002, sec. 2.3, particularly subsec. 2.3.1, eqs 39-40
  *
  *
- * double CalculateRadialExtentConvectiveEnvelope()
+ * double CalculateRadialExtentConvectiveEnvelope() const
  *
  * @return                                      Radial extent of the convective outer envelope
  */
-double GiantBranch::CalculateRadialExtentConvectiveEnvelope() const{
-    double convectiveEnvelopeMass, convectiveEnvelopeMassMax;
+double GiantBranch::CalculateRadialExtentConvectiveEnvelope() const {
+
+    double convectiveEnvelopeMass;
+    double convectiveEnvelopeMassMax;
     std::tie(convectiveEnvelopeMass, convectiveEnvelopeMassMax) = CalculateConvectiveEnvelopeMass();
-    if (utils::Compare(convectiveEnvelopeMass, 0.0) <= 0 || utils::Compare(convectiveEnvelopeMassMax, 0.0) <= 0 ) return 0.0;   // massless convective envelope has zero radial extent        
-    return std::sqrt(convectiveEnvelopeMass/convectiveEnvelopeMassMax) * (m_Radius - CalculateConvectiveCoreRadius());
+    
+    return utils::Compare(convectiveEnvelopeMass, 0.0) <= 0 || utils::Compare(convectiveEnvelopeMassMax, 0.0) > 0
+            ? CalculateRadialExtentConvectiveEnvelope
+            : 0.0;                                      // massless convective envelope has zero radial extent        
 }
 
 
@@ -703,15 +672,13 @@ double GiantBranch::CalculateRadialExtentConvectiveEnvelope() const{
  * Hurley et al. 2000, eq 66
  *
  *
- * double CalculateCoreMassAtBAGB(const double p_Mass)
+ * double CalculateCoreMassAtBAGB(const double p_Mass) const
  *
  * @param   [IN]    p_Mass                      Mass in Msol
  * @return                                      Core mass at the Base of the Asymptotic Giant Branch in Msol
  */
 double GiantBranch::CalculateCoreMassAtBAGB(const double p_Mass) const {
-#define b m_BnCoefficients  // for convenience and readability - undefined at end of function
-    return std::sqrt(std::sqrt((b[36] * PPOW(p_Mass, b[37])) + b[38]));   // sqrt() is much faster than PPOW()
-#undef b
+    return std::sqrt(std::sqrt((m_Bn[36] * PPOW(p_Mass, m_Bn[37])) + m_Bn[38]));   // sqrt() is much faster than PPOW()
 }
 
 
@@ -723,16 +690,14 @@ double GiantBranch::CalculateCoreMassAtBAGB(const double p_Mass) const {
  * Static version required by CalculateGBParams_Static()
  * 
  *
- * double CalculateCoreMassAtBAGB_Static(const double p_Mass, const DBL_VECTOR &p_BnCoefficients)
+ * double CalculateCoreMassAtBAGB_Static(const double p_Mass, const DBL_VECTOR &p_Bn)
  *
  * @param   [IN]    p_Mass                      Mass in Msol
- * @param   [IN]    p_BnCoefficients            b(n) coefficients
+ * @param   [IN]    p_Bn                        b(n) coefficients
  * @return                                      Core mass at the Base of the Asymptotic Giant Branch in Msol
  */
-double GiantBranch::CalculateCoreMassAtBAGB_Static(const double p_Mass, const DBL_VECTOR &p_BnCoefficients) {
-#define b p_BnCoefficients  // for convenience and readability - undefined at end of function
-    return std::sqrt(std::sqrt((b[36] * PPOW(p_Mass, b[37])) + b[38]));   // sqrt() is much faster than PPOW()
-#undef b
+double GiantBranch::CalculateCoreMassAtBAGB_Static(const double p_Mass, const DBL_VECTOR &p_Bn) {
+    return std::sqrt(std::sqrt((p_Bn[36] * PPOW(p_Mass, p_Bn[37])) + p_Bn[38]));   // sqrt() is much faster than PPOW()
 }
 
 
@@ -751,19 +716,14 @@ double GiantBranch::CalculateCoreMassAtBAGB_Static(const double p_Mass, const DB
  * @return                                      Core mass at the Base of the Giant Branch in Msol
  */
 double GiantBranch::CalculateCoreMassAtBGB(const double p_Mass, const DBL_VECTOR &p_GBParams) {
-#define gbParams(x) p_GBParams[static_cast<int>(GBP::x)]                // for convenience and readability - undefined at end of function
-#define massCutoffs(x) m_MassCutoffs[static_cast<int>(MASS_CUTOFF::x)]  // for convenience and readability - undefined at end of function
 
-    if (utils::Compare(p_Mass, massCutoffs(MHeF)) <= 0)     return 0.0;                                                 // No McBGB for stars with mass below the helium flash threshold, see text above Eq. (44) of Hurley+ (2000)
+    if (utils::Compare(p_Mass, massCutoffs(MHeF)) <= 0) return 0.0;                                                     // No McBGB for stars with mass below the helium flash threshold, see text above Eq. (44) of Hurley+ (2000)
     
     double luminosity = GiantBranch::CalculateLuminosityAtPhaseBase_Static(massCutoffs(MHeF), m_AnCoefficients);
     double Mc_MHeF    = BaseStar::CalculateCoreMassGivenLuminosity_Static(luminosity, p_GBParams);
     double c          = (Mc_MHeF * Mc_MHeF * Mc_MHeF * Mc_MHeF) - (MC_L_C1 * PPOW(massCutoffs(MHeF), MC_L_C2));         // pow() is slow - use multiplication
     
     return std::min((0.95 * gbParams(McBAGB)), std::sqrt(std::sqrt(c + (MC_L_C1 * PPOW(p_Mass, MC_L_C2)))));            // sqrt is much faster than PPOW()
-
-#undef massCutoffs
-#undef gbParams
 }
 
 
@@ -777,29 +737,24 @@ double GiantBranch::CalculateCoreMassAtBGB(const double p_Mass, const DBL_VECTOR
  * Static version required by CalculateGBParams_Static()
  *
  *
- * double CalculateCoreMassAtBGB_Static(const double p_Mass, const DBL_VECTOR &p_MassCutoffs, const DBL_VECTOR &p_AnCoefficients, const DBL_VECTOR &p_GBParams)
+ * double CalculateCoreMassAtBGB_Static(const double p_Mass, const DBL_VECTOR &p_MassCutoffs, const DBL_VECTOR &p_An, const DBL_VECTOR &p_GBParams)
  *
  * @param   [IN]    p_Mass                      Mass in Msol
  * @param   [IN]    p_MassCutoffs               Mass cutoffs
- * @param   [IN]    p_AnCoefficients            a(n) coefficients
+ * @param   [IN]    p_An                        a(n) coefficients
  * @param   [IN]    p_GBParams                  Giant Branch parameters
  * @return                                      Core mass at the Base of the Giant Branch in Msol
  */
 double GiantBranch::CalculateCoreMassAtBGB_Static(const double      p_Mass, 
                                                   const DBL_VECTOR &p_MassCutoffs, 
-                                                  const DBL_VECTOR &p_AnCoefficients, 
+                                                  const DBL_VECTOR &p_Ans, 
                                                   const DBL_VECTOR &p_GBParams) {
-#define gbParams(x) p_GBParams[static_cast<int>(GBP::x)]                // for convenience and readability - undefined at end of function
-#define massCutoffs(x) p_MassCutoffs[static_cast<int>(MASS_CUTOFF::x)]  // for convenience and readability - undefined at end of function
 
-    double luminosity = GiantBranch::CalculateLuminosityAtPhaseBase_Static(massCutoffs(MHeF), p_AnCoefficients);
+    double luminosity = GiantBranch::CalculateLuminosityAtPhaseBase_Static(massCutoffs(MHeF), p_An);
     double Mc_MHeF    = BaseStar::CalculateCoreMassGivenLuminosity_Static(luminosity, p_GBParams);
     double c          = (Mc_MHeF * Mc_MHeF * Mc_MHeF * Mc_MHeF) - (MC_L_C1 * PPOW(massCutoffs(MHeF), MC_L_C2));     // pow() is slow - use multiplication
 
     return std::min((0.95 * gbParams(McBAGB)), std::sqrt(std::sqrt(c + (MC_L_C1 * PPOW(p_Mass, MC_L_C2)))));        // sqrt is much faster than PPOW()
-
-#undef massCutoffs
-#undef gbParams
 }
 
 
@@ -835,7 +790,6 @@ double GiantBranch::CalculateCoreMassAtSupernova_Static(const double p_Mthreshol
  * @return                                      Core mass at Helium Ignition in Msol
  */
 double GiantBranch::CalculateCoreMassAtHeIgnition(const double p_Mass) const {
-#define massCutoffs(x) m_MassCutoffs[static_cast<int>(MASS_CUTOFF::x)]  // for convenience and readability - undefined at end of function
 
     double coreMass;
 
@@ -854,8 +808,6 @@ double GiantBranch::CalculateCoreMassAtHeIgnition(const double p_Mass) const {
     }
 
     return coreMass;
-
-#undef massCutoffs
 }
 
 
@@ -928,7 +880,7 @@ double GiantBranch::CalculateCriticalMassRatioClaeys14(const bool p_AccretorIsDe
         if (qCrit < 0.0) {                                                                                              // default value of -1 recalculates qCrit with the following function 
             double coreMassRatio   = m_HeCoreMass / m_Mass;
             double coreMassRatio_4 = coreMassRatio * coreMassRatio * coreMassRatio * coreMassRatio * coreMassRatio;
-            double x               = BaseStar::CalculateGBRadiusXExponent();                                            // x from Hurley et al 2000, Eq. 47 - Depends on composition
+            double x               = BaseStar::CalculateGBRadiusXExponent();                                            // x from Hurley et al. 2000, Eq. 47 - Depends on composition
             qCrit                  = 2.13 / ( 1.67 - x + 2.0 * coreMassRatio_4);                                        // Claeys+ 2014, Table 2
         }
     }
@@ -1115,8 +1067,6 @@ DBL_DBL GiantBranch::CalculateConvectiveEnvelopeMass() const {
  * @return                                      Lifetime to He ignition (tHeI)
  */
 double GiantBranch::CalculateLifetimeToHeIgnition(const double p_Mass, const double p_Tinf1_FGB, const double p_Tinf2_FGB) {
-#define gbParams(x) m_GBParams[static_cast<int>(GBP::x)]                // for convenience and readability - undefined at end of function
-#define massCutoffs(x) m_MassCutoffs[static_cast<int>(MASS_CUTOFF::x)]  // for convenience and readability - undefined at end of function
 
     double LHeI = CalculateLuminosityAtHeIgnition_Static(p_Mass, m_Alpha1, massCutoffs(MHeF), m_BnCoefficients);
     double p1   = gbParams(p) - 1.0;
@@ -1125,9 +1075,6 @@ double GiantBranch::CalculateLifetimeToHeIgnition(const double p_Mass, const dou
     return utils::Compare(LHeI, gbParams(Lx)) <= 0
             ? p_Tinf1_FGB - (1.0 / (p1 * gbParams(AH) * gbParams(D))) * PPOW((gbParams(D) / LHeI), (p1 / gbParams(p)))
             : p_Tinf2_FGB - (1.0 / (q1 * gbParams(AH) * gbParams(B))) * PPOW((gbParams(B) / LHeI), (q1 / gbParams(q)));
-
-#undef massCutoffs
-#undef gbParams
 }
 
 
@@ -1318,6 +1265,8 @@ double GiantBranch::CalculateRemnantMassByMaltsev2024(const double p_COCoreMass,
         delete newStar; newStar = nullptr;                                                                              // return the memory allocated for the new star
     }
 
+    if (massTransferCase == MT_CASE::NONE && HydrogenAbundanceSurface() == 0.0) massTransferCase = MT_CASE::B;			// if a star was stripped by winds, treat it as if it experienced Case B mass transfer
+        
     // apply the appropriate remnant mass prescription for the chosen MT case
     switch (massTransferCase) {                                                                                         // which MT_CASE?
 
@@ -1835,7 +1784,7 @@ double GiantBranch::CalculateFallbackByBelczynski2002(const double p_COCoreMass)
 /*
  * Calculate remnant mass
  *
- * Formula used by Hurley code not given in Hurley et al 2000 but in Belczynski et al. 2002
+ * Formula used by Hurley code not given in Hurley et al. 2000 but in Belczynski et al. 2002
  *
  *
  * double CalculateRemnantMassByBelczynski2002(const double p_Mass, const double p_COCoreMass, const double p_FallbackFraction)
