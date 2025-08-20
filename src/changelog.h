@@ -1649,8 +1649,16 @@
 //                                               - changed "--initial-mass-power" to "--initial-mass-function-power" in "program-options-list-defaults.rst"
 //  03.23.01  IM - August 18, 2025      - Enhancement, defect repair:
 //                                          - In the MALTSEV SN prescription, treat wind-stripped stars as if they experienced case B mass transfer
-//                                          - Limit the output of CalculateEtaPTY() [Helium accretion efficiency onto WDs from Piersanti+ 2014, A3] to be in [0.0, 1.0]
-//
+//                                          - Limit the output of CalculateEtaPTY() [Helium accretion efficiency onto WDs from Piersanti+ 2014, A3] to be in [0,1]
+//  03.24.00 RTW - August 18, 2025      - Enhancement:
+//                                          - Updated Maltsev SN prescription, to include Maltsev mode (extrapolation variant outside of Z bounds), 
+//                                            fallback option, fixed remnant mass, and added lum and teff as attributes of RLOFProperties
+//  03.25.00 RTW - August 18, 2025      - Enhancement:
+//                                          - Added KLENCKI_LINEAR AM loss, which is linear in the specific AM gamma instead of the orbital separation (as in MACLEOD_LINEAR)
+//  03.25.01  JR - August 20, 2025      - Defect repairs:
+//                                          - Corrected calculations for Hurley A(n) and B(n) coefficients (see Hurley et al. 2000, appendix)
+//                                          - Changed utils::GetGSLVersion() to avoid compiler warning "warning: ignoring attributes on template argument ‘int (*)(FILE*)’ [-Wignored-attributes]"
+//                                          - Reverted Makefile line "SOURCES := $(wildcard *.cpp)" to listing actual source files
 //
 // Version string format is MM.mm.rr, where
 //
@@ -1661,7 +1669,7 @@
 // if MM is incremented, set mm and rr to 00, even if defect repairs and minor enhancements were also made
 // if mm is incremented, set rr to 00, even if defect repairs were also made
 
-const std::string VERSION_STRING = "03.23.01";
+const std::string VERSION_STRING = "03.25.01";
 
 
 # endif // __changelog_h__
