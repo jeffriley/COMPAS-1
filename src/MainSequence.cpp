@@ -459,8 +459,8 @@ double MainSequence::CalculateDeltaR(const double p_Mass) const {
     double deltaR;
 
     if (utils::Compare(p_Mass, massCutoffs(MHook)) <= 0) deltaR = 0.0;   // this really is supposed to be 0
-    else if (utils::Compare(p_Mass, an[42])         <= 0) deltaR = an[43] * std::sqrt((p_Mass - massCutoffs(MHook)) / (an[42] - massCutoffs(MHook)));
-    else if (utils::Compare(p_Mass, 2.0)            < 0) deltaR = an[43] + ((m_RConstants[static_cast<int>(R_CONSTANTS::B_DELTA_R)] - an[43]) * PPOW(((p_Mass - an[42]) / (2.0 - an[42])), an[44]));
+    else if (utils::Compare(p_Mass, an[42])        <= 0) deltaR = an[43] * std::sqrt((p_Mass - massCutoffs(MHook)) / (an[42] - massCutoffs(MHook)));
+    else if (utils::Compare(p_Mass, 2.0)           <  0) deltaR = an[43] + ((m_RConstants[static_cast<int>(R_CONSTANTS::B_DELTA_R)] - an[43]) * PPOW(((p_Mass - an[42]) / (2.0 - an[42])), an[44]));
     else {
         // pow() is slow - use multiplication (sqrt() is faster than pow())
         double top    = an[38] + (an[39] * p_Mass * p_Mass * p_Mass * std::sqrt(p_Mass));

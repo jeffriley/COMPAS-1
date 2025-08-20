@@ -1116,48 +1116,7 @@ double BaseStar::CalculateCriticalMassRatio(const bool p_AccretorIsDegenerate, c
 }
 
 
-///////////////////////////////////////////////////////////////////////////////////////
-//                                                                                   //
-//                              LUMINOSITY CALCULATIONS                              //
-//                                                                                   //
-///////////////////////////////////////////////////////////////////////////////////////
 
-
-/*
- * CalculateLuminosityAtZAMS
-  *
- * Calculate luminosity at ZAMS (in Lsol)
- * Tout et al. 1996, eq 1
- *
- *
- * double CalculateLuminosityAtZAMS(const double p_MZAMS) const
- *
- * @param   [IN]    p_MZAMS                     Zero age main sequence mass in Msol
- * @return                                      Luminosity in Lsol (LZAMS)
- */
-double BaseStar::CalculateLuminosityAtZAMS(const double p_MZAMS) const {
-
-#define coeff(x) m_LCoefficients[static_cast<int>(L_Coeff::x)]   // for convenience and readability - undefined at end of function
-
-    // pow() is slow - use multiplication where it makes sense
-    // sqrt() is much faster than pow()
-    double m_0_5  = std::sqrt(p_MZAMS);
-    double m_2    = p_MZAMS * p_MZAMS;
-    double m_3    = m_2 * p_MZAMS;
-    double m_5    = m_3 * m_2;
-    double m_5_5  = m_5 * m_0_5;
-    double m_7    = m_5 * m_2;
-    double m_8    = m_7 * p_MZAMS;
-    double m_9_5  = m_8 * p_MZAMS * m_0_5;
-    double m_11   = m_8 * m_3;
-
-    double top    = (coeff(ALPHA) * m_5_5) + (coeff(BETA) * m_11);
-    double bottom = (coeff(GAMMA) + m_3) + (coeff(DELTA) * m_5) + (coeff(EPSILON) * m_7) + (coeff(ZETA) * m_8) + (coeff(ETA) * m_9_5);
-
-    return top / bottom;
-
-#undef coeff
-}
 
 
 /*

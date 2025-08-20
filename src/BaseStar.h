@@ -279,8 +279,7 @@ public:
     
     double                      CalculateEddyTurnoverTimescale() const;
     
-    double                      CalculateInitialHeliumAbundance() const                                         { return 0.24 + 2.0 * m_Metallicity; }                              // Pols et al. 1998
-    double                      CalculateInitialHydrogenAbundance() const                                       { return 0.76 - 3.0 * m_Metallicity; }                              // Pols et al. 1998
+
     
     virtual DBL_DBL_DBL_DBL     CalculateImKnmDynamical(const double p_Omega, const double p_SemiMajorAxis, const double p_M2) const;
     virtual DBL_DBL_DBL_DBL     CalculateImKnmEquilibrium(const double p_Omega, const double p_SemiMajorAxis, const double p_M2) const ;
