@@ -63,12 +63,12 @@ private:
    
         DBL_VECTOR  aCoefficients;          // Hurley et al. 2000 a(n) coefficients
         DBL_VECTOR  bCoefficients;          // Hurley et al. 2000 b(n) coefficients
-        DBL_VECTOR  lCoefficients;          // Hurley et al. 2000 luminosity coefficients
-        DBL_VECTOR  rCoefficients;          // Hurley et al. 2000 radius coefficients
+        DBL_VECTOR  luminosityCoefficients;          // Hurley et al. 2000 luminosity coefficients
+        DBL_VECTOR  radiusCoefficients;          // Hurley et al. 2000 radius coefficients
     
-        DBL_VECTOR  gConstants;             // Hurley et al. 2000 gamma constants
-        DBL_VECTOR  lConstants;             // Hurley et al. 2000 luminosity constants
-        DBL_VECTOR  rConstants;             // Hurley et al. 2000 radius constants
+        DBL_VECTOR  gammaConstants;             // Hurley et al. 2000 gamma constants
+        DBL_VECTOR  luminosityConstants;             // Hurley et al. 2000 luminosity constants
+        DBL_VECTOR  radiusConstants;             // Hurley et al. 2000 radius constants
 
         DBL_VECTOR  massCutoffs;            // Hurley et al. 2000 mass cutoffs
 
