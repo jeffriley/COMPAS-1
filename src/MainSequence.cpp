@@ -228,8 +228,8 @@ double MainSequence::CalculateGamma(const double p_Mass) const {
 
          if (utils::Compare(p_Mass,  1.0)           <= 0) gamma = an[76] + (an[77] * PPOW(p_Mass - an[78], an[79]));
     else if (utils::Compare(p_Mass,  an[75])        <= 0) gamma = B_GAMMA + (an[80] - B_GAMMA) * PPOW((p_Mass - 1.0) / (an[75] - 1.0), an[81]);
-    else if (utils::Compare(p_Mass, (an[75] + 0.1)) <= 0) gamma = C_GAMMA - (10.0 * (p_Mass - an[75]) * C_GAMMA);   // according to legacy code, the end point is wrong in the arxiv version of Hurley et al. 2000 (should be 0.1) - confirmed in BSE Fortran code
-    else                                                  gamma = 0.0;                                              // this really is zero according to the legacy code - confirmed in BSE Fortran code
+    else if (utils::Compare(p_Mass, (an[75] + 0.1)) <= 0) gamma = C_GAMMA - (10.0 * (p_Mass - an[75]) * C_GAMMA);   // see discussion just prior to eq 23 - the end point is wrong in the arxiv version of Hurley et al. 2000 (should be 0.1, not 1.0) - confirmed in BSE Fortran code
+    else                                                  gamma = 0.0;                                              // see discussion just prior to eq 23 - confirmed in BSE Fortran code
 
     return std::max(0.0, gamma);                                                                                    // see discussion following eq 23 - confirmed in BSE Fortran code
 
