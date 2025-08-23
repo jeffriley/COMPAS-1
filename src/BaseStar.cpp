@@ -564,8 +564,8 @@ void BaseStar::CalculateAnCoefficients(DBL_VECTOR &p_An, DBL_VECTOR &p_LConstant
     p_RConstants(C_BETA_R)    = (p_An[69] * 16384.0) / (p_An[70] + PPOW(16.0, p_An[71]));                                           // Hurley et al. 2000, eq 22a
     p_RConstants(B_DELTA_R)   = (p_An[38] + p_An[39] * 8.0 * M_SQRT2) / (p_An[40] * 8.0 + PPOW(2.0, p_An[41])) - 1.0;               // Hurley et al. 2000, eq 17
 
-    p_GammaConstants(B_GAMMA) = p_An[76] + (p_An[77] * PPOW((1.0 - p_An[78]), p_An[79]));                                           // Hurley et al. 2000, eq 23
-    p_GammaConstants(C_GAMMA) = (utils::Compare(p_An[75], 1.0) == 0) ? p_GammaConstants(B_GAMMA) : p_An[80];                        // Hurley et al. 2000, eq 23
+    p_GammaConstants(B_GAMMA) = max(0.0, p_An[76] + (p_An[77] * PPOW((1.0 - p_An[78]), p_An[79])));                                 // Hurley et al. 2000, eq 23 and discussion immediately following - max() confirmed in BSE Fortran code
+    p_GammaConstants(C_GAMMA) = (utils::Compare(p_An[75], 1.0) <= 0) ? p_GammaConstants(B_GAMMA) : p_An[80];                        // Hurley et al. 2000, eq 23 and discussion immediately following - <= 1.0 confirmed in BSE Fortran code
 
 #undef GammaConstants
 #undef RConstants
