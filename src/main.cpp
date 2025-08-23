@@ -880,6 +880,8 @@ int main(int argc, char * argv[]) {
 
             InitialiseProfiling;                                                                    // initialise profiling functionality
 
+            GLOBALS->Initialise();                                                                  // initialise the globals functionality
+
             int objectsRequested = 0;                                                               // for logging
             int objectsCreated   = 0;                                                               // for logging
 
@@ -898,7 +900,7 @@ int main(int argc, char * argv[]) {
             (void)utils::SplashScreen();                                                            // announce ourselves
 
             if (!LOGGING->Enabled()) programStatus = PROGRAM_STATUS::LOGGING_FAILED;                // logging failed to start
-            else {   
+            else {                                                                                  // logging started ok
 
                 if (!OPTIONS->GridFilename().empty()) {                                             // have grid filename?
                     ERROR error = OPTIONS->OpenGridFile(OPTIONS->GridFilename());                   // yes - open grid file

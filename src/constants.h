@@ -513,90 +513,64 @@ const COMPASUnorderedMap<STELLAR_TYPE, double> WD_Baryon_Number = {
     {STELLAR_TYPE::OXYGEN_NEON_WHITE_DWARF,   17.0}
 };
 
-// symbolic names for term coefficients for Hurley L (luminosity) and R (radius) coefficients from Tout et al. 1996
-enum class HURLEY_LR_TCoeff: int { a, b, c, d, e };
-#define A HURLEY_LR_TCoeff::a
-#define B HURLEY_LR_TCoeff::b
-#define C HURLEY_LR_TCoeff::c
-#define D HURLEY_LR_TCoeff::d
-#define E HURLEY_LR_TCoeff::e
+// symbolic names for term coefficients for L (luminosity) and R (radius) coefficients from Tout et al. 1996, table 1
+enum class TOUT_LR_TCoeff: int { a, b, c, d, e };
 
-// symbolic names for Hurley L (luminosity) coefficients (from Tout et al. 1996)
-enum class HURLEY_L_Coeff: int { ALPHA, BETA, GAMMA, DELTA, EPSILON, ZETA, ETA };
-#define ALPHA   HURLEY_L_Coeff::ALPHA
-#define BETA    HURLEY_L_Coeff::BETA
-#define GAMMA   HURLEY_L_Coeff::GAMMA
-#define DELTA   HURLEY_L_Coeff::DELTA
-#define EPSILON HURLEY_L_Coeff::EPSILON
-#define ZETA    HURLEY_L_Coeff::ZETA
-#define ETA     HURLEY_L_Coeff::ETA
+// symbolic names for L (luminosity) coefficients from Tout et al. 1996, table 1
+enum class TOUT_L_Coeff: int { ALPHA, BETA, GAMMA, DELTA, EPSILON, ZETA, ETA };
 
-// Hurley L (luminosity) coefficients
-// Values from table 1 in Tout et al. 1996
-// Key to map is HURLEY_L_Coeff.  Map element is unordered_map of term coefficient values.
-const std::map<HURLEY_L_Coeff, COMPASUnorderedMap<HURLEY_LR_TCoeff, double>> HURLEY_L_COEFF = {
-    {HURLEY_L_Coeff::ALPHA,   {{a, 0.39704170}, {b,  -0.32913574}, {c,  0.34776688}, {d,  0.37470851}, {e, 0.09011915}}},
-    {HURLEY_L_Coeff::BETA,    {{a, 8.52762600}, {b, -24.41225973}, {c, 56.43597107}, {d, 37.06152575}, {e, 5.45624060}}},
-    {HURLEY_L_Coeff::GAMMA,   {{a, 0.00025546}, {b,  -0.00123461}, {c, -0.00023246}, {d,  0.00045519}, {e, 0.00016176}}},
-    {HURLEY_L_Coeff::DELTA,   {{a, 5.43288900}, {b,  -8.62157806}, {c, 13.44202049}, {d, 14.51584135}, {e, 3.39793084}}},
-    {HURLEY_L_Coeff::EPSILON, {{a, 5.56357900}, {b, -10.32345224}, {c, 19.44322980}, {d, 18.97361347}, {e, 4.16903097}}},
-    {HURLEY_L_Coeff::ZETA,    {{a, 0.78866060}, {b,  -2.90870942}, {c,  6.54713531}, {d,  4.05606657}, {e, 0.53287322}}},
-    {HURLEY_L_Coeff::ETA,     {{a, 0.00586685}, {b,  -0.01704237}, {c,  0.03872348}, {d,  0.02570041}, {e, 0.00383376}}}
+// L (luminosity) coefficients from Tout et al. 1996, table 1
+// Key to map is TOUT_L_Coeff.  Map element is unordered_map of term coefficient values.
+#define a TOUT_LR_TCoeff::a
+#define b TOUT_LR_TCoeff::b
+#define c TOUT_LR_TCoeff::c
+#define d TOUT_LR_TCoeff::d
+#define e TOUT_LR_TCoeff::e
+const std::map<TOUT_L_Coeff, COMPASUnorderedMap<TOUT_LR_TCoeff, double>> TOUT_L_COEFF = {
+    {TOUT_L_Coeff::ALPHA,   {{a, 0.39704170}, {b,  -0.32913574}, {c,  0.34776688}, {d,  0.37470851}, {e, 0.09011915}}},
+    {TOUT_L_Coeff::BETA,    {{a, 8.52762600}, {b, -24.41225973}, {c, 56.43597107}, {d, 37.06152575}, {e, 5.45624060}}},
+    {TOUT_L_Coeff::GAMMA,   {{a, 0.00025546}, {b,  -0.00123461}, {c, -0.00023246}, {d,  0.00045519}, {e, 0.00016176}}},
+    {TOUT_L_Coeff::DELTA,   {{a, 5.43288900}, {b,  -8.62157806}, {c, 13.44202049}, {d, 14.51584135}, {e, 3.39793084}}},
+    {TOUT_L_Coeff::EPSILON, {{a, 5.56357900}, {b, -10.32345224}, {c, 19.44322980}, {d, 18.97361347}, {e, 4.16903097}}},
+    {TOUT_L_Coeff::ZETA,    {{a, 0.78866060}, {b,  -2.90870942}, {c,  6.54713531}, {d,  4.05606657}, {e, 0.53287322}}},
+    {TOUT_L_Coeff::ETA,     {{a, 0.00586685}, {b,  -0.01704237}, {c,  0.03872348}, {d,  0.02570041}, {e, 0.00383376}}}
 };
+#undef e
+#undef d
+#undef c
+#undef b
+#undef a
 
-#undef ALPHA
-#undef BETA
-#undef GAMMA
-#undef DELTA
-#undef EPSILON
-#undef ZETA
-#undef ETA
+// symbolic names for R (radius) coefficients from Tout et al. 1996, table 2
+enum class TOUT_R_Coeff: int { THETA, IOTA, KAPPA, LAMBDA, MU, NU, XI, OMICRON, PI };
 
-// symbolic names for Hurley R (radius) coefficients from Tout et al. 1996
-enum class HURLEY_R_Coeff: int { THETA, IOTA, KAPPA, LAMBDA, MU, NU, XI, OMICRON, PI };
-#define THETA   HURLEY_R_Coeff::THETA
-#define IOTA    HURLEY_R_Coeff::IOTA
-#define KAPPA   HURLEY_R_Coeff::KAPPA
-#define LAMBDA  HURLEY_R_Coeff::LAMBDA
-#define MU      HURLEY_R_Coeff::MU
-#define NU      HURLEY_R_Coeff::NU
-#define XI      HURLEY_R_Coeff::XI
-#define OMICRON HURLEY_R_Coeff::OMICRON
-#define Pi      HURLEY_R_Coeff::PI
-
-// Hurley R (radius) coefficients
-// Values given in table 2 in Tout et al. 1996
-// Key to map is HURLEY_R_Coeff.  Map element is unordered_map of term coefficient values.
-const std::map<HURLEY_R_Coeff, COMPASUnorderedMap<HURLEY_LR_TCoeff, double>> HURLEY_R_COEFF = {
-    {HURLEY_R_Coeff::THETA,   {{a,  1.71535900}, {b,  0.62246212}, {c,  -0.92557761}, {d,  -1.16996966}, {e, -0.30631491}}},
-    {HURLEY_R_Coeff::IOTA,    {{a,  6.59778800}, {b, -0.42450044}, {c, -12.13339427}, {d, -10.73509484}, {e, -2.51487077}}},
-    {HURLEY_R_Coeff::KAPPA,   {{a, 10.08855000}, {b, -7.11727086}, {c, -31.67119479}, {d, -24.24848322}, {e, -5.33608972}}},
-    {HURLEY_R_Coeff::LAMBDA,  {{a,  1.01249500}, {b,  0.32699690}, {c,  -0.00923418}, {d,  -0.03876858}, {e, -0.00412750}}},
-    {HURLEY_R_Coeff::MU,      {{a,  0.07490166}, {b,  0.02410413}, {c,   0.07233664}, {d,   0.03040467}, {e,  0.00197741}}},
-    {HURLEY_R_Coeff::NU,      {{a,  0.01077422}, {b,  0.00000000}, {c,   0.00000000}, {d,   0.00000000}, {e,  0.00000000}}},
-    {HURLEY_R_Coeff::XI,      {{a,  3.08223400}, {b,  0.94472050}, {c,  -2.15200882}, {d,  -2.49219496}, {e, -0.63848738}}},
-    {HURLEY_R_Coeff::OMICRON, {{a, 17.84778000}, {b, -7.45345690}, {c, -48.96066856}, {d, -40.05386135}, {e, -9.09331816}}},
-    {HURLEY_R_Coeff::Pi,      {{a,  0.00022582}, {b, -0.00186899}, {c,   0.00388783}, {d,   0.00142402}, {e, -0.00007671}}}
+// R (radius) coefficients from Tout et al. 1996, table 2
+// Key to map is TOUT_R_Coeff.  Map element is unordered_map of term coefficient values.
+#define a TOUT_LR_TCoeff::a
+#define b TOUT_LR_TCoeff::b
+#define c TOUT_LR_TCoeff::c
+#define d TOUT_LR_TCoeff::d
+#define e TOUT_LR_TCoeff::e
+const std::map<TOUT_R_Coeff, COMPASUnorderedMap<TOUT_LR_TCoeff, double>> TOUT_R_COEFF = {
+    {TOUT_R_Coeff::THETA,   {{a,  1.71535900}, {b,  0.62246212}, {c,  -0.92557761}, {d,  -1.16996966}, {e, -0.30631491}}},
+    {TOUT_R_Coeff::IOTA,    {{a,  6.59778800}, {b, -0.42450044}, {c, -12.13339427}, {d, -10.73509484}, {e, -2.51487077}}},
+    {TOUT_R_Coeff::KAPPA,   {{a, 10.08855000}, {b, -7.11727086}, {c, -31.67119479}, {d, -24.24848322}, {e, -5.33608972}}},
+    {TOUT_R_Coeff::LAMBDA,  {{a,  1.01249500}, {b,  0.32699690}, {c,  -0.00923418}, {d,  -0.03876858}, {e, -0.00412750}}},
+    {TOUT_R_Coeff::MU,      {{a,  0.07490166}, {b,  0.02410413}, {c,   0.07233664}, {d,   0.03040467}, {e,  0.00197741}}},
+    {TOUT_R_Coeff::NU,      {{a,  0.01077422}, {b,  0.00000000}, {c,   0.00000000}, {d,   0.00000000}, {e,  0.00000000}}},
+    {TOUT_R_Coeff::XI,      {{a,  3.08223400}, {b,  0.94472050}, {c,  -2.15200882}, {d,  -2.49219496}, {e, -0.63848738}}},
+    {TOUT_R_Coeff::OMICRON, {{a, 17.84778000}, {b, -7.45345690}, {c, -48.96066856}, {d, -40.05386135}, {e, -9.09331816}}},
+    {TOUT_R_Coeff::Pi,      {{a,  0.00022582}, {b, -0.00186899}, {c,   0.00388783}, {d,   0.00142402}, {e, -0.00007671}}}
 };
-
-#undef THETA
-#undef IOTA
-#undef KAPPA
-#undef LAMBDA
-#undef MU
-#undef NU
-#undef XI
-#undef OMICRON
-#undef Pi
-
-#undef A
-#undef B
-#undef C
-#undef D
-#undef E
+#undef e
+#undef d
+#undef c
+#undef b
+#undef a
 
 // symbolic names for term coefficients for Hurley A & B coefficients from Hurley et al. 2000
 enum class HURLEY_AB_TCoeff: int { ALPHA, BETA, GAMMA, ETA, MU };
+
 #define ALPHA HURLEY_AB_TCoeff::ALPHA
 #define BETA  HURLEY_AB_TCoeff::BETA
 #define GAMMA HURLEY_AB_TCoeff::GAMMA
@@ -768,11 +742,11 @@ const std::map<int, COMPASUnorderedMap<HURLEY_AB_TCoeff, double>> HURLEY_B_COEFF
     {57, {{ALPHA, -1.584333E-1}, {BETA, -1.728865E-1}, {GAMMA, -4.461431E-1}, {ETA, -3.925259E-1}, {MU, -1.276203E-1}}}
 };
 
-#undef ALPHA
-#undef BETA
-#undef GAMMA
-#undef ETA
 #undef MU
+#undef ETA
+#undef GAMMA
+#undef BETA
+#undef ALPHA
 
 // Hurley C coefficients
 // Values given in Hurley et al. 2000, p6, sec 5.1

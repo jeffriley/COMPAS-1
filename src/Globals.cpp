@@ -16,6 +16,62 @@ Globals* Globals::m_Instance = nullptr;
 ///////////////////////////////////////////////////////////////////////////////////////
 
 
+
+
+// ADMIN-ish
+
+
+void Initialise() {
+
+    // options are already initialised here
+
+
+    // regardles of evolution maode (SSE or BSE), we will need to record details
+    // for at east one star
+    StarDetails* m_Star1 = new StarDetails;                 // star 1
+
+    // assumption: metallicity is same for both stars in a binary.  The code here could easily be changed to have metallicity different for each star, but COMPAS options currently don't allow that, so for now we use that as a simplification.
+
+    m_RefZ                   = OPTIONS->Metallicity();                                                      // reference metallicity
+
+    m_ZAMSheliumAbundance    = CalculateZAMSHeliumAbundance_Pols_1998(m_RefZ);                              // ZAMS helium abundance
+    m_ZAMShydrogenAbundance  = CalculateZAMSHydrogenAbundance_Pols_1998(m_RefZ);                            // ZAMS hydrogen abundance
+
+    m_HurleyZdependentValues = CalculateHurleyZdependentValues(m_RefZ, m_HurleyZdependentValues);           // Hurley Z-dependent values
+
+    m_LuminosityCoefficients = CalculateLuminosityCoefficients_Tout_1996(m_HurleyZdependentValues.zeta);
+    m_RadiusCoefficients     = CalculateRadiusCoefficients_Tout_1996(m_HurleyZdependentValues.zeta);
+
+
+
+    // Calculates the Baryonic mass for which the gravitational remnant mass will be equal to the maximum Neutron Star mass (inverse of SolveQuadratic())
+    // needed to decide whether to calculate Fryer+2012 for Neutron Star or Black Hole in GiantBranch::CalculateGravitationalRemnantMass()
+    // calculate only once for entire simulation of N binaries in the future.
+    m_BaryonicMassOfMaxNSMass = (0.075 * OPTIONS->MaximumNeutronStarMass() * OPTIONS->MaximumNeutronStarMass()) + OPTIONS->MaximumNeutronStarMass();
+
+
+    // first, determine what mode the user requested
+    EVOLUTION_MODE evolutionMode = OPTIONS->EvolutionMode();
+    
+    if (evolutionMode == EVOLUTION_MODE::BSE_HURLEY) {      // binary mode?
+                                                            // yes
+        StarDetails* m_Star2 = new StarDetails;             // star 2
+
+        // star 2 z-dependent values are the same as star 1
+        m_Star2->refZ = m_Star1->refZ;
+
+        m_Star2->ZAMSheliumAbundance   = m_Star1->ZAMSheliumAbundance;
+        m_Star2->ZAMShydrogenAbundance = m_Star1->ZAMShydrogenAbundance;
+            
+    }
+
+
+}
+
+
+
+
+
 ///////////////////////////////////////////////////////////////////////////////////////
 //                                                                                   //
 //                 (RE)CALCULATE HURLEY METALLICITY-DEPENDENT VALUES                 //
@@ -41,14 +97,14 @@ Globals* Globals::m_Instance = nullptr;
  * The a(n) values are from table in Appendix A of Hurley et al. 2000.
  * 
  * 
- * DBL_VECTOR CalculateHurleyACoefficients(const double p_RefZ, const double p_Sigma, const double p_Zeta) const
+ * DBL_VECTOR CalculateHurleyACoefficients(const double p_Z, const double p_Sigma, const double p_Zeta) const
  * 
- * @param       p_RefZ                          Reference metallicity used to calculate a(n) coefficients
+ * @param       p_Z                             Metallicity
  * @param       p_Sigma                         Sigma from Hurley et al. 2000 sigma, p24
  * @param       p_Zeta                          Zeta from Hurley et al. 2000, p5, just before eq 1
  * @return                                      a(n) coefficients vector
  */
-DBL_VECTOR Globals::CalculateHurleyACoefficients(const double p_RefZ, const double p_Sigma, const double p_Zeta) const {
+DBL_VECTOR Globals::CalculateHurleyACoefficients(const double p_Z, const double p_Sigma, const double p_Zeta) const {
 // macros for convenience and readability - undefined at end of function
 #define index    coeff.first
 #define coeff(x) coeff.second[AB_TCoeff::x]
@@ -56,7 +112,7 @@ DBL_VECTOR Globals::CalculateHurleyACoefficients(const double p_RefZ, const doub
     // create and inialise a(n) coefficients vector - this is the return value
     DBL_VECTOR a(HURLEY_A_COEFF.size() + 1, DEFAULT_INITIAL_DOUBLE_VALUE);
 
-    // calculate some powers of zeta
+    // calculate some powers of zeta - for performance and readability
     // this function is only called once per star, and at most twice per binary (but probably once), so not too onerous
     const double zeta2 = p_Zeta * p_Zeta;
     const double zeta3 = p_Zeta * zeta2;
@@ -82,15 +138,15 @@ DBL_VECTOR Globals::CalculateHurleyACoefficients(const double p_RefZ, const doub
     a[50]  = min(a[50], (0.306 + (0.053 * p_Zeta)));
     a[51]  = min(a[51], (0.3625 + (0.062 * p_Zeta)));
     a[52]  = max(a[52], 0.9);;
-    a[52]  = p_RefZ > 0.01 ? min(a[52], 1.0) : a[52];
+    a[52]  = p_Z > 0.01 ? min(a[52], 1.0) : a[52];
     a[53]  = max(a[53], 1.0);
-    a[53]  = p_RefZ > 0.01 ? min(a[53], 1.1) : a[53];
+    a[53]  = p_Z > 0.01 ? min(a[53], 1.1) : a[53];
     a[57]  = max((0.6355 - (0.4192 * p_Zeta)), max(1.25, min(1.4, a[57])));
     a[62]  = max(0.065, a[62]);
-    a[63]  = p_RefZ < 0.004 ? min(0.055, a[63]) : a[63];
+    a[63]  = p_Z < 0.004 ? min(0.055, a[63]) : a[63];
     a[66]  = max(0.8, min(0.8 - (2.0 * p_Zeta), max(a[66], min(1.6, -0.308 - (1.046 * p_Zeta)))));
     a[68]  = max(0.9, min(a[68], 1.0));
-    a[72]  = p_RefZ > 0.01 ? max(a[72], 0.95) : a[72];
+    a[72]  = p_Z > 0.01 ? max(a[72], 0.95) : a[72];
     a[74]  = max(1.4, min(a[74], 1.6));
     a[75]  = max(1.0, min(a[75], 1.27));
     a[75]  = max(a[75], 0.6355 - (0.4192 * p_Zeta));
@@ -128,16 +184,16 @@ DBL_VECTOR Globals::CalculateHurleyACoefficients(const double p_RefZ, const doub
  * Values are from table in Appendix A of Hurley et al. 2000
  *
  *
- * DBL_VECTOR CalculateHurleyBCoefficients(const double p_RefZ, const double p_Sigma, const double p_Zeta, const double p_Rho, const DBL_VECTOR &p_MassCutoffs) const
+ * DBL_VECTOR CalculateHurleyBCoefficients(const double p_Z, const double p_Sigma, const double p_Zeta, const double p_Rho, const DBL_VECTOR& p_MassCutoffs) const
  * 
- * @param       p_RefZ                          Reference metallicity used to calculate b(n) coefficients
+ * @param       p_Z                             Metallicity
  * @param       p_Sigma                         Sigma from Hurley et al. 2000 sigma, p24
  * @param       p_Zeta                          Zeta from Hurley et al. 2000, p5, just before eq 1
  * @param       p_Rho                           Rho from Hurley et al. 2000 sigma, p24
  * @param       p_MassCutoffs                   Hurley mass cutoffs vector
  * @return                                      b(n) coefficients vector
  */
-DBL_VECTOR Globals::CalculateHurleyBCoefficients(const double p_RefZ, const double p_Sigma, const double p_Zeta, const double p_Rho, const DBL_VECTOR &p_MassCutoffs) const {
+DBL_VECTOR Globals::CalculateHurleyBCoefficients(const double p_Z, const double p_Sigma, const double p_Zeta, const double p_Rho, const DBL_VECTOR& p_MassCutoffs) const {
 // macros for convenience and readability - undefined at end of function
 #define index    coeff.first
 #define coeff(x) coeff.second[AB_TCoeff::x]
@@ -145,7 +201,7 @@ DBL_VECTOR Globals::CalculateHurleyBCoefficients(const double p_RefZ, const doub
     // create and inialise b(n) coefficients vector - this is the return value
     DBL_VECTOR b(HURLEY_B_COEFF.size() + 1, DEFAULT_INITIAL_DOUBLE_VALUE);
 
-    // calculate some powers of zeta and rho
+    // calculate some powers of zeta and rho - for performance and readability
     // this function is only called once per star, and at most twice per binary (but probably once), so not too onerous
     const double zeta2 = p_Zeta * p_Zeta;
     const double zeta3 = p_Zeta * zeta2;
@@ -162,9 +218,9 @@ DBL_VECTOR Globals::CalculateHurleyBCoefficients(const double p_RefZ, const doub
 
     // special cases - see Hurley et al. 2000
     b[ 1]  = min(0.54, b[1]);
-    b[ 2]  = min(max(PPOW(10.0, (-4.6739 - (0.9394 * p_Sigma))), (-0.04167 + (55.67 * p_RefZ))), (0.4771 - (9329.21 * PPOW(p_RefZ, 2.94))));
+    b[ 2]  = min(max(PPOW(10.0, (-4.6739 - (0.9394 * p_Sigma))), (-0.04167 + (55.67 * p_Z))), (0.4771 - (9329.21 * PPOW(p_Z, 2.94))));
     b[ 3]  = PPOW(10.0, max(-0.1451, (-2.2794 - (1.5175 * p_Sigma) - (0.254 * p_Sigma * p_Sigma))));
-    b[ 3]  = p_RefZ > 0.004 ? max(b[3], 0.7307 + (14265.1 * PPOW(p_RefZ, 3.395))) : b[3];
+    b[ 3]  = p_Z > 0.004 ? max(b[3], 0.7307 + (14265.1 * PPOW(p_Z, 3.395))) : b[3];
     b[ 4] += 0.1231572 * zeta5;
     b[ 6] += 0.01640687 * zeta5;
     b[11] *= b[11];
@@ -173,7 +229,7 @@ DBL_VECTOR Globals::CalculateHurleyBCoefficients(const double p_RefZ, const doub
     b[16]  = PPOW(b[16], b[15]);
     b[17]  = xi > -1.0 ? 1.0 - (0.3880523 * PPOW(p_Rho, 2.862149)) : 1.0;
     b[24]  = PPOW(b[24], b[28]);
-    b[26]  = 5.0 - (0.09138012 * PPOW(p_RefZ, -0.3671407));
+    b[26]  = 5.0 - (0.09138012 * PPOW(p_Z, -0.3671407));
     b[27]  = PPOW(b[27], (2.0 * b[28]));
     b[31]  = PPOW(b[31], b[33]);
     b[34]  = PPOW(b[34], b[33]);
@@ -188,102 +244,12 @@ DBL_VECTOR Globals::CalculateHurleyBCoefficients(const double p_RefZ, const doub
     b[47]  = (1.127733 * p_Rho) + (0.2344416 * rho2) - (0.3793726 * rho3);
     b[51] -= 0.1343798 * zeta5;
     b[53] += 0.4426929 * zeta5;
-    b[55]  = min((0.99164 - (743.123 * PPOW(p_RefZ, 2.83))), b[55]);
+    b[55]  = min((0.99164 - (743.123 * PPOW(p_Z, 2.83))), b[55]);
     b[56] += 0.1140142 * zeta5;
     b[57] -= 0.01308728 * zeta5;
 
     // return the b(n) coefficients vector by value - NRVO takes care of performance/efficiency
     return b;
-
-#undef coeff
-#undef index
-}
-    
-    
-/*
- * CalculateHurleyLuminosityCoefficients
- *
- * @brief
- * Calculate Hurley et al. 2000 alpha-like luminosity coefficients
- *
- * Luminosity coefficients depend on the star's metallicity only - so this only needs to be done at most
- * once per star (upon creation), but can also be reused if metallicity doesn't change from one star to
- * the next (e.g. in a population run).
- *
- * Values are from table 1 in Tout et al. 1996
- *
- * DBL_VECTOR CalculateHurleyLuminosityCoefficients(const double p_Zeta) const
- * 
- * @param       p_Zeta                          Zeta from Hurley et al. 2000, p5, just before eq 1
- * @return                                      Luminosity coefficients vector
- */
- DBL_VECTOR Globals::CalculateHurleyLuminosityCoefficients(const double p_Zeta) const {
-// macros for convenience and readability - undefined at end of function
-#define index    static_cast<int>(coeff.first)
-#define coeff(x) coeff.second[LR_TCoeff::x]
-    
-    // create and inialise luminosity coefficients vector - this is the return value
-    DBL_VECTOR lCoeffs(HURLEY_L_COEFF.size(), DEFAULT_INITIAL_DOUBLE_VALUE);
-
-    // calculate some powers of zeta
-    // this function is only called once per star, and at most twice per binary (but probably once), so not too onerous
-    const double zeta2 = p_Zeta * p_Zeta;
-    const double zeta3 = p_Zeta * zeta2;
-    const double zeta4 = p_Zeta * zeta3;
-
-    // populate luminosity coefficients vector
-    // iterate over luminosity coefficients constants HURLEY_L_COEFF (see constants.h)
-    // each row is indexed by the HURLEY_L_Coeff keys 'ALPHA', 'BETA', 'GAMMA', 'DELTA', 'EPSILON', 'ZETA', 'ETA',
-    // and defines the coefficients of the 5 terms (HURLEY_LR_TCoeff coefficients 'a', 'b', 'c', 'd', 'e') 
-    for (auto coeff: HURLEY_L_COEFF) lCoeffs[index] = coeff(a) + (coeff(b) * p_Zeta) + (coeff(c) * zeta2) + (coeff(d) * zeta3) + (coeff(e) * zeta4);
-
-    // return the luminosity coefficients vector by value - NRVO takes care of performance/efficiency
-    return lCoeffs;
-
-#undef coeff
-#undef index
-}
-    
-    
-/*
- * CalculateHurleyRadiusCoefficients
- *
- * @brief
- * Calculate Hurley alpha-like radius coefficients
- *
- * Radius coefficients depend on the star's metallicity only - so this only needs to be done at most
- * once per star (upon creation), but can also be reused if metallicity doesn't change from one star
- * to the next (e.g. in a population run).
- *
- * Values are from table 2 in Tout et al. 1996
- *
- * DBL_VECTOR CalculateHurleyRadiusCoefficients(const double p_Zeta) const
- * 
- * @param       p_Zeta                          Zeta from Hurley et al. 2000, p5, just before eq 1
- * @return                                      Radius coefficients vector
- */
-DBL_VECTOR Globals::CalculateHurleyRadiusCoefficients(const double p_Zeta) const {
-// macros for convenience and readability - undefined at end of function
-#define index    static_cast<int>(coeff.first)
-#define coeff(x) coeff.second[LR_TCoeff::x]
-    
-    // create and inialise radius coefficients vector - this is the return value
-    DBL_VECTOR rCoeffs(HURLEY_R_COEFF.size(), DEFAULT_INITIAL_DOUBLE_VALUE);
-
-    // calculate some powers of zeta
-    // this function is only called once per star, and at most twice per binary (but probably once), so not too onerous
-    const double zeta2 = p_Zeta * p_Zeta;
-    const double zeta3 = p_Zeta * zeta2;
-    const double zeta4 = p_Zeta * zeta3;
-
-    // populate radius coefficients vector
-    // iterate over radius coefficients constants HURLEY_R_COEFF (see constants.h)
-    // each row is indexed by the HURLEY_R_Coeff keys 'THETA', 'IOTA', 'KAPPA', 'LAMBDA', 'MU', 'NU', 'XI', 'OMICRON', 'PI',
-    // and defines the coefficients of the 5 terms (HURLEY_LR_TCoeff coefficients 'a', 'b', 'c', 'd', 'e') 
-    for (auto coeff: HURLEY_R_COEFF) rCoeffs[index] = coeff(a) + (coeff(b) * p_Zeta) + (coeff(c) * zeta2) + (coeff(d) * zeta3) + (coeff(e) * zeta4);
-
-    // return the radius coefficients vector by value - NRVO takes care of performance/efficiency
-    return rCoeffs;
 
 #undef coeff
 #undef index
@@ -307,12 +273,12 @@ DBL_VECTOR Globals::CalculateHurleyRadiusCoefficients(const double p_Zeta) const
  *    - B_BETA_L : eq 20
  * 
  * 
- * DBL_VECTOR CalculateHurleyLuminosityConstants(const DBL_VECTOR &p_aCoefficients) const
+ * DBL_VECTOR CalculateHurleyLuminosityConstants(const DBL_VECTOR& p_aCoefficients) const
  * 
  * @param       p_aCoefficients                 Hurley a(n) coefficients
  * @return                                      Luminosity constants vector
  */
-DBL_VECTOR Globals::CalculateHurleyLuminosityConstants(const DBL_VECTOR &p_aCoefficients) const {
+DBL_VECTOR Globals::CalculateHurleyLuminosityConstants(const DBL_VECTOR& p_aCoefficients) const {
 #define a p_aCoefficients // for convenience and readability - undefined at end of function
    
     // create and inialise luminosity constants vector - this is the return value
@@ -349,12 +315,12 @@ DBL_VECTOR Globals::CalculateHurleyLuminosityConstants(const DBL_VECTOR &p_aCoef
  *    - C_BETA_R : eq 22, with M = 16.0 (see discussion immediately following eq 22a)
  * 
  * 
- * DBL_VECTOR CalculateHurleyRadiusConstants(const DBL_VECTOR &p_aCoefficients) const
+ * DBL_VECTOR CalculateHurleyRadiusConstants(const DBL_VECTOR& p_aCoefficients) const
  * 
  * @param       p_aCoefficients                 Hurley a(n) coefficients
  * @return                                      Radius constants vector
  */
-DBL_VECTOR Globals::CalculateHurleyRadiusConstants(const DBL_VECTOR &p_aCoefficients) const {
+DBL_VECTOR Globals::CalculateHurleyRadiusConstants(const DBL_VECTOR& p_aCoefficients) const {
 #define a p_aCoefficients // for convenience and readability - undefined at end of function
            
     // create and inialise radius constants vector - this is the return value
@@ -390,21 +356,21 @@ DBL_VECTOR Globals::CalculateHurleyRadiusConstants(const DBL_VECTOR &p_aCoeffici
  *    - C_GAMMA: see discussion immediately following eq 23
  * 
  * 
- * DBL_VECTOR CalculateHurleyGammaConstants(const DBL_VECTOR &p_aCoefficients) const
+ * DBL_VECTOR CalculateHurleyGammaConstants(const DBL_VECTOR& p_aCoefficients) const
  * 
  * @param       p_aCoefficients                 Hurley a(n) coefficients
  * @return                                      Gamma constants vector
  */
-DBL_VECTOR Globals::CalculateHurleyGammaConstants(const DBL_VECTOR &p_aCoefficients) const {
+DBL_VECTOR Globals::CalculateHurleyGammaConstants(const DBL_VECTOR& p_aCoefficients) const {
 #define a p_aCoefficients // for convenience and readability - undefined at end of function
                
     // create and inialise gamma constants vector - this is the return value
     DBL_VECTOR gammas(HURLEY_GAMMA_CONSTANT::COUNT, DEFAULT_INITIAL_DOUBLE_VALUE);
         
     // populate gamma constants vector
-    double bGamma = max(0.0, a[76] + (a[77] * PPOW((1.0 - a[78]), a[79])));                     // Hurley et al. 2000, eq 23
+    double bGamma = max(0.0, a[76] + (a[77] * PPOW((1.0 - a[78]), a[79])));                     // Hurley et al. 2000, eq 23 and discussion following
     gammas[static_cast<int>(HURLEY_GAMMA_CONSTANT::B_GAMMA)] = bGamma;
-    gammas[static_cast<int>(HURLEY_GAMMA_CONSTANT::C_GAMMA)] = a[75] <= 1.0 ? bGamma : a[80];   // Hurley et al. 2000, eq 23  
+    gammas[static_cast<int>(HURLEY_GAMMA_CONSTANT::C_GAMMA)] = a[75] <= 1.0 ? bGamma : a[80];   // Hurley et al. 2000, eq 23 and discussion following  
         
     // return the gamma constants vector by value - NRVO takes care of performance/efficiency
     return gammas;
@@ -427,25 +393,25 @@ DBL_VECTOR Globals::CalculateHurleyGammaConstants(const DBL_VECTOR &p_aCoefficie
  * (upon creation), but can also be reused if metallicity doesn't change from one star to the next (e.g. in a population run).
  *
  *
- * DBL_VECTOR CalculateHurleyMassCutoffs(const double p_RefZ, const double p_Zeta) const
+ * DBL_VECTOR CalculateHurleyMassCutoffs(const double p_Z, const double p_Zeta) const
  * 
- * @param       p_RefZ                          Reference metallicity used to calculate radius coefficients
+ * @param       p_Z                             Metallicity
  * @param       p_Zeta                          Zeta from Hurley et al. 2000, p5, just before eq 1
  * @return                                      Mass cutoffs vector
  */
-DBL_VECTOR Globals::CalculateHurleyMassCutoffs(const double p_RefZ, const double p_Zeta) const {
+DBL_VECTOR Globals::CalculateHurleyMassCutoffs(const double p_Z, const double p_Zeta) const {
    
     // create and inialise mass cutoffs vector - this is the return value
     DBL_VECTOR massCutoffs(MASS_CUTOFF::COUNT, DEFAULT_INITIAL_DOUBLE_VALUE);
 
-    // calculate some powers of zeta
+    // calculate some powers of zeta - for performance and readability
     // this function is only called once per star, and at most twice per binary (but probably once), so not too onerous
     const double zeta2 = p_Zeta * p_Zeta;
 
     // populate mass cutoffs vector
     massCutoffs[static_cast<int>MASS_CUTOFF::MHook] = 1.0185 + (0.16015 * p_Zeta) + (0.0892 * zeta2);
     massCutoffs[static_cast<int>MASS_CUTOFF::MHeF]  = 1.995 + (0.25 * p_Zeta) + (0.087 * zeta2);  
-    massCutoffs[static_cast<int>MASS_CUTOFF::MFGB]  = 13.048 * PPOW((p_RefZ / ZSOL_HURLEY), 0.06) / (1.0 + (0.0012 * PPOW((ZSOL_HURLEY / p_RefZ), 1.27)));    
+    massCutoffs[static_cast<int>MASS_CUTOFF::MFGB]  = 13.048 * PPOW((p_Z / ZSOL_HURLEY), 0.06) / (1.0 + (0.0012 * PPOW((ZSOL_HURLEY / p_Z), 1.27)));    
 
     // return the mass cutoffs vector by value - NRVO takes care of performance/efficiency
     return massCutoffs;
@@ -470,13 +436,13 @@ DBL_VECTOR Globals::CalculateHurleyMassCutoffs(const double p_RefZ, const double
  * alpha4 can be indexed directly (index is alpha ordinal-1 (e.g. alpha1 is at vec[0]; alpha3 at vec[2], etc.)).
  *
  *
- * DBL_VECTOR CalculateHurleyAlphas(const DBL_VECTOR p_bCoefficients&, const DBL_VECTOR &p_MassCutoffs) const)
+ * DBL_VECTOR CalculateHurleyAlphas(const DBL_VECTOR& p_bCoefficients, const DBL_VECTOR& p_MassCutoffs) const)
  * 
  * @param       p_bCoefficients                 Hurley b(n) coefficients
  * @param       p_MassCutoffs                   Hurley mass cutoffs vector
  * @return                                      Alpha values vector
  */
-DBL_VECTOR Globals::CalculateHurleyAlphas(const DBL_VECTOR &p_bCoefficients, const DBL_VECTOR &p_MassCutoffs) const {
+DBL_VECTOR Globals::CalculateHurleyAlphas(const DBL_VECTOR& p_bCoefficients, const DBL_VECTOR& p_MassCutoffs) const {
 // macros for convenience and readability - undefined at end of function
 #define massCutoffs(x) p_MassCutoffs[static_cast<int>(MASS_CUTOFF::x)] 
 #define b              p_bCoefficients
@@ -527,14 +493,14 @@ DBL_VECTOR Globals::CalculateHurleyAlphas(const DBL_VECTOR &p_bCoefficients, con
  * but can also be reused if metallicity doesn't change from one star to the next (e.g. in a population run).
  *
  *
- * void CalculateHurleyGBRadiusXexponent(const double p_Zeta) const
+ * double CalculateHurleyGBRadiusXexponent(const double p_Zeta) const
  * 
  * @param       p_Zeta                          Zeta from Hurley et al. 2000, p5, just before eq 1
  * @return                                      Giant Branch radius 'x' exponent
  */
 double Globals::CalculateHurleyGBRadiusXexponent(const double p_Zeta) const {
 
-    // calculate some powers of zeta
+    // calculate some powers of zeta - for performance and readability
     // this function is only called once per star, and at most twice per binary (but probably once), so not too onerous
     const double zeta2 = p_Zeta * p_Zeta;
     const double zeta3 = p_Zeta * zeta2;
@@ -551,58 +517,63 @@ double Globals::CalculateHurleyGBRadiusXexponent(const double p_Zeta) const {
 ///////////////////////////////////////////////////////////////////////////////////////
 
 /*
- * CalculateAndSetHurleyZdependentValues
+ * CalculateHurleyZdependentValues
  *
  * @brief
- * Calculate and set all members of the Globals class member struct "m_HurleyZdependent" if
- * necessary - if the reference metallicity passed is different from the reference metallicity
- * recorded in the "m_HurleyZdependent" struct, then all values will be calculated and set.
+ * Calculate and set all Hurley Z-dependent values if necessary - if the reference metallicity passed
+ * is different from the reference metallicity recorded in the struct parameter passed, then all values
+ * will be calculated and set, otherwise the struct passed will be returned unchanged.
  * 
  * Note that the reference metallicity passed to this function will be range checked and clamped
  * to [MINIMUM_METALLICITY_HURLEY, MAXIMUM_METALLICITY_HURLEY] before anything else is done.
  * (This shouldn't happen - options code should already have caught this, but defensive...)
  * 
  * 
- * CalculateAndSetHurleyZdependentValues(const double p_RefZ)
+ * struct HurleyZdependentValues CalculateHurleyZdependentValues(const double p_Z, const HurleyZdependentValues& p_HurleyZdependentValues) const
  * 
- * @param       p_RefZ                          Reference metallicity used to calculate radius coefficients
+ * @param       p_Z                             Metallicity value to be used calculate Hurley Z-dependent values
+ * @param       p_HurleyZdependentValues        Struct containing Hurley Z-dependent values
+ * @return                                      Struct containing (possibly updated) Hurley Z-dependent values
  */
-void CalculateAndSetHurleyZdependentValues(const double p_RefZ) {
-        
-    double refZ = p_RefZ;
+struct HurleyZdependentValues CalculateHurleyZdependentValues(const double p_Z, const HurleyZdependentValues& p_HurleyZdependentValues) const {
 
-    // range check and clamp to [MINIMUM_METALLICITY_HURLEY, MAXIMUM_METALLICITY_HURLEY]
-    if (refZ < MINIMUM_METALLICITY_HURLEY || refZ > MAXIMUM_METALLICITY_HURLEY) {                   // reference metallicity outside range?
-                                                                                                    // yes
-        refZ = std::max(MAXIMUM_METALLICITY_HURLEY, std::min(refZ, MINIMUM_METALLICITY_HURLEY));    // clamp it
-                                                                                                    // issue warning
+    HurleyZdependentValues values = p_HurleyZdependentValues;                               // return value - default is unchanged
+
+    double Z = p_Z;
+
+    // range check metallicty passed in and clamp to [MINIMUM_METALLICITY_HURLEY, MAXIMUM_METALLICITY_HURLEY]
+    if (Z < MINIMUM_METALLICITY_HURLEY || Z > MAXIMUM_METALLICITY_HURLEY) {                 // reference metallicity outside range?
+                                                                                            // yes
+        Z = std::max(MAXIMUM_METALLICITY_HURLEY, std::min(Z, MINIMUM_METALLICITY_HURLEY));  // clamp it
+                                                                                            // issue warning
         // ISSUE WARNING & CLAMP TO [MINIMUM, MAXIMUM]  
     }
 
-    if (refZ != m_HurleyZdependent.refZ) {                                                          // reference metallicity changed?
-                                                                                                    // yes
+    if (Z != p_HurleyZdependentValues.refZ) {                                               // reference metallicity changed?
+                                                                                            // yes
         // (re)calculate and set class member values
-        m_HurleyZdependent.refZ                   = refZ;                                           // reference metallicity
-        m_HurleyZdependent.sigma                  = log10(m_HurleyZdependent.refZ);                 // Hurley et al. 2000 p24, sigma = log10(Z)
-        m_HurleyZdependent.zeta                   = m_HurleyZdependent.sigma - LOG10_ZSOL_HURLEY;   // Hurley et al. 2000 p5, just before eq 1, zeta = log10(Z/0.02) = log10(Z) - log10(0.02) = sigma - LOG10_ZSOL_HURLEY
-        m_HurleyZdependent.zetaAnders             = m_HurleyZdependent.sigma - LOG10_ZSOL_ANDERS;   // log10(Z / ZSOL_ANDERS)
-        m_HurleyZdependent.zetaAsplund            = m_HurleyZdependent.sigma - LOG10_ZSOL_ASPLUND;  // log10(Z / ZSOL_ASPLUND)
-        m_HurleyZdependent.rho                    = m_HurleyZdependent.zeta + 1.0;                  // Hurley et al. 2000 p24, rho = zeta + 1.0
+        values.refZ                = Z;                                                     // Hurley reference metallicity
+        values.sigma               = log10(values.refZ);                                    // Hurley et al. 2000 p24, sigma = log10(Z)
+        values.zeta                = values.sigma - LOG10_ZSOL_HURLEY;                      // Hurley et al. 2000 p5, just before eq 1, zeta = log10(Z/0.02) = log10(Z) - log10(0.02) = sigma - LOG10_ZSOL_HURLEY
+        values.zetaAnders          = values.sigma - LOG10_ZSOL_ANDERS;                      // log10(Z / ZSOL_ANDERS)
+        values.zetaAsplund         = values.sigma - LOG10_ZSOL_ASPLUND;                     // log10(Z / ZSOL_ASPLUND)
+        values.rho                 = values.zeta + 1.0;                                     // Hurley et al. 2000 p24, rho = zeta + 1.0
 
-        m_HurleyZdependent.aCoefficients          = CalculateHurleyACoefficients(refZ, m_HurleyZdependent.sigma, m_HurleyZdependent.zeta);
-        m_HurleyZdependent.massCutoffs            = CalculateAndSetHurleyMassCutoffs(refZ, m_HurleyZdependent.zeta);
-        m_HurleyZdependent.bCoefficients          = CalculateHurleyBCoefficients(refZ, m_HurleyZdependent.sigma, m_HurleyZdependent.zeta, m_HurleyZdependent.rho, m_HurleyZdependent.massCutoffs);
-        m_HurleyZdependent.luminosityCoefficients = CalculateHurleyLCoefficients(m_HurleyZdependent.zeta);
-        m_HurleyZdependent.radiusCoefficients     = CalculateHurleyRCoefficients(m_HurleyZdependent.zeta);
+        values.aCoefficients       = CalculateHurleyACoefficients(Z, values.sigma, values.zeta);
+        values.massCutoffs         = CalculateHurleyMassCutoffs(Z, values.zeta);
+        values.bCoefficients       = CalculateHurleyBCoefficients(Z, values.sigma, values.zeta, values.rho, values.massCutoffs);
 
-        m_HurleyZdependent.gammaConstants         = CalculateHurleyGammaConstants(m_HurleyZdependent.aCoefficients);
-        m_HurleyZdependent.luminosityConstants    = CalculateHurleyLuminosityConstants(m_HurleyZdependent.aCoefficients);
-        m_HurleyZdependent.radiusConstants        = CalculateHurleyRadiusConstants(m_HurleyZdependent.aCoefficients);
+        values.gammaConstants      = CalculateHurleyGammaConstants(values.aCoefficients);
+        values.luminosityConstants = CalculateHurleyLuminosityConstants(values.aCoefficients);
+        values.radiusConstants     = CalculateHurleyRadiusConstants(values.aCoefficients);
 
-        m_HurleyZdependent.xExponent              = CalculateHurleyGBRadiusXexponent();
+        values.xExponent           = CalculateHurleyGBRadiusXexponent();
 
-        m_HurleyZdependent.alphas                 = CalculateHurleyAplhas(m_HurleyZdependent.bCoefficients, m_HurleyZdependent.massCutoffs);
+        values.alphas              = CalculateHurleyAplhas(values.bCoefficients, values.massCutoffs);
     }
+
+    // return the values struct by value - NRVO takes care of performance/efficiency
+    return values;
 }
 
 
@@ -616,91 +587,200 @@ void CalculateAndSetHurleyZdependentValues(const double p_RefZ) {
 // modify members of the Globals class.                                              //
 //                                                                                   //
 ///////////////////////////////////////////////////////////////////////////////////////
-
+    
+    
 /*
- * CalculateAndSetZAMSHeliumAbundance
-  *
- * Calculate ZAMS helium abundance
- * Pols et al. 1998
+ * CalculateLuminosityCoefficients_Tout_1996
  *
+ * @brief
+ * Calculate luminosity coefficients per Tout et al. 1996, table 1
  *
- * void CalculateAndSetZAMSHeliumAbundance()
+ * Luminosity coefficients depend on the star's metallicity only - so this only needs to be done at most
+ * once per star (upon creation), but can also be reused if metallicity doesn't change from one star to
+ * the next (e.g. in a population run).
+ * 
  *
+ * DBL_VECTOR CalculateLuminosityCoefficients_Tout_1996(const double p_Zeta) const
+ * 
+ * @param       p_Zeta                          Zeta from Hurley et al. 2000, p5, just before eq 1
+ * @return                                      Luminosity coefficients vector
  */
-void Globals::CalculateAndSetZAMSHeliumAbundance() {
-    m_ZAMSheliumAbundance = 0.24 + 2.0 * m_RefZ;
+DBL_VECTOR Globals::CalculateLuminosityCoefficients_Tout_1996(const double p_Zeta) const {
+// macros for convenience and readability - undefined at end of function
+#define index    static_cast<int>(coeff.first)
+#define coeff(x) coeff.second[LR_TCoeff::x]
+        
+    // create and inialise luminosity coefficients vector - this is the return value
+    DBL_VECTOR lCoeffs(TOUT_L_COEFF.size(), DEFAULT_INITIAL_DOUBLE_VALUE);
+    
+    // calculate some powers of zeta - for performance and readability
+    // this function is only called once per star, and at most twice per binary (but probably once), so not too onerous
+    const double zeta2 = p_Zeta * p_Zeta;
+    const double zeta3 = p_Zeta * zeta2;
+    const double zeta4 = p_Zeta * zeta3;
+    
+    // populate luminosity coefficients vector
+    // iterate over luminosity coefficients constants TOUT_L_COEFF (see constants.h)
+    // each row is indexed by the TOUT_L_Coeff keys 'ALPHA', 'BETA', 'GAMMA', 'DELTA', 'EPSILON', 'ZETA', 'ETA',
+    // and defines the coefficients of the 5 terms (TOUT_LR_TCoeff coefficients 'a', 'b', 'c', 'd', 'e') 
+    for (auto coeff: TOUT_L_COEFF) lCoeffs[index] = coeff(a) + (coeff(b) * p_Zeta) + (coeff(c) * zeta2) + (coeff(d) * zeta3) + (coeff(e) * zeta4);
+    
+    // return the luminosity coefficients vector by value - NRVO takes care of performance/efficiency
+    return lCoeffs;
+    
+#undef coeff
+#undef index
+}
+        
+        
+/*
+ * CalculateRadiusCoefficients_Tout_1996
+ *
+ * @brief
+ * Calculate radius coefficients per Tout et al. 1996, table 2
+ *
+ * Radius coefficients depend on the star's metallicity only - so this only needs to be done at most
+ * once per star (upon creation), but can also be reused if metallicity doesn't change from one star
+ * to the next (e.g. in a population run).
+ * 
+ *
+ * DBL_VECTOR CalculateRadiusCoefficients_Tout_1996(const double p_Zeta) const
+ * 
+ * @param       p_Zeta                          Zeta from Hurley et al. 2000, p5, just before eq 1
+ * @return                                      Radius coefficients vector
+ */
+DBL_VECTOR Globals::CalculateRadiusCoefficients_Tout_1996(const double p_Zeta) const {
+// macros for convenience and readability - undefined at end of function
+#define index    static_cast<int>(coeff.first)
+#define coeff(x) coeff.second[TOUT_LR_TCoeff::x]
+        
+    // create and inialise radius coefficients vector - this is the return value
+    DBL_VECTOR rCoeffs(TOUT_R_COEFF.size(), DEFAULT_INITIAL_DOUBLE_VALUE);
+    
+    // calculate some powers of zeta - for performance and readability
+    // this function is only called once per star, and at most twice per binary (but probably once), so not too onerous
+    const double zeta2 = p_Zeta * p_Zeta;
+    const double zeta3 = p_Zeta * zeta2;
+    const double zeta4 = p_Zeta * zeta3;
+    
+    // populate radius coefficients vector
+    // iterate over radius coefficients constants TOUT_R_COEFF (see constants.h)
+    // each row is indexed by the TOUT_R_Coeff keys 'THETA', 'IOTA', 'KAPPA', 'LAMBDA', 'MU', 'NU', 'XI', 'OMICRON', 'PI',
+    // and defines the coefficients of the 5 terms (TOUT_LR_TCoeff coefficients 'a', 'b', 'c', 'd', 'e') 
+    for (auto coeff: TOUT_R_COEFF) rCoeffs[index] = coeff(a) + (coeff(b) * p_Zeta) + (coeff(c) * zeta2) + (coeff(d) * zeta3) + (coeff(e) * zeta4);
+    
+    // return the radius coefficients vector by value - NRVO takes care of performance/efficiency
+    return rCoeffs;
+    
+#undef coeff
+#undef index
 }
 
 
 /*
- * CalculateAndSetZAMSHydrogenAbundance
-  *
- * Calculate ZAMS hydrogen abundance
- * Pols et al. 1998
+ * CalculateZAMSHeliumAbundanceFraction_Pols_1998
+ *
+ * @brief
+ * Calculate ZAMS helium abundance (as a fraction of the star's mass) per Pols et al. 1998
  *
  *
- * void CalculateAndSetZAMSHydrogenAbundance()
- *
+ * double CalculateZAMSHeliumAbundanceFraction_Pols_1998(const double p_Z) const
+ * 
+ * @param       p_Z                             Metallicity
+ * @return                                      ZAMS helium abundance fraction
  */
-void Globals::CalculateAndSetZAMSHydrogenAbundance() {
-    m_ZAMShydrogenAbundance =  0.76 - 3.0 * m_RefZ;
+double Globals::CalculateZAMSHeliumAbundanceFraction_Pols_1998(const double p_Z) const {
+    return 0.24 + 2.0 * p_Z;
 }
 
 
 /*
- * CalculateAndSetZAMSLuminosity
+ * CalculateZAMSHydrogenAbundanceFraction_Pols_1998
  *
- * Calculate ZAMS luminosity (in Lsol)
- * Tout et al. 1996, eq 1
- * 
- * Uses Hurley luminosity coefficients
+ * @brief
+ * Calculate ZAMS hydrogen abundance (as a fraction of the star's mass) per Pols et al. 1998
  *
  *
- * void CalculateAndSetZAMSLuminosity()
+ * double CalculateZAMSHydrogenAbundanceFraction_Pols_1998(const double p_Z) const
  *
+ * @param       p_Z                             Metallicity
+ * @return                                      ZAMS hydrogen abundance fraction
  */
-void Globals::CalculateAndSetZAMSLuminosity() {
-    #define lCoefficients(x) m_HurleyZdependent.lCoefficients[static_cast<int>(HURLEY_L_Coeff::x)] // for convenience and readability - undefined at end of function
-    
-        // pow() is slow - use multiplication where it makes sense
-        // sqrt() is much faster than pow()
-        double Z_0_5 = std::sqrt(m_RefZ);
-        double Z_2   = m_RefZ * m_RefZ;
-        double Z_3   = m_RefZ * Z_2;
-        double Z_5   = Z_2 * Z_3;
-        double Z_5_5 = Z_5 * Z_0_5;
-        double Z_7   = Z_2 * Z_5;
-        double Z_8   = m_RefZ * Z_7;
-        double Z_9_5 = m_RefZ * Z_8 * Z_0_5;
-        double Z_11  = Z_3 * Z_5;
-        
-        double top    = (lCoefficients(ALPHA) * Z_5_5) + (lCoefficients(BETA) * Z_11);
-        double bottom = (lCoefficients(GAMMA) + Z_3) + (lCoefficients(DELTA) * Z_5) + (lCoefficients(EPSILON) * Z_7) + (lCoefficients(ZETA) * Z_8) + (lCoefficients(ETA) * Z_9_5);
-        
-        m_ZAMSluminosity = top / bottom;
-        
-    #undef lCoefficients
-    }
- 
+double Globals::CalculateZAMSHydrogenAbundanceFraction_Pols_1998(const double p_Z) const {
+    return 0.76 - 3.0 * p_Z;
+}
+
 
 /*
- * CalculateAndSetZAMSLuminosity
+ * CalculateZAMSLuminosity_Tout_1996
  *
- * Calculate ZAMS luminosity (in Lsol)
- * Tout et al. 1996, eq 1
+ * @brief
+ * Calculate ZAMS luminosity (in Lsol) per Tout et al. 1996, eq 1
+ *
+ *
+ * double CalculateZAMSLuminosity_Tout_1996(const double p_MZAMS, const DBL_VECTOR& p_LuminosityCoefficients) const
  * 
- * Uses Hurley luminosity coefficients
- *
- *
- * void CalculateAndSetZAMSLuminosity()
- *
+ * @param       p_MZAMS                         Zero age main sequence mass (Msol)
+ * @param       p_LuminosityCoefficients        Tout luminosity coefficients
+ * @return                                      ZAMS luminosity (Lsol)
  */
-void Globals::CalculateAndSetZAMSLuminosity() {   
+double Globals::CalculateZAMSLuminosity_Tout_1996(const double p_MZAMS, const DBL_VECTOR& p_LuminosityCoefficients) const {
+#define lCoeffs(x) p_LuminosityCoefficients[static_cast<int>(TOUT_L_Coeff::x)] // for convenience and readability - undefined at end of function
     
+    // calculate some powers of p_MZAMS - for performance and readability
+    // this function is only called once per star, and at most twice per binary (but probably once), so not too onerous
+    // pow() is slow - use multiplication where it makes sense
+    const double M0_5 = std::sqrt(p_MZAMS);  // sqrt() is much faster than pow()
+    const double M2   = p_MZAMS * p_MZAMS;
+    const double M3   = p_MZAMS * M2;
+    const double M5   = M2 * M3;
+    const double M7   = M2 * M5;
+    const double M8   = p_MZAMS * M7;
+        
+    double top = (lCoeffs(ALPHA) * (M5 * M0_5)) + (lCoeffs(BETA) * (M3 * M8));
+        
+    return top / (lCoeffs(GAMMA) + M3) + (lCoeffs(DELTA) * M5) + (lCoeffs(EPSILON) * M7) + (lCoeffs(ZETA) * M8) + (lCoeffs(ETA) * ( M8 * p_MZAMS * M0_5));
+        
+#undef lCoeffs
+}
+
+
+/*
+ * CalculateZAMSRadius_Tout_1996
+ *
+ * Calculate radius at ZAMS (in Rsol) per Tout et al. 1996, eq 2
+ *
+ *
+ * double CalculateZAMSRadius_Tout_1996(const double p_MZAMS, const DBL_VECTOR& p_RadiusCoefficients)
+ *
+ * @param       p_MZAMS                         Zero age main sequence mass (Msol)
+ * @param       p_RadiusCoefficients            Tout radius coefficients
+ * @return                                      ZAMS radius (Rsol)
+ */
+double BaseStar::CalculateZAMSRadius_Tout_1996(const double p_MZAMS, const DBL_VECTOR& p_RadiusCoefficients) const {
+#define rCoeffs(x) p_RadiusCoefficients[static_cast<int>(TOUT_R_Coeff::x)] // for convenience and readability - undefined at end of function
+    
+    // calculate some powers of p_MZAMS - for performance and readability
+    // this function is only called once per star, and at most twice per binary (but probably once), so not too onerous
+    // pow() is slow - use multiplication where it makes sense
+    const double M0_5  = std::sqrt(p_MZAMS);
+    const double M2    = p_MZAMS * p_MZAMS;
+    const double M6    = M2 * M2 * M2;
+    const double M6_5  = M6 * M0_5;
+    const double M8    = M6 * M2;
+    const double M11   = M8 * M2 * p_MZAMS;
+    const double M19   = M11 * M8;
+    const double M19_5 = M19 * M0_5;
+    
+    double top = (rCoeffs(THETA) * (M2 * M0_5)) + (rCoeffs(IOTA) * M6_5) + (rCoeffs(KAPPA) * M11) + (rCoeffs(LAMBDA) * M19) + (rCoeffs(MU) * M19_5);
+    
+    return top / rCoeffs(NU) + (rCoeffs(XI) * M2) + (rCoeffs(OMICRON) * (M8 * M0_5)) + (M6 * M6 * M6_5) + (rCoeffs(PI) * M19_5);
+    
+#undef coeff
+}
 
 
 
-    // Calculates the Baryonic mass for which the GravitationalRemnantMass will be equal to the maximumNeutronStarMass (inverse of SolveQuadratic())
-    // needed to decide whether to calculate Fryer+2012 for Neutron Star or Black Hole in GiantBranch::CalculateGravitationalRemnantMass()
-    // calculate only once for entire simulation of N binaries in the future.
-    m_BaryonicMassOfMaximumNeutronStarMass = (0.075 * OPTIONS->MaximumNeutronStarMass() * OPTIONS->MaximumNeutronStarMass()) + OPTIONS->MaximumNeutronStarMass();
+
+
+

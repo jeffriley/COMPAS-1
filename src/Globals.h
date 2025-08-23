@@ -30,9 +30,19 @@ private:
 
     static Globals* m_Instance;
 
-    double          m_RefZ;                 // reference metallicity - used to calculate metallicity-dependent globals
+    // assumption: metallicity is same for both stars in a binary.  The code here could easily be changed to have metallicity different for each star, but COMPAS options currently don't allow that, so for now we use that as a simplification.
 
+    double m_RefZ;                      // reference metallicity - used to calculate metallicity-dependent globals
 
+    // Z-dependent values
+
+    struct HurleyZdependent m_HurleyZdependent; // Hurley Z-dependent values
+
+    DBL_VECTOR  m_LuminosityCoefficients;   // luminosity coefficients
+    DBL_VECTOR  m_RadiusCoefficients;       // radius coefficients
+
+    double m_ZAMSheliumAbundanceFraction;       // Z-dependent ZAMS helium abundance fraction
+    double m_ZAMShydrogenAbundanceFraction;     // Z-dependent ZAMS hydrogen abundance fraction
 
     // Values of the variables in this struct depend on the star's metallicity only - so these values only need to
     // be calculated once per star (upon creation), but can also be reused if metallicity doesn't change from one
@@ -44,7 +54,7 @@ private:
     // Values of the variables in this struct depend on the star's metallicity only - so these values only need to
     // be calculated once per star (upon creation), but can also be reused if metallicity doesn't change from one
     // star to the next (e.g. in a population run).
-    typedef struct {
+    typdef struct HurleyZdependent {
 
         double      refZ = -1.0;            // reference metallicty, initially undefined
 
@@ -63,22 +73,31 @@ private:
    
         DBL_VECTOR  aCoefficients;          // Hurley et al. 2000 a(n) coefficients
         DBL_VECTOR  bCoefficients;          // Hurley et al. 2000 b(n) coefficients
-        DBL_VECTOR  luminosityCoefficients;          // Hurley et al. 2000 luminosity coefficients
-        DBL_VECTOR  radiusCoefficients;          // Hurley et al. 2000 radius coefficients
     
-        DBL_VECTOR  gammaConstants;             // Hurley et al. 2000 gamma constants
-        DBL_VECTOR  luminosityConstants;             // Hurley et al. 2000 luminosity constants
-        DBL_VECTOR  radiusConstants;             // Hurley et al. 2000 radius constants
+        DBL_VECTOR  gammaConstants;         // Hurley et al. 2000 gamma constants
+        DBL_VECTOR  luminosityConstants;    // Hurley et al. 2000 luminosity constants
+        DBL_VECTOR  radiusConstants;        // Hurley et al. 2000 radius constants
 
         DBL_VECTOR  massCutoffs;            // Hurley et al. 2000 mass cutoffs
 
         DBL_VECTOR  alphas;                 // Hurley at al. 2000 alpha values (alpha1, alpha3, and alpha4; alpha2 is not constant, so not calculated here)
-    } m_HurleyZdependent;
-    
 
+    } Hurldey;
+    
+    struct StarDetails {
+
+        double      refZ = -1.0;            // reference metallicty, initially undefined
+
+
+    };
+
+
+
+    double m_BaryonicMassOfMaxNSMass; // once per run
+
+    // these are per binary - should be in BaseStar
     double m_ZAMSluminosity;
-    double m_ZAMSheliumAbundance;
-    double m_ZAMShydrogenAbundance;
+
 
 public:
 
@@ -88,6 +107,7 @@ public:
     }
     
     void            Initialise();
+
     void            Free();
 
     // getters
@@ -130,27 +150,25 @@ public:
 
     // member functions
 
-    // calculate and set Hurley Z-dependent values
-    void CalculateAndSetHurleyMassCutoffs();                                            // mass cutoffs
 
-    void CalculateAndSetHurleyACoefficientsAndConstants();                              // a(n) coefficients, gamma, luminosity, and radius constants
-    void CalculateAndSetHurleyBCoefficients();                                          // b(n) coefficients
-    void CalculateAndSetHurleyLCoefficients();                                          // luminosity coefficients
-    void CalculateAndSetHurleyRCoefficients();                                          // radius coefficients
+    void       CalculateAndSetHurleyZdependentValues(const double p_RefZ);
 
-    void CalculateAndSetHurleyGBRadiusXexponent();                                      // GB radius "x" exponent
+    DBL_VECTOR CalculateHurleyACoefficients(const double p_RefZ, const double p_Sigma, const double p_Zeta) const;
+    DBL_VECTOR CalculateHurleyAlphas(const DBL_VECTOR& p_bCoefficients, const DBL_VECTOR& p_MassCutoffs) const;
+    DBL_VECTOR CalculateHurleyBCoefficients(const double p_RefZ, const double p_Sigma, const double p_Zeta, const double p_Rho, const DBL_VECTOR& p_MassCutoffs) const;
+    DBL_VECTOR CalculateHurleyGammaConstants(const DBL_VECTOR& p_aCoefficients) const;
+    double     CalculateHurleyGBRadiusXexponent(const double p_Zeta) const;
+    DBL_VECTOR CalculateHurleyLuminosityConstants(const DBL_VECTOR& p_aCoefficients) const;
+    DBL_VECTOR CalculateHurleyMassCutoffs(const double p_RefZ, const double p_Zeta) const;
+    DBL_VECTOR CalculateHurleyRadiusConstants(const DBL_VECTOR& p_aCoefficients) const;
 
-    void CalculateAndSetHurleyAlpha1();                                                 // alpha1
-    void CalculateAndSetHurleyAlpha3();                                                 // alpha3
-    void CalculateAndSetHurleyAlpha4();                                                 // alpha4
+    DBL_VECTOR CalculateLuminosityCoefficients_Tout_1996(const double p_Zeta) const;
+    DBL_VECTOR CalculateRadiusCoefficients_Tout_1996(const double p_Zeta) const;
 
-    void CalculateAndSetHurleyZdependentValues(const double p_ReferenceMetallicity);    // driver function
-    
-    // calculate and set ZAMS Z-dependent values
-    void CalculateAndSetZAMSHeliumAbundance();                                          // helium abundance
-    void CalculateAndSetZAMSHydrogenAbundance();                                        // hydrogen abundance
-    void CalculateAndSetZAMSLuminosity();                                               // luminosity
-    
+    double     CalculateZAMSHeliumAbundanceFraction_Pols_1998(const double p_RefZ) const;
+    double     CalculateZAMSHydrogenAbundanceFraction_Pols_1998(const double p_RefZ) const;
+    double     CalculateZAMSLuminosity_Tout_1996(const double p_MZAMZ, const DBL_VECTOR& p_LuminosityCoefficients) const;
+    double     CalculateZAMSRadius_Tout_1996(const double p_MZAMS, const DBL_VECTOR& p_RadiusCoefficients) const;
 };
 
 #endif // __Globals_H__
