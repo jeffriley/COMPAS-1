@@ -19,6 +19,60 @@
 // JR: todo: clean this up and document it better
 
 
+
+
+class CDOUBLE {
+
+private:
+
+    double m_Value;
+    double m_AbsoluteTolerance;
+    double m_RelativeTolerance;
+
+public:
+
+#define EQUALS(a, b)  (fabs(a - b) <= std::max(m_AbsoluteTolerance, m_RelativeTolerance * std::max(fabs(a), fabs(b))))
+#define SMALLER(a, b) (EQUALS(a, b) ? false : (a < b) ? true : false)
+#define BIGGER(a, b)  (EQUALS(a, b) ? false : (b < a) ? true : false)
+
+
+    CDOUBLE(double p_Value, double p_AbsoluteTolerance = FLOAT_TOLERANCE_ABSOLUTE; p_RelativeTolerance = FLOAT_TOLERANCE_RELATIVE) {
+        m_Value             = p_Value;
+        m_AbsoluteTolerance = std::abs(p_AbsoluteTolerance);
+        m_RelativeTolerance = std::abs(p_RelativeTolerance);
+
+        // EXPLAIN USES ABS
+        // EXPLAIN IF BOTH TOERANCES 0.) same as fundamental (but may be used for future application of tolerances)
+    }
+
+    double Value() const { return m_Value; }
+
+    bool operator==(const double   p_Operand2) const { return EQUALS(m_Value, p_Operand2); }            // == fundamental
+    bool operator==(const CDOUBLE& p_Operand2) const { return EQUALS(m_Value, p_Operand2.Value()); }    // == CDOUBLE
+    
+    bool operator!=(const double   p_Operand2) const { return !EQUALS(m_Value, p_Operand2); }           // != fundamental
+    bool operator!=(const CDOUBLE& p_Operand2) const { return !EQUALS(m_Value, p_Operand2.Value()); }   // != CDOUBLE
+    
+    bool operator<( const double   p_Operand2) const { return SMALLER(m_Value, p_Operand2); }           // < fundamental
+    bool operator<( const CDOUBLE& p_Operand2) const { return SMALLER(m_Value, p_Operand2.Value()); }   // < CDOUBLE
+    
+    bool operator>( const double   p_Operand2) const { return BIGGER(m_Value, p_Operand2); }            // > fundamental
+    bool operator>( const CDOUBLE& p_Operand2) const { return BIGGER(m_Value, p_Operand2.Value()); }    // > CDOUBLE
+    
+    bool operator<=(const double   p_Operand2) const { return !BIGGER(m_Value, p_Operand2); }           // <= fundamental
+    bool operator<=(const CDOUBLE& p_Operand2) const { return !BIGGER(m_Value, p_Operand2.Value()); }   // <= CDOUBLE
+    
+    bool operator>=(const double   p_Operand2) const { return !SMALLER(m_Value, p_Operand2.Value()); }  // >= fundamental
+    bool operator>=(const CDOUBLE& p_Operand2) const { return !SMALLER(m_Value, p_Operand2.Value()); }  // >= CDOUBLE
+
+#undef BIGGER
+#undef SMALLER
+#undef EQUALS
+};  
+
+
+
+
 // Bitwise operators for Enum Class - |, |=, &, &=, ^, ^=, ~ only
 // from http://blog.bitwigglers.org/using-enum-classes-as-type-safe-bitmasks/
 #define ENABLE_BITMASK_OPERATORS(x)     \

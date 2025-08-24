@@ -110,8 +110,8 @@ extern OBJECT_ID globalObjectId;    // used to uniquely identify objects - used 
 
 #undef COMPARE_GLOBAL_TOLERANCE // define/undef this to compare floats with/without tolerance (see FLOAT_TOLERANCE_ABSOLUTE, FLOAT_TOLERANCE_RELATIVE and Compare() function)
 
-constexpr double FLOAT_TOLERANCE_ABSOLUTE               = 0.0000005;                                                // absolute tolerance for floating-point comparisons if COMPARE_GLOBAL_TOLERANCE is defined
-constexpr double FLOAT_TOLERANCE_RELATIVE               = 0.0000005;                                                // relative tolerance for floating-point comparisons if COMPARE_GLOBAL_TOLERANCE is defined
+constexpr double FLOAT_TOLERANCE_ABSOLUTE               = 5.0E-7;                                                   // absolute tolerance for floating-point comparisons if COMPARE_GLOBAL_TOLERANCE is defined
+constexpr double FLOAT_TOLERANCE_RELATIVE               = 5.0E-7;                                                   // relative tolerance for floating-point comparisons if COMPARE_GLOBAL_TOLERANCE is defined
 
 constexpr double ROOT_ABS_TOLERANCE                     = 1.0E-6;                                                   // absolute tolerance for root finder
 constexpr double ROOT_REL_TOLERANCE                     = 1.0E-6;                                                   // relative tolerance for root finder
