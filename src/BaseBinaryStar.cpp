@@ -1781,8 +1781,8 @@ ImmediateEventT BaseBinaryStar::ResolveMainSequenceMerger() {
     double initialHydrogenFraction = m_Star1->InitialHydrogenAbundance();
     
     double finalHydrogenMass;
-    if ((OPTIONS->MainSequenceCoreMassPrescription() == CORE_MASS_PRESCRIPTION::BRCEK) &&
-        (utils::Compare(m_Star1->MZAMS(), BRCEK_LOWER_MASS_LIMIT) >= 0)                &&
+    if ((OPTIONS->MainSequenceCoreMassPrescription() == MS_CORE_MASS_PRESCRIPTION::BRCEK) &&
+        (utils::Compare(m_Star1->MZAMS(), BRCEK_LOWER_MASS_LIMIT) >= 0)                   &&
         (utils::Compare(m_Star2->MZAMS(), BRCEK_LOWER_MASS_LIMIT) >= 0)) {
         
         // total hydrogen masses (from the core, envelope, and the intermediate region between the core and envelope)

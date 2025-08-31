@@ -25,13 +25,15 @@ class BaseStar {
 public:
     
     BaseStar();
-    
+    virtual ~BaseStar() {}
+
+    /*
     BaseStar(const unsigned long int p_RandomSeed,
              const double            p_MZAMS,
              const double            p_Metallicity,
-             const KickParameters    p_KickParameters,
+             const KickParametersT   p_KickParameters,
              const double            p_RotationalVelocity = -1.0);
-    
+    */
     
     /*
      * The following Clone() functions should be used to clone a star - any steller type, including BaseStar.
@@ -69,16 +71,19 @@ public:
     virtual BaseStar* Clone(const OBJECT_PERSISTENCE p_Persistence, const bool p_Initialise = true) { return this; }
     static  BaseStar* Clone(BaseStar* p_Star, const OBJECT_PERSISTENCE p_Persistence, const bool p_Initialise = true) { return p_Star; }
     
-    virtual ~BaseStar() {}
+
     
     
     // object identifiers - all classes have these
     OBJECT_ID                   ObjectId() const                                        { return m_ObjectId; }
     OBJECT_TYPE                 ObjectType() const                                      { return OBJECT_TYPE::BASE_STAR; }
     OBJECT_PERSISTENCE          ObjectPersistence() const                               { return m_ObjectPersistence; }
-    STELLAR_TYPE                InitialStellarType() const                              { return m_InitialStellarType; }
+
+
+
+    STELLAR_TYPE                StartingStellarType() const                             { return m_StartingStellarType; }
     STELLAR_TYPE                StellarType() const                                     { return m_StellarType; }
-    STELLAR_TYPE                StellarTypePrev() const                                 { return m_StellarTypePrev; }
+//    STELLAR_TYPE                StellarTypePrev() const                                 { return m_StellarTypePrev; }
     
     
     // Getters - alphabetically
@@ -285,9 +290,11 @@ public:
     virtual DBL_DBL_DBL_DBL     CalculateImKnmEquilibrium(const double p_Omega, const double p_SemiMajorAxis, const double p_M2) const ;
     virtual DBL_DBL_DBL_DBL     CalculateImKnmTidal(const double p_Omega, const double p_SemiMajorAxis, const double p_M2) const;
     
-    virtual double              CalculateLambdaDewi() const                                                     { return 1.0; }                                                     // Default for stellar types with no LamdaDewi definitions - 1.0 is benign
-    double                      CalculateLambdaKruckow(const double p_Radius, const double p_Alpha) const;
-    double                      CalculateLambdaKruckow() const                                                  { return CalculateLambdaKruckow(m_Radius, OPTIONS->CommonEnvelopeSlopeKruckow()); }
+    virtual double              CalculateLambdaDewi() const                                                     { return 1.0; }           
+                                              // Default for stellar types with no LamdaDewi definitions - 1.0 is benign
+    GNU_CONST double CalculateLambdaKruckow(const double p_Radius, const double p_Alpha) const;
+    double CalculateLambdaKruckow() const { return CalculateLambdaKruckow(m_Radius, OPTIONS->CommonEnvelopeSlopeKruckow()); }
+    
     virtual double              CalculateLambdaLoveridge(const double p_EnvMass, const bool p_IsMassLoss = false) const { return 1.0; }                                             // Default for non giant branch stars - 1.0 is benign
     double                      CalculateLambdaLoveridge() const                                                { return CalculateLambdaLoveridge(m_Mass - m_CoreMass, false); }
     double                      CalculateLambdaNanjing() const;
@@ -411,10 +418,23 @@ protected:
     // Object identifiers - all classes have these
     OBJECT_ID               m_ObjectId;                                 // Instantiated object's unique object id
     OBJECT_PERSISTENCE      m_ObjectPersistence;                        // Instantiated object's persistence (permanent or ephemeral)
-    STELLAR_TYPE            m_InitialStellarType;                       // Stellar type at birth, defined in Hurley et al. 2000
+
+
+    StateHistory                m_StateHistory;
+
+
+
+/*
+    STELLAR_TYPE            m_StartingStellarType;                      // Stellar type at start of simulation, defined in Hurley et al. 2000
     STELLAR_TYPE            m_StellarType;                              // Stellar type defined in Hurley et al. 2000
     ERROR                   m_Error;                                    // Records most recent error encountered for this star
-  
+*/
+    
+//    StarStateT stateZero;
+//    StarStateT stateZAMS;  // << ---- flag this as not set - until it is set (if it is set)
+
+/*
+
     // Stellar variables
     bool                    m_CHE;                                      // CHE flag - true if the star spent entire MS as a CH star; false if evolved CH->MS
     EVOLUTION_STATUS        m_EvolutionStatus;                          // Status of evolution for this star (typically final outcome e.g. DONE, TIMES_UP, etc.)
@@ -472,7 +492,9 @@ protected:
     // Metallicity variables
     double                  m_Metallicity;                              // Metallicity
     double                  m_Log10Metallicity;                         // log10(Metallicity) - for performance
+*/
 
+/*
     // Metallicity dependent constants
     double                  m_Alpha1;                                   // Alpha1 in Hurley et al. 2000, just after eq 49
     double                  m_Alpha3;                                   // Alpha3 in Hurley et al. 2000, just after eq 56
@@ -506,7 +528,9 @@ protected:
     DBL_VECTOR              m_GammaConstants;                           // Gamma constants
     DBL_VECTOR              m_LConstants;                               // Luminosity constants
     DBL_VECTOR              m_RConstants;                               // Radius constants
+*/
 
+/*
     // Stellar details squirrelled away...
     SupernovaDetailsT       m_SupernovaDetails;                         // Supernova attributes
     PulsarDetailsT          m_PulsarDetails;                            // Pulsar attributes
@@ -516,7 +540,7 @@ protected:
 
     // Star mass transfer history 
     ST_VECTOR               m_MassTransferDonorHistory;                 // List of MT donor stellar types - mostly relevant for binary stars
-
+*/
 
     // Protected member function prototypes - alphabetically (implementations are in the cpp file)
     // See below (after class declaration) for inline functions declared in this header file
@@ -578,7 +602,12 @@ protected:
     double              CalculateLuminosityAtBAGB(double p_Mass) const;         // inline implementation below
 
     virtual double      CalculateLuminosityAtPhaseEnd() const                                                           { return m_Luminosity; }                                                    // Default is NO-OP
-    double              CalculateLuminosityAtZAMS(const double p_MZAMS) const;
+
+
+
+    
+    
+    
     double       CalculateLuminosityGivenCoreMass(const double p_CoreMass) const                                 { return std::min((m_GBParams[static_cast<int>(GBP::B)] * PPOW(p_CoreMass, m_GBParams[static_cast<int>(GBP::q)])), (m_GBParams[static_cast<int>(GBP::D)] * PPOW(p_CoreMass, m_GBParams[static_cast<int>(GBP::p)]))); } // Hurley et al. 2000, eq 37
 
     virtual double      CalculateLuminosityOnPhase() const                                                              { return m_Luminosity; }                                                    // Default is NO-OP
@@ -669,44 +698,42 @@ protected:
     /*
      * CalculateMassLossRateLBVBelczynski
      *
+     * @brief
      * Calculate LBV-like mass loss rate for stars beyond the Humphreys-Davidson limit (Humphreys & Davidson 1994)
-     * per Belczynski et al. 2010, eq 8
-     *
-     * Does not use any class member variables 
+     * per Belczynski et al. 2010, eq 8 
      * 
      *
-     * double CalculateMassLossRateLBVBelczynski() const
+     * GNU_CONST double CalculateMassLossRateLBVBelczynski() const
      *
      * @return                                      LBV-like mass loss rate (Msol yr^-1)
      */    
-    double CalculateMassLossRateLBVBelczynski() const {
+    GNU_CONST double CalculateMassLossRateLBVBelczynski() const {
         return OPTIONS->LuminousBlueVariableFactor() * 1.0E-4;
     } 
+
 
     /*
      * CalculateMassLossRateLBVHurley
      *
+     * @brief
      * Calculate LBV-like mass loss rate for stars beyond the Humphreys-Davidson limit (Humphreys & Davidson 1994)
-     * per Hurley+ 2000, section 7.1, a few equations after Eq. 106 (Equation not labelled)
-     *
-     * Uses current values of:
-     * 
-     *    - m_Luminosity
+     * per Hurley+ 2000, section 7.1, unlabelled equation a few equations after eq 106
      *  
      *
-     * double CalculateMassLossRateLBVHurley(const double p_HDlimitfactor) const
+     * GNU_CONST double CalculateMassLossRateLBVHurley(const double p_Luminosity, const double p_HDlimitfactor) const
      *
-     * @param   [IN]    p_HDlimitfactor             Factor by which star is above Humphreys-Davidson limit
+     * @param       p_Luminosity                    Luminosity of the star (Lsol)
+     * @param       p_HDlimitfactor                 Factor by which star is above Humphreys-Davidson limit
      * @return                                      LBV-like mass loss rate (Msol yr^-1)
      */
-    double CalculateMassLossRateLBVHurley(const double p_HDlimitfactor) const {
+    GNU_CONST double CalculateMassLossRateLBVHurley(const double p_Luminosity, const double p_HDlimitfactor) const {
         double v = p_HDlimitfactor - 1.0;
-        return 0.1 * v * v * v * ((m_Luminosity / 6.0E5) - 1.0);
+        return 0.1 * v * v * v * ((p_Luminosity / 6.0E5) - 1.0);
     }
 
 
     virtual double      CalculateMassLossRateMerritt2025();
-    double              CalculateMassLossRateNieuwenhuijzenDeJager() const;
+    GNU_CONST std::tuple<double, MASS_LOSS_TYPE> CalculateMassLossRateNieuwenhuijzenDeJager(p_Metallicity, p_Mass, p_Radius, p_Luminosity) const;
     std::tuple<double, MASS_LOSS_TYPE> CalculateMassLossRateOB(const OB_MASS_LOSS_PRESCRIPTION p_OBMassLossPrescription) const;
     std::tuple<double, MASS_LOSS_TYPE> CalculateMassLossRateOBBjorklund2022() const;
     std::tuple<double, MASS_LOSS_TYPE> CalculateMassLossRateOBKrticka2018() const;
@@ -736,11 +763,12 @@ protected:
 
     std::tuple<double, MASS_LOSS_TYPE>              CalculateMassLossRateOBVink2001() const;
     std::tuple<double, MASS_LOSS_TYPE>              CalculateMassLossRateOBVinkSander2021() const;
-    std::tuple<double, MASS_LOSS_TYPE>              CalculateMassLossRateRSG(const RSG_MASS_LOSS_PRESCRIPTION p_RSG_mass_loss) const;
+    GNU_CONST std::tuple<double, MASS_LOSS_TYPE> CalculateMassLossRateRSG(const double p_Metallicity, const double p_MZAMS, const double p_Mass, const double p_Radius, const double p_Luminosity, const RSG_MASS_LOSS_PRESCRIPTION p_MassLossPrescription) const;
 
     /*
      * CalculateMassLossRateRSGBeasor2020
      *
+     * @brief
      * Calculate mass loss rate for RSG stars per Beasor+2020
      * https://arxiv.org/pdf/2001.07222.pdf eq 4.
      * 
@@ -749,46 +777,44 @@ protected:
      * 
      * corrected again by Beasor+2023
      * https://ui.adsabs.harvard.edu/abs/2023MNRAS.524.2460B/abstract
-     *
-     * Uses current values of:
-     * 
-     *    - m_Luminosity
-     *    - m_MZAMS
      * 
      *  
-     * double CalculateMassLossRateRSGBeasor2020() const
+     * GNU_CONST std::tuple<double, MASS_LOSS_TYPE> CalculateMassLossRateRSGBeasor2020(const double p_MZAMS, const double p_Luminosity) const
      *
+     * @param       p_MZAMS                         ZAMS Mass of the star (Msol)
+     * @param       p_Luminosity                    Luminosity of the star (Lsol)
      * @return                                      Tuple containing:
      *                                                   DOUBLE         Mass loss rate for RSG stars (Msol yr^-1)
      *                                                   MASS_LOSS_TYPE dominant mass loss type (will be MASS_LOSS_TYPE::RSG)
      */
-    std::tuple<double, MASS_LOSS_TYPE> CalculateMassLossRateRSGBeasor2020() const {
-        return std::make_tuple(PPOW(10.0, -21.5 - 0.15 * m_MZAMS + 3.6 * log10(m_Luminosity)), MASS_LOSS_TYPE::RSG);
+    GNU_CONST std::tuple<double, MASS_LOSS_TYPE> CalculateMassLossRateRSGBeasor2020(const double p_MZAMS, const double p_Luminosity) const {
+        return std::make_tuple(PPOW(10.0, -21.5 - 0.15 * p_MZAMS + 3.6 * log10(p_Luminosity)), MASS_LOSS_TYPE::RSG);
     }
+
 
     /*
      * CalculateMassLossRateRSGDecin2023
      *
+     * @brief
      * Calculate mass loss rate for RSG stars per Decin 2023
      * https://arxiv.org/pdf/2303.09385.pdf eq 6.
      *
-     * Uses current values of:
      * 
-     *    - m_Luminosity
-     *    - m_MZAMS
+     * GNU_CONST std::tuple<double, MASS_LOSS_TYPE> CalculateMassLossRateRSGDecin2023(const double p_MZAMS, const double p_Luminosity) const
      *
-     * 
-     * double CalculateMassLossRateRSGDecin2023()c onst
-     *
-     * @return                                      Mass loss rate for RSG stars (Msol yr^-1)
+     * @param       p_MZAMS                         ZAMS Mass of the star (Msol)
+     * @param       p_Luminosity                    Luminosity of the star (Lsol)
+     * @return                                      Tuple containing:
+     *                                                   DOUBLE         Mass loss rate for RSG stars (Msol yr^-1)
+     *                                                   MASS_LOSS_TYPE dominant mass loss type (will be MASS_LOSS_TYPE::RSG)
      */
-
-    double CalculateMassLossRateRSGDecin2023() const {
-        return PPOW(10.0, -20.63 - 0.16 * m_MZAMS + 3.47 * log10(m_Luminosity));
+    GNU_CONST std::tuple<double, MASS_LOSS_TYPE> CalculateMassLossRateRSGDecin2023(const double p_MZAMS, const double p_Luminosity) const {
+        return std::make_tuple(PPOW(10.0, -20.63 - 0.16 * p_MZAMS + 3.47 * log10(p_Luminosity)), MASS_LOSS_TYPE::RSG);;
     }
 
-    double              CalculateMassLossRateRSGKee2021() const;
-    double              CalculateMassLossRateRSGVinkSabhahit2023() const;
+
+    GNU_CONST std::tuple<double, MASS_LOSS_TYPE> CalculateMassLossRateRSGKee2021(const double p_Mass, const double p_Luminosity, const double p_Temperature) const;
+    GNU_CONST std::tuple<double, MASS_LOSS_TYPE> CalculateMassLossRateRSGVinkSabhahit2023(const double p_Mass, const double p_Luminosity) const;
     double              CalculateMassLossRateRSGYang2023() const;
     double              CalculateMassLossRateVassiliadisWood() const;
     double              CalculateMassLossRateVMS(const VMS_MASS_LOSS_PRESCRIPTION p_VMS_mass_loss);
@@ -905,8 +931,14 @@ protected:
                                                                  const double       p_DtPrev);
 
     virtual double      CalculateRadiusAtPhaseEnd() const                                                               { return m_Radius; }                                                        // Default is NO-OP
-    double              CalculateRadiusAtZAMS(const double p_MZAMS) const;
-    virtual double      CalculateRadiusOnPhase() const                                                                  { return m_Radius; }                                                        // Default is NO-OP
+
+    virtual double      CalculateRadiusOnPhase_Hurley() const;
+
+
+    virtual double CalculateRadiusOnPhase() const;
+
+    double CalculateRadiusOnPhase(const double p_Mass, const double p_Tau, const double p_RZAMS) const;
+
     virtual std::tuple <double, STELLAR_TYPE> CalculateRadiusAndStellarTypeOnPhase() const                              { return std::make_tuple(CalculateRadiusOnPhase(), m_StellarType); }
 
     void                CalculateRCoefficients(const double p_LogMetallicityXi, DBL_VECTOR &p_RCoefficients) const;
@@ -1173,6 +1205,7 @@ std::tuple<double, MASS_LOSS_TYPE> BaseStar::CalculateMassLossRateWolfRayetShena
 /*
  * CalculateMassLossRateRSGYang2023
  *
+ * @brief
  * Calculate mass loss rate for RSG stars (Red Supergiant) per Yang 2023
  * https://arxiv.org/pdf/2303.09385.pdf eq 6.
  *
@@ -1182,13 +1215,14 @@ std::tuple<double, MASS_LOSS_TYPE> BaseStar::CalculateMassLossRateWolfRayetShena
  *    - m_Luminosity
  * 
  *  
- * std::tuple<double, MASS_LOSS_TYPE> CalculateMassLossRateRSGYang2023() const
+ * GNU_CONST std::tuple<double, MASS_LOSS_TYPE> CalculateMassLossRateRSGYang2023(const double p_Luminosity) const
  *
+ * @param       p_Luminosity                    Luminosity of the star (Lsol)
  * @return                                      Tuple containing:
  *                                                   DOUBLE         Mass loss rate for RSG stars (Msol yr^-1)
  *                                                   MASS_LOSS_TYPE dominant mass loss type (will be MASS_LOSS_TYPE::RSG)
  */
-std::tuple<double, MASS_LOSS_TYPE> BaseStar::CalculateMassLossRateRSGYang2023() const {
+GNU_CONST std::tuple<double, MASS_LOSS_TYPE> BaseStar::CalculateMassLossRateRSGYang2023(const double p_Luminosity) const {
 
     double logL   = log10(m_Luminosity);
     double logL_2 = logL * logL;

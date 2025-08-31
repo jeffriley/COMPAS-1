@@ -28,6 +28,11 @@ protected:
     double          m_HeliumAbundanceCoreOut      = m_InitialHeliumAbundance;                                                                                       // Helium abundance just outside the core, used for rejuvenation calculations
 
     // member functions - alphabetically
+
+    double     CalculateZAMSLuminosity_Tout_1996(const double p_MZAMZ, const DBL_VECTOR& p_LuminosityCoefficients) const;
+    double     CalculateZAMSRadius_Tout_1996(const double p_MZAMS, const DBL_VECTOR& p_RadiusCoefficients) const;
+
+
     double          CalculateAlphaL(const double p_Mass) const;
     double          CalculateAlphaR(const double p_Mass) const;
 
@@ -47,7 +52,7 @@ protected:
     double          CalculateCOCoreMassAtPhaseEnd() const                                   { return CalculateCOCoreMassOnPhase(); }                                // Same as on phase
     double          CalculateCOCoreMassOnPhase() const                                      { return 0.0; }                                                         // McCO(MS) = 0.0
 
-    double          CalculateCoreMassAtPhaseEnd() const                                     { return (OPTIONS->MainSequenceCoreMassPrescription() == CORE_MASS_PRESCRIPTION::MANDEL) ? std::min(MainSequenceCoreMass(), m_Mass) : 0.0; }        // Accounts for minimal core mass built up prior to mass loss through mass transfer; core mass can't exceed total mass
+    double          CalculateCoreMassAtPhaseEnd() const                                     { return (OPTIONS->MainSequenceCoreMassPrescription() == MS_CORE_MASS_PRESCRIPTION::MANDEL) ? std::min(MainSequenceCoreMass(), m_Mass) : 0.0; }        // Accounts for minimal core mass built up prior to mass loss through mass transfer; core mass can't exceed total mass
     double          CalculateCoreMassOnPhase() const                                        { return 0.0; }                                                         // Mc(MS) = 0.0 (Hurley et al. 2000, just before eq 28)
 
     double          CalculateHeCoreMassAtPhaseEnd() const                                   { return CalculateCoreMassAtPhaseEnd(); }                               // Same as He core mass
@@ -85,11 +90,20 @@ protected:
 
     double          CalculateRadiusOnMassChange(double p_dM)                                { return CalculateRadiusOnPhase(m_Mass + p_dM, m_Tau, CalculateRadiusAtZAMS(m_Mass + p_dM)); }
     
-    double          CalculateRadiusOnPhase(const double p_Mass, const double p_Tau, const double p_RZAMS) const;
 
     double          CalculateRadiusAtPhaseEnd(const double p_Mass, const double p_RZAMS) const;
     double          CalculateRadiusAtPhaseEnd() const                                       { return CalculateRadiusAtPhaseEnd(m_Mass, m_RZAMS); }                  // Use class member variables
-    double          CalculateRadiusOnPhase() const                                          { return CalculateRadiusOnPhase(m_Mass, m_Tau, m_RZAMS0); }             // Use class member variables
+
+
+//    double CalculateRadiusOnPhase_Hurley(const double p_Mass, const double p_Tau, const double p_RZAMS) const override;
+    double CalculateRadiusOnPhase_Hurley() const override;
+
+
+
+    double          CalculateRadiusOnPhase(const double p_Mass, const double p_Tau, const double p_RZAMS) const;
+    double          CalculateRadiusOnPhase() const override;
+
+
     double          CalculateRadiusOnPhase(const double p_Mass, const double p_Luminosity) const { return Radius(); }                                               // Not a meaningful function for MS stars
     double          CalculateRadiusTransitionToHG(const double p_Mass, const double p_Tau, const double p_RZAMS) const;
      

@@ -23,26 +23,17 @@ class Globals {
 
 private:
 
-    Globals() { m_RefZ = -1.0; }            // reference metallicty, initially undefined   
-    
-    Globals(Globals const&) = delete;
-    Globals& operator = (Globals const&) = delete;
+    ////////////////////////////////////////////////////////////////////////////////////////
+    //                                                                                    //
+    // NOTE: this code assumes that metallicity is same for both stars in a binary.       //
+    //                                                                                    //
+    // The code here could easily be changed to have metallicity different for each star, //
+    // but COMPAS options currently don't allow that (and may never), so for now we use   //
+    // that as a  simplification.                                                         //
+    //                                                                                    //
+    ////////////////////////////////////////////////////////////////////////////////////////
 
-    static Globals* m_Instance;
 
-    // assumption: metallicity is same for both stars in a binary.  The code here could easily be changed to have metallicity different for each star, but COMPAS options currently don't allow that, so for now we use that as a simplification.
-
-    double m_RefZ;                      // reference metallicity - used to calculate metallicity-dependent globals
-
-    // Z-dependent values
-
-    struct HurleyZdependent m_HurleyZdependent; // Hurley Z-dependent values
-
-    DBL_VECTOR  m_LuminosityCoefficients;   // luminosity coefficients
-    DBL_VECTOR  m_RadiusCoefficients;       // radius coefficients
-
-    double m_ZAMSheliumAbundanceFraction;       // Z-dependent ZAMS helium abundance fraction
-    double m_ZAMShydrogenAbundanceFraction;     // Z-dependent ZAMS hydrogen abundance fraction
 
     // Values of the variables in this struct depend on the star's metallicity only - so these values only need to
     // be calculated once per star (upon creation), but can also be reused if metallicity doesn't change from one
@@ -82,7 +73,61 @@ private:
 
         DBL_VECTOR  alphas;                 // Hurley at al. 2000 alpha values (alpha1, alpha3, and alpha4; alpha2 is not constant, so not calculated here)
 
-    } Hurldey;
+    } HurleyZdependentT;
+
+
+    Globals() {
+
+        // calculate the baryonic mass for which the gravitational remnant mass will be equal
+        // to the maximum NS mass (see option '--maximum-neutron-star-mass')
+        // calculated once per run
+        const double maxNSMass    = OPTIONS->MaximumNeutronStarMass();
+        m_BaryonicMassOfMaxNSMass = (0.075 * maxNSMass * maxNSMass) + maxNSMass;
+    } 
+    
+    Globals(Globals const&) = delete;
+    Globals& operator = (Globals const&) = delete;
+
+    static Globals* m_Instance;
+
+
+    // reference metallicity - used to calculate metallicity-dependent globals
+    std::optional<double> m_RefZ;
+
+
+    // non Z-dependent values
+    // these are calculated once per run only (in the constructor), and are guaranteed to exist
+    
+    double m_BaryonicMassOfMaxNSMass;                                   // baryonic mass for which the gravitational remnant mass will be equal to the max NS mass
+
+
+    // Z-dependent values
+    // these are calculated whenever the reference metallicity changes, and are guaranteed to exist
+    // only if m_RefZ has a value, and then will be correct for the value of m_RefZ 
+
+    // although the following two values are ZAMS values, they can be calculated for all stars because
+    // they only depend on the ZAMS metallicity of the star (COMPAS does not change the metallicity of
+    // the star throughout its lifetime, and the metallicity given for a star is the ZAMS metallicity)
+    double m_ZAMSheliumAbundance;                                       // Z-dependent ZAMS helium abundance fraction
+    double m_ZAMShydrogenAbundance;                                     // Z-dependent ZAMS hydrogen abundance fraction
+
+    DBL_VECTOR m_LuminosityCoefficients;                                // luminosity coefficients
+    DBL_VECTOR m_RadiusCoefficients;                                    // radius coefficients
+
+    HurleyZdependentT m_HurleyZdependent;                               // Hurley Z-dependent values
+   
+    // ZAMS Z-dependent values
+    // these are calculated whenever the reference metallicity changes, and are guaranteed to exist
+    // only if m_RefZ has a value *and* the star starts on the main sequence, and then will be correct
+    // ZAMS values for the value of m_RefZ 
+
+    // Shikauchi et al. 2024 coefficients - only present if required:
+    // if the BRCEK MS core mass prescription was specified, and star starts on the main sequence
+    std::optional<DBL_VECTOR> m_ShikauchiACoeffs;                       // alpha: the natural decline rate of fMix
+    std::optional<DBL_VECTOR> m_ShikauchiFCoeffs;                       // fMix: fraction of the mass contained in themixing core mass at ZAMS
+    std::optional<DBL_VECTOR> m_ShikauchiLCoeffs;                       // luminosity
+
+
     
     struct StarDetails {
 
@@ -93,7 +138,6 @@ private:
 
 
 
-    double m_BaryonicMassOfMaxNSMass; // once per run
 
     // these are per binary - should be in BaseStar
     double m_ZAMSluminosity;
@@ -106,13 +150,27 @@ public:
         return m_Instance;
     }
     
-    void            Initialise();
+    void Initialise();
 
-    void            Free();
 
     // getters
-    double          ReferenceMetallicity()                                  { return m_RefZ; } 
+
+    // caller should use:
+    //
+    // auto x = Peek(n)
+    // if (x) or if (x.has_value()) // "x.value().randomSeed" or "x->randomSeed" or "(*x).randomSeed"
+    // return value may not have a value (depends on stack size and lookback count) - caler needs to deal with this possibility
+
+
+    double        ReferenceMetallicity() const  { return m_RefZ; } 
+
+    DBL_VECTOR    LuminosityCoefficients()      { return m_LuminosityCoefficients; }
+
+    std::optional<DBL_VECTOR> ShikauskiAlphaCoefficients()      { return m_ShikauchiACoeffs; }
+    std::optional<DBL_VECTOR> ShikauskifMixCoefficients()       { return m_ShikauchiFCoeffs; }
+    std::optional<DBL_VECTOR> ShikauskiLuminosityCoefficients() { return m_ShikauchiLCoeffs; }
     
+
     // setters
     void            SetReferenceMetallicity(const double p_ReferenceMetallicity);
 
@@ -124,25 +182,54 @@ public:
 
         // range check and clamp to [MINIMUM_METALLICITY, MAXIMUM_METALLICITY] before anything else
         // this shouldn't happen - options code should already have caught this, but defensive...
-        if (refZ < MINIMUM_METALLICITY || refZ > MAXIMUM_METALLICITY) {                             // reference metallicity outside range?
-                                                                                                    // yes
-            refZ = std::max(MAXIMUM_METALLICITY, std::min(refZ, MAXIMUM_METALLICITY));              // clamp it
-                                                                                                    // issue warning
+        if (refZ < MINIMUM_METALLICITY || refZ > MAXIMUM_METALLICITY) {                         // reference metallicity outside range?
+                                                                                                // yes
+            refZ = std::max(MAXIMUM_METALLICITY, std::min(refZ, MAXIMUM_METALLICITY));          // clamp it
+                                                                                                // issue warning
             // ISSUE WARNING & CLAMP TO [MINIMUM, MAXIMUM]  
         }
         
-        if (refZ == m_RefZ) return;                                                                 // no change - nothing to do
+        if (refZ != m_RefZ) {                                                                   // reference metallicity changed?
+                                                                                                
+            m_RefZ = refZ;                                                                      // yes - set new reference metallicity
 
-        // reference metallicity has changed - recalculate metallicity-dependent values
+            // (re)calculate metallicity-dependent values
 
-        Switch (OPTIONS->Mode()) {                                                          // which evolution mode?
 
-            EVOLUTION_MODE::SSE_HURLEY:                                                     // HURLEY SSE
-            EVOLUTION_MODE::BSE_HURLEY:                                                     // HURLEY BSE
-            InitialiseHurleyZdependentValues();
-                break;
+            // the following are evolution-mode independent, and are always recalculated
+            // when the reference metallicity changes
+            m_ZAMSheliumAbundance    = CalculateZAMSHeliumAbundance_Pols_1998(m_RefZ);
+            m_ZAMShydrogenAbundance  = CalculateZAMSHydrogenAbundance_Pols_1998(m_RefZ);
+                                                                                            
+            m_LuminosityCoefficients = CalculateLuminosityCoefficients_Tout_1996(m_HurleyZdependentValues.zeta);
+            m_RadiusCoefficients     = CalculateRadiusCoefficients_Tout_1996(m_HurleyZdependentValues.zeta);
 
-            default: // THIS IS AN ERROR!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+            // Shikauchi et al. 2024 coefficients are only calculated if the BRCEK MS core mass
+            // prescription was specified, and star starts on the main sequence
+            if (OPTIONS->MainSequenceCoreMassPrescription() == MS_CORE_MASS_PRESCRIPTION::BRCEK &&
+                utils::IsOneOf(OPTIONS->StellarType(), STELLAR_TYPE_LIST::MAIN_SEQUENCE)) {
+                std::tie(m_ShikauchiACoeffs, m_ShikauchiFCoeffs, m_ShikauchiLyCoeffs) = CalculateShikauchiCoefficients(m_RefZ);
+            }
+
+
+            // the following are evolution-mode dependent, and are calculated only if required
+            Switch (OPTIONS->Mode()) {                                                          // which evolution mode?
+
+                EVOLUTION_MODE::SSE_HURLEY:                                                     // HURLEY SSE
+                EVOLUTION_MODE::BSE_HURLEY:                                                     // HURLEY BSE
+                    m_HurleyZdependentValues = CalculateHurleyZdependentValues(m_RefZ, m_HurleyZdependentValues);
+                    break;
+        
+                default:                                                                        // unknown mode
+                    // the only way this can happen is if someone added an EVOLUTION_MODE
+                    // and it isn't accounted for in this code.  We should not default here, with or without a warning.
+                    // We are here because the user chose a mode this code doesn't account for, and that should
+                    // be flagged as an error and result in termination of the evolution of the star or binary.
+                    // The correct fix for this is to add code for the missing mode or, if the missing mode is
+                    // superfluous, remove it from the option.
+    
+                    THROW_ERROR(ERROR::UNKNOWN_EVOLUTION_MODE);                                 // throw error
+            }
         }
     }
 
@@ -151,24 +238,24 @@ public:
     // member functions
 
 
-    void       CalculateAndSetHurleyZdependentValues(const double p_RefZ);
+    GNU_PURE  DBL_VECTOR CalculateLuminosityCoefficients_Tout_1996(const double p_Zeta) const;
+    GNU_PURE  DBL_VECTOR CalculateRadiusCoefficients_Tout_1996(const double p_Zeta) const;
 
-    DBL_VECTOR CalculateHurleyACoefficients(const double p_RefZ, const double p_Sigma, const double p_Zeta) const;
-    DBL_VECTOR CalculateHurleyAlphas(const DBL_VECTOR& p_bCoefficients, const DBL_VECTOR& p_MassCutoffs) const;
-    DBL_VECTOR CalculateHurleyBCoefficients(const double p_RefZ, const double p_Sigma, const double p_Zeta, const double p_Rho, const DBL_VECTOR& p_MassCutoffs) const;
-    DBL_VECTOR CalculateHurleyGammaConstants(const DBL_VECTOR& p_aCoefficients) const;
-    double     CalculateHurleyGBRadiusXexponent(const double p_Zeta) const;
-    DBL_VECTOR CalculateHurleyLuminosityConstants(const DBL_VECTOR& p_aCoefficients) const;
-    DBL_VECTOR CalculateHurleyMassCutoffs(const double p_RefZ, const double p_Zeta) const;
-    DBL_VECTOR CalculateHurleyRadiusConstants(const DBL_VECTOR& p_aCoefficients) const;
+    GNU_CONST double     CalculateZAMSHeliumAbundance_Pols_1998(const double p_RefZ) const;
+    GNU_CONST double     CalculateZAMSHydrogenAbundance_Pols_1998(const double p_RefZ) const;
+    
+    GNU_PURE  HurleyZdependentT CalculateHurleyZdependentValues(const double p_RefZ);
 
-    DBL_VECTOR CalculateLuminosityCoefficients_Tout_1996(const double p_Zeta) const;
-    DBL_VECTOR CalculateRadiusCoefficients_Tout_1996(const double p_Zeta) const;
+    GNU_PURE  DBL_VECTOR CalculateHurleyACoefficients(const double p_RefZ, const double p_Sigma, const double p_Zeta) const;
+    GNU_CONST DBL_VECTOR CalculateHurleyAlphas(const DBL_VECTOR& p_bCoefficients, const DBL_VECTOR& p_MassCutoffs) const;
+    GNU_PURE  DBL_VECTOR CalculateHurleyBCoefficients(const double p_RefZ, const double p_Sigma, const double p_Zeta, const double p_Rho, const DBL_VECTOR& p_MassCutoffs) const;
+    GNU_CONST DBL_VECTOR CalculateHurleyGammaConstants(const DBL_VECTOR& p_aCoefficients) const;
+    GNU_CONST double     CalculateHurleyGBRadiusXexponent(const double p_Zeta) const;
+    GNU_CONST DBL_VECTOR CalculateHurleyLuminosityConstants(const DBL_VECTOR& p_aCoefficients) const;
+    GNU_CONST DBL_VECTOR CalculateHurleyMassCutoffs(const double p_RefZ, const double p_Zeta) const;
+    GNU_CONST DBL_VECTOR CalculateHurleyRadiusConstants(const DBL_VECTOR& p_aCoefficients) const;
 
-    double     CalculateZAMSHeliumAbundanceFraction_Pols_1998(const double p_RefZ) const;
-    double     CalculateZAMSHydrogenAbundanceFraction_Pols_1998(const double p_RefZ) const;
-    double     CalculateZAMSLuminosity_Tout_1996(const double p_MZAMZ, const DBL_VECTOR& p_LuminosityCoefficients) const;
-    double     CalculateZAMSRadius_Tout_1996(const double p_MZAMS, const DBL_VECTOR& p_RadiusCoefficients) const;
+    GNU_PURE std::tuple<DBL_VECTOR, DBL_VECTOR, DBL_VECTOR> CalculateShikauchiCoefficients(const double p_Z) const;
 };
 
 #endif // __Globals_H__

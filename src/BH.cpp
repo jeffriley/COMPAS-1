@@ -39,24 +39,6 @@ double BH::CalculateNeutrinoMassLoss_Static(const double p_BaryonicMass) {
 
 
 /*
- * Calculate core collapse Supernova parameters
- *
- *
- * DBL_DBL_DBL CalculateCoreCollapseSNParams_Static(const double p_Mass)
- *
- * @param   [IN]    p_Mass                      Mass in Msol
- * @return                                      Tuple containing Luminosity, Radius and Temperature of Black Hole
- */
-DBL_DBL_DBL BH::CalculateCoreCollapseSNParams_Static(const double p_Mass) {
-    double luminosity  = BH::CalculateLuminosityOnPhase_Static();                                   // luminosity of BH
-    double radius      = BH::CalculateRadiusOnPhase_Static(p_Mass);                                 // Schwarzschild radius (not correct for rotating BH)
-    double temperature = BaseStar::CalculateTemperatureOnPhase_Static(luminosity, radius);          // temperature of BH
-
-    return std::make_tuple(luminosity, radius, temperature);
-}
-
-
-/*
  * Calculate the kick given to a black hole based on users chosen assumptions about black hole kicks,
  * fallback and the magnitude of a kick drawn from a distribution
  *

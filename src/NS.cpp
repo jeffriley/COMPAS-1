@@ -114,26 +114,6 @@ double NS::CalculateRadiusOnPhaseInKM_Static(const double p_Mass) {
 
 
 /*
- * Calculate core collapse Supernova parameters
- *
- * Called from GiantBranch, so must be static.
- * 
- * 
- * DBL_DBL_DBL CalculateCoreCollapseSNParams_Static(const double p_Mass)
- *
- * @param   [IN]    p_Mass                      Mass in Msol
- * @return                                      Tuple containing Luminosity, Radius and Temperature of Neutron Star
- */
-DBL_DBL_DBL NS::CalculateCoreCollapseSNParams_Static(const double p_Mass) {
-    double luminosity  = CalculateLuminosityOnPhase_Static(p_Mass, 0.0);                                        // luminosity of Neutron Star as it cools
-    double radius      = CalculateRadiusOnPhase_Static(p_Mass);                                                 // radius of Neutron Star in Rsol
-    double temperature = BaseStar::CalculateTemperatureOnPhase_Static(luminosity, radius);                      // temperature of NS
-
-    return std::make_tuple(luminosity, radius, temperature);
-}
-
-
-/*
  * Calculate the spin period of a Pulsar at birth according to selected distribution (by commandline option)
  * Users should note that when choosing the NOSPIN option, 
  * pulsar spin frequency is set to 0 and spin period is infinity. 

@@ -35,10 +35,11 @@ public:
     }
     
     // member functions - alphabetically
-    static  DBL_DBL_DBL CalculateCoreCollapseSNParams_Static(const double p_Mass);
     static  double      CalculateLuminosityOnPhase_Static()                         { return 1.0E-10; }                                                 // Hurley et al. 2000, eq 96
     static  double      CalculateNeutrinoMassLoss_Static(const double p_BaryonicMass);
-    static  double      CalculateRadiusOnPhase_Static(const double p_Mass)          { return 4.24E-6 * p_Mass; }                                        // Schwarzschild radius of Black Hole - Hurley et al. 2000, eq 94
+
+    static  double      CalculateSchwarzschildRadius_Static(const double p_Mass)    { return 4.24E-6 * p_Mass; }                                        // Schwarzschild radius of black hole
+    static  double      CalculateRadiusOnPhase_Hurley_Static(const double p_Mass)   { return CalculateSchwarzschildRadius_Static(p_Mass); }             // Hurley et al. 2000, eq 94
      
     static  double      ReweightSupernovaKickByMass_Static(const double p_vK, const double p_FallbackFraction, const double p_BlackHoleMass);
    
@@ -64,8 +65,10 @@ protected:
     double  CalculateLuminosityOnPhase() const                                      { return CalculateLuminosityOnPhase_Static(); }
     std::tuple<double, MASS_LOSS_TYPE> CalculateMassLossRate() { return std::make_tuple(0.0, MASS_LOSS_TYPE::NONE); } // Ensure that NSs don't lose mass in winds
     double  CalculateMomentOfInertia() const                                        { return (2.0 / 5.0) * m_Mass * m_Radius * m_Radius; }
-    double  CalculateRadiusOnPhase() const                                          { return CalculateRadiusOnPhase_Static(m_Mass); }                   // Use class member variables - returns radius in Rsol
-    double  CalculateRadiusOnPhase(double p_Mass, double p_Luminosity) const        { return CalculateRadiusOnPhase(); }        // not a meaningful calculation for BH, ignore arguments
+
+    double  CalculateRadiusOnPhase_Hurley() const override                          { return CalculateRadiusOnPhase_Hurley_Static(m_Mass); }                   // Use class member variables - returns radius in Rsol
+
+//    double  CalculateRadiusOnPhase(double p_Mass, double p_Luminosity) const        { return CalculateRadiusOnPhase(); }        // not a meaningful calculation for BH, ignore arguments
     
 };
 

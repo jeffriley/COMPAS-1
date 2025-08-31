@@ -8,39 +8,46 @@ Star::Star() : m_Star(new BaseStar()) {
 
     m_ObjectId          = globalObjectId++;                                                                         // set object id
     m_ObjectPersistence = OBJECT_PERSISTENCE::PERMANENT;                                                            // set object persistence
-
-    m_SaveStar = nullptr;
 }
 
 
 // Regular constructor - with parameters for RandomSeed, MZAMS, Metallicity, and KickParameters
-Star::Star(const unsigned long int p_RandomSeed,
-           const double            p_MZAMS,
-           const double            p_Metallicity, 
-           const KickParameters    p_KickParameters,
-           const double            p_RotationalVelocity) {
+Star::Star(const STARTING_STELLAR_TYPE p_StartingStellarType,
+           const unsigned long int     p_RandomSeed,
+           const double                p_Metallicity, 
+           const double                p_Mass,
+           const KickParameters        p_KickParameters,
+           const double                p_RotationalVelocity) {
 
-    m_ObjectId          = globalObjectId++;                                                                         // set object id
-    m_ObjectPersistence = OBJECT_PERSISTENCE::PERMANENT;                                                            // set object persistence
-
-    m_Star = new BaseStar(p_RandomSeed, p_MZAMS, p_Metallicity, p_KickParameters, p_RotationalVelocity);            // create underlying BaseStar object
-
-    // star begins life as a main sequence star, unless it is
-    // spinning fast enough for it to be chemically homogeneous
-
-    if (OPTIONS->CHEMode() != CHE_MODE::NONE && utils::Compare(m_Star->Omega(), m_Star->OmegaCHE()) >= 0) {         // CHE?
-        (void)SwitchTo(STELLAR_TYPE::CHEMICALLY_HOMOGENEOUS, true);                                                 // yes
-    }
-    else if (p_MZAMS <= 0.7) {                                                                                      // no - MS - initial mass determines actual type  JR: don't use utils::Compare() here
-        (void)SwitchTo(STELLAR_TYPE::MS_LTE_07, true);                                                              // MS <= 0.0 Msol
-    }
-    else {
-        (void)SwitchTo(STELLAR_TYPE::MS_GT_07, true);                                                               // MS > 0.7 Msol
-    }
-
-    m_SaveStar = nullptr;
+    m_ObjectId          = globalObjectId++;                                                                             // set object id
+    m_ObjectPersistence = OBJECT_PERSISTENCE::PERMANENT;                                                                // set object persistence
    
-    // thresholds flags for system detailed output file
+    m_Star = new BaseStar();                                                                                            // create underlying BaseStar object
+
+    // switch the star to the specified starting stellar type
+    // if specified starting stellar type is main seqiuence, check whether the star is
+    // spinning fast enough for it to be chemically homogeneous, and if so, switch to CH
+    STELLAR_TYPE startingStellarType = static_cast<STELLAR_TYPE>(static_cast<int>(p_StartingStellarType));              // fix up starting stellar type
+    if (utils::IsOneOf(startingStellarType, MAIN_SEQUENCE)) {                                                           // starting stellar type MS?
+        if (OPTIONS->CHEMode() != CHE_MODE::NONE && utils::Compare(m_Star->Omega(), m_Star->OmegaCHE()) >= 0) {         // yes - fast enough to be CH?
+            startingStellarType = STELLAR_TYPE::CHEMICALLY_HOMOGENEOUS;                                                 // yes - set starting stellar type to CH
+            (void)SwitchTo(STELLAR_TYPE::CHEMICALLY_HOMOGENEOUS, true);                                                 // switch to CH
+        }
+        else if (p_Mass <= 0.7) {                                                                                       // no, not CH - initial mass determines actual type
+            (void)SwitchTo(STELLAR_TYPE::MS_LTE_07, true);                                                              // mass <= 0.7 Msol: switch to MS_LTE_07
+        }
+        else {
+            (void)SwitchTo(STELLAR_TYPE::MS_GT_07, true);                                                               // mass > 0.7 Msol: switch to MS_GT_07
+        }
+    }
+    else (void)SwitchTo(stellarType, true);                                                                             // no, not MS - switch to specified starting stellar type
+
+    // initialise the state history of the star
+    // since the star has now switched to the specified starting stellar type, each
+    // star is able to determine its starting state according to its stellar type.
+    m_Star->InitialiseState(p_RandomSeed, p_Metallicity, p_Mass, p_KickParameters, p_RotationalVelocity);
+
+    // thresholds flags for system snapshot output file
     if (OPTIONS->SystemSnapshotAgeThresholds().size()  > 0) m_SystemSnapshotAgeFlags.assign(OPTIONS->SystemSnapshotAgeThresholds().size(), -1.0);
     if (OPTIONS->SystemSnapshotTimeThresholds().size() > 0) m_SystemSnapshotTimeFlags.assign(OPTIONS->SystemSnapshotTimeThresholds().size(), false);
 }
@@ -52,8 +59,7 @@ Star::Star(const Star& p_Star) {
     m_ObjectId          = globalObjectId++;                                                                                             // set object id
     m_ObjectPersistence = p_Star.ObjectPersistence();                                                                                   // set object persistence
 
-    m_Star     = p_Star.m_Star ? static_cast<BaseStar*>(p_Star.m_Star->Clone(OBJECT_PERSISTENCE::PERMANENT, false)) : nullptr;          // copy underlying BaseStar object
-    m_SaveStar = p_Star.m_SaveStar ? static_cast<BaseStar*>(p_Star.m_SaveStar->Clone(OBJECT_PERSISTENCE::PERMANENT, false)) : nullptr;  // and the saved copy
+    m_Star = p_Star.m_Star ? static_cast<BaseStar*>(p_Star.m_Star->Clone(OBJECT_PERSISTENCE::PERMANENT, false)) : nullptr;              // copy underlying BaseStar object
 }
 
 
@@ -136,48 +142,6 @@ STELLAR_TYPE Star::SwitchTo(const STELLAR_TYPE p_StellarType, bool p_SetInitialT
     return stellarTypePrev;
 }
 
-
-/*
- * Save current state of star
- *
- * Instantiates new object of current star class, deletes existing pointer to saved star
- * object (if it exists) and replaces it with pointer to newly instantiated object
- *
- *
- * void SaveState()
- */
-void Star::SaveState() {
-
-    delete m_SaveStar;
-    m_SaveStar = m_Star->Clone(OBJECT_PERSISTENCE::PERMANENT);
-}
-
-
-/*
- * Revert to the saved state of the star
- *
- * Changes the current star pointer (m_Star) to point to the save star object and
- * set the saved star pointer (m_SaveStar) to null.  Setting the saved state pointer
- * to null means there will be no saved state after calling this function - so state
- * needs to be saved if necessary (I don't do it here because we may not need to).
- *
- *
- * bool RevertState()
- *
- * @return                                      Boolean flag indicating success/failure (true = success)
- */
-bool Star::RevertState() {
-    bool result = false;
-
-    if (m_SaveStar) {
-        delete m_Star;
-        m_Star     = m_SaveStar;
-        m_SaveStar = nullptr;
-        result     = true;
-    }
-
-    return result;
-}
 
 /*
  *
@@ -399,7 +363,7 @@ if (OPTIONS->DebugLevel() > 0) std::cout << std::boolalpha << std::setprecision(
  *
  * EVOLUTION_STATUS Evolve(const long int p_Id)
  *
- * @param   [IN]    p_Id                        The id (e.g. step number) for this star - can be used to name logfiles for this star
+ * @param   [IN]    p_Id                        The id for this star - can be used to name logfiles for this star
  * @return                                      Status
  */
 EVOLUTION_STATUS Star::Evolve(const long int p_Id) {
@@ -430,6 +394,17 @@ EVOLUTION_STATUS Star::Evolve(const long int p_Id) {
             }
             else usingProvidedTimesteps = true;                                                                 // have user-provided timesteps
         }
+
+        // the evolution of a star in COMPAS is effectively represented as a finite-state machine, though we don't know
+        // the number of states a priori (the number of states is not infinite, though it could  << REWRITE - IT IS INFINTE, BUT WE DON'T VISI THEM ALL
+        // be intractably large, but even so, not an infinite-state machine - more like a transition system).  We do have an
+        // upper limit on the number of states - set by option values for the maximum evolution
+        // time and the maximum number of timesteps.  Even without those, given that we have an
+        // absolute minimum timestep, and a star can't be older than the universe, we have a
+        // theoretical maximum number of states.  But the actual number of state is infinite!
+        // We just don't visit them all in any single run of COMPAS...  <<<<<<<<<<<<<<<<<<<<<  NEED TO DOCUMENT THIS SOMEWHERE
+
+        // set the initial state of our state machine
 
         unsigned long int stepNum = 0;                                                                          // initialise step number
         while (evolutionStatus == EVOLUTION_STATUS::CONTINUE) {

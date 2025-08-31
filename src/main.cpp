@@ -350,13 +350,15 @@ std::tuple<int, int> EvolveSingleStars() {
                                                                                                                             // yes - continue
                         randomSeed = RAND->CurrentSeed();                                                                   // current random seed - to pass to star object
 
-                        // the initial mass of the star is supplied - this is to allow binary stars to initialise
-                        // the masses of their constituent stars (rather than have the constituent stars sample 
+                        // the mass of the star is supplied - this is to allow binary stars to initialise the
+                        // masses of their constituent stars (rather than have the constituent stars sample 
                         // their own mass).  Here we use the mass supplied by the user via the program options or, 
                         // if no mass was supplied by the user, sample the mass from the IMF.
 
-                        double initialMass = OPTIONS->OptionSpecified("initial-mass")                                       // user specified mass?
-                                                ? OPTIONS->InitialMass()                                                    // yes, use it
+                        // JR - REVISIT THIS FOR STARTING AFTER ZAMS - WE SHOULDN'T SAMPLE FROM IMF FOR NON-ZAMS <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+                        double mass = OPTIONS->OptionSpecified("mass")                                                      // user specified mass?
+                                                ? OPTIONS->Mass()                                                           // yes, use it
                                                 : utils::SampleInitialMass(OPTIONS->InitialMassFunction(),                  // no, sample it
                                                                            OPTIONS->InitialMassFunctionMax(), 
                                                                            OPTIONS->InitialMassFunctionMin(), 
@@ -396,8 +398,8 @@ std::tuple<int, int> EvolveSingleStars() {
                         // create the star
                         delete star; star = nullptr;                                                                        // so we don't leak...
                         star = OPTIONS->OptionSpecified("rotational-frequency")                                             // user specified rotational frequency?
-                                ? new Star(randomSeed, initialMass, metallicity, kickParameters, OPTIONS->RotationalFrequency() * SECONDS_IN_YEAR) // yes - use it (convert from Hz to cycles per year - see BaseStar::CalculateZAMSAngularFrequency())
-                                : new Star(randomSeed, initialMass, metallicity, kickParameters);                           // no - let it be calculated
+                                ? new Star(stellarType, randomSeed, metallicity, mass, kickParameters, OPTIONS->RotationalFrequency() * SECONDS_IN_YEAR) // yes - use it (convert from Hz to cycles per year - see BaseStar::CalculateZAMSAngularFrequency())
+                                : new Star(stellarType, randomSeed, metallicity, mass, kickParameters);                     // no - let it be calculated
 
                         thisStarStatus = EVOLUTION_STATUS::STARTED;
                         
@@ -407,14 +409,16 @@ std::tuple<int, int> EvolveSingleStars() {
                         if (!OPTIONS->Quiet()) {                                                                            // quiet mode?
                             SAY(index                                     <<                                                // announce result of evolving the star
                                 ": "                                      <<
-                                EVOLUTION_STATUS_LABEL.at(thisStarStatus) <<                  
-                                ": RandomSeed = "                         <<
-                                star->RandomSeed()                        <<
-                                ", Initial Mass = "                       <<
-                                star->MZAMS()                             <<
+                                EVOLUTION_STATUS_LABEL.at(thisStarStatus) <<
+                                ": "                                      <<
+                                STELLAR_TYPE_LABEL.at(stellarType)        <<                  
+                                ", RandomSeed = "                         <<
+                                randomSeed                                <<
+                                ", Mass = "                               <<
+                                mass                                      <<
                                 ", Metallicity = "                        <<
-                                star->Metallicity()                       <<
-                                ", "                                      <<
+                                metallicity                               <<
+                                " -> "                                    <<
                                 STELLAR_TYPE_LABEL.at(star->StellarType()));
                         }
 

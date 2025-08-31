@@ -44,10 +44,6 @@ void Initialise() {
 
 
 
-    // Calculates the Baryonic mass for which the gravitational remnant mass will be equal to the maximum Neutron Star mass (inverse of SolveQuadratic())
-    // needed to decide whether to calculate Fryer+2012 for Neutron Star or Black Hole in GiantBranch::CalculateGravitationalRemnantMass()
-    // calculate only once for entire simulation of N binaries in the future.
-    m_BaryonicMassOfMaxNSMass = (0.075 * OPTIONS->MaximumNeutronStarMass() * OPTIONS->MaximumNeutronStarMass()) + OPTIONS->MaximumNeutronStarMass();
 
 
     // first, determine what mode the user requested
@@ -535,7 +531,7 @@ double Globals::CalculateHurleyGBRadiusXexponent(const double p_Zeta) const {
  * @param       p_HurleyZdependentValues        Struct containing Hurley Z-dependent values
  * @return                                      Struct containing (possibly updated) Hurley Z-dependent values
  */
-struct HurleyZdependentValues CalculateHurleyZdependentValues(const double p_Z, const HurleyZdependentValues& p_HurleyZdependentValues) const {
+HurleyZdependentT CalculateHurleyZdependentValues(const double p_Z, const HurleyZdependentValues& p_HurleyZdependentValues) const {
 
     HurleyZdependentValues values = p_HurleyZdependentValues;                               // return value - default is unchanged
 
@@ -569,7 +565,7 @@ struct HurleyZdependentValues CalculateHurleyZdependentValues(const double p_Z, 
 
         values.xExponent           = CalculateHurleyGBRadiusXexponent();
 
-        values.alphas              = CalculateHurleyAplhas(values.bCoefficients, values.massCutoffs);
+        values.alphas              = CalculateHurleyAlphas(values.bCoefficients, values.massCutoffs);
     }
 
     // return the values struct by value - NRVO takes care of performance/efficiency
@@ -678,109 +674,119 @@ DBL_VECTOR Globals::CalculateRadiusCoefficients_Tout_1996(const double p_Zeta) c
 
 
 /*
- * CalculateZAMSHeliumAbundanceFraction_Pols_1998
+ * CalculateZAMSHeliumAbundance_Pols_1998
  *
  * @brief
- * Calculate ZAMS helium abundance (as a fraction of the star's mass) per Pols et al. 1998
+ * Calculate ZAMS helium abundance as a fraction of the star's mass, per Pols et al. 1998
  *
  *
- * double CalculateZAMSHeliumAbundanceFraction_Pols_1998(const double p_Z) const
+ * double CalculateZAMSHeliumAbundance_Pols_1998(const double p_Z) const
  * 
  * @param       p_Z                             Metallicity
- * @return                                      ZAMS helium abundance fraction
+ * @return                                      ZAMS helium abundance
  */
-double Globals::CalculateZAMSHeliumAbundanceFraction_Pols_1998(const double p_Z) const {
+double Globals::CalculateZAMSHeliumAbundance_Pols_1998(const double p_Z) const {
     return 0.24 + 2.0 * p_Z;
 }
 
 
 /*
- * CalculateZAMSHydrogenAbundanceFraction_Pols_1998
+ * CalculateZAMSHydrogenAbundance_Pols_1998
  *
  * @brief
- * Calculate ZAMS hydrogen abundance (as a fraction of the star's mass) per Pols et al. 1998
+ * Calculate ZAMS hydrogen abundance as a fraction of the star's mass, per Pols et al. 1998
  *
  *
- * double CalculateZAMSHydrogenAbundanceFraction_Pols_1998(const double p_Z) const
+ * double CalculateZAMSHydrogenAbundance_Pols_1998(const double p_Z) const
  *
  * @param       p_Z                             Metallicity
- * @return                                      ZAMS hydrogen abundance fraction
+ * @return                                      ZAMS hydrogen abundance
  */
-double Globals::CalculateZAMSHydrogenAbundanceFraction_Pols_1998(const double p_Z) const {
+double Globals::CalculateZAMSHydrogenAbundance_Pols_1998(const double p_Z) const {
     return 0.76 - 3.0 * p_Z;
 }
 
 
 /*
- * CalculateZAMSLuminosity_Tout_1996
+ * CalculateShikauchiCoefficients
  *
- * @brief
- * Calculate ZAMS luminosity (in Lsol) per Tout et al. 1996, eq 1
- *
- *
- * double CalculateZAMSLuminosity_Tout_1996(const double p_MZAMS, const DBL_VECTOR& p_LuminosityCoefficients) const
+ * Calculate metallicity-dependent coefficients per Shikauchi et al. 2024
+ * Shikauchi et al. 2024 gives values for the coefficients of relationships for:
  * 
- * @param       p_MZAMS                         Zero age main sequence mass (Msol)
- * @param       p_LuminosityCoefficients        Tout luminosity coefficients
- * @return                                      ZAMS luminosity (Lsol)
+ *    - the natural decline rate of the mixing core mass in the absence of mass loss (alpha),
+ *    - the fraction of the mass contained in the mixing core (fMix),
+ *    - luminosity
+ * 
+ * The relationships described by Shikauchi et al. 2024 are metallicity-dependent.  This function
+ * calculates the values for coefficents at a specified metallicity either by extending the extremities
+ * of the relationships (assuming a constant value equal to the bound), or linear interpolation between
+ * the bounds defined by Shikauchi et al. 2024.
+ * 
+ *
+ * std::tuple<DBL_VECTOR, DBL_VECTOR, DBL_VECTOR> InterpolateShikauchiCoefficients(const double p_Metallicity)
+ *
+ * @param       p_Z                             Metallicity
+ * @return                                      Tuple containing vectors of coefficients (alpha, fMix, luminosity)
  */
-double Globals::CalculateZAMSLuminosity_Tout_1996(const double p_MZAMS, const DBL_VECTOR& p_LuminosityCoefficients) const {
-#define lCoeffs(x) p_LuminosityCoefficients[static_cast<int>(TOUT_L_Coeff::x)] // for convenience and readability - undefined at end of function
+std::tuple<DBL_VECTOR, DBL_VECTOR, DBL_VECTOR> Globals::CalculateShikauchiCoefficients(const double p_Z) const {
+// macros for convenience and readability - undefined at end of function
+#define lower SHIKAUCHI_Coeff::ONE_TENTH_Z_SOL
+#define mid   SHIKAUCHI_Coeff::ONE_THIRD_Z_SOL
+#define upper SHIKAUCHI_Coeff::Z_SOL
+
+    // create and initialise return values - vectors of coefficients
+    DBL_VECTOR alphaCoeff(SHIKAUCHI_FMIX_COEFF[lower].size(), 0.0);             // alpha coefficients
+    DBL_VECTOR fMixCoeff(SHIKAUCHI_ALPHA_COEFF[lower].size(), 0.0);             // fMix coefficients
+    DBL_VECTOR luminosityCoeff(SHIKAUCHI_LUMINOSITY_COEFF[lower].size(), 0.0);  // luminosity coefficients
+       
+    // common factors for each of the metallicities defined by Shikauchi et al. 2024
+    const double logLowerZ         = std::log10(0.1 * ZSOL_HURLEY);             // Z lower bound: SHIKAUCHI_Coeff::ONE_TENTH_Z_SOL
+    const double logMidZ           = std::log10(1.0 / 3.0 * ZSOL_HURLEY);       // Z mid-range:   SHIKAUCHI_Coeff::ONE_THIRD_Z_SOL
+    const double logUpperZ         = std::log10(ZSOL_HURLEY);                   // Z upper bound: SHIKAUCHI_Coeff::Z_SOL
+
+    const double logZ              = std::log10(p_Z);
+    const double logZ_logLowerZ    = logZ - logLowerZ;
+    const double logZ_logMidZ      = logZ - logMidZ;
+    const double logMidZ_logZ      = logMidZ  - logZ;
+    const double logMidZ_logLowerZ = logMidZ  - logLowerZ;
+    const double logUpperZ_logZ    = logUpperZ - logZ;
+    const double logUpperZ_logMidZ = logUpperZ - logMidZ;
     
-    // calculate some powers of p_MZAMS - for performance and readability
-    // this function is only called once per star, and at most twice per binary (but probably once), so not too onerous
-    // pow() is slow - use multiplication where it makes sense
-    const double M0_5 = std::sqrt(p_MZAMS);  // sqrt() is much faster than pow()
-    const double M2   = p_MZAMS * p_MZAMS;
-    const double M3   = p_MZAMS * M2;
-    const double M5   = M2 * M3;
-    const double M7   = M2 * M5;
-    const double M8   = p_MZAMS * M7;
-        
-    double top = (lCoeffs(ALPHA) * (M5 * M0_5)) + (lCoeffs(BETA) * (M3 * M8));
-        
-    return top / (lCoeffs(GAMMA) + M3) + (lCoeffs(DELTA) * M5) + (lCoeffs(EPSILON) * M7) + (lCoeffs(ZETA) * M8) + (lCoeffs(ETA) * ( M8 * p_MZAMS * M0_5));
-        
-#undef lCoeffs
+    // calculate coefficients for specified metallicity
+    if (logZ <= logLowestZ) {                                                   // p_Z at or below lower metallicity bound?
+                                                                                // yes, clamp coefficients to lower bound values
+        alphaCoeff      = SHIKAUCHI_ALPHA_COEFF[lower];
+        fMixCoeff       = SHIKAUCHI_FMIX_COEFF[lower];
+        luminosityCoeff = SHIKAUCHI_LUMINOSITY_COEFF[lower];
+    }
+    else if (logZ <= middle) {                                                  // p_Z in lower to middle metallicity band?
+                                                                                // yes, interpolate
+        for (size_t i = 0; i < alphaCoeff.size(); i++)
+            alphaCoeff[i] = (SHIKAUCHI_ALPHA_COEFF[lower][i] * logMidZ_logZ + SHIKAUCHI_ALPHA_COEFF[mid][i] * logZ_logLowerZ) / logMidZ_logLowerZ;
+        for (size_t i = 0; i < fMixCoeff.size(); i++)
+            fMixCoeff[i]  = (SHIKAUCHI_FMIX_COEFF[lower][i] * logMidZ_logZ + SHIKAUCHI_FMIX_COEFF[mid][i] * logZ_logLowerZ) / logMidZ_logLowerZ;
+        for (size_t i = 0; i < luminosityCoeff.size; i++)
+            luminosityCoeff[i] = (SHIKAUCHI_LUMINOSITY_COEFF[lower][i] * logMidZ_logZ + SHIKAUCHI_LUMINOSITY_COEFF[mid][i] * logZ_logLowerZ) / logMidZ_logLowerZ;
+    }
+    else if (logZ < high) {                                                     // p_Z in middle to upper metallicity band?
+                                                                                // yes, interpolate
+            for (size_t i = 0; i < alphaCoeff.size(); i++)
+                alphaCoeff[i] = (SHIKAUCHI_ALPHA_COEFF[mid][i] * logUpperZ_logZ + SHIKAUCHI_ALPHA_COEFF[upper][i] * logZ_logMidZ) / logUpperZ_logMidZ;
+            for (size_t i = 0; i < fMixCoeff.size(); i++)
+                fMixCoeff[i]  = (SHIKAUCHI_FMIX_COEFF[mid][i] * logUpperZ_logZ + SHIKAUCHI_FMIX_COEFF[upper][i] * logZ_logMidZ) / logUpperZ_logMidZ;
+            for (size_t i = 0; i < luminosityCoeff.size; i++)
+                luminosityCoeff[i] = (SHIKAUCHI_LUMINOSITY_COEFF[mid][i] * logUpperZ_logZ + SHIKAUCHI_LUMINOSITY_COEFF[upper][i] * logZ_logMidZ) / logUpperZ_logMidZ;
+    }
+    else {                                                                      // p_Z at or above upper metallicity bound
+                                                                                // clamp coefficients to upper bound values
+        alphaCoeff      = SHIKAUCHI_ALPHA_COEFF[upper];
+        fMixCoeff       = SHIKAUCHI_FMIX_COEFF[upper];
+        luminosityCoeff = SHIKAUCHI_LUMINOSITY_COEFF[upper];
+    }
+    
+    return std::make_tuple(alphaCoeff, fMixCoeff, luminosityCoeff);
+
+#undef upper
+#undef mid
+#undef lower
 }
-
-
-/*
- * CalculateZAMSRadius_Tout_1996
- *
- * Calculate radius at ZAMS (in Rsol) per Tout et al. 1996, eq 2
- *
- *
- * double CalculateZAMSRadius_Tout_1996(const double p_MZAMS, const DBL_VECTOR& p_RadiusCoefficients)
- *
- * @param       p_MZAMS                         Zero age main sequence mass (Msol)
- * @param       p_RadiusCoefficients            Tout radius coefficients
- * @return                                      ZAMS radius (Rsol)
- */
-double BaseStar::CalculateZAMSRadius_Tout_1996(const double p_MZAMS, const DBL_VECTOR& p_RadiusCoefficients) const {
-#define rCoeffs(x) p_RadiusCoefficients[static_cast<int>(TOUT_R_Coeff::x)] // for convenience and readability - undefined at end of function
-    
-    // calculate some powers of p_MZAMS - for performance and readability
-    // this function is only called once per star, and at most twice per binary (but probably once), so not too onerous
-    // pow() is slow - use multiplication where it makes sense
-    const double M0_5  = std::sqrt(p_MZAMS);
-    const double M2    = p_MZAMS * p_MZAMS;
-    const double M6    = M2 * M2 * M2;
-    const double M6_5  = M6 * M0_5;
-    const double M8    = M6 * M2;
-    const double M11   = M8 * M2 * p_MZAMS;
-    const double M19   = M11 * M8;
-    const double M19_5 = M19 * M0_5;
-    
-    double top = (rCoeffs(THETA) * (M2 * M0_5)) + (rCoeffs(IOTA) * M6_5) + (rCoeffs(KAPPA) * M11) + (rCoeffs(LAMBDA) * M19) + (rCoeffs(MU) * M19_5);
-    
-    return top / rCoeffs(NU) + (rCoeffs(XI) * M2) + (rCoeffs(OMICRON) * (M8 * M0_5)) + (M6 * M6 * M6_5) + (rCoeffs(PI) * M19_5);
-    
-#undef coeff
-}
-
-
-
-
-
-

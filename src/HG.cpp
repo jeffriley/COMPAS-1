@@ -875,10 +875,11 @@ double HG::CalculateRadiusAtPhaseEnd(const double p_Mass) const {
  * @param   [IN]    p_RZAMS                     Zero Age Main Sequence (ZAMS) Radius
  * @return                                      Radius on the Hertzsprung Gap in Rsol
  */
-double HG::CalculateRadiusOnPhase(const double p_Mass, const double p_Tau, const double p_RZAMS) const {
+double HG::CalculateRadiusOnPhase(const double p_Mass, const double p_Tau, const double p_RZAMS, const DBL_VECTOR p_bCoefficients) const {
+#define b p_bCoefficients // for convenience and readability - undefined at end of function
 
     double RTMS;  
-    if ((OPTIONS->MainSequenceCoreMassPrescription() == CORE_MASS_PRESCRIPTION::BRCEK) && (utils::Compare(m_MZAMS, BRCEK_LOWER_MASS_LIMIT) >= 0))
+    if ((OPTIONS->MainSequenceCoreMassPrescription() == MS_CORE_MASS_PRESCRIPTION::BRCEK) && (utils::Compare(m_MZAMS, BRCEK_LOWER_MASS_LIMIT) >= 0))
         // p_Mass generally has the value of m_Mass0, but since m_Mass is used for radius calculations on the MS and m_Mass0
         // is updated to a new value when BRCEK prescription is used, we need to use m_Mass here to keep radius continuous
         RTMS = MainSequence::CalculateRadiusAtPhaseEnd(m_Mass, p_RZAMS);

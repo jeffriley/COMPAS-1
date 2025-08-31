@@ -1931,21 +1931,26 @@ STELLAR_TYPE GiantBranch::ResolveCoreCollapseSN() {
         stellarType = CalculateRemnantTypeByMuller2016(m_COCoreMass);
     }
     else if (OPTIONS->RemnantMassPrescription() == REMNANT_MASS_PRESCRIPTION::MULLERMANDEL) {
-        stellarType = (utils::Compare(m_Mass, OPTIONS->MaximumNeutronStarMass()) > 0) ? STELLAR_TYPE::BLACK_HOLE : STELLAR_TYPE::NEUTRON_STAR;
+        stellarType = m_Mass > OPTIONS->MaximumNeutronStarMass() ? STELLAR_TYPE::BLACK_HOLE : STELLAR_TYPE::NEUTRON_STAR;
     }
     else if (OPTIONS->RemnantMassPrescription() == REMNANT_MASS_PRESCRIPTION::HURLEY2000) {
-        stellarType = (utils::Compare(m_Mass, 1.8 ) > 0) ? STELLAR_TYPE::BLACK_HOLE : STELLAR_TYPE::NEUTRON_STAR; // Hurley+ 2000, Eq. (92)
+        stellarType = m_Mass > 1.8 ? STELLAR_TYPE::BLACK_HOLE : STELLAR_TYPE::NEUTRON_STAR;                 // Hurley et al. 2000, eq 92
     }
-    else if (utils::Compare(m_Mass, OPTIONS->MaximumNeutronStarMass()) > 0) {
-        std::tie(m_Luminosity, m_Radius, m_Temperature) = BH::CalculateCoreCollapseSNParams_Static(m_Mass);
-        stellarType = STELLAR_TYPE::BLACK_HOLE;
+    else if (m_Mass > OPTIONS->MaximumNeutronStarMass()) {                                                  // collapse to BH
+        m_Luminosity  = BH::CalculateLuminosityOnPhase_Static();                                            // luminosity of BH
+        m_Radius      = BH::CalculateSchwarzschildRadius_Static(m_Mass);                                    // Schwarzschild radius (not correct for rotating BH)
+        m_Temperature = BaseStar::CalculateTemperatureOnPhase_Static(m_Luminosity, m_Radius);               // temperature of BH
+        stellarType   = STELLAR_TYPE::BLACK_HOLE;
     }
-    else {
-        std::tie(m_Luminosity, m_Radius, m_Temperature) = NS::CalculateCoreCollapseSNParams_Static(m_Mass);
-        stellarType = STELLAR_TYPE::NEUTRON_STAR;
+    else {                                                                                                  // collapse to NS
+        m_Luminosity  = NS::CalculateLuminosityOnPhase_Static(m_Mass, 0.0);                                 // luminosity of NS as it cools
+        m_Radius      = NS::CalculateRadiusOnPhase_Static(m_Mass);                                          // radius of NS
+        m_Temperature = BaseStar::CalculateTemperatureOnPhase_Static(m_Luminosity, m_Radius);               // temperature of NS
+        stellarType   = STELLAR_TYPE::NEUTRON_STAR;
     }
 
-    if (utils::Compare(mass,m_CoreMass) == 0 && utils::Compare(m_HeCoreMass, m_COCoreMass) == 0) {          // entire star is CO core, so this is a USSN
+    // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< UTILS::COMPARE <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+    if (utils::Compare(mass, m_CoreMass) == 0 && utils::Compare(m_HeCoreMass, m_COCoreMass) == 0) {         // entire star is CO core, so this is a USSN
         SetSNCurrentEvent(SN_EVENT::USSN);                                                                  // flag ultra-stripped SN happening now
         SetSNPastEvent(SN_EVENT::USSN);                                                                     // ... and will be a past event
     }

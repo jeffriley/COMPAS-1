@@ -250,10 +250,18 @@ void Options::OptionValues::Initialise() {
     m_TimestepMultipliers.clear();
 
     
-    // Initial mass options
-    m_InitialMass                                                   = 5.0;
-    m_InitialMass1                                                  = 5.0;
-    m_InitialMass2                                                  = 5.0;
+    // starting stellar type
+    m_StellarType.type                                              = STARTING_STELLAR_TYPE::MS;                            // default is main sequence
+    m_StellarType.typeString                                        = STARTING_STELLAR_TYPE_LABEL.at(m_StellarType.type);
+    m_StellarType1.type                                             = STARTING_STELLAR_TYPE::MS;                            // default is main sequence
+    m_StellarType1.typeString                                       = STARTING_STELLAR_TYPE_LABEL.at(m_StellarType.type);
+    m_StellarType2.type                                             = STARTING_STELLAR_TYPE::MS;                            // default is main sequence
+    m_StellarType2.typeString                                       = STARTING_STELLAR_TYPE_LABEL.at(m_StellarType.type);
+
+    // Mass options
+    m_Mass                                                          = 5.0;
+    m_Mass1                                                         = 5.0;
+    m_Mass2                                                         = 5.0;
 
     m_InitialMassFunction.type                                      = INITIAL_MASS_FUNCTION::KROUPA;
     m_InitialMassFunction.typeString                                = INITIAL_MASS_FUNCTION_LABEL.at(m_InitialMassFunction.type);
@@ -262,7 +270,7 @@ void Options::OptionValues::Initialise() {
     m_InitialMassFunctionPower                                      = 0.0;
 
 
-    // Initial mass ratio
+    // Mass ratio
     m_MassRatio                                                     = 1.0;
     m_MassRatioDistribution.type                                    = MASS_RATIO_DISTRIBUTION::FLAT;
     m_MassRatioDistribution.typeString                              = MASS_RATIO_DISTRIBUTION_LABEL.at(m_MassRatioDistribution.type);
@@ -452,8 +460,8 @@ void Options::OptionValues::Initialise() {
     m_ScaleTerminalWindVelocityWithMetallicityPower                 = 0.0;
 
     // Core mass prescription
-    m_MainSequenceCoreMassPrescription.type                         = CORE_MASS_PRESCRIPTION::MANDEL;
-    m_MainSequenceCoreMassPrescription.typeString                   = CORE_MASS_PRESCRIPTION_LABEL.at(m_MainSequenceCoreMassPrescription.type);
+    m_MainSequenceCoreMassPrescription.type                         = MS_CORE_MASS_PRESCRIPTION::MANDEL;
+    m_MainSequenceCoreMassPrescription.typeString                   = MS_CORE_MASS_PRESCRIPTION_LABEL.at(m_MainSequenceCoreMassPrescription.type);
 
     // Mass transfer options
     m_UseMassTransfer                                               = true;
@@ -1028,7 +1036,6 @@ bool Options::AddOptions(OptionValues *p_Options, po::options_description *p_Opt
 
         // numerical options - alphabetically grouped by type 
 
-
         // unsigned long
 
         (
@@ -1313,29 +1320,29 @@ bool Options::AddOptions(OptionValues *p_Options, po::options_description *p_Opt
         )
 
         (
-            "initial-mass",                                            
-            po::value<double>(&p_Options->m_InitialMass)->default_value(p_Options->m_InitialMass),                                                                          
-            ("Initial mass (in Msol) for the star (SSE) (default = " + std::to_string(p_Options->m_InitialMass) + ")").c_str()
+            "mass",                                            
+            po::value<double>(&p_Options->m_Mass)->default_value(p_Options->m_Mass),                                                                          
+            ("Mass (in Msol) for the star (SSE) (default = " + std::to_string(p_Options->m_Mass) + ")").c_str()
         )
         (
-            "initial-mass-1",                                            
-            po::value<double>(&p_Options->m_InitialMass1)->default_value(p_Options->m_InitialMass1),                                                                          
-            ("Initial mass (in Msol) for the primary star (BSE) (default = " + std::to_string(p_Options->m_InitialMass1) + ")").c_str()
+            "mass-1",                                            
+            po::value<double>(&p_Options->m_Mass1)->default_value(p_Options->m_Mass1),                                                                          
+            ("Mass (in Msol) for the primary star (BSE) (default = " + std::to_string(p_Options->m_Mass1) + ")").c_str()
         )
         (
-            "initial-mass-2",                                            
-            po::value<double>(&p_Options->m_InitialMass2)->default_value(p_Options->m_InitialMass2),
-            ("Initial mass (in Msol) for the secondary star (BSE) (default = " + std::to_string(p_Options->m_InitialMass2) + ")").c_str()
+            "mass-2",                                            
+            po::value<double>(&p_Options->m_Mass2)->default_value(p_Options->m_Mass2),
+            ("Mass (in Msol) for the secondary star (BSE) (default = " + std::to_string(p_Options->m_Mass2) + ")").c_str()
         )
         (
             "initial-mass-function-max",                                            
             po::value<double>(&p_Options->m_InitialMassFunctionMax)->default_value(p_Options->m_InitialMassFunctionMax),                                                                          
-            ("The maximum mass (in Msol) to sample from the initial mass function (IMF), (only used when sampling initial mass, default = " + std::to_string(p_Options->m_InitialMassFunctionMax) + ")").c_str()
+            ("The maximum mass (in Msol) to sample from the initial mass function (IMF), (only used when sampling ZAMS mass, default = " + std::to_string(p_Options->m_InitialMassFunctionMax) + ")").c_str()
         )
         (
             "initial-mass-function-min",                                            
             po::value<double>(&p_Options->m_InitialMassFunctionMin)->default_value(p_Options->m_InitialMassFunctionMin),                                                                          
-            ("The minimum mass (in Msol) to sample from the initial mass function (IMF), (only used when sampling initial mass, default = " + std::to_string(p_Options->m_InitialMassFunctionMin) + ")").c_str()
+            ("The minimum mass (in Msol) to sample from the initial mass function (IMF), (only used when sampling ZAMS mass, default = " + std::to_string(p_Options->m_InitialMassFunctionMin) + ")").c_str()
         )
         (
             "initial-mass-function-power",                                          
@@ -1957,7 +1964,6 @@ bool Options::AddOptions(OptionValues *p_Options, po::options_description *p_Opt
         (
             "main-sequence-core-mass-prescription",
             po::value<std::string>(&p_Options->m_MainSequenceCoreMassPrescription.typeString)->default_value(p_Options->m_MainSequenceCoreMassPrescription.typeString),
-            
             ("Main Sequence core mass prescription (" + AllowedOptionValuesFormatted("main-sequence-core-mass-prescription") + ", default = '" + p_Options->m_MainSequenceCoreMassPrescription.typeString + "')").c_str()
         )
         (
@@ -2086,10 +2092,26 @@ bool Options::AddOptions(OptionValues *p_Options, po::options_description *p_Opt
             ("Initial semi-major axis distribution (" + AllowedOptionValuesFormatted("semi-major-axis-distribution") + ", default = '" + p_Options->m_SemiMajorAxisDistribution.typeString + "')").c_str()
         )        
         (
+            "stellar-type",                                   
+            po::value<std::string>(&p_Options->m_StellarType.typeString)->default_value(p_Options->m_StellarType.typeString),                                                            
+            ("Starting stellar type for the star (SSE) (" + AllowedOptionValuesFormatted("stellar-type") + ", default = '" + p_Options->m_StellarType.typeString + "')").c_str()
+        )
+        (
+            "stellar-type-1",                                   
+            po::value<std::string>(&p_Options->m_StellarType1.typeString)->default_value(p_Options->m_StellarType1.typeString),                                                            
+            ("Starting stellar type for the primary star (BSE) (" + AllowedOptionValuesFormatted("stellar-type-1") + ", default = '" + p_Options->m_StellarType1.typeString + "')").c_str()
+        )
+        (
+            "stellar-type-2",                                   
+            po::value<std::string>(&p_Options->m_StellarType2.typeString)->default_value(p_Options->m_StellarType2.typeString),                                                            
+            ("Starting stellar type for the secondary star (BSE) (" + AllowedOptionValuesFormatted("stellar-type-2") + ", default = '" + p_Options->m_StellarType2.typeString + "')").c_str()
+        )
+        (
             "stellar-zeta-prescription",                                   
             po::value<std::string>(&p_Options->m_StellarZetaPrescription.typeString)->default_value(p_Options->m_StellarZetaPrescription.typeString),                                                            
             ("Prescription for stellar zeta (" + AllowedOptionValuesFormatted("stellar-zeta-prescription") + ", default = '" + p_Options->m_StellarZetaPrescription.typeString + "')").c_str()
         )
+
         (
             "tides-prescription",                            
             po::value<std::string>(&p_Options->m_TidesPrescription.typeString)->default_value(p_Options->m_TidesPrescription.typeString),                                                                                                    
@@ -2419,7 +2441,7 @@ std::string Options::OptionValues::CheckAndSetOptions() {
         }
         
         if (!DEFAULTED("main-sequence-core-mass-prescription")) {                                                                   // main sequence core mass prescription
-            std::tie(found, m_MainSequenceCoreMassPrescription.type) = utils::GetMapKey(m_MainSequenceCoreMassPrescription.typeString, CORE_MASS_PRESCRIPTION_LABEL, m_MainSequenceCoreMassPrescription.type);
+            std::tie(found, m_MainSequenceCoreMassPrescription.type) = utils::GetMapKey(m_MainSequenceCoreMassPrescription.typeString, MS_CORE_MASS_PRESCRIPTION_LABEL, m_MainSequenceCoreMassPrescription.type);
             COMPLAIN_IF(!found, "Unknown Main Sequence Core Mass Prescription");
         }
         
@@ -2583,9 +2605,9 @@ std::string Options::OptionValues::CheckAndSetOptions() {
         COMPLAIN_IF(m_HDF5BufferSize < 1, "HDF5 IO buffer size (--hdf5-buffer-size) must be >= 1");
         COMPLAIN_IF(m_HDF5ChunkSize < HDF5_MINIMUM_CHUNK_SIZE, "HDF5 file dataset chunk size (--hdf5-chunk-size) must be >= minimum chunk size of " + std::to_string(HDF5_MINIMUM_CHUNK_SIZE));
 
-        COMPLAIN_IF(m_InitialMass  < MINIMUM_INITIAL_MASS || m_InitialMass  > MAXIMUM_INITIAL_MASS, "Initial mass (--initial-mass) must be between " + std::to_string(MINIMUM_INITIAL_MASS) + " and " + std::to_string(MAXIMUM_INITIAL_MASS) + " Msol");
-        COMPLAIN_IF(m_InitialMass1 < MINIMUM_INITIAL_MASS || m_InitialMass1 > MAXIMUM_INITIAL_MASS, "Primary initial mass (--initial-mass-1) must be between " + std::to_string(MINIMUM_INITIAL_MASS) + " and " + std::to_string(MAXIMUM_INITIAL_MASS) + " Msol");
-        COMPLAIN_IF(m_InitialMass2 < MINIMUM_INITIAL_MASS || m_InitialMass2 > MAXIMUM_INITIAL_MASS, "Secondary initial mass (--initial-mass-2) must be between " + std::to_string(MINIMUM_INITIAL_MASS) + " and " + std::to_string(MAXIMUM_INITIAL_MASS) + " Msol");
+        COMPLAIN_IF(m_Mass  < MINIMUM_INITIAL_MASS || m_Mass  > MAXIMUM_INITIAL_MASS, "M mass (--mass) must be between " + std::to_string(MINIMUM_INITIAL_MASS) + " and " + std::to_string(MAXIMUM_INITIAL_MASS) + " Msol");
+        COMPLAIN_IF(m_Mass1 < MINIMUM_INITIAL_MASS || m_Mass1 > MAXIMUM_INITIAL_MASS, "Primary mass (--mass-1) must be between " + std::to_string(MINIMUM_INITIAL_MASS) + " and " + std::to_string(MAXIMUM_INITIAL_MASS) + " Msol");
+        COMPLAIN_IF(m_Mass2 < MINIMUM_INITIAL_MASS || m_Mass2 > MAXIMUM_INITIAL_MASS, "Secondary mass (--mass-2) must be between " + std::to_string(MINIMUM_INITIAL_MASS) + " and " + std::to_string(MAXIMUM_INITIAL_MASS) + " Msol");
 
         COMPLAIN_IF(m_InitialMassFunctionMin < MINIMUM_INITIAL_MASS, "Minimum mass to be sampled from the IMF (--initial-mass-function-min) must be >= " + std::to_string(MINIMUM_INITIAL_MASS) + " Msol");
         COMPLAIN_IF(m_InitialMassFunctionMax > MAXIMUM_INITIAL_MASS, "Maximum mass to be sampled from the IMF (--initial-mass-function-max) must be <= " + std::to_string(MAXIMUM_INITIAL_MASS) + " Msol");
@@ -2823,7 +2845,7 @@ STR_VECTOR Options::AllowedOptionValues(const std::string p_OptionString) {
         case _("kick-magnitude-distribution")                       : POPULATE_RET(KICK_MAGNITUDE_DISTRIBUTION_LABEL);              break;
         case _("logfile-type")                                      : POPULATE_RET(LOGFILETYPELabel);                               break;
         case _("LBV-mass-loss-prescription")                        : POPULATE_RET(LBV_MASS_LOSS_PRESCRIPTION_LABEL);               break;
-        case _("main-sequence-core-mass-prescription")              : POPULATE_RET(CORE_MASS_PRESCRIPTION_LABEL);                   break;
+        case _("main-sequence-core-mass-prescription")              : POPULATE_RET(MS_CORE_MASS_PRESCRIPTION_LABEL);                break;
         case _("maltsev-mode")                                      : POPULATE_RET(MALTSEV_MODE_LABEL);                             break;
         case _("mass-loss-prescription")                            : POPULATE_RET(MASS_LOSS_PRESCRIPTION_LABEL);                   break;
         case _("mass-ratio-distribution")                           : POPULATE_RET(MASS_RATIO_DISTRIBUTION_LABEL);                  break;
@@ -2846,12 +2868,15 @@ STR_VECTOR Options::AllowedOptionValues(const std::string p_OptionString) {
         case _("response-to-spin-up")                               : POPULATE_RET(RESPONSE_TO_SPIN_UP_LABEL);                      break;
         case _("rotational-velocity-distribution")                  : POPULATE_RET(ROTATIONAL_VELOCITY_DISTRIBUTION_LABEL);         break;
         case _("semi-major-axis-distribution")                      : POPULATE_RET(SEMI_MAJOR_AXIS_DISTRIBUTION_LABEL);             break;
+        case _("stellar-type")                                      : POPULATE_RET(STARTING_STELLAR_TYPE_LABEL);                    break;
         case _("stellar-zeta-prescription")                         : POPULATE_RET(ZETA_PRESCRIPTION_LABEL);                        break;
         case _("tides-prescription")                                : POPULATE_RET(TIDES_PRESCRIPTION_LABEL);                       break;
         case _("VMS-mass-loss-prescription")                        : POPULATE_RET(VMS_MASS_LOSS_PRESCRIPTION_LABEL);               break;
         case _("WR-mass-loss-prescription")                         : POPULATE_RET(WR_MASS_LOSS_PRESCRIPTION_LABEL);                break;
         default: break;
     }
+
+    // remove duplicates here <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
     return ret;
 
 #undef POPULATE_RET
@@ -4958,9 +4983,9 @@ COMPAS_VARIABLE Options::OptionValue(const T_ANY_PROPERTY p_Property) const {
         case PROGRAM_OPTION::FRYER22_FMIX                                   : value = Fryer22fmix();                                                        break;
         case PROGRAM_OPTION::FRYER22_MCRIT                                  : value = Fryer22Mcrit();                                                       break;
 
-        case PROGRAM_OPTION::INITIAL_MASS                                   : value = InitialMass();                                                        break;
-        case PROGRAM_OPTION::INITIAL_MASS_1                                 : value = InitialMass1();                                                       break;
-        case PROGRAM_OPTION::INITIAL_MASS_2                                 : value = InitialMass2();                                                       break;
+        case PROGRAM_OPTION::MASS                                           : value = Mass();                                                               break;
+        case PROGRAM_OPTION::MASS_1                                         : value = Mass1();                                                              break;
+        case PROGRAM_OPTION::MASS_2                                         : value = Mass2();                                                              break;
 
         case PROGRAM_OPTION::INITIAL_MASS_FUNCTION                          : value = static_cast<int>(InitialMassFunction());                              break;
         case PROGRAM_OPTION::INITIAL_MASS_FUNCTION_MAX                      : value = InitialMassFunctionMax();                                             break;

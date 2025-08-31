@@ -3,7 +3,7 @@
 
 
 // This is where developer-defined types are defined - except for types that pertain directly to
-// the COMPAS looging functionality (including the definition of the default record composition
+// the COMPAS logging functionality (including the definition of the default record composition
 // for the various log files) - those are listed in LogTypedefs.h
 
 #include <boost/math/tools/roots.hpp>
@@ -17,60 +17,6 @@
 
 
 // JR: todo: clean this up and document it better
-
-
-
-
-class CDOUBLE {
-
-private:
-
-    double m_Value;
-    double m_AbsoluteTolerance;
-    double m_RelativeTolerance;
-
-public:
-
-#define EQUALS(a, b)  (fabs(a - b) <= std::max(m_AbsoluteTolerance, m_RelativeTolerance * std::max(fabs(a), fabs(b))))
-#define SMALLER(a, b) (EQUALS(a, b) ? false : (a < b) ? true : false)
-#define BIGGER(a, b)  (EQUALS(a, b) ? false : (b < a) ? true : false)
-
-
-    CDOUBLE(double p_Value, double p_AbsoluteTolerance = FLOAT_TOLERANCE_ABSOLUTE; p_RelativeTolerance = FLOAT_TOLERANCE_RELATIVE) {
-        m_Value             = p_Value;
-        m_AbsoluteTolerance = std::abs(p_AbsoluteTolerance);
-        m_RelativeTolerance = std::abs(p_RelativeTolerance);
-
-        // EXPLAIN USES ABS
-        // EXPLAIN IF BOTH TOERANCES 0.) same as fundamental (but may be used for future application of tolerances)
-    }
-
-    double Value() const { return m_Value; }
-
-    bool operator==(const double   p_Operand2) const { return EQUALS(m_Value, p_Operand2); }            // == fundamental
-    bool operator==(const CDOUBLE& p_Operand2) const { return EQUALS(m_Value, p_Operand2.Value()); }    // == CDOUBLE
-    
-    bool operator!=(const double   p_Operand2) const { return !EQUALS(m_Value, p_Operand2); }           // != fundamental
-    bool operator!=(const CDOUBLE& p_Operand2) const { return !EQUALS(m_Value, p_Operand2.Value()); }   // != CDOUBLE
-    
-    bool operator<( const double   p_Operand2) const { return SMALLER(m_Value, p_Operand2); }           // < fundamental
-    bool operator<( const CDOUBLE& p_Operand2) const { return SMALLER(m_Value, p_Operand2.Value()); }   // < CDOUBLE
-    
-    bool operator>( const double   p_Operand2) const { return BIGGER(m_Value, p_Operand2); }            // > fundamental
-    bool operator>( const CDOUBLE& p_Operand2) const { return BIGGER(m_Value, p_Operand2.Value()); }    // > CDOUBLE
-    
-    bool operator<=(const double   p_Operand2) const { return !BIGGER(m_Value, p_Operand2); }           // <= fundamental
-    bool operator<=(const CDOUBLE& p_Operand2) const { return !BIGGER(m_Value, p_Operand2.Value()); }   // <= CDOUBLE
-    
-    bool operator>=(const double   p_Operand2) const { return !SMALLER(m_Value, p_Operand2.Value()); }  // >= fundamental
-    bool operator>=(const CDOUBLE& p_Operand2) const { return !SMALLER(m_Value, p_Operand2.Value()); }  // >= CDOUBLE
-
-#undef BIGGER
-#undef SMALLER
-#undef EQUALS
-};  
-
-
 
 
 // Bitwise operators for Enum Class - |, |=, &, &=, ^, ^=, ~ only
@@ -155,6 +101,8 @@ operator ~(Enum rhs) {
 }
 
 
+
+
 // enum class types
 // ================
 //
@@ -230,6 +178,44 @@ const COMPASUnorderedMap<STELLAR_TYPE, std::string> STELLAR_TYPE_LABEL = {
     { STELLAR_TYPE::BINARY_STAR,                               "Binary_Star" },
     { STELLAR_TYPE::NONE,                                      "Not_a_Star!" }
 };
+
+
+enum class STARTING_STELLAR_TYPE: int { // Hurley
+    ms,                                 //   0 - preserves Hurley numbering - resolves to MS
+    MS,                                 //   1
+    HG,                                 //   2
+    FGB,                                //   3
+    CHeB,                               //   4
+    EAGB,                               //   5
+    TPAGB,                              //   6
+    HeMS,                               //   7
+    HeHG,                               //   8
+    HeGB,                               //   9
+    HeWD,                               //  10
+    COWD,                               //  11
+    ONeWD,                              //  12
+    NS,                                 //  13
+    BH                                  //  14
+};
+
+
+const COMPASUnorderedMap<STARTING_STELLAR_TYPE, std::string> STARTING_STELLAR_TYPE_LABEL = {
+    { STARTING_STELLAR_TYPE::MS,                                        "MS" },
+    { STARTING_STELLAR_TYPE::HERTZSPRUNG_GAP,                           "HG" },
+    { STARTING_STELLAR_TYPE::FIRST_GIANT_BRANCH,                        "FGB" },
+    { STARTING_STELLAR_TYPE::CORE_HELIUM_BURNING,                       "CHeB" },
+    { STARTING_STELLAR_TYPE::EARLY_ASYMPTOTIC_GIANT_BRANCH,             "EAGB" },
+    { STARTING_STELLAR_TYPE::THERMALLY_PULSING_ASYMPTOTIC_GIANT_BRANCH, "TPAGB" },
+    { STARTING_STELLAR_TYPE::NAKED_HELIUM_STAR_MS,                      "HeMS" },
+    { STARTING_STELLAR_TYPE::NAKED_HELIUM_STAR_HERTZSPRUNG_GAP,         "HeHG" },
+    { STARTING_STELLAR_TYPE::NAKED_HELIUM_STAR_GIANT_BRANCH,            "HeGB" },
+    { STARTING_STELLAR_TYPE::HELIUM_WHITE_DWARF,                        "HeWD" },
+    { STARTING_STELLAR_TYPE::CARBON_OXYGEN_WHITE_DWARF,                 "COWD" },
+    { STARTING_STELLAR_TYPE::OXYGEN_NEON_WHITE_DWARF,                   "ONeWD" },
+    { STARTING_STELLAR_TYPE::NEUTRON_STAR,                              "NS" },
+    { STARTING_STELLAR_TYPE::BLACK_HOLE,                                "BH" }
+};
+
 
 // stellar type list initializer
 typedef std::initializer_list<STELLAR_TYPE> STELLAR_TYPE_LIST;
@@ -444,11 +430,11 @@ const COMPASUnorderedMap<CHE_MODE, std::string> CHE_MODE_LABEL = {
 };
 
 // main sequence core mass prescription
-enum class CORE_MASS_PRESCRIPTION: int { ZERO, MANDEL, BRCEK };
-const COMPASUnorderedMap<CORE_MASS_PRESCRIPTION, std::string> CORE_MASS_PRESCRIPTION_LABEL = {
-    { CORE_MASS_PRESCRIPTION::ZERO,   "ZERO" },
-    { CORE_MASS_PRESCRIPTION::MANDEL, "MANDEL" },
-    { CORE_MASS_PRESCRIPTION::BRCEK,  "BRCEK" }
+enum class MS_CORE_MASS_PRESCRIPTION: int { ZERO, MANDEL, BRCEK };
+const COMPASUnorderedMap<MS_CORE_MASS_PRESCRIPTION, std::string> MS_CORE_MASS_PRESCRIPTION_LABEL = {
+    { MS_CORE_MASS_PRESCRIPTION::ZERO,   "ZERO" },
+    { MS_CORE_MASS_PRESCRIPTION::MANDEL, "MANDEL" },
+    { MS_CORE_MASS_PRESCRIPTION::BRCEK,  "BRCEK" }
 };
 
 // logfile delimiters
@@ -784,9 +770,9 @@ const COMPASUnorderedMap<NEUTRINO_MASS_LOSS_PRESCRIPTION, std::string> NEUTRINO_
 // neutron star accretion scenario under common envelope
 enum class NS_ACCRETION_IN_CE: int { ZERO, SURFACE, DISK };
 const COMPASUnorderedMap<NS_ACCRETION_IN_CE, std::string> NS_ACCRETION_IN_CE_LABEL = {
-    { NS_ACCRETION_IN_CE::ZERO,  "ZERO" },
+    { NS_ACCRETION_IN_CE::ZERO,    "ZERO" },
     { NS_ACCRETION_IN_CE::SURFACE, "SURFACE" },
-    { NS_ACCRETION_IN_CE::DISK, "DISK" },
+    { NS_ACCRETION_IN_CE::DISK,    "DISK" },
 };
 
 // neutron star equations of state
@@ -899,9 +885,9 @@ const COMPASUnorderedMap<MALTSEV_MODE, std::string> MALTSEV_MODE_LABEL = {
 // response of star to spin-up beyond the Keplerian frequency
 enum class RESPONSE_TO_SPIN_UP: int { TRANSFER_TO_ORBIT, KEPLERIAN_LIMIT, NO_LIMIT };
 const COMPASUnorderedMap<RESPONSE_TO_SPIN_UP, std::string> RESPONSE_TO_SPIN_UP_LABEL = {
-    { RESPONSE_TO_SPIN_UP::TRANSFER_TO_ORBIT,   "TRANSFER_TO_ORBIT" },
-    { RESPONSE_TO_SPIN_UP::KEPLERIAN_LIMIT,     "KEPLERIAN_LIMIT" },
-    { RESPONSE_TO_SPIN_UP::NO_LIMIT,            "NO_LIMIT"}
+    { RESPONSE_TO_SPIN_UP::TRANSFER_TO_ORBIT, "TRANSFER_TO_ORBIT" },
+    { RESPONSE_TO_SPIN_UP::KEPLERIAN_LIMIT,   "KEPLERIAN_LIMIT" },
+    { RESPONSE_TO_SPIN_UP::NO_LIMIT,          "NO_LIMIT"}
 };
 
 // rotational velocity distributions
@@ -1053,10 +1039,10 @@ enum class TIMESCALE: int {
 // critical mass ratio prescriptions
 enum class QCRIT_PRESCRIPTION: int { NONE, CLAEYS, GE, GE_IC, HURLEY_HJELLMING_WEBBINK};
 const COMPASUnorderedMap<QCRIT_PRESCRIPTION, std::string> QCRIT_PRESCRIPTION_LABEL = {
-    { QCRIT_PRESCRIPTION::NONE,    "NONE" },
-    { QCRIT_PRESCRIPTION::CLAEYS,  "CLAEYS" },
-    { QCRIT_PRESCRIPTION::GE_IC, "GE_IC" },
-    { QCRIT_PRESCRIPTION::GE,    "GE" },
+    { QCRIT_PRESCRIPTION::NONE,                     "NONE" },
+    { QCRIT_PRESCRIPTION::CLAEYS,                   "CLAEYS" },
+    { QCRIT_PRESCRIPTION::GE_IC,                    "GE_IC" },
+    { QCRIT_PRESCRIPTION::GE,                       "GE" },
     { QCRIT_PRESCRIPTION::HURLEY_HJELLMING_WEBBINK, "HURLEY_HJELLMING_WEBBINK" },
 };
 
@@ -1221,7 +1207,7 @@ typedef struct KickParameters {
 
     bool   meanAnomalySpecified;                            // BSE only
     double meanAnomaly;                                     // BSE only
-} KickParameters;
+} KickParametersT;
 
 
 // struct for supernova attributes of the base star

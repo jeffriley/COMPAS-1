@@ -223,14 +223,17 @@ private:
     //       deprecation date.  Datestring format is yyyymmdd (e.g.20251107 indicates November 07, 2025).
 
     std::vector<std::tuple<std::string, std::string, bool, std::string>> deprecatedOptionStrings = {
-        { "retain-core-mass-during-caseA-mass-transfer", "",                               false, "20250116" },
-        { "minimum-secondary-mass",                      "minimum-sampled-secondary-mass", false, "20250808" },
-        { "initial-mass-max",                            "initial-mass-function-max",      false, "20250808" },
-        { "initial-mass-min",                            "initial-mass-function-min",      false, "20250808" },
-        { "initial-mass-power",                          "initial-mass-function-power",    false, "20250808" },
-        { "use-mass-loss",                               "mass-loss-prescription",         false, "20250809" },
-        { "mass-transfer-jloss-macleod-linear-fraction-degen",       "mass-transfer-jloss-linear-fraction-degen",     false, "20250819" }, 
-        { "mass-transfer-jloss-macleod-linear-fraction-non-degen",   "mass-transfer-jloss-linear-fraction-non-degen", false, "20250819" },   
+        { "retain-core-mass-during-caseA-mass-transfer",           "",                                              false, "20250116" },
+        { "minimum-secondary-mass",                                "minimum-sampled-secondary-mass",                false, "20250808" },
+        { "initial-mass-max",                                      "initial-mass-function-max",                     false, "20250808" },
+        { "initial-mass-min",                                      "initial-mass-function-min",                     false, "20250808" },
+        { "initial-mass-power",                                    "initial-mass-function-power",                   false, "20250808" },
+        { "use-mass-loss",                                         "mass-loss-prescription",                        false, "20250809" },
+        { "mass-transfer-jloss-macleod-linear-fraction-degen",     "mass-transfer-jloss-linear-fraction-degen",     false, "20250819" }, 
+        { "mass-transfer-jloss-macleod-linear-fraction-non-degen", "mass-transfer-jloss-linear-fraction-non-degen", false, "20250819" },   
+        { "initial-mass",                                          "mass",                                          false, "20250825" },
+        { "initial-mass-1",                                        "mass-1",                                        false, "20250825" },
+        { "initial-mass-2",                                        "mass-2",                                        false, "20250825" }
     };
 
     std::vector<std::tuple<std::string, std::string, std::string, bool, std::string>> deprecatedOptionValues = {
@@ -253,7 +256,10 @@ private:
     // the following vector is used to replace deprecated options in the logfile-definitions file
     std::vector<std::tuple<std::string, std::string, bool, std::string>> deprecatedOptionProperties = {
         { "black_hole_kicks", "black_hole_kicks_mode",      false, "20241030" },
-        { "lbv_prescription", "LBV_mass_loss_prescription", false, "20241030" }
+        { "lbv_prescription", "LBV_mass_loss_prescription", false, "20241030" },
+        { "initial_mass",     "mass",                       false, "20250825" },
+        { "initial_mass_1",   "mass_1",                     false, "20250825" },
+        { "initial_mass_2",   "mass_2",                     false, "20250825" }
     };
 
 
@@ -888,11 +894,17 @@ public:
 
             std::string                                         m_TimestepsFileName;                                            // The name of the timesteps file
 
-            // Initial distribution variables
+            // starting (state zero) variables
 
-            double                                              m_InitialMass;                                                  // Initial mass of single star (SSE)
-            double                                              m_InitialMass1;                                                 // Initial mass of primary (BSE)
-            double                                              m_InitialMass2;                                                 // Initial mass of secondary (BSE)
+            ENUM_OPT<STARTING_STELLAR_TYPE>                     m_StellarType;                                                  // starting stellar type of single star (SSE)
+            ENUM_OPT<STARTING_STELLAR_TYPE>                     m_StellarType1;                                                 // starting stellar type of primary (BSE)
+            ENUM_OPT<STARTING_STELLAR_TYPE>                     m_StellarType2;                                                 // starting stellar type of secondary (BSE)
+
+            double                                              m_Mass;                                                         // Mass of single star (SSE)
+            double                                              m_Mass1;                                                        // Mass of primary (BSE)
+            double                                              m_Mass2;                                                        // Mass of secondary (BSE)
+
+            // Initial distribution variables
 
             ENUM_OPT<INITIAL_MASS_FUNCTION>                     m_InitialMassFunction;                                          // Which initial mass function
             double                                              m_InitialMassFunctionMin;                                       // Minimum mass to generate in Msol
@@ -1491,9 +1503,6 @@ public:
     bool                                        HMXRBinaries() const                                                    { return OPT_VALUE("hmxr-binaries", m_HMXRBinaries, true); }
 
     bool                                        IncludeWDBinariesAsDCO() const                                          { return OPT_VALUE("include-WD-binaries-as-DCO", m_WDBinariesAsDCO, true); }
-    double                                      InitialMass() const                                                     { return OPT_VALUE("initial-mass", m_InitialMass, true); }
-    double                                      InitialMass1() const                                                    { return OPT_VALUE("initial-mass-1", m_InitialMass1, true); }
-    double                                      InitialMass2() const                                                    { return OPT_VALUE("initial-mass-2", m_InitialMass2, true); }
 
     INITIAL_MASS_FUNCTION                       InitialMassFunction() const                                             { return OPT_VALUE("initial-mass-function", m_InitialMassFunction.type, true); }
     double                                      InitialMassFunctionMax() const                                          { return OPT_VALUE("initial-mass-function-max", m_InitialMassFunctionMax, true); }
@@ -1586,10 +1595,14 @@ public:
     double                                      LuminousBlueVariableFactor() const                                      { return OPT_VALUE("luminous-blue-variable-multiplier", m_LuminousBlueVariableFactor, true); }
     LBV_MASS_LOSS_PRESCRIPTION                  LBVMassLossPrescription() const                                         { return OPT_VALUE("LBV-mass-loss-prescription", m_LBVMassLossPrescription.type, true); }
     
-    CORE_MASS_PRESCRIPTION                      MainSequenceCoreMassPrescription() const                                { return OPT_VALUE("main-sequence-core-mass-prescription", m_MainSequenceCoreMassPrescription.type, true); }
+    MS_CORE_MASS_PRESCRIPTION                   MainSequenceCoreMassPrescription() const                                { return OPT_VALUE("main-sequence-core-mass-prescription", m_MainSequenceCoreMassPrescription.type, true); }
 
     double                                      MaltsevFallback() const                                                 { return OPT_VALUE("maltsev-fallback", m_MaltsevFallback, true); }
     MALTSEV_MODE                                MaltsevMode() const                                                     { return OPT_VALUE("maltsev-mode", m_MaltsevMode.type, true); }
+
+    double                                      Mass() const                                                            { return OPT_VALUE("mass", m_Mass, true); }
+    double                                      Mass1() const                                                           { return OPT_VALUE("mass-1", m_Mass1, true); }
+    double                                      Mass2() const                                                           { return OPT_VALUE("mass-2", m_Mass2, true); }
     
     double                                      MassChangeFraction() const                                              { return m_CmdLine.optionValues.m_MassChangeFraction; }
     
@@ -1748,6 +1761,10 @@ public:
     double                                      SN_Phi2() const                                                         { return OPT_VALUE("kick-phi-2", m_KickPhi2, true); }
     double                                      SN_Theta1() const                                                       { return OPT_VALUE("kick-theta-1", m_KickTheta1, true); }
     double                                      SN_Theta2() const                                                       { return OPT_VALUE("kick-theta-2", m_KickTheta2, true); }
+
+    STARTING_STELLAR_TYPE                       StellarType() const                                                     { return OPT_VALUE("stellar-type", m_StellarType.type, true); }
+    STARTING_STELLAR_TYPE                       StellarType1() const                                                    { return OPT_VALUE("stellar-type-1", m_StellarType1.type, true); }
+    STARTING_STELLAR_TYPE                       StellarType2() const                                                    { return OPT_VALUE("stellar-type-2", m_StellarType2.type, true); }
 
     ZETA_PRESCRIPTION                           StellarZetaPrescription() const                                         { return OPT_VALUE("stellar-zeta-prescription", m_StellarZetaPrescription.type, true); }
     bool                                        StoreInputFiles() const                                                 { return m_CmdLine.optionValues.m_StoreInputFiles; }

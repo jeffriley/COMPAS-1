@@ -53,22 +53,26 @@ public:
 
     Star();
 
-    Star(const unsigned long int p_RandomSeed, 
-         const double            p_MZAMS, 
-         const double            p_Metallicity, 
-         const KickParameters    p_KickParameters,
-         const double            p_RotationalVelocity = -1.0); 
+    Star(const STARTING_STELLAR_TYPE p_StartingStellarType,
+         const unsigned long int     p_RandomSeed, 
+         const double                p_Metallicity, 
+         const double                p_Mass, 
+         const KickParameters        p_KickParameters,
+         const double                p_RotationalVelocity = -1.0); 
 
     Star(const Star& p_Star);
 
-    virtual ~Star() { delete m_Star; delete m_SaveStar; }
+    virtual ~Star() { delete m_Star; }
 
 
     // object identifiers - all classes have these
     inline OBJECT_ID            ObjectId() const                                                            { return m_ObjectId; }
     inline OBJECT_TYPE          ObjectType() const                                                          { return OBJECT_TYPE::STAR; }
     inline OBJECT_PERSISTENCE   ObjectPersistence() const                                                   { return m_ObjectPersistence; }
-    inline STELLAR_TYPE         InitialStellarType() const                                                  { return m_Star->InitialStellarType(); }
+
+
+
+    inline STELLAR_TYPE         StartingStellarType() const                                                 { return m_Star->StartingStellarType(); }
     inline STELLAR_TYPE         StellarType() const                                                         { return m_Star->StellarType(); }
 
     // getters - alphabetically
@@ -295,8 +299,7 @@ private:
 
     long int  m_Id;                             // id used to name output files - uses p_Id as passed (usually the step number of multiple single stars being produced)
 
-    BaseStar *m_Star;                           // pointer to current star
-    BaseStar *m_SaveStar;                       // pointer to saved star
+    BaseStar *m_Star;                           // pointer to star
 
     std::vector<double> m_Timesteps;            // timesteps vector - for debugging/testing
 

@@ -10,6 +10,46 @@
 #include <csignal>
 #include <limits>
 
+// global defines
+
+#define UNKNOWN_COMPILER 0
+#define GCC_COMPILER     1
+#define CLANG_COMPILER   2
+
+#if defined(__GNUC__) && !defined(__clang__)
+    #define COMPILER_ID    GCC_COMPILER
+    #define COMILER_MAJOR  __GNUC__
+    #define COMPILER_MINOR __GNUC_MINOR__
+    #define COMPILER_PATCH __GNUC_PATCHLEVEL__
+#elif defined(__clang__)
+    #define COMPILER_ID    CLANG_COMPILER
+    #define COMILER_MAJOR  __clang__
+    #define COMPILER_MINOR __clang_minor__
+    #define COMPILER_PATCH __clang_patchlevel__
+#else
+    #define COMPILER_ID    UNKNOWN_COMPILER
+    #define COMILER_MAJOR  "??"
+    #define COMPILER_MINOR "??"
+    #define COMPILER_PATCH "??"
+#endif
+
+#if COMPILER_ID == GCC_COMPILER || COMPILER == CLANG_COMPILER
+    #define GNU_CONST [[gnu::const]]
+    #define GNU_PURE  [[gnu::pure]]
+#else
+    #define GNU_CONST
+    #define GNU_PURE
+#endif
+
+
+#define COMPASUnorderedMap std::unordered_map   // since c++17
+
+#define massCutoffs(x) m_MassCutoffs[static_cast<int>(MASS_CUTOFF::x)]
+
+#define QUANTISE_DT(dt)     (std::round(dt / TIMESTEP_QUANTUM) * TIMESTEP_QUANTUM)      // for quantising timestep
+
+#define BRCEK_MS_CORE_MASS_REGIME(x) (OPTIONS->MainSequenceCoreMassPrescription() == MS_CORE_MASS_PRESCRIPTION::BRCEK && x >= BRCEK_LOWER_MASS_LIMIT)
+
 
 // common type definitions
 // easiest way of making them available globally is to put them here
@@ -30,13 +70,6 @@ typedef std::vector<std::tuple<DBL_VECTOR, DBL_VECTOR>>                 GE_QCRIT
 typedef std::tuple<DBL_VECTOR, GE_QCRIT_RADII_QCRIT_VECTOR_HE>          GE_QCRIT_TABLE_HE; 
 
 
-// global #defines
-
-#define COMPASUnorderedMap std::unordered_map   // since c++17
-
-#define massCutoffs(x) m_MassCutoffs[static_cast<int>(MASS_CUTOFF::x)]
-
-#define QUANTISE_DT(dt)     (std::round(dt / TIMESTEP_QUANTUM) * TIMESTEP_QUANTUM)      // for quantising timestep
 
 
 // the defaults size of the boost list that handles variant types is 20 - so only 20 variant types are allowed
@@ -109,6 +142,7 @@ extern OBJECT_ID globalObjectId;    // used to uniquely identify objects - used 
 // I've added _2_PI and SQRT_M_2_PI below
 
 #undef COMPARE_GLOBAL_TOLERANCE // define/undef this to compare floats with/without tolerance (see FLOAT_TOLERANCE_ABSOLUTE, FLOAT_TOLERANCE_RELATIVE and Compare() function)
+#undef CDOUBLE_USE_TOLERANCE // define/undef this to compare floats with/without tolerance (see CDOUBLE class, FLOAT_TOLERANCE_ABSOLUTE, and FLOAT_TOLERANCE_RELATIVE)
 
 constexpr double FLOAT_TOLERANCE_ABSOLUTE               = 5.0E-7;                                                   // absolute tolerance for floating-point comparisons if COMPARE_GLOBAL_TOLERANCE is defined
 constexpr double FLOAT_TOLERANCE_RELATIVE               = 5.0E-7;                                                   // relative tolerance for floating-point comparisons if COMPARE_GLOBAL_TOLERANCE is defined
@@ -117,6 +151,9 @@ constexpr double ROOT_ABS_TOLERANCE                     = 1.0E-6;               
 constexpr double ROOT_REL_TOLERANCE                     = 1.0E-6;                                                   // relative tolerance for root finder
 
 constexpr std::size_t MAX_STACK_TRACE_SIZE              = 64;                                                       // for debugging - overkill, but just in case
+
+constexpr std::size_t DEFAULT_STATE_HISTORY_STACK_SIZE  = 3;                                                        // current state, previous state, and zero state
+
 
 // initialisation constants
 constexpr double DEFAULT_INITIAL_DOUBLE_VALUE           = 0.0;                                                      // default initial value for double variables
@@ -234,6 +271,8 @@ constexpr double NEUTRON_STAR_RADIUS                    = (1.0 / 7.0) * 1.0E-4; 
 constexpr double MASSIVE_THRESHOLD                      = 8.0;                                                      // Mass (in solar masses) above which we consider stars to be "massive"
 constexpr double HIGH_MASS_THRESHOLD                    = 12.0;                                                     // Mass (in solar masses) above which Hurley considers stars to be high mass stars
 constexpr double VMS_MASS_THRESHOLD                     = 100.0;                                                    // Minimum mass for applying Very Massive (VMS) mass loss rates to be applied
+constexpr double B_STAR_MASS_THRESHOLD                  = 2.0;                                                      // Minimum MS mass for B-stars
+constexpr double O_STAR_MASS_THRESHOLD                  = 16.0;                                                     // Minimum MS mass for O-stars
 
 constexpr double FRYER_PROTO_CORE_MASS_RAPID            = 1.0;                                                      // Proto neutron star core mass in the Fryer+ 2012 rapid prescription (Eq. 15)
 constexpr double MCH                                    = 1.44;                                                     // Chandrasekhar mass
@@ -315,7 +354,8 @@ constexpr double STARTRACK_PPISN_HE_CORE_MASS           = 45.0;                 
 
 constexpr double Q_CNO                                  = 9.9073E4;                                                 // Energy released per unit mass by hydrogen fusion via the CNO cycle in Lsol Myr Msol-1
 
-// Initial mass of stars above which (including the limit) we allow convective core mass calculations from Shikauchi et al. (2024) and rejuvenation calculations
+// Initial mass of stars above which (including the limit) we allow convective core mass calculations from
+// Shikauchi et al. (2024) and rejuvenation calculations
 // Note that this value should always be > 0.7 Msol
 constexpr double BRCEK_LOWER_MASS_LIMIT                 = 1.5;
 // Maximum core mass to total mass ratio on the main sequence (when BRCEK core mass prescription is used)
@@ -325,11 +365,11 @@ constexpr double BRCEK_CORE_MASS_TO_MASS_RATIO_LIMIT    = 0.9;
 
 // logging constants
 
-const LOGFILETYPE DEFAULT_LOGFILE_TYPE                  = LOGFILETYPE::HDF5;                                        // Default logfile type
-const std::string DEFAULT_OUTPUT_CONTAINER_NAME         = "COMPAS_Output";                                          // Default name for output container (directory)
-const std::string DEFAULT_HDF5_FILE_NAME                = "COMPAS_Output";                                          // Default name for HDF5 output file
-const std::string DETAILED_OUTPUT_DIRECTORY_NAME        = "Detailed_Output";                                        // Name for detailed output directory within output container
-const std::string RUN_DETAILS_FILE_NAME                 = "Run_Details";                                            // Name for run details output file within output container
+constexpr LOGFILETYPE DEFAULT_LOGFILE_TYPE              = LOGFILETYPE::HDF5;                                        // Default logfile type
+constexpr std::string DEFAULT_OUTPUT_CONTAINER_NAME     = "COMPAS_Output";                                          // Default name for output container (directory)
+constexpr std::string DEFAULT_HDF5_FILE_NAME            = "COMPAS_Output";                                          // Default name for HDF5 output file
+constexpr std::string DETAILED_OUTPUT_DIRECTORY_NAME    = "Detailed_Output";                                        // Name for detailed output directory within output container
+constexpr std::string RUN_DETAILS_FILE_NAME             = "Run_Details";                                            // Name for run details output file within output container
 
 constexpr int    HDF5_DEFAULT_CHUNK_SIZE                = 100000;                                                   // Default HDF5 chunk size (number of dataset entries)
 constexpr int    HDF5_DEFAULT_IO_BUFFER_SIZE            = 1;                                                        // Number of HDF5 chunks to buffer for IO (per open dataset)
@@ -348,7 +388,6 @@ constexpr double MAXIMUM_METALLICITY_HURLEY             = 0.03;                 
 
 constexpr double MINIMUM_METALLICITY                    = MINIMUM_METALLICITY_HURLEY;                               // Minimum metallicity - same as Hurley for the moment
 constexpr double MAXIMUM_METALLICITY                    = MAXIMUM_METALLICITY_HURLEY;                               // Maximum metallicity - same as Hurley for the moment
-
 
 // IMF constants
 constexpr double SALPETER_POWER                         = -2.35;
@@ -446,12 +485,17 @@ constexpr double MALTSEV2024_M3AZ01                     = 13.7;
 
 constexpr double COWD_LOG_MDOT_MIN_OFF_CENTRE_IGNITION  = -5.688246139;                                             // Minimum log mass accretion rate for off centre ignition in a CO WD. From Wang+ 2017. Log( 2.05 x 10^-6). 
 constexpr double COWD_MASS_MIN_OFF_CENTRE_IGNITION      = 1.33;                                                     // Minimum mass required for off centre ignition, as shown in Wang, Podsiadlowski & Han (2017), sect 3.2.
+
 constexpr double HEWD_HE_MDOT_CRIT                      = 2.0E-8;                                                   // Critical accretion rate for He WD accreting He-rich material. From Belczynski+ 2008, Mdot_crit2 in section 5.7.1.
 constexpr double HEWD_MINIMUM_MASS_IGNITION             = 0.35;                                                     // Minimum mass for HeMS burning
+
 constexpr double MASS_DOUBLE_DETONATION_CO              = 0.9;                                                      // Minimum mass for detonation which would yield something similar to SN Ia. Ruiter+ 2014.
+
 constexpr double Q_HYDROGEN_BURNING                     = 6.4E18 * MSOL_TO_G / (SECONDS_IN_YEAR * LSOL);            // 6.4E18 is the energy yield of H burning in erg/g as given in Nomoto+ 2007 (2007ApJ...663.1269N)
+
 constexpr double L0_RITTER_HIGH_Z                       = 1995262.3;                                                // Luminosity constant which depends on metallicity in Ritter 1999, eq 10
 constexpr double L0_RITTER_LOW_Z                        = 31622.8;
+
 constexpr double WD_HE_SHELL_MCRIT_DETONATION           = 0.05;                                                     // Minimum shell mass of He for detonation. Should be composed of helium (so, exclude burnt material), but not implemented yet. Ruiter+ 2014.
 constexpr double WD_LOG_MT_LIMIT_PIERSANTI_RG_SS_0      = -6.84;                                                    // Constant from Piersanti et al. 2014 see Table A1
 constexpr double WD_LOG_MT_LIMIT_PIERSANTI_RG_SS_1      = 1.349;                                                    // Constant from Piersanti et al. 2014 see Table A1
@@ -502,12 +546,12 @@ constexpr double HURLEY_HJELLMING_WEBBINK_QCRIT_WD        = 1.59;
 
 // coefficients for the calculation of initial angular frequency for Chemically Homogeneous Evolution
 // Mandel from Butler 2018
-const DBL_VECTOR CHE_Coefficients = { 5.7914E-04, -1.9196E-06, -4.0602E-07, 1.0150E-08, -9.1792E-11, 2.9051E-13 };
+constexpr DBL_VECTOR CHE_Coefficients = { 5.7914E-04, -1.9196E-06, -4.0602E-07, 1.0150E-08, -9.1792E-11, 2.9051E-13 };
 
 // WD effective baryon number lookup table
 // unordered_map - key is stellar type
 // Hurley et al. 2000, just after eq 90
-const COMPASUnorderedMap<STELLAR_TYPE, double> WD_Baryon_Number = {
+constexpr COMPASUnorderedMap<STELLAR_TYPE, double> WD_Baryon_Number = {
     {STELLAR_TYPE::HELIUM_WHITE_DWARF,         4.0},
     {STELLAR_TYPE::CARBON_OXYGEN_WHITE_DWARF, 15.0},
     {STELLAR_TYPE::OXYGEN_NEON_WHITE_DWARF,   17.0}
@@ -526,7 +570,7 @@ enum class TOUT_L_Coeff: int { ALPHA, BETA, GAMMA, DELTA, EPSILON, ZETA, ETA };
 #define c TOUT_LR_TCoeff::c
 #define d TOUT_LR_TCoeff::d
 #define e TOUT_LR_TCoeff::e
-const std::map<TOUT_L_Coeff, COMPASUnorderedMap<TOUT_LR_TCoeff, double>> TOUT_L_COEFF = {
+constexpr std::map<TOUT_L_Coeff, COMPASUnorderedMap<TOUT_LR_TCoeff, double>> TOUT_L_COEFF = {
     {TOUT_L_Coeff::ALPHA,   {{a, 0.39704170}, {b,  -0.32913574}, {c,  0.34776688}, {d,  0.37470851}, {e, 0.09011915}}},
     {TOUT_L_Coeff::BETA,    {{a, 8.52762600}, {b, -24.41225973}, {c, 56.43597107}, {d, 37.06152575}, {e, 5.45624060}}},
     {TOUT_L_Coeff::GAMMA,   {{a, 0.00025546}, {b,  -0.00123461}, {c, -0.00023246}, {d,  0.00045519}, {e, 0.00016176}}},
@@ -551,7 +595,7 @@ enum class TOUT_R_Coeff: int { THETA, IOTA, KAPPA, LAMBDA, MU, NU, XI, OMICRON, 
 #define c TOUT_LR_TCoeff::c
 #define d TOUT_LR_TCoeff::d
 #define e TOUT_LR_TCoeff::e
-const std::map<TOUT_R_Coeff, COMPASUnorderedMap<TOUT_LR_TCoeff, double>> TOUT_R_COEFF = {
+constexpr std::map<TOUT_R_Coeff, COMPASUnorderedMap<TOUT_LR_TCoeff, double>> TOUT_R_COEFF = {
     {TOUT_R_Coeff::THETA,   {{a,  1.71535900}, {b,  0.62246212}, {c,  -0.92557761}, {d,  -1.16996966}, {e, -0.30631491}}},
     {TOUT_R_Coeff::IOTA,    {{a,  6.59778800}, {b, -0.42450044}, {c, -12.13339427}, {d, -10.73509484}, {e, -2.51487077}}},
     {TOUT_R_Coeff::KAPPA,   {{a, 10.08855000}, {b, -7.11727086}, {c, -31.67119479}, {d, -24.24848322}, {e, -5.33608972}}},
@@ -560,7 +604,7 @@ const std::map<TOUT_R_Coeff, COMPASUnorderedMap<TOUT_LR_TCoeff, double>> TOUT_R_
     {TOUT_R_Coeff::NU,      {{a,  0.01077422}, {b,  0.00000000}, {c,   0.00000000}, {d,   0.00000000}, {e,  0.00000000}}},
     {TOUT_R_Coeff::XI,      {{a,  3.08223400}, {b,  0.94472050}, {c,  -2.15200882}, {d,  -2.49219496}, {e, -0.63848738}}},
     {TOUT_R_Coeff::OMICRON, {{a, 17.84778000}, {b, -7.45345690}, {c, -48.96066856}, {d, -40.05386135}, {e, -9.09331816}}},
-    {TOUT_R_Coeff::Pi,      {{a,  0.00022582}, {b, -0.00186899}, {c,   0.00388783}, {d,   0.00142402}, {e, -0.00007671}}}
+    {TOUT_R_Coeff::PI,      {{a,  0.00022582}, {b, -0.00186899}, {c,   0.00388783}, {d,   0.00142402}, {e, -0.00007671}}}
 };
 #undef e
 #undef d
@@ -581,7 +625,7 @@ enum class HURLEY_AB_TCoeff: int { ALPHA, BETA, GAMMA, ETA, MU };
 // Values given in table in Appendix A of Hurley et al. 2000
 // Key to map is n (A(n)).  Map element is unordered_map of term coefficient values.
 // The key is expected to start at 1 and increase monotonically by 1 - any other behaviour will cause problems in the code
-const std::map<int, COMPASUnorderedMap<HURLEY_AB_TCoeff, double>> HURLEY_A_COEFF = {
+constexpr std::map<int, COMPASUnorderedMap<HURLEY_AB_TCoeff, double>> HURLEY_A_COEFF = {
     { 1, {{ALPHA,  1.593890E3 }, {BETA,  2.053038E3 }, {GAMMA,  1.231226E3 }, {ETA,  2.327785E2 }, {MU,  0.000000E0 }}},
     { 2, {{ALPHA,  2.706708E3 }, {BETA,  1.483131E3 }, {GAMMA,  5.772723E2 }, {ETA,  7.411230E1 }, {MU,  0.000000E0 }}},
     { 3, {{ALPHA,  1.466143E2 }, {BETA, -1.048442E2 }, {GAMMA, -6.795374E1 }, {ETA, -1.391127E1 }, {MU,  0.000000E0 }}},
@@ -677,7 +721,7 @@ const std::map<int, COMPASUnorderedMap<HURLEY_AB_TCoeff, double>> HURLEY_A_COEFF
 // Values given in table in Appendix A of Hurley et al. 2000
 // Key to map is n (B(n)).  Map element is unordered_map of term coefficient values.
 // The key is expected to start at 1 and increase monotonically by 1 - any other behaviour will cause problems in the code
-const std::map<int, COMPASUnorderedMap<HURLEY_AB_TCoeff, double>> HURLEY_B_COEFF = {
+constexpr std::map<int, COMPASUnorderedMap<HURLEY_AB_TCoeff, double>> HURLEY_B_COEFF = {
     { 1, {{ALPHA,  3.970000E-1}, {BETA,  2.882600E-1}, {GAMMA,  5.293000E-1}, {ETA,  0.000000E0 }, {MU,  0.000000E0 }}},
     { 2, {{ALPHA,  0.000000E0 }, {BETA,  0.000000E0 }, {GAMMA,  0.000000E0 }, {ETA,  0.000000E0 }, {MU,  0.000000E0 }}},
     { 3, {{ALPHA,  0.000000E0 }, {BETA,  0.000000E0 }, {GAMMA,  0.000000E0 }, {ETA,  0.000000E0 }, {MU,  0.000000E0 }}},
@@ -752,7 +796,46 @@ const std::map<int, COMPASUnorderedMap<HURLEY_AB_TCoeff, double>> HURLEY_B_COEFF
 // Values given in Hurley et al. 2000, p6, sec 5.1
 // Key to map is n (C(n)).  Map element is unordered_map of term coefficient values.
 // The key is expected to start at 1 and increase monotonically by 1 - any other behaviour will cause problems in the code
-const std::unordered_map<int, double> HURLEY_C_COEFF = {{1, -8.672073E-2}, {2, 9.301992E0}, {3, 4.637345E0}};
+constexpr std::unordered_map<int, double> HURLEY_C_COEFF = {{1, -8.672073E-2}, {2, 9.301992E0}, {3, 4.637345E0}};
+
+
+// symbolic names for coefficients from Shikauchi et al. 2024, section A4
+// Z_SOL = 0.2 (https://arxiv.org/abs/2409.00460)
+enum class SHIKAUCHI_Coeff: int { ONE_TENTH_Z_SOL, ONE_THIRD_Z_SOL, Z_SOL };
+
+// alpha coefficients from Shikauchi et al. 2024, table 2
+// alpha is the natural decline rate of the mixing core mass in the absence of mass loss
+// Key to map is SHIKAUCHI_Coeff.  Map element is a DBL_VECTOR of coefficient values.
+constexpr std::map<SHIKAUCHI_Coeff, DBL_VECTOR> SHIKAUCHI_ALPHA_COEFF = {
+    {SHIKAUCHI_Coeff::ONE_TENTH_Z_SOL, {0.45, -0.0557105,  -0.86589929}},
+    {SHIKAUCHI_Coeff::ONE_THIRD_Z_SOL, {0.45, -0.06968022, -0.73688164}},
+    {SHIKAUCHI_Coeff::Z_SOL,           {0.45, -0.05878711, -0.84646162}}
+};
+
+// fMix coefficients from Shikauchi et al. 2024, table 3 (https://arxiv.org/abs/2409.00460)
+// fMix is the fraction of the mass contained in the mixing core at ZAMS
+// Key to map is SHIKAUCHI_Coeff.  Map element is a DBL_VECTOR of coefficient values.
+constexpr std::map<SHIKAUCHI_Coeff, DBL_VECTOR> SHIKAUCHI_FMIX_COEFF = {
+    {SHIKAUCHI_Coeff::ONE_TENTH_Z_SOL, {0.86914766, -0.60815098, 37.20654856}},
+    {SHIKAUCHI_Coeff::ONE_THIRD_Z_SOL, {0.86269445, -0.62623353, 35.74630996}},
+    {SHIKAUCHI_Coeff::Z_SOL,           {0.86605495, -0.64960375, 35.57019104}}
+};
+
+// Luminosity coefficients from Shikauchi et al. 2024, table 4 (https://arxiv.org/abs/2409.00460)
+// Key to map is SHIKAUCHI_Coeff.  Map element is a DBL_VECTOR of coefficient values.
+constexpr std::map<SHIKAUCHI_Coeff, DBL_VECTOR> SHIKAUCHI_LUMINOSITY_COEFF = {
+    {SHIKAUCHI_Coeff::ONE_TENTH_Z_SOL, {3.38627891, 1.13599187, -0.97389238, -0.87675442, 1.65386007, 0.07661174, -1.78737297, 0.622451,   -0.47511355,  0.02483567, 0.94243277, -0.06798225, 0.11086108, -0.14859538, 1.78029915}},
+    {SHIKAUCHI_Coeff::ONE_THIRD_Z_SOL, {3.45464814, 0.94880846, -1.11409154, -0.86672079, 2.38986855, 0.04448855, -2.74913945, 0.60905625, -0.27648361,  0.03514139, 1.37569819, -0.19184532, 0.12816567, -0.14392935, 1.76390159}},
+    {SHIKAUCHI_Coeff::Z_SOL,           {3.80166901, 0.37407948, -1.29904749, -1.34541622, 3.70934166, 0.28320469, -3.92327169, 0.92444477, -0.40146717, -0.00821364, 1.80297947, -0.15776603, 0.09205681, -0.21913557, 1.78496679}}
+};
+
+// Delta coefficients from Shikauchi et al. 2024, section A.4 (https://arxiv.org/abs/2409.00460)
+constexpr DBL_VECTOR SHIKAUCHI_DELTA_COEFFICIENTS = {0.54491412, -0.00900365, 0.08936248};
+
+// Coefficients used to determine the initial convective core mass of MS star after full mixing (due to a merger or CHE)
+// from Brcek et al. (2025)
+constexpr DBL_VECTOR BRCEK_FMIX_COEFFICIENTS = {0.898171018326982, -0.592244880828559, 55.7885260968562, 0.359078394562545, 1.87717633667786};
+
 
 
 // Critial mass ratios for a grid of masses and radii. These come from the team of Hongwei Ge, in a series of papers 
@@ -778,7 +861,7 @@ const std::unordered_map<int, double> HURLEY_C_COEFF = {{1, -8.672073E-2}, {2, 9
 // In all cases, q is mAccretor/mDonor, which is inverted from the Ge et al. datatable. 
 //
 // Low Z = 0.001 table
-const GE_QCRIT_TABLE QCRIT_GE_LOW_Z = {
+constexpr GE_QCRIT_TABLE QCRIT_GE_LOW_Z = {
     {1.0, 1.14, 1.3, 1.44, 1.6, 1.8, 2.0, 2.5, 3.2, 4.0, 5.0, 6.3, 8.0, 10.0, 13.0, 16.0, 20.0, 25.0, 32.0, 40.0, 50.0, 63.0, 80.0, 100.0},
     {
       {{-0.0391, -0.029, -0.0112, 0.0059, 0.0217, 0.0359, 0.0492, 0.0663, 0.1844, 0.2985, 0.4157, 0.5323, 0.6365, 0.7326, 0.8349, 0.9336, 1.0333, 1.1347, 1.2364, 1.3386, 1.4372, 1.5371, 1.6372, 1.7365, 1.834, 1.9394, 2.0102, 2.0483, 2.1567, 2.2588},  {0.425, 0.412, 0.392, 0.375, 0.360, 0.348, 0.338, 0.326, 0.269, 0.239, 0.242, 0.962, 1.085, 1.101, 1.092, 1.071, 1.042, 1.007, 0.970, 0.928, 0.881, 0.827, 0.767, 0.700, 0.625, 0.532, 0.463, 0.286, 0.221, 0.138},  {0.425, 0.414, 0.398, 0.384, 0.372, 0.361, 0.352, 0.342, 0.292, 0.265, 0.264, 0.817, 0.912, 0.926, 0.919, 0.903, 0.882, 0.856, 0.829, 0.797, 0.762, 0.720, 0.675, 0.623, 0.564, 0.491, 0.435, 0.286, 0.332, 0.332},  {0.455, 0.446, 0.433, 0.422, 0.412, 0.404, 0.396, 0.387, 0.345, 0.322, 0.315, 0.693, 0.768, 0.779, 0.775, 0.765, 0.750, 0.732, 0.713, 0.691, 0.666, 0.637, 0.603, 0.565, 0.521, 0.465, 0.423, 0.296, 0.340, 0.340},  {0.424, 0.411, 0.390, 0.373, 0.359, 0.347, 0.336, 0.324, 0.267, 0.237, 0.241, 0.913, 1.022, 1.029, 1.007, 0.974, 0.932, 0.883, 0.831, 0.773, 0.711, 0.643, 0.570, 0.492, 0.410, 0.318, 0.255, 0.149, 0.088, 0.022},  {0.424, 0.414, 0.397, 0.382, 0.370, 0.360, 0.351, 0.341, 0.291, 0.264, 0.263, 0.779, 0.867, 0.873, 0.858, 0.833, 0.801, 0.765, 0.726, 0.682, 0.635, 0.582, 0.525, 0.464, 0.398, 0.323, 0.270, 0.172, 0.117, 0.046},  {0.454, 0.446, 0.433, 0.421, 0.411, 0.403, 0.395, 0.386, 0.344, 0.321, 0.314, 0.668, 0.737, 0.743, 0.734, 0.717, 0.696, 0.671, 0.644, 0.613, 0.579, 0.541, 0.499, 0.453, 0.403, 0.344, 0.303, 0.209, 0.164, 0.099}},
@@ -809,7 +892,7 @@ const GE_QCRIT_TABLE QCRIT_GE_LOW_Z = {
 };
 //
 // High Z = 0.02 table
-const GE_QCRIT_TABLE QCRIT_GE_HIGH_Z = {
+constexpr GE_QCRIT_TABLE QCRIT_GE_HIGH_Z = {
     {0.1, 0.13, 0.16, 0.2, 0.22, 0.25, 0.28, 0.32, 0.36, 0.4, 0.45, 0.5, 0.56, 0.63, 0.71, 0.8, 0.89, 1.0, 1.14, 1.3, 1.44, 1.6, 1.8, 2.0, 2.04, 2.5, 3.2, 4.0, 5.0, 6.3, 8.0, 10.0, 13.0, 16.0, 20.0, 25.0, 32.0, 40.0, 50.0, 63.0, 80.0, 100.0},
     {
       {{-0.8724, -0.8581, -0.8457, -0.8367, -0.8336},  {-334.448, -502.513, -502.513, 497.512, 332.226},  {-200.401, -250.627, -200.401, 990.099, 497.512},  {-90.992, -111.235, -100.100, -334.448, 100000.000},  {1.517, 1.531, 1.534, 1.536, 1.538},  {1.241, 1.252, 1.253, 1.255, 1.255},  {1.006, 1.013, 1.014, 1.015, 1.016}},
@@ -858,7 +941,7 @@ const GE_QCRIT_TABLE QCRIT_GE_HIGH_Z = {
 };
 //
 // He star table
-const GE_QCRIT_TABLE_HE QCRIT_GE_HE_STAR = {
+constexpr GE_QCRIT_TABLE_HE QCRIT_GE_HE_STAR = {
     {0.35, 0.4, 0.45, 0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 1.0, 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8, 1.9, 2.0, 2.1, 2.2, 2.3, 2.4, 2.5, 2.6, 2.8, 3.0, 3.2, 3.5, 3.8, 4.2, 4.6, 5.0, 5.4, 5.8, 6.3, 6.9, 7.5, 8.0, 8.6, 9.3, 10.0},
     {
       {{-2.6886, -2.6486, -2.609, -2.5716, -2.5363, -2.5009, -2.4674, -2.4347, -2.4031, -2.3756, -2.3446},  {0.516, 0.506, 0.495, 0.485, 0.474, 0.463, 0.451, 0.438, 0.424, 0.347, 0.329}},
@@ -914,13 +997,14 @@ const GE_QCRIT_TABLE_HE QCRIT_GE_HE_STAR = {
 // CDF from Table 7 in Dufton et al. 2013 https://arxiv.org/abs/1212.2424
 // There is an assumption in the code that this function is monitonically increasing - it is now
 // and should remain so if the map is modified.
-const std::map<double, double> BStarRotationalVelocityCDFTable = {
+constexpr std::map<double, double> BStarRotationalVelocityCDFTable = {
     {000.0, 0.000}, {020.0, 0.046}, {040.0, 0.094}, {060.0, 0.144}, {080.0, 0.192}, {100.0, 0.239},
     {120.0, 0.253}, {140.0, 0.270}, {160.0, 0.288}, {180.0, 0.322}, {200.0, 0.377}, {220.0, 0.435},
     {240.0, 0.492}, {260.0, 0.548}, {280.0, 0.609}, {300.0, 0.674}, {320.0, 0.739}, {340.0, 0.796},
     {360.0, 0.841}, {380.0, 0.879}, {400.0, 0.912}, {420.0, 0.938}, {440.0, 0.956}, {460.0, 0.971},
     {480.0, 0.983}, {500.0, 0.990}, {520.0, 0.993}, {540.0, 0.995}, {560.0, 0.996}, {580.0, 0.997}
 };
+
 
 // These neutron star (NS) equations-of-state (EOS) are taken from the review Ozel & Freire 2016,
 // Masses, Radii, and Equation of State of Neutron Stars,
@@ -930,7 +1014,7 @@ const std::map<double, double> BStarRotationalVelocityCDFTable = {
 //
 // for now we choose one example EOS ARP3 from
 // Akmal et al. 1998 https://arxiv.org/abs/nucl-th/9804027
-const std::map<double, double> ARP3MassRadiusRelation = {
+constexpr std::map<double, double> ARP3MassRadiusRelation = {
     {0.184 , 16.518}, {0.188 , 16.292}, {0.192 , 16.067}, {0.195 , 15.857}, {0.199 , 15.658}, {0.203 , 15.46 }, {0.207 , 15.277}, {0.212, 15.102}, {0.216, 14.933},
     {0.221 , 14.774}, {0.225 , 14.619}, {0.23  , 14.473}, {0.235 , 14.334}, {0.24  , 14.199}, {0.245 , 14.073}, {0.251 , 13.951}, {0.256, 13.834}, {0.262, 13.725},
     {0.268 , 13.618}, {0.273 , 13.52 }, {0.28  , 13.423}, {0.286 , 13.332}, {0.292 , 13.245}, {0.299 , 13.162}, {0.306 , 13.084}, {0.313, 13.009}, {0.32 , 12.94 },
@@ -956,11 +1040,12 @@ const std::map<double, double> ARP3MassRadiusRelation = {
     {2.3571, 10.885}, {2.3572, 10.866}, {2.3581, 10.849}, {2.3582, 10.831}, {2.3591, 10.813}, {2.3592, 10.795}, {2.3593, 10.777}, {2.361, 10.76 }, {2.362, 10.742}
 };
 
+
 // mass / Msun of stellar models computed by Xu & Li (2010), with additional unpublished 50 and 100 Msun models
-const DBL_VECTOR NANJING_MASSES = { 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 12.0, 14.0, 16.0, 20.0, 50.0, 100.0 };
+constexpr DBL_VECTOR NANJING_MASSES = { 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 12.0, 14.0, 16.0, 20.0, 50.0, 100.0 };
 
 // mass / Msun bin edges of Xu & Li (2010) lambda prescription as implemented in StarTrack. These are the midpoints between the masses in NANJING_MASSES
-const DBL_VECTOR NANJING_MASSES_MIDPOINTS = { 1.5, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5, 8.5, 9.5, 11.0, 13.0, 15.0, 18.0, 35.0, 75.0 };
+constexpr DBL_VECTOR NANJING_MASSES_MIDPOINTS = { 1.5, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5, 8.5, 9.5, 11.0, 13.0, 15.0, 18.0, 35.0, 75.0 };
 
 // coefficients for calculating binding and recombination energy as described in Loveridge et al. 2011
 // electronic tables, program and further information in: http://astro.ru.nl/~sluys/index.php?title=BE
@@ -977,7 +1062,7 @@ struct LoveridgeCoefficients {
 // These are used as indices into the loveridgeCoefficients multi-dimensional vector (described below)
 // This is a bit of a hack until I figure out how to (elegantly) iterate over enum classes...
 enum class LOVERIDGE_METALLICITY: int { Z000010, Z000100, Z001000, Z001500, Z002000, Z003000, COUNT };
-const std::vector<std::tuple<LOVERIDGE_METALLICITY, double>> LOVERIDGE_METALLICITY_VALUE = {
+constexpr std::vector<std::tuple<LOVERIDGE_METALLICITY, double>> LOVERIDGE_METALLICITY_VALUE = {
     { LOVERIDGE_METALLICITY::Z000010, 0.00010 },
     { LOVERIDGE_METALLICITY::Z000100, 0.00100 },
     { LOVERIDGE_METALLICITY::Z001000, 0.01000 },
@@ -993,7 +1078,7 @@ const DBL_VECTOR LOVERIDGE_LM_HM_CUTOFFS = { 11.7000, 11.7000, 10.2000, 11.7000,
 
 // coefficients for the division between Low Mass RGB 1 and Low Mass RGB 2, indexed by metallicity (LOVERIDGE_METALLICITY)
 // From Loveridge et al. 2011, table 2 & eq 4
-const std::vector<DBL_VECTOR> LOVERIDGE_LM1_LM2_CUTOFFS = {
+constexpr std::vector<DBL_VECTOR> LOVERIDGE_LM1_LM2_CUTOFFS = {
     { 6.047230E-01,  1.397240E+00, -8.249630E-02,  1.141430E+00,  0.000000E+00 },       // Metallicity Z000010 (0.00010)
     { 4.566000E-01,  1.186600E+00,  2.390880E+00, -3.054040E+00,  1.404900E+00 },       // Metallicity Z000100 (0.00100)
     { 2.821740E-01,  1.149380E+00,  1.884450E+00, -1.082300E+00,  0.000000E+00 },       // Metallicity Z001000 (0.01000)
@@ -1007,7 +1092,7 @@ const std::vector<DBL_VECTOR> LOVERIDGE_LM1_LM2_CUTOFFS = {
 // This vector records the coefficients (m, r, alpha(m,r) used in Loveridge et al. 2001, eq 5
 // Using a vector indexed by metallicity and evolutionary stage because it's faster than a map, and
 // the lambdas could be calculated at every timestep.
-const std::vector<std::vector<std::vector<LoveridgeCoefficients>>> LOVERIDGE_COEFFICIENTS = {
+constexpr std::vector<std::vector<std::vector<LoveridgeCoefficients>>> LOVERIDGE_COEFFICIENTS = {
     {                                                                                   // Metallicity Z000010 (0.00010)
         {                                                                               // LMR1 (Z000010)
             { 0,     0,     1.49884369566236408389E+01},
@@ -3790,33 +3875,5 @@ const std::vector<std::vector<std::vector<LoveridgeCoefficients>>> LOVERIDGE_COE
         }
     }
 };
-
-
-// Coefficients for determining Main Sequence core mass
-// from Shikauchi et al. (2024), https://arxiv.org/abs/2409.00460
-// Section A.4
-const DBL_VECTOR SHIKAUCHI_DELTA_COEFFICIENTS = {0.54491412, -0.00900365, 0.08936248};
-// Table 2
-const std::vector<DBL_VECTOR> SHIKAUCHI_ALPHA_COEFFICIENTS = {
-    {0.45, -0.0557105,  -0.86589929},       // 0.1*Z_Sun
-    {0.45, -0.06968022, -0.73688164},       // 1/3*Z_Sun
-    {0.45, -0.05878711, -0.84646162}        // Solar metallicity Z_Sun
-};
-// Table 3
-const std::vector<DBL_VECTOR> SHIKAUCHI_FMIX_COEFFICIENTS = {
-    {0.86914766, -0.60815098, 37.20654856},     // 0.1*Z_Sun
-    {0.86269445, -0.62623353, 35.74630996},     // 1/3*Z_Sun
-    {0.86605495, -0.64960375, 35.57019104}      // Solar metallicity Z_Sun
-};
-// Table 4
-const std::vector<DBL_VECTOR> SHIKAUCHI_L_COEFFICIENTS = {
-    {3.38627891, 1.13599187, -0.97389238, -0.87675442, 1.65386007, 0.07661174, -1.78737297, 0.622451,   -0.47511355,  0.02483567, 0.94243277, -0.06798225, 0.11086108, -0.14859538, 1.78029915},   // 0.1*Z_Sun
-    {3.45464814, 0.94880846, -1.11409154, -0.86672079, 2.38986855, 0.04448855, -2.74913945, 0.60905625, -0.27648361,  0.03514139, 1.37569819, -0.19184532, 0.12816567, -0.14392935, 1.76390159},   // 1/3*Z_Sun
-    {3.80166901, 0.37407948, -1.29904749, -1.34541622, 3.70934166, 0.28320469, -3.92327169, 0.92444477, -0.40146717, -0.00821364, 1.80297947, -0.15776603, 0.09205681, -0.21913557, 1.78496679}    // Solar metallicity Z_Sun
-};
-// Coefficients used to determine the initial convective core mass of MS star after full mixing (due to a merger or CHE)
-// from Brcek et al. (2025)
-const DBL_VECTOR BRCEK_FMIX_COEFFICIENTS = {0.898171018326982, -0.592244880828559, 55.7885260968562, 0.359078394562545, 1.87717633667786};
-
 
 #endif // __constants_h__
