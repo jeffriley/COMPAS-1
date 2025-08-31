@@ -366,10 +366,10 @@ constexpr double BRCEK_CORE_MASS_TO_MASS_RATIO_LIMIT    = 0.9;
 // logging constants
 
 constexpr LOGFILETYPE DEFAULT_LOGFILE_TYPE              = LOGFILETYPE::HDF5;                                        // Default logfile type
-constexpr std::string DEFAULT_OUTPUT_CONTAINER_NAME     = "COMPAS_Output";                                          // Default name for output container (directory)
-constexpr std::string DEFAULT_HDF5_FILE_NAME            = "COMPAS_Output";                                          // Default name for HDF5 output file
-constexpr std::string DETAILED_OUTPUT_DIRECTORY_NAME    = "Detailed_Output";                                        // Name for detailed output directory within output container
-constexpr std::string RUN_DETAILS_FILE_NAME             = "Run_Details";                                            // Name for run details output file within output container
+const std::string DEFAULT_OUTPUT_CONTAINER_NAME     = "COMPAS_Output";                                          // Default name for output container (directory)
+const std::string DEFAULT_HDF5_FILE_NAME            = "COMPAS_Output";                                          // Default name for HDF5 output file
+const std::string DETAILED_OUTPUT_DIRECTORY_NAME    = "Detailed_Output";                                        // Name for detailed output directory within output container
+const std::string RUN_DETAILS_FILE_NAME             = "Run_Details";                                            // Name for run details output file within output container
 
 constexpr int    HDF5_DEFAULT_CHUNK_SIZE                = 100000;                                                   // Default HDF5 chunk size (number of dataset entries)
 constexpr int    HDF5_DEFAULT_IO_BUFFER_SIZE            = 1;                                                        // Number of HDF5 chunks to buffer for IO (per open dataset)
@@ -546,12 +546,12 @@ constexpr double HURLEY_HJELLMING_WEBBINK_QCRIT_WD        = 1.59;
 
 // coefficients for the calculation of initial angular frequency for Chemically Homogeneous Evolution
 // Mandel from Butler 2018
-constexpr DBL_VECTOR CHE_Coefficients = { 5.7914E-04, -1.9196E-06, -4.0602E-07, 1.0150E-08, -9.1792E-11, 2.9051E-13 };
+const DBL_VECTOR CHE_Coefficients = { 5.7914E-04, -1.9196E-06, -4.0602E-07, 1.0150E-08, -9.1792E-11, 2.9051E-13 };
 
 // WD effective baryon number lookup table
 // unordered_map - key is stellar type
 // Hurley et al. 2000, just after eq 90
-constexpr COMPASUnorderedMap<STELLAR_TYPE, double> WD_Baryon_Number = {
+const COMPASUnorderedMap<STELLAR_TYPE, double> WD_Baryon_Number = {
     {STELLAR_TYPE::HELIUM_WHITE_DWARF,         4.0},
     {STELLAR_TYPE::CARBON_OXYGEN_WHITE_DWARF, 15.0},
     {STELLAR_TYPE::OXYGEN_NEON_WHITE_DWARF,   17.0}
@@ -570,7 +570,7 @@ enum class TOUT_L_Coeff: int { ALPHA, BETA, GAMMA, DELTA, EPSILON, ZETA, ETA };
 #define c TOUT_LR_TCoeff::c
 #define d TOUT_LR_TCoeff::d
 #define e TOUT_LR_TCoeff::e
-constexpr std::map<TOUT_L_Coeff, COMPASUnorderedMap<TOUT_LR_TCoeff, double>> TOUT_L_COEFF = {
+const std::map<TOUT_L_Coeff, COMPASUnorderedMap<TOUT_LR_TCoeff, double>> TOUT_L_COEFF = {
     {TOUT_L_Coeff::ALPHA,   {{a, 0.39704170}, {b,  -0.32913574}, {c,  0.34776688}, {d,  0.37470851}, {e, 0.09011915}}},
     {TOUT_L_Coeff::BETA,    {{a, 8.52762600}, {b, -24.41225973}, {c, 56.43597107}, {d, 37.06152575}, {e, 5.45624060}}},
     {TOUT_L_Coeff::GAMMA,   {{a, 0.00025546}, {b,  -0.00123461}, {c, -0.00023246}, {d,  0.00045519}, {e, 0.00016176}}},
@@ -595,7 +595,7 @@ enum class TOUT_R_Coeff: int { THETA, IOTA, KAPPA, LAMBDA, MU, NU, XI, OMICRON, 
 #define c TOUT_LR_TCoeff::c
 #define d TOUT_LR_TCoeff::d
 #define e TOUT_LR_TCoeff::e
-constexpr std::map<TOUT_R_Coeff, COMPASUnorderedMap<TOUT_LR_TCoeff, double>> TOUT_R_COEFF = {
+const std::map<TOUT_R_Coeff, COMPASUnorderedMap<TOUT_LR_TCoeff, double>> TOUT_R_COEFF = {
     {TOUT_R_Coeff::THETA,   {{a,  1.71535900}, {b,  0.62246212}, {c,  -0.92557761}, {d,  -1.16996966}, {e, -0.30631491}}},
     {TOUT_R_Coeff::IOTA,    {{a,  6.59778800}, {b, -0.42450044}, {c, -12.13339427}, {d, -10.73509484}, {e, -2.51487077}}},
     {TOUT_R_Coeff::KAPPA,   {{a, 10.08855000}, {b, -7.11727086}, {c, -31.67119479}, {d, -24.24848322}, {e, -5.33608972}}},
@@ -625,7 +625,7 @@ enum class HURLEY_AB_TCoeff: int { ALPHA, BETA, GAMMA, ETA, MU };
 // Values given in table in Appendix A of Hurley et al. 2000
 // Key to map is n (A(n)).  Map element is unordered_map of term coefficient values.
 // The key is expected to start at 1 and increase monotonically by 1 - any other behaviour will cause problems in the code
-constexpr std::map<int, COMPASUnorderedMap<HURLEY_AB_TCoeff, double>> HURLEY_A_COEFF = {
+const std::map<int, COMPASUnorderedMap<HURLEY_AB_TCoeff, double>> HURLEY_A_COEFF = {
     { 1, {{ALPHA,  1.593890E3 }, {BETA,  2.053038E3 }, {GAMMA,  1.231226E3 }, {ETA,  2.327785E2 }, {MU,  0.000000E0 }}},
     { 2, {{ALPHA,  2.706708E3 }, {BETA,  1.483131E3 }, {GAMMA,  5.772723E2 }, {ETA,  7.411230E1 }, {MU,  0.000000E0 }}},
     { 3, {{ALPHA,  1.466143E2 }, {BETA, -1.048442E2 }, {GAMMA, -6.795374E1 }, {ETA, -1.391127E1 }, {MU,  0.000000E0 }}},
@@ -721,7 +721,7 @@ constexpr std::map<int, COMPASUnorderedMap<HURLEY_AB_TCoeff, double>> HURLEY_A_C
 // Values given in table in Appendix A of Hurley et al. 2000
 // Key to map is n (B(n)).  Map element is unordered_map of term coefficient values.
 // The key is expected to start at 1 and increase monotonically by 1 - any other behaviour will cause problems in the code
-constexpr std::map<int, COMPASUnorderedMap<HURLEY_AB_TCoeff, double>> HURLEY_B_COEFF = {
+const std::map<int, COMPASUnorderedMap<HURLEY_AB_TCoeff, double>> HURLEY_B_COEFF = {
     { 1, {{ALPHA,  3.970000E-1}, {BETA,  2.882600E-1}, {GAMMA,  5.293000E-1}, {ETA,  0.000000E0 }, {MU,  0.000000E0 }}},
     { 2, {{ALPHA,  0.000000E0 }, {BETA,  0.000000E0 }, {GAMMA,  0.000000E0 }, {ETA,  0.000000E0 }, {MU,  0.000000E0 }}},
     { 3, {{ALPHA,  0.000000E0 }, {BETA,  0.000000E0 }, {GAMMA,  0.000000E0 }, {ETA,  0.000000E0 }, {MU,  0.000000E0 }}},
@@ -796,7 +796,7 @@ constexpr std::map<int, COMPASUnorderedMap<HURLEY_AB_TCoeff, double>> HURLEY_B_C
 // Values given in Hurley et al. 2000, p6, sec 5.1
 // Key to map is n (C(n)).  Map element is unordered_map of term coefficient values.
 // The key is expected to start at 1 and increase monotonically by 1 - any other behaviour will cause problems in the code
-constexpr std::unordered_map<int, double> HURLEY_C_COEFF = {{1, -8.672073E-2}, {2, 9.301992E0}, {3, 4.637345E0}};
+const std::unordered_map<int, double> HURLEY_C_COEFF = {{1, -8.672073E-2}, {2, 9.301992E0}, {3, 4.637345E0}};
 
 
 // symbolic names for coefficients from Shikauchi et al. 2024, section A4
@@ -806,7 +806,7 @@ enum class SHIKAUCHI_Coeff: int { ONE_TENTH_Z_SOL, ONE_THIRD_Z_SOL, Z_SOL };
 // alpha coefficients from Shikauchi et al. 2024, table 2
 // alpha is the natural decline rate of the mixing core mass in the absence of mass loss
 // Key to map is SHIKAUCHI_Coeff.  Map element is a DBL_VECTOR of coefficient values.
-constexpr std::map<SHIKAUCHI_Coeff, DBL_VECTOR> SHIKAUCHI_ALPHA_COEFF = {
+const std::map<SHIKAUCHI_Coeff, DBL_VECTOR> SHIKAUCHI_ALPHA_COEFF = {
     {SHIKAUCHI_Coeff::ONE_TENTH_Z_SOL, {0.45, -0.0557105,  -0.86589929}},
     {SHIKAUCHI_Coeff::ONE_THIRD_Z_SOL, {0.45, -0.06968022, -0.73688164}},
     {SHIKAUCHI_Coeff::Z_SOL,           {0.45, -0.05878711, -0.84646162}}
@@ -815,7 +815,7 @@ constexpr std::map<SHIKAUCHI_Coeff, DBL_VECTOR> SHIKAUCHI_ALPHA_COEFF = {
 // fMix coefficients from Shikauchi et al. 2024, table 3 (https://arxiv.org/abs/2409.00460)
 // fMix is the fraction of the mass contained in the mixing core at ZAMS
 // Key to map is SHIKAUCHI_Coeff.  Map element is a DBL_VECTOR of coefficient values.
-constexpr std::map<SHIKAUCHI_Coeff, DBL_VECTOR> SHIKAUCHI_FMIX_COEFF = {
+const std::map<SHIKAUCHI_Coeff, DBL_VECTOR> SHIKAUCHI_FMIX_COEFF = {
     {SHIKAUCHI_Coeff::ONE_TENTH_Z_SOL, {0.86914766, -0.60815098, 37.20654856}},
     {SHIKAUCHI_Coeff::ONE_THIRD_Z_SOL, {0.86269445, -0.62623353, 35.74630996}},
     {SHIKAUCHI_Coeff::Z_SOL,           {0.86605495, -0.64960375, 35.57019104}}
@@ -823,18 +823,18 @@ constexpr std::map<SHIKAUCHI_Coeff, DBL_VECTOR> SHIKAUCHI_FMIX_COEFF = {
 
 // Luminosity coefficients from Shikauchi et al. 2024, table 4 (https://arxiv.org/abs/2409.00460)
 // Key to map is SHIKAUCHI_Coeff.  Map element is a DBL_VECTOR of coefficient values.
-constexpr std::map<SHIKAUCHI_Coeff, DBL_VECTOR> SHIKAUCHI_LUMINOSITY_COEFF = {
+const std::map<SHIKAUCHI_Coeff, DBL_VECTOR> SHIKAUCHI_LUMINOSITY_COEFF = {
     {SHIKAUCHI_Coeff::ONE_TENTH_Z_SOL, {3.38627891, 1.13599187, -0.97389238, -0.87675442, 1.65386007, 0.07661174, -1.78737297, 0.622451,   -0.47511355,  0.02483567, 0.94243277, -0.06798225, 0.11086108, -0.14859538, 1.78029915}},
     {SHIKAUCHI_Coeff::ONE_THIRD_Z_SOL, {3.45464814, 0.94880846, -1.11409154, -0.86672079, 2.38986855, 0.04448855, -2.74913945, 0.60905625, -0.27648361,  0.03514139, 1.37569819, -0.19184532, 0.12816567, -0.14392935, 1.76390159}},
     {SHIKAUCHI_Coeff::Z_SOL,           {3.80166901, 0.37407948, -1.29904749, -1.34541622, 3.70934166, 0.28320469, -3.92327169, 0.92444477, -0.40146717, -0.00821364, 1.80297947, -0.15776603, 0.09205681, -0.21913557, 1.78496679}}
 };
 
 // Delta coefficients from Shikauchi et al. 2024, section A.4 (https://arxiv.org/abs/2409.00460)
-constexpr DBL_VECTOR SHIKAUCHI_DELTA_COEFFICIENTS = {0.54491412, -0.00900365, 0.08936248};
+const DBL_VECTOR SHIKAUCHI_DELTA_COEFFICIENTS = {0.54491412, -0.00900365, 0.08936248};
 
 // Coefficients used to determine the initial convective core mass of MS star after full mixing (due to a merger or CHE)
 // from Brcek et al. (2025)
-constexpr DBL_VECTOR BRCEK_FMIX_COEFFICIENTS = {0.898171018326982, -0.592244880828559, 55.7885260968562, 0.359078394562545, 1.87717633667786};
+const DBL_VECTOR BRCEK_FMIX_COEFFICIENTS = {0.898171018326982, -0.592244880828559, 55.7885260968562, 0.359078394562545, 1.87717633667786};
 
 
 
@@ -861,7 +861,7 @@ constexpr DBL_VECTOR BRCEK_FMIX_COEFFICIENTS = {0.898171018326982, -0.5922448808
 // In all cases, q is mAccretor/mDonor, which is inverted from the Ge et al. datatable. 
 //
 // Low Z = 0.001 table
-constexpr GE_QCRIT_TABLE QCRIT_GE_LOW_Z = {
+const GE_QCRIT_TABLE QCRIT_GE_LOW_Z = {
     {1.0, 1.14, 1.3, 1.44, 1.6, 1.8, 2.0, 2.5, 3.2, 4.0, 5.0, 6.3, 8.0, 10.0, 13.0, 16.0, 20.0, 25.0, 32.0, 40.0, 50.0, 63.0, 80.0, 100.0},
     {
       {{-0.0391, -0.029, -0.0112, 0.0059, 0.0217, 0.0359, 0.0492, 0.0663, 0.1844, 0.2985, 0.4157, 0.5323, 0.6365, 0.7326, 0.8349, 0.9336, 1.0333, 1.1347, 1.2364, 1.3386, 1.4372, 1.5371, 1.6372, 1.7365, 1.834, 1.9394, 2.0102, 2.0483, 2.1567, 2.2588},  {0.425, 0.412, 0.392, 0.375, 0.360, 0.348, 0.338, 0.326, 0.269, 0.239, 0.242, 0.962, 1.085, 1.101, 1.092, 1.071, 1.042, 1.007, 0.970, 0.928, 0.881, 0.827, 0.767, 0.700, 0.625, 0.532, 0.463, 0.286, 0.221, 0.138},  {0.425, 0.414, 0.398, 0.384, 0.372, 0.361, 0.352, 0.342, 0.292, 0.265, 0.264, 0.817, 0.912, 0.926, 0.919, 0.903, 0.882, 0.856, 0.829, 0.797, 0.762, 0.720, 0.675, 0.623, 0.564, 0.491, 0.435, 0.286, 0.332, 0.332},  {0.455, 0.446, 0.433, 0.422, 0.412, 0.404, 0.396, 0.387, 0.345, 0.322, 0.315, 0.693, 0.768, 0.779, 0.775, 0.765, 0.750, 0.732, 0.713, 0.691, 0.666, 0.637, 0.603, 0.565, 0.521, 0.465, 0.423, 0.296, 0.340, 0.340},  {0.424, 0.411, 0.390, 0.373, 0.359, 0.347, 0.336, 0.324, 0.267, 0.237, 0.241, 0.913, 1.022, 1.029, 1.007, 0.974, 0.932, 0.883, 0.831, 0.773, 0.711, 0.643, 0.570, 0.492, 0.410, 0.318, 0.255, 0.149, 0.088, 0.022},  {0.424, 0.414, 0.397, 0.382, 0.370, 0.360, 0.351, 0.341, 0.291, 0.264, 0.263, 0.779, 0.867, 0.873, 0.858, 0.833, 0.801, 0.765, 0.726, 0.682, 0.635, 0.582, 0.525, 0.464, 0.398, 0.323, 0.270, 0.172, 0.117, 0.046},  {0.454, 0.446, 0.433, 0.421, 0.411, 0.403, 0.395, 0.386, 0.344, 0.321, 0.314, 0.668, 0.737, 0.743, 0.734, 0.717, 0.696, 0.671, 0.644, 0.613, 0.579, 0.541, 0.499, 0.453, 0.403, 0.344, 0.303, 0.209, 0.164, 0.099}},
@@ -892,7 +892,7 @@ constexpr GE_QCRIT_TABLE QCRIT_GE_LOW_Z = {
 };
 //
 // High Z = 0.02 table
-constexpr GE_QCRIT_TABLE QCRIT_GE_HIGH_Z = {
+const GE_QCRIT_TABLE QCRIT_GE_HIGH_Z = {
     {0.1, 0.13, 0.16, 0.2, 0.22, 0.25, 0.28, 0.32, 0.36, 0.4, 0.45, 0.5, 0.56, 0.63, 0.71, 0.8, 0.89, 1.0, 1.14, 1.3, 1.44, 1.6, 1.8, 2.0, 2.04, 2.5, 3.2, 4.0, 5.0, 6.3, 8.0, 10.0, 13.0, 16.0, 20.0, 25.0, 32.0, 40.0, 50.0, 63.0, 80.0, 100.0},
     {
       {{-0.8724, -0.8581, -0.8457, -0.8367, -0.8336},  {-334.448, -502.513, -502.513, 497.512, 332.226},  {-200.401, -250.627, -200.401, 990.099, 497.512},  {-90.992, -111.235, -100.100, -334.448, 100000.000},  {1.517, 1.531, 1.534, 1.536, 1.538},  {1.241, 1.252, 1.253, 1.255, 1.255},  {1.006, 1.013, 1.014, 1.015, 1.016}},
@@ -941,7 +941,7 @@ constexpr GE_QCRIT_TABLE QCRIT_GE_HIGH_Z = {
 };
 //
 // He star table
-constexpr GE_QCRIT_TABLE_HE QCRIT_GE_HE_STAR = {
+const GE_QCRIT_TABLE_HE QCRIT_GE_HE_STAR = {
     {0.35, 0.4, 0.45, 0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 1.0, 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8, 1.9, 2.0, 2.1, 2.2, 2.3, 2.4, 2.5, 2.6, 2.8, 3.0, 3.2, 3.5, 3.8, 4.2, 4.6, 5.0, 5.4, 5.8, 6.3, 6.9, 7.5, 8.0, 8.6, 9.3, 10.0},
     {
       {{-2.6886, -2.6486, -2.609, -2.5716, -2.5363, -2.5009, -2.4674, -2.4347, -2.4031, -2.3756, -2.3446},  {0.516, 0.506, 0.495, 0.485, 0.474, 0.463, 0.451, 0.438, 0.424, 0.347, 0.329}},
@@ -997,7 +997,7 @@ constexpr GE_QCRIT_TABLE_HE QCRIT_GE_HE_STAR = {
 // CDF from Table 7 in Dufton et al. 2013 https://arxiv.org/abs/1212.2424
 // There is an assumption in the code that this function is monitonically increasing - it is now
 // and should remain so if the map is modified.
-constexpr std::map<double, double> BStarRotationalVelocityCDFTable = {
+const std::map<double, double> BStarRotationalVelocityCDFTable = {
     {000.0, 0.000}, {020.0, 0.046}, {040.0, 0.094}, {060.0, 0.144}, {080.0, 0.192}, {100.0, 0.239},
     {120.0, 0.253}, {140.0, 0.270}, {160.0, 0.288}, {180.0, 0.322}, {200.0, 0.377}, {220.0, 0.435},
     {240.0, 0.492}, {260.0, 0.548}, {280.0, 0.609}, {300.0, 0.674}, {320.0, 0.739}, {340.0, 0.796},
@@ -1014,7 +1014,7 @@ constexpr std::map<double, double> BStarRotationalVelocityCDFTable = {
 //
 // for now we choose one example EOS ARP3 from
 // Akmal et al. 1998 https://arxiv.org/abs/nucl-th/9804027
-constexpr std::map<double, double> ARP3MassRadiusRelation = {
+const std::map<double, double> ARP3MassRadiusRelation = {
     {0.184 , 16.518}, {0.188 , 16.292}, {0.192 , 16.067}, {0.195 , 15.857}, {0.199 , 15.658}, {0.203 , 15.46 }, {0.207 , 15.277}, {0.212, 15.102}, {0.216, 14.933},
     {0.221 , 14.774}, {0.225 , 14.619}, {0.23  , 14.473}, {0.235 , 14.334}, {0.24  , 14.199}, {0.245 , 14.073}, {0.251 , 13.951}, {0.256, 13.834}, {0.262, 13.725},
     {0.268 , 13.618}, {0.273 , 13.52 }, {0.28  , 13.423}, {0.286 , 13.332}, {0.292 , 13.245}, {0.299 , 13.162}, {0.306 , 13.084}, {0.313, 13.009}, {0.32 , 12.94 },
@@ -1042,10 +1042,10 @@ constexpr std::map<double, double> ARP3MassRadiusRelation = {
 
 
 // mass / Msun of stellar models computed by Xu & Li (2010), with additional unpublished 50 and 100 Msun models
-constexpr DBL_VECTOR NANJING_MASSES = { 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 12.0, 14.0, 16.0, 20.0, 50.0, 100.0 };
+const DBL_VECTOR NANJING_MASSES = { 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 12.0, 14.0, 16.0, 20.0, 50.0, 100.0 };
 
 // mass / Msun bin edges of Xu & Li (2010) lambda prescription as implemented in StarTrack. These are the midpoints between the masses in NANJING_MASSES
-constexpr DBL_VECTOR NANJING_MASSES_MIDPOINTS = { 1.5, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5, 8.5, 9.5, 11.0, 13.0, 15.0, 18.0, 35.0, 75.0 };
+const DBL_VECTOR NANJING_MASSES_MIDPOINTS = { 1.5, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5, 8.5, 9.5, 11.0, 13.0, 15.0, 18.0, 35.0, 75.0 };
 
 // coefficients for calculating binding and recombination energy as described in Loveridge et al. 2011
 // electronic tables, program and further information in: http://astro.ru.nl/~sluys/index.php?title=BE
@@ -1062,7 +1062,7 @@ struct LoveridgeCoefficients {
 // These are used as indices into the loveridgeCoefficients multi-dimensional vector (described below)
 // This is a bit of a hack until I figure out how to (elegantly) iterate over enum classes...
 enum class LOVERIDGE_METALLICITY: int { Z000010, Z000100, Z001000, Z001500, Z002000, Z003000, COUNT };
-constexpr std::vector<std::tuple<LOVERIDGE_METALLICITY, double>> LOVERIDGE_METALLICITY_VALUE = {
+const std::vector<std::tuple<LOVERIDGE_METALLICITY, double>> LOVERIDGE_METALLICITY_VALUE = {
     { LOVERIDGE_METALLICITY::Z000010, 0.00010 },
     { LOVERIDGE_METALLICITY::Z000100, 0.00100 },
     { LOVERIDGE_METALLICITY::Z001000, 0.01000 },
@@ -1078,7 +1078,7 @@ const DBL_VECTOR LOVERIDGE_LM_HM_CUTOFFS = { 11.7000, 11.7000, 10.2000, 11.7000,
 
 // coefficients for the division between Low Mass RGB 1 and Low Mass RGB 2, indexed by metallicity (LOVERIDGE_METALLICITY)
 // From Loveridge et al. 2011, table 2 & eq 4
-constexpr std::vector<DBL_VECTOR> LOVERIDGE_LM1_LM2_CUTOFFS = {
+const std::vector<DBL_VECTOR> LOVERIDGE_LM1_LM2_CUTOFFS = {
     { 6.047230E-01,  1.397240E+00, -8.249630E-02,  1.141430E+00,  0.000000E+00 },       // Metallicity Z000010 (0.00010)
     { 4.566000E-01,  1.186600E+00,  2.390880E+00, -3.054040E+00,  1.404900E+00 },       // Metallicity Z000100 (0.00100)
     { 2.821740E-01,  1.149380E+00,  1.884450E+00, -1.082300E+00,  0.000000E+00 },       // Metallicity Z001000 (0.01000)
@@ -1092,7 +1092,7 @@ constexpr std::vector<DBL_VECTOR> LOVERIDGE_LM1_LM2_CUTOFFS = {
 // This vector records the coefficients (m, r, alpha(m,r) used in Loveridge et al. 2001, eq 5
 // Using a vector indexed by metallicity and evolutionary stage because it's faster than a map, and
 // the lambdas could be calculated at every timestep.
-constexpr std::vector<std::vector<std::vector<LoveridgeCoefficients>>> LOVERIDGE_COEFFICIENTS = {
+const std::vector<std::vector<std::vector<LoveridgeCoefficients>>> LOVERIDGE_COEFFICIENTS = {
     {                                                                                   // Metallicity Z000010 (0.00010)
         {                                                                               // LMR1 (Z000010)
             { 0,     0,     1.49884369566236408389E+01},
