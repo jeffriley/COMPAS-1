@@ -73,7 +73,9 @@ protected:
                                                 const bool   p_IsHeRich)                                        { return CalculateMassAcceptanceRate(p_DonorMassRate, p_AccretorMassRate); } // Ignore the He content for non-WDs
 
     double          CalculateMassLossRateHurley()                                                               { m_DominantMassLossRate = MASS_LOSS_TYPE::NONE ; return 0.0; }
-    double          CalculateMassLossRateBelczynski2010()                                                       { m_DominantMassLossRate = MASS_LOSS_TYPE::NONE ; return 0.0; }
+
+std::tuple<double, MASS_LOSS_TYPE> CalculateMassLossRateBelczynski2010(const double p_Metallicity, const double p_Luminosity, const double p_HeAbundanceSurface) { return make_tuple(0.0, MASS_LOSS_TYPE::NONE); }
+
     double          CalculateMassLossRateMerritt2025()                                                          { m_DominantMassLossRate = MASS_LOSS_TYPE::NONE ; return 0.0; }                                                         // 
 
     double          CalculatePerturbationMuOnPhase() const                                                      { return m_Mu; }                                                        // NO-OP

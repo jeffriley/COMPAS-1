@@ -150,11 +150,11 @@ BaseBinaryStar::BaseBinaryStar(const unsigned long int p_Seed, const long int p_
         // binary star contains two instances of star to hold masses, radii and luminosities.
         // star 1 initially more massive
         m_Star1 = !OPTIONS->OptionDefaulted("rotational-frequency-1")                                                                   // user specified primary rotational frequency?
-                    ? new BinaryConstituentStar(m_RandomSeed, mass1, metallicity, kickParameters1, OPTIONS->RotationalFrequency1() * SECONDS_IN_YEAR) // yes - use it (convert from Hz to cycles per year - see BaseStar::CalculateZAMSAngularFrequency())
+                    ? new BinaryConstituentStar(m_RandomSeed, mass1, metallicity, kickParameters1, OPTIONS->RotationalFrequency1())     // yes - use it
                     : new BinaryConstituentStar(m_RandomSeed, mass1, metallicity, kickParameters1);                                     // no - let it be calculated
 
         m_Star2 = !OPTIONS->OptionDefaulted("rotational-frequency-2")                                                                   // user specified secondary rotational frequency?
-                    ? new BinaryConstituentStar(m_RandomSeed, mass2, metallicity, kickParameters2, OPTIONS->RotationalFrequency2() * SECONDS_IN_YEAR) // yes - use it (convert from Hz to cycles per year - see BaseStar::CalculateZAMSAngularFrequency())
+                    ? new BinaryConstituentStar(m_RandomSeed, mass2, metallicity, kickParameters2, OPTIONS->RotationalFrequency2())     // yes - use it
                     : new BinaryConstituentStar(m_RandomSeed, mass2, metallicity, kickParameters2);                                     // no - let it be calculated
 
         double starToRocheLobeRadiusRatio1 = (m_Star1->Radius() * RSOL_TO_AU) / (m_SemiMajorAxis * (1.0 - m_Eccentricity) * CalculateRocheLobeRadius_Static(mass1, mass2));

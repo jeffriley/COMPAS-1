@@ -33,6 +33,46 @@
     #define COMPILER_PATCH "??"
 #endif
 
+
+// [[gnu::pure]] and [[gnu::const]]
+//
+// gnu::pure-ness and gnu::const-ness are gnu-specific attributes that signal to
+// the compiler that the functions marked so behave in a particular way, so can
+// be treated specially by the compiler wrt optimisation.  Specifically:
+//
+// [[gnu::pure]] signals to the compiler that the function does not modify the
+// state of the program in an observable way (other than indirectly by callers
+// inspecting and acting upon the function's return value).  Functions marked
+// [[gnu-pure]] are permitted to interrogate (read) any non-volatile objects
+// (see "volatile" attribute), including global and/or static data, but they
+// must not mutate it.  The return value of a [[gnu::pure]] function must depend
+// only on its arguments and the values of any non-volatile global or static data
+// that it uses (reads).  Note that [[gnu::pure]] functions that don't return a
+// value (i.e. void function) don't make sense, and result in compilation errors.
+//
+// [[gnu::const]] also signals to the compiler that the function does not modify
+// the state of the program in an observable way (other than indirectly by callers
+// inspecting and acting upon the function's return value), but is a stricter
+// version of [[gnu::pure]].  Functions marked [[gnu-const]] are not permitted to
+// interrogate (read) or mutate (write) any non-volatile objects (see "volatile"
+// attribute), including global and/or static data.  The return value of a 
+// [[gnu::const]] function must depend only on its arguments.  Note that 
+// [[gnu::const]] functions that don't return a value (i.e. void function) don't
+// make sense, and result in compilation errors.
+//
+// Declarations in `constants.h` (and elsewhere) marked `constexpr` can be
+// evaluated at compile time, and if the declaration does not require a reference
+// to be accessed (i.e. it is not a vector or other container that requires a
+// reference to access individual elements), then the value can be inserted directly
+// into the code and does not require storage (memory), and as such can be accessed
+// (read only) by either a [[gnu-pure]] or [[gnu-cost]] function.  This also applies
+// to single values from an `enum class` (e.g. `MASS_LOSS_TYPE::OB`).
+//
+// Marking functions [[gnu::const]] or [[gnu::pure]] erroneoulsy can (probably will)
+// result in undefined behaviour.
+//
+// [[gnu::const]] and [[gnu::pure]] are supported by the gnu and clang compilers.
+
 #if COMPILER_ID == GCC_COMPILER || COMPILER == CLANG_COMPILER
     #define GNU_CONST [[gnu::const]]
     #define GNU_PURE  [[gnu::pure]]
@@ -152,7 +192,7 @@ constexpr double ROOT_REL_TOLERANCE                     = 1.0E-6;               
 
 constexpr std::size_t MAX_STACK_TRACE_SIZE              = 64;                                                       // for debugging - overkill, but just in case
 
-constexpr std::size_t DEFAULT_STATE_HISTORY_STACK_SIZE  = 3;                                                        // current state, previous state, and zero state
+constexpr std::size_t DEFAULT_STATE_HISTORY_STACK_SIZE  = 0;                                                        // unbounded
 
 
 // initialisation constants
@@ -355,9 +395,10 @@ constexpr double STARTRACK_PPISN_HE_CORE_MASS           = 45.0;                 
 constexpr double Q_CNO                                  = 9.9073E4;                                                 // Energy released per unit mass by hydrogen fusion via the CNO cycle in Lsol Myr Msol-1
 
 // Initial mass of stars above which (including the limit) we allow convective core mass calculations from
-// Shikauchi et al. (2024) and rejuvenation calculations
+// Shikauchi et al. 2024 and rejuvenation calculations
 // Note that this value should always be > 0.7 Msol
 constexpr double BRCEK_LOWER_MASS_LIMIT                 = 1.5;
+constexpr double SHIKAUCHI_LOWER_MASS_LIMIT             = 15.0;                                                     // Lower mass limit for Shikauchi et al. 2024
 // Maximum core mass to total mass ratio on the main sequence (when BRCEK core mass prescription is used)
 // Sets upper limit on the main-sequence convective core mass to prevent the star from becoming fully convective
 // Detailed models from MESA suggest that the convective core mass never exceeds ~90% of the total mass
@@ -424,6 +465,10 @@ constexpr double KROUPA_BREAK_2_PLUS1_3                 = 2.46228882668983257;  
 constexpr double KROUPA_BREAK_2_POWER_2_3               = 0.5;                                                      // pow(KROUPA_BREAK_2, (KROUPA_POWER_2 - KROUPA_POWER_3));
 
 constexpr double OPIKS_LAW_SEMIMAJOR_AXIS_DISTRIBUTION_POWER =  -1.0;
+
+// Surface helium mass fraction limits for mass loss per Yoon et al. 2006
+constexpr double SURFACE_HE_ABUNDANCE_ML_OB             = 0.55;
+constexpr double SURFACE_HE_ABUNDANCE_ML_WR             = 0.70;
 
 // Constants for the Muller and Mandel remnant mass and kick prescriptions
 constexpr double MULLERMANDEL_M1                        = 2.0;	
@@ -794,9 +839,8 @@ const std::map<int, COMPASUnorderedMap<HURLEY_AB_TCoeff, double>> HURLEY_B_COEFF
 
 // Hurley C coefficients
 // Values given in Hurley et al. 2000, p6, sec 5.1
-// Key to map is n (C(n)).  Map element is unordered_map of term coefficient values.
-// The key is expected to start at 1 and increase monotonically by 1 - any other behaviour will cause problems in the code
-const std::unordered_map<int, double> HURLEY_C_COEFF = {{1, -8.672073E-2}, {2, 9.301992E0}, {3, 4.637345E0}};
+// std::vector<double>. first element is dummy element to preserve Hurley indexing (c1, c2, c2)
+const DBL_VECTOR HURLEY_C_COEFF = { 0.0, -8.672073E-2, 9.301992E0, 4.637345E0 };
 
 
 // symbolic names for coefficients from Shikauchi et al. 2024, section A4

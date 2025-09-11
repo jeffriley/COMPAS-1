@@ -68,7 +68,7 @@ protected:
                          const KickParametersT   p_KickParameters,
                          const double            p_RotationalVelocity) {
 
-        StarStateT state;
+        StarState state;
 
         state.stellarType              = STELLAR_TYPE::MS_GT_07;     // this stellar type
 
@@ -92,8 +92,8 @@ protected:
         state.dMdt                     = 0.0;
         state.dominantMassLossType     = MASS_LOSS_TYPE::NONE;
 
-        state.luminosity               = CalculateZAMSLuminosity_Tout_1996(p_Mass, GLOBALS->LuminosityCoefficients());
-        state.radius                   = CalculateZAMSRadius_Tout_1996(p_Mass, GLOBALS->RadiusCoefficients());
+        state.luminosity               = CalculateZAMSLuminosity_Tout_1996(p_Mass, GLOBALS->ToutLuminosityCoefficients());
+        state.radius                   = CalculateZAMSRadius_Tout_1996(p_Mass, GLOBALS->ToutRadiusCoefficients());
 
         state.heliumAbundance          = GLOBALS->ZAMSHeliumAbundance();
         state.heliumAbundanceCore      = heliumAbundance;

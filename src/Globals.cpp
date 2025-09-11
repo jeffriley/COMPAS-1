@@ -28,19 +28,22 @@ void Initialise() {
 
     // regardles of evolution maode (SSE or BSE), we will need to record details
     // for at east one star
-    StarDetails* m_Star1 = new StarDetails;                 // star 1
+    StarDetails* m_Star1 = new StarDetails;                                                                 // star 1
 
-    // assumption: metallicity is same for both stars in a binary.  The code here could easily be changed to have metallicity different for each star, but COMPAS options currently don't allow that, so for now we use that as a simplification.
+    // Assumption: metallicity is same for both stars in a binary.  
+    // The code here could easily be changed to have metallicity different for each star, but
+    // COMPAS options currently don't allow that, so for now we use that as a simplification.
+    // We may never want to do that, but the point is, should we decide we want to, we could.
 
-    m_RefZ                   = OPTIONS->Metallicity();                                                      // reference metallicity
+    m_RefZ                           = OPTIONS->Metallicity();                                              // reference metallicity
 
-    m_ZAMSheliumAbundance    = CalculateZAMSHeliumAbundance_Pols_1998(m_RefZ);                              // ZAMS helium abundance
-    m_ZAMShydrogenAbundance  = CalculateZAMSHydrogenAbundance_Pols_1998(m_RefZ);                            // ZAMS hydrogen abundance
+    m_ZAMSheliumAbundance            = CalculateZAMSHeliumAbundance_Pols(m_RefZ);                           // ZAMS helium abundance
+    m_ZAMShydrogenAbundance          = CalculateZAMSHydrogenAbundance_Pols(m_RefZ);                         // ZAMS hydrogen abundance
 
-    m_HurleyZdependentValues = CalculateHurleyZdependentValues(m_RefZ, m_HurleyZdependentValues);           // Hurley Z-dependent values
+    m_HurleyZdependentValues         = CalculateHurleyZdependentValues(m_RefZ, m_HurleyZdependentValues);   // Hurley Z-dependent values
 
-    m_LuminosityCoefficients = CalculateLuminosityCoefficients_Tout_1996(m_HurleyZdependentValues.zeta);
-    m_RadiusCoefficients     = CalculateRadiusCoefficients_Tout_1996(m_HurleyZdependentValues.zeta);
+    m_ToutZAMSLuminosityCoefficients = CalculateZAMSLuminosityCoefficients_Tout(m_ZetaHurley);              // Tout luminosity coefficients
+    m_ToutZAMSRadiusCoefficients     = CalculateZAMSRadiusCoefficients_Tout(m_ZetaHurley);                  // Tout radius coefficients
 
 
 
@@ -186,7 +189,7 @@ DBL_VECTOR Globals::CalculateHurleyACoefficients(const double p_Z, const double 
  * @param       p_Sigma                         Sigma from Hurley et al. 2000 sigma, p24
  * @param       p_Zeta                          Zeta from Hurley et al. 2000, p5, just before eq 1
  * @param       p_Rho                           Rho from Hurley et al. 2000 sigma, p24
- * @param       p_MassCutoffs                   Hurley mass cutoffs vector
+ * @param       p_MassCutoffs                   Hurley mass cutoffs
  * @return                                      b(n) coefficients vector
  */
 DBL_VECTOR Globals::CalculateHurleyBCoefficients(const double p_Z, const double p_Sigma, const double p_Zeta, const double p_Rho, const DBL_VECTOR& p_MassCutoffs) const {
@@ -435,7 +438,7 @@ DBL_VECTOR Globals::CalculateHurleyMassCutoffs(const double p_Z, const double p_
  * DBL_VECTOR CalculateHurleyAlphas(const DBL_VECTOR& p_bCoefficients, const DBL_VECTOR& p_MassCutoffs) const)
  * 
  * @param       p_bCoefficients                 Hurley b(n) coefficients
- * @param       p_MassCutoffs                   Hurley mass cutoffs vector
+ * @param       p_MassCutoffs                   Hurley mass cutoffs
  * @return                                      Alpha values vector
  */
 DBL_VECTOR Globals::CalculateHurleyAlphas(const DBL_VECTOR& p_bCoefficients, const DBL_VECTOR& p_MassCutoffs) const {
@@ -516,57 +519,35 @@ double Globals::CalculateHurleyGBRadiusXexponent(const double p_Zeta) const {
  * CalculateHurleyZdependentValues
  *
  * @brief
- * Calculate and set all Hurley Z-dependent values if necessary - if the reference metallicity passed
- * is different from the reference metallicity recorded in the struct parameter passed, then all values
- * will be calculated and set, otherwise the struct passed will be returned unchanged.
- * 
- * Note that the reference metallicity passed to this function will be range checked and clamped
- * to [MINIMUM_METALLICITY_HURLEY, MAXIMUM_METALLICITY_HURLEY] before anything else is done.
- * (This shouldn't happen - options code should already have caught this, but defensive...)
+ * Calculate Hurley Z-dependent values.
  * 
  * 
- * struct HurleyZdependentValues CalculateHurleyZdependentValues(const double p_Z, const HurleyZdependentValues& p_HurleyZdependentValues) const
+ * struct HurleyZdependentValues CalculateHurleyZdependentValues(const double p_Z, const double p_Sigma, const double p_Zeta, const HurleyZdependentValues& p_HurleyZdependentValues) const
  * 
  * @param       p_Z                             Metallicity value to be used calculate Hurley Z-dependent values
+ * @param       p_Sigma                         Sigma from Hurley et al. 2000 p24, sigma = log10(Z)
+ * @param       p_Zeta                          Zeta from Hurley et al. 2000, p5, just before eq 1
  * @param       p_HurleyZdependentValues        Struct containing Hurley Z-dependent values
  * @return                                      Struct containing (possibly updated) Hurley Z-dependent values
  */
-HurleyZdependentT CalculateHurleyZdependentValues(const double p_Z, const HurleyZdependentValues& p_HurleyZdependentValues) const {
+HurleyZdependentT CalculateHurleyZdependentValues(const double p_Z, const double p_Sigma, const double p_Zeta, const HurleyZdependentValues& p_HurleyZdependentValues) const {
 
-    HurleyZdependentValues values = p_HurleyZdependentValues;                               // return value - default is unchanged
+    HurleyZdependentValues values = p_HurleyZdependentValues;   // return value - default is unchanged
 
-    double Z = p_Z;
+    // (re)calculate and set class member values
+    values.rho                 = p_Zeta + 1.0;                  // Hurley et al. 2000 p24, rho = zeta + 1.0
 
-    // range check metallicty passed in and clamp to [MINIMUM_METALLICITY_HURLEY, MAXIMUM_METALLICITY_HURLEY]
-    if (Z < MINIMUM_METALLICITY_HURLEY || Z > MAXIMUM_METALLICITY_HURLEY) {                 // reference metallicity outside range?
-                                                                                            // yes
-        Z = std::max(MAXIMUM_METALLICITY_HURLEY, std::min(Z, MINIMUM_METALLICITY_HURLEY));  // clamp it
-                                                                                            // issue warning
-        // ISSUE WARNING & CLAMP TO [MINIMUM, MAXIMUM]  
-    }
+    values.aCoefficients       = CalculateHurleyACoefficients(p_Z, p_Sigma, p_Zeta);
+    values.massCutoffs         = CalculateHurleyMassCutoffs(p_Z, p_Zeta);
+    values.bCoefficients       = CalculateHurleyBCoefficients(p_Z, p_Sigma, p_Zeta, values.rho, values.massCutoffs);
 
-    if (Z != p_HurleyZdependentValues.refZ) {                                               // reference metallicity changed?
-                                                                                            // yes
-        // (re)calculate and set class member values
-        values.refZ                = Z;                                                     // Hurley reference metallicity
-        values.sigma               = log10(values.refZ);                                    // Hurley et al. 2000 p24, sigma = log10(Z)
-        values.zeta                = values.sigma - LOG10_ZSOL_HURLEY;                      // Hurley et al. 2000 p5, just before eq 1, zeta = log10(Z/0.02) = log10(Z) - log10(0.02) = sigma - LOG10_ZSOL_HURLEY
-        values.zetaAnders          = values.sigma - LOG10_ZSOL_ANDERS;                      // log10(Z / ZSOL_ANDERS)
-        values.zetaAsplund         = values.sigma - LOG10_ZSOL_ASPLUND;                     // log10(Z / ZSOL_ASPLUND)
-        values.rho                 = values.zeta + 1.0;                                     // Hurley et al. 2000 p24, rho = zeta + 1.0
+    values.gammaConstants      = CalculateHurleyGammaConstants(values.aCoefficients);
+    values.luminosityConstants = CalculateHurleyLuminosityConstants(values.aCoefficients);
+    values.radiusConstants     = CalculateHurleyRadiusConstants(values.aCoefficients);
 
-        values.aCoefficients       = CalculateHurleyACoefficients(Z, values.sigma, values.zeta);
-        values.massCutoffs         = CalculateHurleyMassCutoffs(Z, values.zeta);
-        values.bCoefficients       = CalculateHurleyBCoefficients(Z, values.sigma, values.zeta, values.rho, values.massCutoffs);
+    values.xExponent           = CalculateHurleyGBRadiusXexponent();
 
-        values.gammaConstants      = CalculateHurleyGammaConstants(values.aCoefficients);
-        values.luminosityConstants = CalculateHurleyLuminosityConstants(values.aCoefficients);
-        values.radiusConstants     = CalculateHurleyRadiusConstants(values.aCoefficients);
-
-        values.xExponent           = CalculateHurleyGBRadiusXexponent();
-
-        values.alphas              = CalculateHurleyAlphas(values.bCoefficients, values.massCutoffs);
-    }
+    values.alphas              = CalculateHurleyAlphas(values.bCoefficients, values.massCutoffs);
 
     // return the values struct by value - NRVO takes care of performance/efficiency
     return values;
@@ -586,7 +567,7 @@ HurleyZdependentT CalculateHurleyZdependentValues(const double p_Z, const Hurley
     
     
 /*
- * CalculateLuminosityCoefficients_Tout_1996
+ * CalculateLuminosityCoefficients_Tout
  *
  * @brief
  * Calculate luminosity coefficients per Tout et al. 1996, table 1
@@ -596,12 +577,12 @@ HurleyZdependentT CalculateHurleyZdependentValues(const double p_Z, const Hurley
  * the next (e.g. in a population run).
  * 
  *
- * DBL_VECTOR CalculateLuminosityCoefficients_Tout_1996(const double p_Zeta) const
+ * DBL_VECTOR CalculateLuminosityCoefficients_Tout(const double p_Zeta) const
  * 
  * @param       p_Zeta                          Zeta from Hurley et al. 2000, p5, just before eq 1
  * @return                                      Luminosity coefficients vector
  */
-DBL_VECTOR Globals::CalculateLuminosityCoefficients_Tout_1996(const double p_Zeta) const {
+DBL_VECTOR Globals::CalculateLuminosityCoefficients_Tout(const double p_Zeta) const {
 // macros for convenience and readability - undefined at end of function
 #define index    static_cast<int>(coeff.first)
 #define coeff(x) coeff.second[LR_TCoeff::x]
@@ -630,7 +611,7 @@ DBL_VECTOR Globals::CalculateLuminosityCoefficients_Tout_1996(const double p_Zet
         
         
 /*
- * CalculateRadiusCoefficients_Tout_1996
+ * CalculateRadiusCoefficients_Tout
  *
  * @brief
  * Calculate radius coefficients per Tout et al. 1996, table 2
@@ -640,12 +621,12 @@ DBL_VECTOR Globals::CalculateLuminosityCoefficients_Tout_1996(const double p_Zet
  * to the next (e.g. in a population run).
  * 
  *
- * DBL_VECTOR CalculateRadiusCoefficients_Tout_1996(const double p_Zeta) const
+ * DBL_VECTOR CalculateRadiusCoefficients_Tout(const double p_Zeta) const
  * 
  * @param       p_Zeta                          Zeta from Hurley et al. 2000, p5, just before eq 1
  * @return                                      Radius coefficients vector
  */
-DBL_VECTOR Globals::CalculateRadiusCoefficients_Tout_1996(const double p_Zeta) const {
+DBL_VECTOR Globals::CalculateRadiusCoefficients_Tout(const double p_Zeta) const {
 // macros for convenience and readability - undefined at end of function
 #define index    static_cast<int>(coeff.first)
 #define coeff(x) coeff.second[TOUT_LR_TCoeff::x]
@@ -674,35 +655,35 @@ DBL_VECTOR Globals::CalculateRadiusCoefficients_Tout_1996(const double p_Zeta) c
 
 
 /*
- * CalculateZAMSHeliumAbundance_Pols_1998
+ * CalculateZAMSHeliumAbundance_Pols
  *
  * @brief
  * Calculate ZAMS helium abundance as a fraction of the star's mass, per Pols et al. 1998
  *
  *
- * double CalculateZAMSHeliumAbundance_Pols_1998(const double p_Z) const
+ * double CalculateZAMSHeliumAbundance_Pols(const double p_Z) const
  * 
- * @param       p_Z                             Metallicity
- * @return                                      ZAMS helium abundance
+ * @param       p_Z                             Metallicity of the star
+ * @return                                      ZAMS helium abundance for the star
  */
-double Globals::CalculateZAMSHeliumAbundance_Pols_1998(const double p_Z) const {
+double Globals::CalculateZAMSHeliumAbundance_Pols(const double p_Z) const {
     return 0.24 + 2.0 * p_Z;
 }
 
 
 /*
- * CalculateZAMSHydrogenAbundance_Pols_1998
+ * CalculateZAMSHydrogenAbundance_Pols
  *
  * @brief
  * Calculate ZAMS hydrogen abundance as a fraction of the star's mass, per Pols et al. 1998
  *
  *
- * double CalculateZAMSHydrogenAbundance_Pols_1998(const double p_Z) const
+ * double CalculateZAMSHydrogenAbundance_Pols(const double p_Z) const
  *
- * @param       p_Z                             Metallicity
- * @return                                      ZAMS hydrogen abundance
+ * @param       p_Z                             Metallicity of the star
+ * @return                                      ZAMS hydrogen abundance for the star
  */
-double Globals::CalculateZAMSHydrogenAbundance_Pols_1998(const double p_Z) const {
+double Globals::CalculateZAMSHydrogenAbundance_Pols(const double p_Z) const {
     return 0.76 - 3.0 * p_Z;
 }
 
@@ -710,7 +691,8 @@ double Globals::CalculateZAMSHydrogenAbundance_Pols_1998(const double p_Z) const
 /*
  * CalculateShikauchiCoefficients
  *
- * Calculate metallicity-dependent coefficients per Shikauchi et al. 2024
+ * @brief
+ * Calculate metallicity-dependent coefficients per Shikauchi et al. 2024.
  * Shikauchi et al. 2024 gives values for the coefficients of relationships for:
  * 
  *    - the natural decline rate of the mixing core mass in the absence of mass loss (alpha),
@@ -723,9 +705,9 @@ double Globals::CalculateZAMSHydrogenAbundance_Pols_1998(const double p_Z) const
  * the bounds defined by Shikauchi et al. 2024.
  * 
  *
- * std::tuple<DBL_VECTOR, DBL_VECTOR, DBL_VECTOR> InterpolateShikauchiCoefficients(const double p_Metallicity)
+ * std::tuple<DBL_VECTOR, DBL_VECTOR, DBL_VECTOR> CalculateShikauchiCoefficients(const double p_Z)
  *
- * @param       p_Z                             Metallicity
+ * @param       p_Z                             Metallicity of the star
  * @return                                      Tuple containing vectors of coefficients (alpha, fMix, luminosity)
  */
 std::tuple<DBL_VECTOR, DBL_VECTOR, DBL_VECTOR> Globals::CalculateShikauchiCoefficients(const double p_Z) const {
@@ -770,12 +752,12 @@ std::tuple<DBL_VECTOR, DBL_VECTOR, DBL_VECTOR> Globals::CalculateShikauchiCoeffi
     }
     else if (logZ < high) {                                                     // p_Z in middle to upper metallicity band?
                                                                                 // yes, interpolate
-            for (size_t i = 0; i < alphaCoeff.size(); i++)
-                alphaCoeff[i] = (SHIKAUCHI_ALPHA_COEFF[mid][i] * logUpperZ_logZ + SHIKAUCHI_ALPHA_COEFF[upper][i] * logZ_logMidZ) / logUpperZ_logMidZ;
-            for (size_t i = 0; i < fMixCoeff.size(); i++)
-                fMixCoeff[i]  = (SHIKAUCHI_FMIX_COEFF[mid][i] * logUpperZ_logZ + SHIKAUCHI_FMIX_COEFF[upper][i] * logZ_logMidZ) / logUpperZ_logMidZ;
-            for (size_t i = 0; i < luminosityCoeff.size; i++)
-                luminosityCoeff[i] = (SHIKAUCHI_LUMINOSITY_COEFF[mid][i] * logUpperZ_logZ + SHIKAUCHI_LUMINOSITY_COEFF[upper][i] * logZ_logMidZ) / logUpperZ_logMidZ;
+        for (size_t i = 0; i < alphaCoeff.size(); i++)
+            alphaCoeff[i] = (SHIKAUCHI_ALPHA_COEFF[mid][i] * logUpperZ_logZ + SHIKAUCHI_ALPHA_COEFF[upper][i] * logZ_logMidZ) / logUpperZ_logMidZ;
+        for (size_t i = 0; i < fMixCoeff.size(); i++)
+            fMixCoeff[i]  = (SHIKAUCHI_FMIX_COEFF[mid][i] * logUpperZ_logZ + SHIKAUCHI_FMIX_COEFF[upper][i] * logZ_logMidZ) / logUpperZ_logMidZ;
+        for (size_t i = 0; i < luminosityCoeff.size; i++)
+            luminosityCoeff[i] = (SHIKAUCHI_LUMINOSITY_COEFF[mid][i] * logUpperZ_logZ + SHIKAUCHI_LUMINOSITY_COEFF[upper][i] * logZ_logMidZ) / logUpperZ_logMidZ;
     }
     else {                                                                      // p_Z at or above upper metallicity bound
                                                                                 // clamp coefficients to upper bound values

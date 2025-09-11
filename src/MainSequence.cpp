@@ -3,391 +3,189 @@
 #include "HG.h"
 
 
-///////////////////////////////////////////////////////////////////////////////////////
-//                                                                                   //
-//             PARAMETERS, MISCELLANEOUS CALCULATIONS AND FUNCTIONS ETC.             //
-//                                                                                   //
-///////////////////////////////////////////////////////////////////////////////////////
+
+// Here:
+//
+// Luminosity calculations
+// Mass calculations
+// Miscellaneous calculations
+//    -
+//    -
+// Radius Calculations
 
 
-/*
- * CalculateHeliumAbundanceCoreOnPhase
- *
- * @brief
- * Calculate the helium abundance in the core of the star
- * 
- * Currently just a simple linear model from the initial helium abundance to 
- * the maximum helium abundance (assuming that all hydrogen is converted to
- * helium). 
- * 
- * When tau = 0, heliumAbundanceCore = m_InitialHeliumAbundance
- * When tau = 1, heliumAbundanceCore = heliumAbundanceCoreMax = 1.0 - m_Metallicity
- * 
- * Should be updated to match detailed models.
- *
- * double CalculateHeliumAbundanceCoreOnPhase(const double p_Tau)
- * 
- * @param   [IN]    p_Tau                       Fraction of main sequence lifetime
- * @return                                      Helium abundance in the core
- */
-double MainSequence::CalculateHeliumAbundanceCoreOnPhase(const double p_Tau) const {
-    
-    // If BRCEK core mass prescription is used, core helium abundance is calculated with the core mass
-    return BRCEK_MS_CORE_MASS_REGIME(m_MZAMS) ? m_HeliumAbundanceCore : ((1.0 - m_Metallicity - m_InitialHeliumAbundance) * p_Tau) + m_InitialHeliumAbundance;
-}
 
 
-/*
- * Calculate the hydrogen abundance in the core of the star
- * 
- * Currently just a simple linear model. Assumes that hydrogen in the core of 
- * the star is burned to helium at a constant rate throughout the lifetime. 
- * 
- * Should be updated to match detailed models.
- *
- * double CalculateHydrogenAbundanceCoreOnPhase(const double p_Tau)
- * 
- * @param   [IN]    p_Tau                       Fraction of main sequence lifetime
- * @return                                      Hydrogen abundance in the core (X_c)
- */
-double MainSequence::CalculateHydrogenAbundanceCoreOnPhase(const double p_Tau) const {
-    
-    // If BRCEK core mass prescription is used, core helium abundance is calculated with the core mass
-    return BRCEK_MS_CORE_MASS_REGIME(m_MZAMS) ? 1.0 - m_HeliumAbundanceCore - m_Metallicity : m_InitialHydrogenAbundance * (1.0 - p_Tau);
-}
 
 
-/*
- * Calculate timescales in units of Myr
- *
- * Timescales depend on a star's mass, so this needs to be called at least each timestep
- *
- * Vectors are passed by reference here for performance - preference would be to pass const& and
- * pass modified value back by functional return, but this way is faster - and this function is
- * called many, many times.
- *
- *
- * void CalculateTimescales(const double p_Mass, DBL_VECTOR &p_Timescales)
- *
- * @param   [IN]        p_Mass                  Mass in Msol
- * @param   [IN/OUT]    p_Timescales            Timescales
- */
-void MainSequence::CalculateTimescales(const double p_Mass, DBL_VECTOR &p_Timescales) {
-    timescales(tBGB) = CalculateLifetimeToBGB(p_Mass);
-    timescales(tMS)  = CalculateLifetimeOnPhase(p_Mass, timescales(tBGB));
-}
 
 
 ///////////////////////////////////////////////////////////////////////////////////////
 //                                                                                   //
 //                              LUMINOSITY CALCULATIONS                              //
+//                                  (alphabetical)                                   //
 //                                                                                   //
 ///////////////////////////////////////////////////////////////////////////////////////
 
 
 /*
- * Calculate the luminosity perturbation delta_L
+ * CalculateHurleyAlphaL
  *
- * Hurley et al. 2000, eq 16
+ * @brief
+ * Calculate the Hurley luminosity alpha coefficient, alphaL, per Hurley et al. 2000, eqs 19a & 19b
  *
+ * AlphaL is used in Hurley et al. 2000, eq 12 (see Calculate_LuminosityOnPahse_Hurley())
+ * 
  *
- * double CalculateDeltaL(const double p_Mass)
+ * double CalculateHurleyAlphaL(const double p_Mass, const DBL_VECTOR& p_aN, const DBL_VECTOR& p_LConsts) const
  *
- * @param   [IN]    p_Mass                      Mass in Msol
- * @return                                      Luminosity perturbation (delta_L in Hurley et al. 2000)
+ * @param       p_Mass                          Mass of the star (Msol)
+ * @param       p_aN                            Hurley a(n) coefficients
+ * @param       p_LConsts                       Hurley luminosity constants
+ * @return                                      Luminosity alpha coefficient, alphaL
  */
-double MainSequence::CalculateDeltaL(const double p_Mass) const {
-#define an m_AnCoefficients                                              // for convenience and readability - undefined at end of function
-
-    double deltaL;
-
-    if (utils::Compare(p_Mass, massCutoffs(MHook)) <= 0) {              // per Hurley et al. 2000, eq 16
-        deltaL = 0.0;                                                   // this really is supposed to be zero
+double MainSequence::CalculateHurleyAlphaL(const double p_Mass, const DBL_VECTOR& p_aN, const DBL_VECTOR& p_LConsts) const {
+    
+    double alphaL;
+    
+    if (p_Mass < 0.5) {
+        alphaL = p_aN[49];
     }
-    else if (utils::Compare(p_Mass, an[33]) < 0) {
-        double top    = p_Mass - massCutoffs(MHook);
-        double bottom = an[33] - massCutoffs(MHook);
-        deltaL        = m_LConstants[static_cast<int>(L_CONSTANTS::B_DELTA_L)] * PPOW((top / bottom), 0.4);
+    else if (p_Mass < 0.7) {
+        alphaL = p_aN[49] + (5.0 * (0.3 - p_aN[49]) * (p_Mass - 0.5));
+    }
+    else if (p_Mass < p_aN[52]) {
+        alphaL = 0.3 + ((p_aN[50] - 0.3) * (p_Mass - 0.7) / (p_aN[52] - 0.7));
+    }
+    else if (p_Mass < p_aN[53]) {
+        alphaL = p_aN[50] + ((p_aN[51] - p_aN[50]) * (p_Mass - p_aN[52]) / (p_aN[53] - p_aN[52]));
+    }
+    else if (p_Mass < 2.0) {
+        alphaL = p_aN[51] + ((p_LConsts[static_cast<int>(HURLEY_L_CONSTANTS::B_ALPHA_L)] - p_aN[51]) * (p_Mass - p_aN[53]) / (2.0 - p_aN[53]));
     }
     else {
-        deltaL = std::min((an[34] / PPOW(p_Mass, an[35])), (an[36] / PPOW(p_Mass, an[37])));
+        alphaL = (p_aN[45] + (p_aN[46] * PPOW(p_Mass, p_aN[48]))) / (PPOW(p_Mass, 0.4) + (p_aN[47] * PPOW(p_Mass, 1.9)));
     }
-
-    return deltaL;
-
-#undef an
+    
+    return alphaL;
 }
-
+    
 
 /*
- * Calculate the luminosity beta coefficient
+ * CalculateHurleyBetaL
  *
- * Hurley et al. 2000, eq 20
+ * @brief
+ * Calculate the Hurley luminosity beta coefficient, betaL, per Hurley et al. 2000, eq 20
  *
+ * BetaL is used in Hurley et al. 2000, eq 12 (see CalculateLuminosityOnPhase_Hurley())
  *
- * double CalculateBetaL(const double p_Mass)
+ * 
+ * double CalculateHurleyBetaL(const double p_Mass, const DBL_VECTOR& p_aN, const DBL_VECTOR& p_LConsts) const
  *
- * @param   [IN]    p_Mass                      Mass in Msol
- * @return                                      Luminosity beta coefficient (beta_L in Hurley et al. 2000)
+ * @param       p_Mass                          Mass of the star (Msol)
+ * @param       p_aN                            Hurley a(n) coefficients
+ * @param       p_LConsts                       Hurley luminosity constants
+ * @return                                      Luminosity beta coefficient, betaL
  */
-double MainSequence::CalculateBetaL(const double p_Mass) const {
-#define a m_AnCoefficients    // for convenience and readability - undefined at end of function
+double MainSequence::CalculateHurleyBetaL(const double p_Mass, const DBL_VECTOR& p_aN, const DBL_VECTOR& p_LConsts) const {
 
-    double betaL  = std::max(0.0, (an[54] - (an[55] * PPOW(p_Mass, an[56]))));
-    if ((utils::Compare(p_Mass, an[57]) > 0) && (utils::Compare(betaL, 0.0) > 0)) {
-        double bBetaL = m_LConstants[static_cast<int>(L_CONSTANTS::B_BETA_L)];
+    double betaL = std::max(0.0, (p_aN[54] - (p_aN[55] * PPOW(p_Mass, p_aN[56]))));
 
-        betaL = std::max(0.0, (bBetaL - 10.0 * (p_Mass - an[57]) * bBetaL));
+    if (p_Mass > p_aN[57] && betaL > 0.0) {
+        const double bBetaL = p_LConsts[static_cast<int>(HURLEY_L_CONSTANTS::B_BETA_L)];
+        betaL = std::max(0.0, (bBetaL - 10.0 * (p_Mass - p_aN[57]) * bBetaL));
     }
 
     return betaL;
-
-#undef a
 }
 
 
 /*
- * Calculate the luminosity alpha constant alpha_L
- *
- * Hurley et al. 2000, eqs 19a & 19b
- *
- *
- * double CalculateAlphaL(const double p_Mass)
- *
- * @param   [IN]    p_Mass                      Mass in Msol
- * @return                                      Luminosity alpha constant (alpha_L in Hurley et al. 2000)
- */
-double MainSequence::CalculateAlphaL(const double p_Mass) const {
-#define a m_AnCoefficients    // for convenience and readability - undefined at end of function
-
-    // You might find that functions you give Metallicity to as an argument don't actually need it -- metallicity dependence is in an/MFGB etc.
-    // Also, if this is likely to be called in a loop, try to precompute it (only depends on initial values of mass/metallicity right?
-    // Of course the only problem with this kind of thing is it makes it less flexible if you have to change one of those)
-
-    double alphaL  = 0.0;
-
-         if (utils::Compare(p_Mass, 0.5)   < 0) alphaL = an[49];
-    else if (utils::Compare(p_Mass, 0.7)   < 0) alphaL = an[49] + (5.0 * (0.3 - an[49]) * (p_Mass - 0.5));
-    else if (utils::Compare(p_Mass, an[52]) < 0) alphaL = 0.3 + ((an[50] - 0.3) * (p_Mass - 0.7) / (an[52] - 0.7));
-    else if (utils::Compare(p_Mass, an[53]) < 0) alphaL = an[50] + ((an[51] - an[50]) * (p_Mass - an[52]) / (an[53] - an[52]));
-    else if (utils::Compare(p_Mass, 2.0)   < 0) alphaL = an[51] + ((m_LConstants[static_cast<int>(L_CONSTANTS::B_ALPHA_L)] - an[51]) * (p_Mass - an[53]) / (2.0 - an[53]));
-    else                                        alphaL = (an[45] + (an[46] * PPOW(p_Mass, an[48]))) / (PPOW(p_Mass, 0.4) + (an[47] * PPOW(p_Mass, 1.9)));
-
-    return alphaL;
-
-#undef a
-}
-
-
-/*
- * Calculate the exponent eta (for Hurley et al. 2000, eq 12)
- *
- * Hurley et al. 2000, eq 18
- *
- *
- * double CalculateEta(const double p_Mass)
- *
- * @param   [IN]    p_Mass                      Mass in Msol
- * @return                                      The exponent eta (for Hurley et al. 2000, eq 12)
- */
-double MainSequence::CalculateEta(const double p_Mass) const {
-
-    double eta = 10.0;
-
-    if (utils::Compare(m_Metallicity, 0.0009) <= 0) {
-        if (utils::Compare(p_Mass, 1.1) >= 0) {
-            eta = 20.0;
-        }
-        else if (utils::Compare(p_Mass, 1.0) > 0) {
-            eta = (100.0 * p_Mass) - 90.0;  // linear interpolation between end points
-        }
-    }
-
-    return eta;
-}
-
-
-/*
- * Calculate the gamma coefficient
- *
- * Hurley et al. 2000, eq 23
- *
- *
- * double CalculateGamma(const double p_Mass)
- *
- * @param   [IN]    p_Mass                      Mass in Msol
- * @return                                      The exponent eta (for Hurley et al. 2000, eq 12)
- */
-double MainSequence::CalculateGamma(const double p_Mass) const {
-#define a m_AnCoefficients                                                      // for convenience and readability - undefined at end of function
-#define B_GAMMA m_GammaConstants[static_cast<int>(GAMMA_CONSTANTS::B_GAMMA)]    // for convenience and readability - undefined at end of function
-#define C_GAMMA m_GammaConstants[static_cast<int>(GAMMA_CONSTANTS::C_GAMMA)]    // for convenience and readability - undefined at end of function
-
-    double gamma = 0.0;                                                                                                         // default return value
-
-         if (utils::Compare(p_Mass,  1.0)          <= 0) gamma = a[76] + (a[77] * PPOW(std::abs(p_Mass - a[78]), a[79]));       // BSE Fortran code has abs()
-    else if (utils::Compare(p_Mass,  a[75])        <= 0) gamma = B_GAMMA + (a[80] - B_GAMMA) * PPOW((p_Mass - 1.0) / (a[75] - 1.0), a[81]);
-    else if (utils::Compare(p_Mass, (a[75] + 0.1)) <= 0) gamma = C_GAMMA - (10.0 * (p_Mass - a[75]) * C_GAMMA);                 // see discussion just prior to eq 23 - the end point is wrong in the arxiv version of Hurley et al. 2000 (should be 0.1, not 1.0) - confirmed in BSE Fortran code
-    else                                                 gamma = 0.0;                                                           // see discussion just prior to eq 23 - confirmed in BSE Fortran code
-
-    return std::max(0.0, gamma);                                                                                                // see discussion following eq 23 - confirmed in BSE Fortran code
-
-#undef C_GAMMA
-#undef B_GAMMA
-#undef a
-}
-
-
-/*
- * CalculateZAMSLuminosity_Tout_1996
+ * CalculateHurleyDeltaL
  *
  * @brief
- * Calculate ZAMS luminosity (in Lsol) per Tout et al. 1996, eq 1
+ * Calculate the Hurley luminosity perturbation value, deltaL, per Hurley et al. 2000, eq 16
  *
+ * DeltaL is used in Hurley et al. 2000, eq 12 (see CalculateLuminosityOnPhase_Hurley())
  *
- * double CalculateZAMSLuminosity_Tout_1996(const double p_MZAMS, const DBL_VECTOR& p_LuminosityCoefficients) const
  * 
- * @param       p_MZAMS                         Zero age main sequence mass (Msol)
- * @param       p_LuminosityCoefficients        Tout luminosity coefficients
- * @return                                      ZAMS luminosity (Lsol)
+ * double CalculateHurleyDeltaL(const double p_Mass, const DBL_VECTOR& p_MassCutoffs, const DBL_VECTOR& p_aN, const DBL_VECTOR& p_LConsts) const
+ *
+ * @param       p_Mass                          Mass of the star (Msol)
+ * @param       p_HookMass                      Mass above which MS hook appears (MassCutoffs[static_cast<int>(MASS_CUTOFF::MHook)])
+ * @param       p_aN                            Hurley a(n) coefficients
+ * @param       p_LConsts                       Hurley luminosity constants
+ * @return                                      Luminosity perturbation value, deltaL
  */
-double MainSequence::CalculateZAMSLuminosity_Tout_1996(const double p_MZAMS, const DBL_VECTOR& p_LuminosityCoefficients) const {
-    #define lCoeffs(x) p_LuminosityCoefficients[static_cast<int>(TOUT_L_Coeff::x)] // for convenience and readability - undefined at end of function
-        
-        // calculate some powers of p_MZAMS - for performance and readability
-        // this function is only called once per star, and at most twice per binary (but probably once), so not too onerous
-        // pow() is slow - use multiplication where it makes sense
-        const double M0_5 = std::sqrt(p_MZAMS);  // sqrt() is much faster than pow()
-        const double M2   = p_MZAMS * p_MZAMS;
-        const double M3   = p_MZAMS * M2;
-        const double M5   = M2 * M3;
-        const double M7   = M2 * M5;
-        const double M8   = p_MZAMS * M7;
-            
-        double top = (lCoeffs(ALPHA) * (M5 * M0_5)) + (lCoeffs(BETA) * (M3 * M8));
-            
-        return top / (lCoeffs(GAMMA) + M3) + (lCoeffs(DELTA) * M5) + (lCoeffs(EPSILON) * M7) + (lCoeffs(ZETA) * M8) + (lCoeffs(ETA) * ( M8 * p_MZAMS * M0_5));
-            
-    #undef lCoeffs
+double MainSequence::CalculateHurleyDeltaL(const double p_Mass, const DBL_VECTOR& p_MassCutoffs, const DBL_VECTOR& p_aN, const DBL_VECTOR& p_LConsts) const {
+
+    double deltaL;
+
+    if (p_Mass <= p_HookMass) {     // mass <= hook mass?
+        deltaL = 0.0;               // yes - 0.0 in BSE Fortran code
     }
-    
-    
-    /*
-     * CalculateZAMSRadius_Tout_1996
-     *
-     * Calculate radius at ZAMS (in Rsol) per Tout et al. 1996, eq 2
-     *
-     *
-     * double CalculateZAMSRadius_Tout_1996(const double p_MZAMS, const DBL_VECTOR& p_RadiusCoefficients)
-     *
-     * @param       p_MZAMS                         Zero age main sequence mass (Msol)
-     * @param       p_RadiusCoefficients            Tout radius coefficients
-     * @return                                      ZAMS radius (Rsol)
-     */
-    double MainSequence::CalculateZAMSRadius_Tout_1996(const double p_MZAMS, const DBL_VECTOR& p_RadiusCoefficients) const {
-    #define rCoeffs(x) p_RadiusCoefficients[static_cast<int>(TOUT_R_Coeff::x)] // for convenience and readability - undefined at end of function
-        
-        // calculate some powers of p_MZAMS - for performance and readability
-        // this function is only called once per star, and at most twice per binary (but probably once), so not too onerous
-        // pow() is slow - use multiplication where it makes sense
-        const double M0_5  = std::sqrt(p_MZAMS);
-        const double M2    = p_MZAMS * p_MZAMS;
-        const double M6    = M2 * M2 * M2;
-        const double M6_5  = M6 * M0_5;
-        const double M8    = M6 * M2;
-        const double M11   = M8 * M2 * p_MZAMS;
-        const double M19   = M11 * M8;
-        const double M19_5 = M19 * M0_5;
-        
-        double top = (rCoeffs(THETA) * (M2 * M0_5)) + (rCoeffs(IOTA) * M6_5) + (rCoeffs(KAPPA) * M11) + (rCoeffs(LAMBDA) * M19) + (rCoeffs(MU) * M19_5);
-        
-        return top / rCoeffs(NU) + (rCoeffs(XI) * M2) + (rCoeffs(OMICRON) * (M8 * M0_5)) + (M6 * M6 * M6_5) + (rCoeffs(PI) * M19_5);
-        
-    #undef coeff
+    else if (p_Mass < p_aN[33]) {   // no, mass < a[33]? (see Hurley a(n) coefficients)
+        deltaL = p_LConsts[static_cast<int>(HURLEY_L_CONSTANTS::B_DELTA_L)] * PPOW(((p_Mass - p_HookMass) / (p_aN[33] - p_HookMass)), 0.4);
+    }
+    else {                          // no
+        deltaL = std::min((p_aN[34] / PPOW(p_Mass, p_aN[35])), (p_aN[36] / PPOW(p_Mass, p_aN[37])));
     }
 
-
-
-/*
- * Calculate luminosity at the end of the Main Sequence
- *
- * Hurley et al. 2000, eq 8
- *
- *
- * double CalculateLuminosityAtPhaseEnd(const double p_Mass)
- *
- * @param   [IN]    p_Mass                      Mass in Msol
- * @return                                      Luminosity at the end of the Main Sequence in Lsol
- */
-double MainSequence::CalculateLuminosityAtPhaseEnd(const double p_Mass) const {
-#define a m_AnCoefficients    // for convenience and readability - undefined at end of function
-
-    // pow() is slow - use multiplication
-    double m_3 = p_Mass * p_Mass * p_Mass;
-    double m_4 = m_3 * p_Mass;
-    double m_5 = m_4 * p_Mass;
-
-    double top    = (an[11] * m_3) + (an[12] * m_4) + (an[13] * PPOW(p_Mass, (an[16] + 1.8)));
-    double bottom = an[14] + (an[15] * m_5) + PPOW(p_Mass, an[16]);
-
-    return top / bottom;
-
-#undef a
+    return deltaL;
 }
 
 
 /*
- * Calculate luminosity on the Main Sequence
+ * CalculateLuminosity
  *
- * Hurley et al. 2000, eq 12 OR BRCEK <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< Fix this
+ * @brief
+ * Calculate the luminosity on the main sequence.
+ * Uses the method appropriate for the evolution method and as specified by program options.
+ * 
+ * 
+ * double CalculateLuminosity(const double      p_Metallicity,
+ *                            const double      p_Mass,
+ *                            const double      p_Time,
+ *                            const double      p_LZAMS,
+ *                            const DBL_VECTOR& p_Timescales,
+ *                            const DBL_VECTOR& p_aN,
+ *                            const DBL_VECTOR& p_LConsts) const
  *
- *
- * double CalculateLuminosityOnPhase(const double p_Time, const double p_Mass, const double p_LZAMS)
- *
- * @param   [IN]    p_Time                      Time (after ZAMS) in Myr
- * @param   [IN]    p_Mass                      Mass in Msol
- * @param   [IN]    p_LZAMS                     Zero Age Main Sequence (ZAMS) Luminosity
- * @return                                      Luminosity on the Main Sequence as a function of time
+ * @param       p_Metallicity                   (Fractional) metallicity of the star
+ * @param       p_Mass                          Mass of the star (Msol)
+ * @param       p_Time                          Time elapsed since ZAMS (Myr)
+ * @param       p_LZAMS                         ZAMS luminosity of the star (Lsol)
+ * @param       p_Timescales                    Hurley timescales
+ * @param       p_aN                            Hurley a(n) coefficients
+ * @param       p_LConsts                       Hurley luminosity constants
+ * @return                                      MS luminosity (Lsol))
  */
-double MainSequence::CalculateLuminosityOnPhase(const double p_Time, const double p_Mass, const double p_LZAMS) const {
-    
-    double luminosity = 0.0;                                                                                                            // default return value
+double MainSequence::CalculateLuminosity(const double      p_Metallicity,
+                                         const double      p_Mass,
+                                         const double      p_Time,
+                                         const double      p_LZAMS,
+                                         const DBL_VECTOR& p_Timescales,                                         
+                                         const DBL_VECTOR& p_aN,
+                                         const DBL_VECTOR& p_LConsts) const {
 
-    // if BRCEK core prescription is used, return luminosity from Shikauchi et al. (2024) during core
-    // hydrogen burning (valid for MZAMS >= 15 Msol) or luminosity that smoothly connects MS and HG
-    // during MS hook (valid for MZAMS >= BRCEK_LOWER_MASS_LIMIT).
-    // do not use Shikauchi luminosity prescription during CHE
-    if (BRCEK_MS_CORE_MASS_REGIME(m_MZAMS) && 
-       !m_CHE) {
-        if (utils::Compare(p_Time, 0.99 * timescales(tMS)) > 0)                                                                         // star in MS hook?
-        luminosity = CalculateLuminosityTransitionToHG(p_Mass, p_Time, p_LZAMS);
-        else {
-            if (utils::Compare(m_MZAMS, 15.0) >= 0)                                                                                     // use Shikauchi luminosity if MZAMS >= 15 Msun
-            luminosity = CalculateLuminosityShikauchi(m_MainSequenceCoreMass, m_HeliumAbundanceCore);
-        }
-    }
-    else {
-    const double epsilon = 0.01;
+    double luminosity;
 
-    double LTMS   = CalculateLuminosityAtPhaseEnd(p_Mass);
-    double alphaL = CalculateAlphaL(p_Mass);
-    double betaL  = CalculateBetaL(p_Mass);
-    double deltaL = CalculateDeltaL(p_Mass);
-    double eta    = CalculateEta(p_Mass);
+    Switch (OPTIONS->Mode()) {                                                                                  // which evolution mode?
 
-    double mu     = std::max(0.5, (1.0 - (0.01 * std::max((an[6] / PPOW(p_Mass, an[7])), (an[8] + (an[9] / PPOW(p_Mass, an[10])))))));  // Hurley et al. 2000, eq 7
-    double tHook  = mu * timescales(tBGB);                                                                                              // Hurley et al. 2000, just after eq 5
-    double tau    = p_Time / timescales(tMS);                                                                                           // Hurley et al. 2000, eq 11
-    double tau1   = std::min(1.0, (p_Time / tHook));                                                                                    // Hurley et al. 2000, eq 14
-    double tau2   = std::max(0.0, std::min(1.0, (p_Time - ((1.0 - epsilon) * tHook)) / (epsilon * tHook)));                             // Hurley et al. 2000, eq 15
+        EVOLUTION_MODE::SSE_HURLEY:                                                                             // HURLEY SSE
+        EVOLUTION_MODE::BSE_HURLEY:                                                                             // HURLEY BSE
+            luminosity = CalculateLuminosityOnPhase_Hurley(p_Metallicity, p_Mass, p_Time, p_LZAMS, p_Timescales, p_aN, p_LConsts);
+            break;
 
-    // pow() is slow - use multipliaction where it makes sense
-    double logLMS_LZAMS  = alphaL * tau;                                                                                                // Hurley et al. 2000, eq 12, part 1
-           logLMS_LZAMS += betaL * PPOW(tau, eta);                                                                                      // Hurley et al. 2000, eq 12, part 2
-           logLMS_LZAMS += (log10(LTMS / p_LZAMS) - alphaL - betaL) * tau * tau;                                                        // Hurley et al. 2000, eq 12, part 3
-           logLMS_LZAMS -= deltaL * ((tau1 * tau1) - (tau2 * tau2));                                                                    // Hurley et al. 2000, eq 12, part 4
+        default:                                                                                                // unknown mode
+            // the only way this can happen is if someone added an EVOLUTION_MODE
+            // and it isn't accounted for in this code.  We should not default here, with or without a warning.
+            // We are here because the user chose a mode this code doesn't account for, and that should
+            // be flagged as an error and result in termination of the evolution of the star or binary.
+            // The correct fix for this is to add code for the missing mode or, if the missing mode is
+            // superfluous, remove it from the option.
 
-    luminosity = p_LZAMS * PPOW(10.0, logLMS_LZAMS);                                                                                          // rewrite Hurley et al. 2000, eq 12 for L(t)
+            THROW_ERROR(ERROR::UNKNOWN_EVOLUTION_MODE);                                                         // throw error
     }
 
     return luminosity;
@@ -395,304 +193,732 @@ double MainSequence::CalculateLuminosityOnPhase(const double p_Time, const doubl
 
 
 /*
- * Calculate luminosity on the Main Sequence when BRCEK core mass prescription is used
+ * CalculateLuminosityAtPhaseEnd_Hurley
  *
- * During core hydrogen burning uses eq (A5) from Shikauchi et al. (2024), valid for stars with MZAMS >= 15 Msol
+ * @brief
+ * Calculate luminosity at the end of the Main Sequence (TAMS), per Hurley et al. 2000, eq 8
  *
- * double CalculateLuminosityShikauchi(const double p_CoreMass, const double p_HeliumAbundanceCore)
  *
- * @param   [IN]    p_CoreMass                  Main sequence core mass in Msol
- * @param   [IN]    p_HeliumAbundanceCore       Central helium fraction
- * @return                                      Luminosity on the Main Sequence as a function of current core mass and central helium fraction
+ * double CalculateLuminosityAtPhaseEnd_Hurley(const double p_Mass, const DBL_VECTOR& p_aN) const
+ *
+ * @param       p_Mass                          Mass of the star (Msol)
+ * @param       p_aN                            Hurley a(n) coefficients
+ * @return                                      TAMS luminosity (Lsol)
  */
-double MainSequence::CalculateLuminosityShikauchi(const double p_CoreMass, const double p_HeliumAbundanceCore) const {
-    DBL_VECTOR L_COEFFICIENTS = std::get<2>(SHIKAUCHI_COEFFICIENTS);
+double MainSequence::CalculateLuminosityAtPhaseEnd_Hurley(const double p_Mass, const DBL_VECTOR& p_aN) const {
+
+    // pow() is slow - use multiplication
+    const double M2  = p_Mass * p_Mass;
+    const double M3  = p_Mass * M2;
+
+    const double top = (p_aN[11] * M3) + (p_aN[12] * M2 * M2) + (p_aN[13] * PPOW(p_Mass, (p_aN[16] + 1.8)));
+
+    return top / (p_aN[14] + (p_aN[15] * M2 * M3) + PPOW(p_Mass, p_aN[16]));
+}
+
+
+/*
+ * CalculateLuminosity_Brcek
+ *
+ * @brief
+ * Calculate luminosity on the Main Sequence per Brcek et al. 2025
+ * Uses Shikauchi et al. 2024 if possible, otherwise defaults to the method
+ * appropriate for the evolution method and as specified by program options.
+ * 
+ *
+ * double CalculateLuminosity_Brcek(const double      p_Metallicity,
+ *                                  const double      p_Mass, 
+ *                                  const double      p_Tau,
+ *                                  const double      p_Time,
+ *                                  const double      p_MZAMS,
+ *                                  const double      p_LZAMS,
+ *                                  const double      p_CoreMass,
+ *                                  const double      p_HeAbundanceCore,
+ *                                  const DBL_VECTOR& p_Timescales,
+ *                                  const DBL_VECTOR& p_aN,
+ *                                  const DBL_VECTOR& p_LConsts,
+ *                                  const DBL_VECTOR& p_ShikauchiLCoeffs) const
+ *
+ * @param       p_Metallicity                   (Fractional) metallicity of the star (Msol)
+ * @param       p_Mass                          Mass of the star (Msol)
+ * @param       p_Tau                           MS fractional age of the star
+ * @param       p_Time                          Time elapsed since ZAMS (Myr)
+ * @param       p_MZAMS                         ZAMS mass of the star (Msol)
+ * @param       p_LZAMS                         ZAMS luminosity of the star (Lsol)
+ * @param       p_CoreMass                      MS core mass of the star (Msol)
+ * @param       p_HeAbundanceCore               Helium abundance in the core of the star 
+ * @param       p_Timescales                    Hurley timescales
+ * @param       p_aN                            Hurley a(n) coefficients
+ * @param       p_LConsts                       Hurley luminosity constants
+ * @param       p_ShikauchiLCoeffs              Shikauchi luminosity coefficients
+ * @return                                      MS luminosity (Lsol)
+ */
+double MainSequence::CalculateLuminosity_Brcek(const double      p_Metallicity,
+                                               const double      p_Mass, 
+                                               const double      p_Tau,
+                                               const double      p_Time,
+                                               const double      p_MZAMS,
+                                               const double      p_LZAMS,
+                                               const double      p_CoreMass,
+                                               const double      p_HeAbundanceCore,
+                                               const DBL_VECTOR& p_Timescales,
+                                               const DBL_VECTOR& p_aN,
+                                               const DBL_VECTOR& p_LConsts,
+                                               const DBL_VECTOR& p_ShikauchiLCoeffs) const {
+
+    double luminosity = 0.0;                                                                                        // default return value
+
+    const double hookStartTime = 0.99 * timescales(tMS);                                                            // MS hook start time
+
+    if (p_Tau > hookStartTime) {                                                                                    // star in MS hook?
+                                                                                                                    // yes
+        // calculate luminosity on the transition from MS to HG - interpolate to smoothly
+        // connect the beginning of MS hook and the beginning of HG (@TAMS)
+
+        // luminosity at TAMS (per Hurley!! FIX THIS <<<<<<<<<<<<<<<<<<<<<<<  SHOULD BE GENERIC - DETERMINE EVOLUTION MODE) <<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+        const double luminosityAtTAMS = HG::CalculateLuminosityOnPhase_Hurley_Static(p_Mass, p_Timescales[static_cast<int>(TIMESCALE::tMS)], p_Timescales);
     
+        double luminosityAtHookStart;                                                                               // luminosity at the start of the MS hook
+        if (p_MZAMS >= std::max(SHIKAUCHI_LOWER_MASS_LIMIT, BRCEK_LOWER_MASS_LIMIT)) {                              // mass in Brcek/Shikauchi regime?
+            luminosityAtHookStart = CalculateLuminosity_Shikauchi(p_CoreMass, p_HeAbundanceCore, p_ShikauchiLCoeffs); // yes - in the hook, core helium abundance fixed at 1-Z and core mass is not changing
+        }
+        else {                                                                                                      // no - can't use Shikauchi here
+                                                                                                                    // use default method
+            luminosityAtHookStart = CalculateLuminosity(p_Metallicity, p_Mass, hookStartTime, p_LZAMS, p_Timescales, p_aN, p_LConsts);
+        }
+    
+        // interpolate to determine luminosity
+        const double tMS = p_Timescales[static_cast<int>(TIMESCALE::tMS)];
+        luminosity = (luminosityAtHookStart * (tMS - p_Age) + luminosityAtTAMS * (p_Age - hookStartTime)) / (tMS - hookStartTime);
+    }
+    else {                                                                                                          // not in the MS hook
+        if (utils::Compare(m_MZAMS, 15.0) >= 0) {                                                                   // MZAMS >= 15 Msol?
+            luminosity = CalculateLuminosityShikauchi(p_CoreMass, p_HeAbundanceCore);                               // yes, use Shikauchi
+        }
+        else {                                                                                                      // no, use default method
+            luminosity = CalculateLuminosity(p_Metallicity, p_Mass, p_Time, p_LZAMS, p_Timescales, p_aN, p_LConsts);
+        }
+    }
+
+    return luminosity;
+}
+
+
+/*
+ * CalculateLuminosityOnPhase
+ *
+ * @brief
+ * Calculate luminosity on the Main Sequence.
+ *
+ * If the Brcek MS core mass prescription was specified by the user, and the star is in the 
+ * Brcek regime, calculate the MS luminosity per Brcek et al. 2025, otherwise uses the method
+ * appropriate for the evolution method and as specified by program options.
+ * 
+ * Uses globals and state variables - read only.
+ * 
+ * 
+ * double CalculateLuminosityOnPhase() const
+ *
+ * @return                                      MS luminosity (Lsol)
+ */
+double MainSequence::CalculateLuminosityOnPhase() const {
+        
+    // common variables
+    const double Z              = GLOBALS->ReferenceMetallicity();                                                              // metallicity of the star
+    const double mass           = m_StateHistory.CurrentState().Mass();                                                         // current mass of the star
+    const double time           = m_StateHistory.CurrentState().Time();                                                         // time elapsed since ZAMS
+    const double mZAMS          = m_StateHistory.ZAMSState().Mass();                                                            // ZAMS mass of the star
+    const double lZAMS          = m_StateHistory.ZAMSState().Luminosity();                                                      // ZAMS luminosity of the star
+    const DBL_VECTOR timescales = GLOBALS->Timescales();                                                                        // Hurley timescales
+
+    double luminosity;
+    if (OPTIONS->MainSequenceCoreMassPrescription() == MS_CORE_MASS_PRESCRIPTION::BRCEK && mZAMS >= BRCEK_LOWER_MASS_LIMIT) {   // in Brcek regime?
+                                                                                                                                // yes - use Brcek
+        const double tau                  = m_StateHistory.CurrentState().Tau();                                                // MS fractional age of the star
+        const double coreMass             = m_StateHistory.CurrentState().CoreMass();                                           // current core mass of the star
+        const double HeAbundanceCore      = m_StateHistory.CurrentState().HeAbundanceCore();                                    // core Helium abundance
+        const DBL_VECTOR aCoeffs          = GLOBALS->HurleyACoefficients();                                                     // Hurley a(n) coefficients
+        const DBL_VECTOR ShikauchiLCoeffs = GLOBALS->ShikauchiLCoefficients();                                                  // Shikauchi luminosity coefficients
+        luminosity = CalculateLuminosity_Brcek(Z, mass, tau, time, mZAMS, lZAMS, coreMass, HeAbundanceCore, timescales, aCoeffs, lConstants, ShikauchiLCoeffs);
+    }
+    else {                                                                                                                      // no - use default method
+        const DBL_VECTOR aCoeffs    = GLOBALS->HurleyACoefficients();                                                           // Hurley a(n) coefficients
+        const DBL_VECTOR lConstants = GLOBALS->HurleyLConstants();                                                              // Hurley luminosity constants
+        luminosity = CalculateLuminosity(Z, mass, time, lZAMS, timescales, aCoeffs, lConstants);
+    }
+
+    return luminosity;
+}
+
+
+/*
+ * CalculateLuminosityOnPhase_Hurley
+ *
+ * @brief
+ * Calculate luminosity on the Main Sequence, per Hurley et al. 2000, eq 12
+ *
+ *
+ * double CalculateLuminosityOnPhase_Hurley(const double      p_Metallicity,
+ *                                          const double      p_Mass,
+ *                                          const double      p_Time,
+ *                                          const double      p_LZAMS,
+ *                                          const DBL_VECTOR& p_Timescales
+ *                                          const DBL_VECTOR& p_aN,
+ *                                          const DBL_VECTOR& p_LConsts) const
+ *
+ * @param       p_Metallicity                   (Fractional) metallicity of the star
+ * @param       p_Mass                          Mass of the star (Msol)
+ * @param       p_Time                          Time elapsed since ZAMS (Myr)
+ * @param       p_LZAMS                         ZAMS luminosity of the star (Lsol)
+ * @param       p_Timescales                    Hurley timescales
+ * @param       p_aN                            Hurley a(n) coefficients
+ * @param       p_LConsts                       Hurley luminosity constants
+ * @return                                      MS luminosity (Lsol))
+ */
+double MainSequence::CalculateLuminosityOnPhase_Hurley(const double      p_Metallicity,
+                                                       const double      p_Mass,
+                                                       const double      p_Time,
+                                                       const double      p_LZAMS,
+                                                       const DBL_VECTOR& p_Timescales,                                                      
+                                                       const DBL_VECTOR& p_aN,
+                                                       const DBL_VECTOR& p_LConsts) const {
+
+    const double LTMS    = CalculateLuminosityAtPhaseEnd_Hurley(p_Mass, p_aN);
+    const double alphaL  = CalculateHurleyAlphaL(p_Mass, p_aN, p_LConsts);
+    const double betaL   = CalculateHurleyBetaL(p_Mass, p_aN, p_LConsts);
+    const double deltaL  = CalculateHurleyDeltaL(p_Mass, p_MassCutoffs, p_aN, p_LConsts);
+    const double eta     = CalculateHurleyEta(p_Metallicity, p_Mass);
+
+    const double mu      = std::max(0.5, (1.0 - (0.01 * std::max((p_aN[6] / PPOW(p_Mass, p_aN[7])), (p_aN[8] + (p_aN[9] / PPOW(p_Mass, p_aN[10]))))))); // Hurley et al. 2000, eq 7
+    const double tHook   = mu * p_Timescales[static_cast<int>(TIMESCALE::tBGB)];                                    // Hurley et al. 2000, just after eq 5
+    const double tau     = p_Time / p_Timescales[static_cast<int>(TIMESCALE::tMS)];                                 // ibid., eq 11
+    const double tau1    = std::min(1.0, (p_Time / tHook));                                                         // ibid., eq 14
+    const double epsilon = 0.01;
+    const double tau2    = std::max(0.0, std::min(1.0, (p_Time - ((1.0 - epsilon) * tHook)) / (epsilon * tHook)));  // ibid., eq 15
+
+                                                                                                                    // ibid., eq 12
+    const double logLMS_LZAMS = (alphaL * tau) + (betaL * PPOW(tau, eta)) + ((log10(LTMS / p_LZAMS) - alphaL - betaL) * tau * tau) - (deltaL * ((tau1 * tau1) - (tau2 * tau2)));
+
+    return p_LZAMS * PPOW(10.0, logLMS_LZAMS);
+}
+
+
+/*
+ * CalculateLuminosity_Shikauchi
+ *
+ * @brief
+ * Calculate luminosity on the Main Sequence, as a function of current core mass and central
+ * helium fraction, per Shikauchi et al. 2024, eq A5.  Only valid during core hydrogen burning,
+ * and for stars with MZAMS >= SHIKAUCHI_LOWER_MASS_LIMIT (Msol) (see constants.h).
+ *
+ * 
+ * double CalculateLuminosity_Shikauchi(const double p_CoreMass, const double p_HeliumAbundanceCore, const DBL_VECTOR& p_ShikauchiLCoefficents) const
+ *
+ * @param       p_CoreMass                      MS core mass of the star (Msol)
+ * @param       p_HeAbundanceCore               Helium abundance in the core of the star
+ * @param       p_ShikauchiLCoefficents         Shikauchi Luminosity Coefficents
+ * @return                                      MS luminosity (Lsol)
+ */
+double MainSequence::CalculateLuminosity_Shikauchi(const double p_CoreMass, const double p_HeAbundanceCore, const DBL_VECTOR& p_ShikauchiLCoefficents) const {
+
     // common factors
-    double logMixingCoreMass   = std::log10(p_CoreMass);
-    double logMixingCoreMass_2 = logMixingCoreMass * logMixingCoreMass;
-    double logMixingCoreMass_3 = logMixingCoreMass_2 * logMixingCoreMass;
+    const double logMixingCoreMass      = std::log10(p_CoreMass);
+    const double logMixingCoreMass2     = logMixingCoreMass * logMixingCoreMass;
+    const double logMixingCoreMass3     = logMixingCoreMass * logMixingCoreMass2;
+    const double logMixingCoreMass4     = logMixingCoreMass * logMixingCoreMass3;
     
-    double heliumAbundanceCore_2 = p_HeliumAbundanceCore * p_HeliumAbundanceCore;
-    double heliumAbundanceCore_3 = heliumAbundanceCore_2 * p_HeliumAbundanceCore;
-    
-    double logL = L_COEFFICIENTS[0] * logMixingCoreMass + L_COEFFICIENTS[1] * p_HeliumAbundanceCore + L_COEFFICIENTS[2] * logMixingCoreMass * p_HeliumAbundanceCore + L_COEFFICIENTS[3] * logMixingCoreMass_2 + L_COEFFICIENTS[4] * heliumAbundanceCore_2 + L_COEFFICIENTS[5] * logMixingCoreMass_3 + L_COEFFICIENTS[6] * heliumAbundanceCore_3 + L_COEFFICIENTS[7] * logMixingCoreMass_2 * p_HeliumAbundanceCore + L_COEFFICIENTS[8] * logMixingCoreMass * heliumAbundanceCore_2 + L_COEFFICIENTS[9] * logMixingCoreMass_3 * logMixingCoreMass + L_COEFFICIENTS[10] * heliumAbundanceCore_3 * p_HeliumAbundanceCore + L_COEFFICIENTS[11] * logMixingCoreMass * heliumAbundanceCore_3 + L_COEFFICIENTS[12] * logMixingCoreMass_2 * heliumAbundanceCore_2 + L_COEFFICIENTS[13] * logMixingCoreMass_3 * p_HeliumAbundanceCore + L_COEFFICIENTS[14];
+    const double heliumAbundanceCore    = p_HeliumAbundanceCore;
+    const double heliumAbundanceCore2   = heliumAbundanceCore * heliumAbundanceCore;
+    const double heliumAbundanceCore3   = heliumAbundanceCore * heliumAbundanceCore2;
+    const double heliumAbundanceCore4   = heliumAbundanceCore * heliumAbundanceCore3;
+
+    const double logMixingCoreMass_He   = logMixingCoreMass * heliumAbundanceCore;
+    const double logMixingCoreMass_He2  = logMixingCoreMass * heliumAbundanceCore2;
+    const double logMixingCoreMass_He3  = logMixingCoreMass * heliumAbundanceCore3;
+
+    const double He_LogMixingCoreMass2  = heliumAbundanceCore * logMixingCoreMass2;
+    const double He_LogMixingCoreMass3  = heliumAbundanceCore * logMixingCoreMass3;
+
+    const double logMixingCoreMass2_He2 = logMixingCoreMass2 * heliumAbundanceCore2;
+
+    // log luminosity 
+    const double logL = p_ShikauchiLCoefficents[0]  * logMixingCoreMass      + 
+                        p_ShikauchiLCoefficents[1]  * heliumAbundanceCore    + 
+                        p_ShikauchiLCoefficents[2]  * logMixingCoreMass_He   + 
+                        p_ShikauchiLCoefficents[3]  * logMixingCoreMass2     + 
+                        p_ShikauchiLCoefficents[4]  * heliumAbundanceCore2   + 
+                        p_ShikauchiLCoefficents[5]  * logMixingCoreMass3     + 
+                        p_ShikauchiLCoefficents[6]  * heliumAbundanceCore3   + 
+                        p_ShikauchiLCoefficents[7]  * He_LogMixingCoreMass2  + 
+                        p_ShikauchiLCoefficents[8]  * logMixingCoreMass_He2  + 
+                        p_ShikauchiLCoefficents[9]  * logMixingCoreMass4     + 
+                        p_ShikauchiLCoefficents[10] * heliumAbundanceCore4   + 
+                        p_ShikauchiLCoefficents[11] * logMixingCoreMass_He3  + 
+                        p_ShikauchiLCoefficents[12] * logMixingCoreMass2_He2 + 
+                        p_ShikauchiLCoefficents[13] * He_LogMixingCoreMass3  + 
+                        p_ShikauchiLCoefficents[14];
     
     return PPOW(10.0, logL);
 }
 
 
 /*
- * Calculate luminosity on the Main Sequence
- *
- * Hurley et al. 2000, eq 12 OR BRCEK <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< Fix this
- *
- *
- * double CalculateLuminosityOnPhase(const double p_Time, const double p_Mass, const double p_LZAMS)
- *
- * @param   [IN]    p_Time                      Time (after ZAMS) in Myr
- * @param   [IN]    p_Mass                      Mass in Msol
- * @param   [IN]    p_LZAMS                     Zero Age Main Sequence (ZAMS) Luminosity
- * @return                                      Luminosity on the Main Sequence as a function of time
- */
-double MainSequence::CalculateLuminosityOnPhase(const double p_Time, const double p_Mass, const double p_LZAMS) const {
-
-    // if BRCEK core prescription is used, return luminosity from Shikauchi et al. (2024) during core
-    // hydrogen burning (valid for MZAMS >= 15 Msol) or luminosity that smoothly connects MS and HG
-    // during MS hook (valid for MZAMS >= BRCEK_LOWER_MASS_LIMIT).
-    // do not use Shikauchi luminosity prescription during CHE
-    if (m_StateHistory.CurrentState().stellarType != STELLER_TYPE::CH                   &&  // CH star?
-        BRCEK_MS_CORE_MASS_REGIME(m_StateHistory.StateZero().mass)) {                    &&  // yes - in Brcek regime?
-                                                                                            // yes
-        if (p_Time > (0.99 * timescales(tMS))) {                                            // in MS hook?                                                                                       
-            luminosity = CalculateLuminosityTransitionToHG(p_Mass, p_Time, p_LZAMS);    // yes -  DESCRIBE <<<<<<<<<<<<<<<<<<<<<<<<<<<< 
-        }
-        else {                                                                              // no - no in MS hook
-            if (utils::Compare(m_MZAMS, 15.0) >= 0)                                                                                     // use Shikauchi luminosity if MZAMS >= 15 Msun
-            luminosity = CalculateLuminosityShikauchi(m_MainSequenceCoreMass, m_HeliumAbundanceCore);
-        }
-    }
-
-
-    // if the Brcek MS core mass prescription was specified by the user, and the star is in the 
-    // Brcek regime, and is on the MS hook, calculate the MS luminosity per Brcek et al. 2025
-    if (BRCEK_MS_CORE_MASS_REGIME(p_MZAMS)                                               && // yes - in Brcek regime?
-        tau > 0.99) {                                                                       // yes - on MS hook?
-                                                                                            // yes
-        retVal = CalculateRadiusOnPhase_Brcek(mass, tau, m_StateHistory.StateZero().radius, radius, GLOBALS->bCoefficients);
-    }
-    else {
-        Switch (OPTIONS->Mode()) {                                                          // which evolution mode?
-
-            EVOLUTION_MODE::SSE_HURLEY:                                                     // HURLEY SSE
-            EVOLUTION_MODE::BSE_HURLEY:                                                     // HURLEY BSE
-                retVal = CalculateRadiusOnPhase_Hurley();
-                break;
-        
-            default:                                                                        // unknown mode
-                // the only way this can happen is if someone added an EVOLUTION_MODE
-                // and it isn't accounted for in this code.  We should not default here, with or without a warning.
-                // We are here because the user chose a mode this code doesn't account for, and that should
-                // be flagged as an error and result in termination of the evolution of the star or binary.
-                // The correct fix for this is to add code for the missing mode or, if the missing mode is
-                // superfluous, remove it from the option.
-
-                THROW_ERROR(ERROR::UNKNOWN_EVOLUTION_MODE);                                 // throw error
-        }       
-    }
-
-
-}
-
-
-/*
- * CalculateLuminosityOnPhase_Brcek
+ * CalculateZAMSLuminosity_Tout_Static
  *
  * @brief
- * Calculate luminosity on the Main Sequence per Brcek et al. 2025
+ * Calculate the ZAMS luminosity of a star (in RSol), given the ZAMS mass of the star,
+ * per Tout et al. 1996, eq 1
  *
- * Calculate luminosity to smoothly connect the beginning of MS hook and the beginning of HG (@TAMS)
- * The MS hook starts at tau = 0.99 on the main sequence
  *
- * GNU_CONST double CalculateLuminosityOnPhase_Brcek(const double p_Mass, const double p_Tau, const double p_RZAMS, const double p_Radius, const DBL_VECTOR p_bCoefficients) const
- *
- * @param       p_Mass                          Current mass of the star (Msol)
- * @param       p_Tau                           Main sequence fractional age of the star
- * @param       p_RZAMS                         ZAMS radius of the star (Rsol)
- * @param       p_Radius                        Current radius of the star (Rsol)
- * @param       p_bCoefficients                 Hurley b(n) coefficients
- * @return                                      Main sequence radius of the star (Rsol)
+ * double CalculateZAMSLuminosity_Tout_Static(const double p_MZAMS, const DBL_VECTOR& p_LCoeffs) const
+ * 
+ * @param       p_MZAMS                         ZAMS mass of the star (Msol)
+ * @param       p_LCoeffs                       Tout luminosity coefficients
+ * @return                                      ZAMS luminosity (Lsol)
  */
-double MainSequence::CalculateLuminosityOnPhase_Brcek(const double p_Mass, const double p_Tau, const double p_RZAMS, const double p_Radius, const DBL_VECTOR p_bCoefficients) const {
-
-    const double luminosityTAMS        = std::min(HG::CalculateLuminosityOnPhase_Static(p_Mass, p_Tau, p_RZAMS, p_bCoefficients), p_Radius);
-    const double luminosityAtHookStart = CalculateRadiusOnPhase_Hurley(mass, 0.99, p_RZAMS); 
+double MainSequence::CalculateZAMSLuminosity_Tout_Static(const double p_MZAMS, const DBL_VECTOR& p_LCoeffs) const {
+#define lCoeffs(x) p_LCoeffs[static_cast<int>(TOUT_L_Coeff::x)] // for convenience and readability - undefined at end of function
         
-    double radius = (radiusAtHookStart * (1.0 - p_Tau) + radiusTAMS * (p_Tau - 0.99)) / 0.01;   // linear interpolation
-
-    // if the star has been stripped below its initial core mass we need to adjust the radius
-
-/*
- * Calculate luminosity on the transition from the Main Sequence to the HG when BRCEK core mass prescription is used
- *
- * Luminosity prescription from Shikauchi et al. (2024) cannot be used beyond the MS hook (beyond age 0.99 * tMS), and this
- * function smoothly connects the luminosity between the beginning of the hook and the beginning of the HG
- *
- *
- * double CalculateLuminosityTransitionToHG(const double p_Mass, const double p_Age, double const p_LZAMS)
- *
- * @param   [IN]    p_Mass                      Mass in Msol
- * @param   [IN]    p_Age                       Age in Myr
- * @param   [IN]    p_LZAMS                     Zero Age Main Sequence (ZAMS) luminosity
- * @return                                      Luminosity on the Main Sequence (for age between tHook and tMS)
- */
-double MainSequence::CalculateLuminosityTransitionToHG(const double p_Mass, const double p_Age, double const p_LZAMS) const {
-
-    HG *clone = HG::Clone(static_cast<HG&>(const_cast<MainSequence&>(*this)), OBJECT_PERSISTENCE::EPHEMERAL);
-    double luminosityTAMS = clone->Luminosity();                                                                                // Get luminosity from clone (with updated Mass0)
-    delete clone; clone = nullptr;                                                                                              // Return the memory allocated for the clone
-    
-    double ageAtHookStart = 0.99 * timescales(tMS);
-    
-    double luminosityAtHookStart;
-    if (utils::Compare(m_MZAMS, std::max(15.0, BRCEK_LOWER_MASS_LIMIT)) >= 0)
-        luminosityAtHookStart = CalculateLuminosityShikauchi(m_MainSequenceCoreMass, m_HeliumAbundanceCore);                    // In the hook, core helium abundance fixed at 1-Z and core mass is not changing
-    else
-        luminosityAtHookStart = CalculateLuminosityOnPhase(ageAtHookStart, p_Mass, p_LZAMS);                                    // Do not use Shikauchi luminosity for MZAMS < 15 Msun
-    
-    // Linear interpolation
-    return (luminosityAtHookStart * (timescales(tMS) - p_Age) + luminosityTAMS * (p_Age - ageAtHookStart)) / (timescales(tMS) - ageAtHookStart);
+    // calculate some powers of p_MZAMS - for performance and readability
+    // this function is only called once per star, and at most twice per binary (but probably once), so not too onerous
+    // pow() is slow - use multiplication where it makes sense
+    const double M0_5 = std::sqrt(p_MZAMS);  // sqrt() is much faster than pow()
+    const double M2   = p_MZAMS * p_MZAMS;
+    const double M3   = p_MZAMS * M2;
+    const double M5   = M2 * M3;
+    const double M7   = M2 * M5;
+    const double M8   = p_MZAMS * M7;
+            
+    const double top  = (lCoeffs(ALPHA) * (M5 * M0_5)) + (lCoeffs(BETA) * (M3 * M8));
+            
+    return top / (lCoeffs(GAMMA) + M3) + (lCoeffs(DELTA) * M5) + (lCoeffs(EPSILON) * M7) + (lCoeffs(ZETA) * M8) + (lCoeffs(ETA) * ( M8 * p_MZAMS * M0_5));
+            
+#undef lCoeffs
 }
 
 
 ///////////////////////////////////////////////////////////////////////////////////////
 //                                                                                   //
 //                                RADIUS CALCULATIONS                                //
+//                                  (alphabetical)                                   //
 //                                                                                   //
 ///////////////////////////////////////////////////////////////////////////////////////
 
 
-
-
 /*
- * Calculate the radius constant alpha_R
- * Hurley et al. 2000, eqs 21a & 21b
+ * CalculateHurleyAlphaR
  *
+ * @brief
+ * Calculate the Hurley radius constant, alphaR, per Hurley et al. 2000, eqs 21a & 21b
  *
- * double CalculateAlphaR(const double p_Mass)
+ * 
+ * double CalculateHurleyAlphaR(const double p_Mass, const DBL_VECTOR& p_aN, const DBL_VECTOR& p_RConsts) const
  *
- * @param   [IN]    p_Mass                      Mass in Msol
- * @return                                      Radius constant alpha_R
+ * @param       p_Mass                          Mass of the star (Msol)
+ * @param       p_aN                            Hurley a(n) coefficients
+ * @param       p_RConsts                       Hurley radius constants
+ * @return                                      Radius constant, alphaR
  */
-double MainSequence::CalculateAlphaR(const double p_Mass) const {
-#define a m_AnCoefficients    // for convenience and readability - undefined at end of function
+double MainSequence::CalculateHurleyAlphaR(const double p_Mass, const DBL_VECTOR& p_aN, const DBL_VECTOR& p_RConsts) const {
 
-    double alphaR = 0.0;
+    double alphaR;
 
-         if (utils::Compare(p_Mass,   0.5) <  0) alphaR = an[62];
-    else if (utils::Compare(p_Mass,  0.65) <  0) alphaR = an[62] + (an[63] - an[62]) * (p_Mass - 0.5) / 0.15;
-    else if (utils::Compare(p_Mass, an[68]) <  0) alphaR = an[63] + (an[64] - an[63]) * (p_Mass - 0.65) / (an[68] - 0.65);
-    else if (utils::Compare(p_Mass, an[66]) <  0) alphaR = an[64] + (m_RConstants[static_cast<int>(R_CONSTANTS::B_ALPHA_R)] - an[64]) * (p_Mass - an[68]) / (an[66] - an[68]);
-    else if (utils::Compare(p_Mass, an[67]) <= 0) alphaR = an[58] * PPOW(p_Mass, an[60]) / (an[59] + PPOW(p_Mass, an[61]));
-    else                                         alphaR = m_RConstants[static_cast<int>(R_CONSTANTS::C_ALPHA_R)] + an[65] * (p_Mass - an[67]);
+    if (p_Mass < 0.5) {
+        alphaR = p_aN[62];
+    }
+    else if (p_Mass < 0.65) {
+        alphaR = p_aN[62] + (p_aN[63] - p_aN[62]) * (p_Mass - 0.5) / 0.15;
+    }
+    else if (p_Mass < p_aN[68]) {
+        alphaR = p_aN[63] + (p_aN[64] - p_aN[63]) * (p_Mass - 0.65) / (p_aN[68] - 0.65);
+    }
+    else if (p_Mass < p_aN[66]) {
+        alphaR = p_aN[64] + (p_RConsts[static_cast<int>(HURLEY_R_CONSTANTS::B_ALPHA_R)] - p_aN[64]) * (p_Mass - p_aN[68]) / (p_aN[66] - p_aN[68]);
+    }
+    else if (p_Mass <= p_aN[67]){
+        alphaR = p_aN[58] * PPOW(p_Mass, p_aN[60]) / (p_aN[59] + PPOW(p_Mass, p_aN[61]));
+    }
+    else {
+        alphaR = p_RConsts[static_cast<int>(HURLEY_R_CONSTANTS::C_ALPHA_R)] + p_aN[65] * (p_Mass - p_aN[67]);
+    }
 
     return alphaR;
-
-#undef a
 }
 
 
 /*
- * Calculate the radius constant beta_R
+ * CalculateHurleyBetaR
  *
- * Hurley et al. 2000, eqs 22a & 22b
+ * @brief
+ * Calculate the Hurley radius constant, betaR, per Hurley et al. 2000, eqs 22a & 22b
  *
  *
- * double Star::CalculateBetaR(const double p_Mass)
+ * double CalculateHurleyBetaR(const double p_Mass, const DBL_VECTOR& p_aN, const DBL_VECTOR& p_RConsts) const
  *
- * @param   [IN]    p_Mass                      Mass in Msol
- * @return                                      Radius constant beta_R
+ * @param       p_Mass                          Mass of the star (Msol)
+ * @param       p_aN                            Hurley a(n) coefficients
+ * @param       p_RConsts                       Hurley radius constants
+ * @return                                      Radius constant, betaR
  */
-double MainSequence::CalculateBetaR(const double p_Mass) const {
-#define a m_AnCoefficients    // for convenience and readability - undefined at end of function
+double MainSequence::CalculateHurleyBetaR(const double p_Mass, const DBL_VECTOR& p_aN, const DBL_VECTOR& p_RConsts) const {
 
-    double betaRPrime = 0.0;
+    double betaRPrime;
 
-         if (utils::Compare(p_Mass, 1.0)   <= 0) betaRPrime = 1.06;
-    else if (utils::Compare(p_Mass, an[74]) <  0) betaRPrime = 1.06 + (an[72] - 1.06) * (p_Mass - 1.0) / (an[74] - 1.06);
-    else if (utils::Compare(p_Mass, 2.0)   <  0) betaRPrime = an[72] + (m_RConstants[static_cast<int>(R_CONSTANTS::B_BETA_R)] - an[72]) * (p_Mass - an[74]) / (2.0 - an[74]);
-    else if (utils::Compare(p_Mass, 16.0)  <= 0) betaRPrime = (an[69] * p_Mass * p_Mass * p_Mass * std::sqrt(p_Mass)) / (an[70] + PPOW(p_Mass, an[71]));  // pow()is slow - use multiplication (sqrt() is faster than pow())
-    else                                         betaRPrime = m_RConstants[static_cast<int>(R_CONSTANTS::C_BETA_R)] + an[73] * (p_Mass - 16.0);
+    if (p_Mass <= 1.0) {
+        betaRPrime = 1.06;
+    }
+    else if (p_Mass < p_aN[74]) {
+        betaRPrime = 1.06 + (p_aN[72] - 1.06) * (p_Mass - 1.0) / (p_aN[74] - 1.06);
+    }
+    else if (p_Mass < 2.0) {
+        betaRPrime = p_aN[72] + (p_RConsts[static_cast<int>(HURLEY_R_CONSTANTS::B_BETA_R)] - p_aN[72]) * (p_Mass - p_aN[74]) / (2.0 - p_aN[74]);
+    }
+    else if (p_Mass <= 16.0) {
+        betaRPrime = (p_aN[69] * p_Mass * p_Mass * p_Mass * std::sqrt(p_Mass)) / (p_aN[70] + PPOW(p_Mass, p_aN[71]));
+    }
+    else {
+        betaRPrime = p_RConsts[static_cast<int>(HURLEY_R_CONSTANTS::C_BETA_R)] + p_aN[73] * (p_Mass - 16.0);
+    }
 
     return betaRPrime - 1.0;
-
-#undef a
 }
 
 
 /*
- * Calculate the value of the radius perturbation DeltaR
+ * CalculateHurleyDeltaR
  *
- * Hurley et al. 2000, eq 17
+ * @brief
+ * Calculate the Hurley radius perturbation value, DeltaR, per Hurley et al. 2000, eq 17
  *
  *
- * double CalculateDeltaR(const double p_Mass)
+ * double CalculateHurleyDeltaR(const double p_Mass, const double p_HookMass, const DBL_VECTOR& p_aN, const DBL_VECTOR& p_RConsts) const
  *
- * @param   [IN]    p_Mass                      Mass in Msol
- * @return                                      The radius perturbation DeltaR
+ * @param       p_Mass                          Mass of the star (Msol)
+ * @param       p_HookMass                      Mass above which MS hook appears (MassCutoffs[static_cast<int>(MASS_CUTOFF::MHook)])
+ * @param       p_aN                            Hurley a(n) coefficients
+ * @param       p_RConsts                       Hurley radius constants
+ * @return                                      Radius perturbation value, deltaR
  */
-double MainSequence::CalculateDeltaR(const double p_Mass) const {
-#define an m_AnCoefficients                                              // for convenience and readability - undefined at end of function
+double MainSequence::CalculateHurleyDeltaR(const double p_Mass, const double p_HookMass, const DBL_VECTOR& p_aN, const DBL_VECTOR& p_RConsts) const {
 
     double deltaR;
 
-    if (utils::Compare(p_Mass, massCutoffs(MHook)) <= 0) deltaR = 0.0;   // this really is supposed to be 0
-    else if (utils::Compare(p_Mass, an[42])        <= 0) deltaR = an[43] * std::sqrt((p_Mass - massCutoffs(MHook)) / (an[42] - massCutoffs(MHook)));
-    else if (utils::Compare(p_Mass, 2.0)           <  0) deltaR = an[43] + ((m_RConstants[static_cast<int>(R_CONSTANTS::B_DELTA_R)] - an[43]) * PPOW(((p_Mass - an[42]) / (2.0 - an[42])), an[44]));
+    if (p_Mass <= p_HookMass) {
+        deltaR = 0.0;   // 0.0 in BSE Fortran code
+    }
+    else if (p_Mass <= p_aN[42]) {
+        deltaR = p_aN[43] * std::sqrt((p_Mass - p_HookMass) / (p_aN[42] - p_HookMass));
+    }
+    else if (p_Mass < 2.0) {
+        deltaR = p_aN[43] + ((p_RConsts[static_cast<int>(HURLEY_R_CONSTANTS::B_DELTA_R)] - p_aN[43]) * PPOW(((p_Mass - p_aN[42]) / (2.0 - p_aN[42])), p_aN[44]));
+    }
     else {
-        // pow() is slow - use multiplication (sqrt() is faster than pow())
-        double top    = an[38] + (an[39] * p_Mass * p_Mass * p_Mass * std::sqrt(p_Mass));
-        double bottom = (an[40] * p_Mass * p_Mass * p_Mass) + PPOW(p_Mass, an[41]);
-        deltaR = (top / bottom) - 1.0;
+        const double top = p_aN[38] + (p_aN[39] * p_Mass * p_Mass * p_Mass * std::sqrt(p_Mass));
+        deltaR = (top / ((p_aN[40] * p_Mass * p_Mass * p_Mass) + PPOW(p_Mass, p_aN[41]))) - 1.0;
     }
 
     return deltaR;
-
-#undef an
 }
 
 
 /*
- * Calculate radius at the end of the Main Sequence
+ * CalculateHurleyEta
  *
- * Hurley et al. 2000, eqs 9a & 9b
+ * @brief
+ * Calculate the Hurley radius exponent eta, per Hurley et al. 2000, eq 18
+ * 
+ * Eta is used in Hurley et al. 2000, eq 12 (see CalculateLuminosityOnPhase_Hurley())
  *
  *
- * double CalculateRadiusAtPhaseEnd(const double p_Mass, const double p_RZAMS)
+ * double CalculateHurleyEta(const double p_Metallicity, const double p_Mass) const
  *
- * @param   [IN]    p_Mass                      Stellar mass (Msol)
- * @param   [IN]    p_RZAMS                     Zero Age Main Sequence (ZAMS) Radius
- * @return                                      Radius at the end of the Main Sequence in Rsol
+ * @param       p_Metallicity                   (Fractional) metallicity of the star
+ * @param       p_Mass                          Mass of the star (Msol)
+ * @return                                      Radius exponent, eta
  */
-double MainSequence::CalculateRadiusAtPhaseEnd(const double p_Mass, const double p_RZAMS) const {
-#define a m_AnCoefficients    // for convenience and readability - undefined at end of function
+double MainSequence::CalculateHurleyEta(const double p_Metallicity, const double p_Mass) const {
+    return p_Metallicity > 0.0009 ? 10.0 : (p_Mass > 1.0 ? (p_Mass >= 1.1 ? 20.0 : (100.0 * p_Mass) - 90.0) : 10.0);
+}
 
-    double RTMS;
-    double mAsterisk = an[17] + 0.1;
 
-    if (utils::Compare(p_Mass, an[17]) <= 0) {
-        RTMS = (an[18] + (an[19] * PPOW(p_Mass, an[21]))) / (an[20] + PPOW(p_Mass, an[22]));
+/*
+ * CalculateHurleyGamma
+ *
+ * @brief
+ * Calculate the Hurley radius coefficient gamma, per Hurley et al. 2000, eq 23
+ * 
+ * Gamma is used in Hurley et al. 2000, eq 13 (see Calculate_RadiusOnPhase_Hurley())
+ *
+ *
+ * double CalculateHurleyGamma(const double p_Mass, const DBL_VECTOR& p_aN, const DBL_VECTOR& p_GammaConsts) const
+ *
+ * @param       p_Mass                          Mass of the star (Msol)
+ * @param       p_aN                            Hurley a(n) coefficients
+ * @param       p_GammaConsts                   Hurley gamma constants
+ * @return                                      Radius coefficient, gamma
+ */
+double MainSequence::CalculateHurleyGamma(const double p_Mass, const DBL_VECTOR& p_aN, const DBL_VECTOR& p_GammaConsts) const {
 
-        if (utils::Compare(p_Mass, 0.5) < 0) {
-            RTMS = std::max(RTMS, 1.5 * p_RZAMS);
-        }
+
+    double gamma;
+
+    if (p_Mass <= 1.0) {
+        // BSE Fortran code has abs()
+        gamma = p_aN[76] + (p_aN[77] * PPOW(std::abs(p_Mass - p_aN[78]), p_aN[79]));
     }
-    else if (utils::Compare(p_Mass, mAsterisk) >= 0) {
-        // pow() is slow - use multiplication
-        double m_3 = p_Mass * p_Mass * p_Mass;
-        double m_5 = m_3 * p_Mass * p_Mass;
-
-        RTMS = ((C_COEFF.at(1) * m_3) + (an[23] * PPOW(p_Mass, an[26])) + (an[24] * PPOW(p_Mass, an[26] + 1.5))) / (an[25] + m_5);
+    else if (p_Mass <= p_aN[75]) {
+        const double bGamma = p_GammaConsts[static_cast<int>(HURLEY_GAMMA_CONSTANTS::B_GAMMA)];
+        gamma = bGamma + (p_aN[80] - bGamma) * PPOW((p_Mass - 1.0) / (p_aN[75] - 1.0), p_aN[81]);
+    }
+    else if (p_Mass <= (p_aN[75] + 0.1)) {
+        // see discussion just prior to eq 23 - the end point is wrong in the arXiv version of
+        // Hurley et al. 2000 (should be 0.1, not 1.0) - confirmed in BSE Fortran code
+        const double cGamma = p_GammaConsts[static_cast<int>(HURLEY_GAMMA_CONSTANTS::C_GAMMA)];
+        gamma = cGamma - (10.0 * (p_Mass - p_aN[75]) * cGamma);
     }
     else {
-        // for stars with masses between a17, a17 + 0.1 interpolate between the end points (y = mx + c)
+        // see discussion just prior to eq 23
+        // confirmed in BSE Fortran code
+        gamma = 0.0;
+    }
 
-        // pow() is slow - use multiplication
-        double mA_3 = mAsterisk * mAsterisk * mAsterisk;
-        double mA_5 = mA_3 * mAsterisk * mAsterisk;
+    // see discussion following eq 23
+    // confirmed in BSE Fortran code
+    return std::max(0.0, gamma);
+}
 
-        double y2   = ((C_COEFF.at(1) * mA_3) + (an[23] * PPOW(mAsterisk, an[26])) + (an[24] * PPOW(mAsterisk, an[26] + 1.5))) / (an[25] + mA_5);    // RTMS(mAsterisk)
-        double y1   = (an[18] + (an[19] * PPOW(an[17], an[21]))) / (an[20] + PPOW(an[17], an[22]));                                                    // RTMS(a17)
 
-        double gradient  = (y2 - y1) / 0.1;
-        double intercept = y1 - (gradient * an[17]);
+/*
+ * CalculateRadius
+ *
+ * @brief
+ * Calculate the radius on the main sequence.
+ * Uses the method appropriate for the evolution method and as specified by program options.
+ * 
+ * 
+ * double CalculateRadius(const double p_Mass, const double p_Tau, const double p_RZAMS, const DBL_VECTOR& p_aN) const
+ *
+ * @param       p_Mass                          Mass of the star (Msol)
+ * @param       p_Tau                           Main Sequence fractional age of the star
+ * @param       p_RZAMS                         ZAMS radius of the star (Rsol)
+ * @param       p_aN                            Hurley a(n) coefficients
+ * @return                                      MS radius (Rsol)
+ */
+double MainSequence::CalculateRadius(const double p_Mass, const double p_Tau, const double p_RZAMS, const DBL_VECTOR& p_aN) const {
+
+    double radius;
+
+    Switch (OPTIONS->Mode()) {                                                                                  // which evolution mode?
+
+        EVOLUTION_MODE::SSE_HURLEY:                                                                             // HURLEY SSE
+        EVOLUTION_MODE::BSE_HURLEY:                                                                             // HURLEY BSE
+            radius = CalculateRadiusOnPhase_Hurley(p_Mass, p_Tau, p_RZAMS, p_aN);
+            break;
+
+        default:                                                                                                // unknown mode
+            // the only way this can happen is if someone added an EVOLUTION_MODE
+            // and it isn't accounted for in this code.  We should not default here, with or without a warning.
+            // We are here because the user chose a mode this code doesn't account for, and that should
+            // be flagged as an error and result in termination of the evolution of the star or binary.
+            // The correct fix for this is to add code for the missing mode or, if the missing mode is
+            // superfluous, remove it from the option.
+
+            THROW_ERROR(ERROR::UNKNOWN_EVOLUTION_MODE);                                                         // throw error
+    }
+
+    return radius;
+}
+
+
+/*
+ * CalculateRadiusAtPhaseEnd
+ *
+ * @brief
+ * Calculate radius at the end of the Main Sequence (TAMS).
+ * Uses the method appropriate for the evolution method and as specified by program options.
+ * 
+ * 
+ * double CalculateRadiusAtPhaseEnd(const double p_Mass, const double p_RZAMS, const DBL_VECTOR& p_aN) const
+ *
+ * @param       p_Mass                          Mass of the star (Msol)
+ * @param       p_RZAMS                         ZAMS radius of the star (Rsol)
+ * @param       p_aN                            Hurley a(n) coefficients
+ * @return                                      TAMS radius (Rsol)
+ */
+double MainSequence::CalculateRadiusAtPhaseEnd(const double p_Mass, const double p_RZAMS, const DBL_VECTOR& p_aN) const {
+
+    double radius;
+
+    Switch (OPTIONS->Mode()) {                                                                                  // which evolution mode?
+
+        EVOLUTION_MODE::SSE_HURLEY:                                                                             // HURLEY SSE
+        EVOLUTION_MODE::BSE_HURLEY:                                                                             // HURLEY BSE
+            radius = CalculateRadiusAtPhaseEnd_Hurley(p_Mass, p_RZAMS, p_aN);
+            break;
+
+        default:                                                                                                // unknown mode
+            // the only way this can happen is if someone added an EVOLUTION_MODE
+            // and it isn't accounted for in this code.  We should not default here, with or without a warning.
+            // We are here because the user chose a mode this code doesn't account for, and that should
+            // be flagged as an error and result in termination of the evolution of the star or binary.
+            // The correct fix for this is to add code for the missing mode or, if the missing mode is
+            // superfluous, remove it from the option.
+
+            THROW_ERROR(ERROR::UNKNOWN_EVOLUTION_MODE);                                                         // throw error
+    }
+
+    return radius;
+}
+
+
+/*
+ * CalculateRadiusAtPhaseEnd_Hurley_Static
+ *
+ * @brief
+ * Calculate radius at the end of the Main Sequence (TAMS), per Hurley et al. 2000, eqs 9a & 9b
+ *
+ *
+ * double CalculateRadiusAtPhaseEnd_Hurley_Static(const double p_Mass, const DBL_VECTOR& p_aN, const DBL_VECTOR& p_GammaConsts) const
+ *
+ * @param       p_Mass                          Mass of the star (Msol)
+ * @param       p_RZAMS                         ZAMS radius of the star (Rsol)
+ * @param       p_aN                            Hurley a(n) coefficients
+ * @return                                      TAMS radius (Rsol)
+ */
+double MainSequence::CalculateRadiusAtPhaseEnd_Hurley_Static(const double p_Mass, const double p_RZAMS, const DBL_VECTOR& p_aN) const {
+
+    const double mA = p_aN[17] + 0.1;
+
+    double RTMS;
+
+    if (p_Mass <= p_aN[17]) {
+        RTMS = (p_aN[18] + (p_aN[19] * PPOW(p_Mass, p_aN[21]))) / (p_aN[20] + PPOW(p_Mass, p_aN[22]));
+        if (p_Mass < 0.5) RTMS = std::max(RTMS, 1.5 * p_RZAMS);
+    }
+    else if (p_Mass >= mA) {     
+        const double M3 = p_Mass * p_Mass * p_Mass;     // pow() is slow - use multiplication
+        RTMS = ((HURLEY_C_COEFF[1] * M3) + (p_aN[23] * PPOW(p_Mass, p_aN[26])) + (p_aN[24] * PPOW(p_Mass, p_aN[26] + 1.5))) / (p_aN[25] + M3 * p_Mass * p_Mass);
+    }
+    else {                                              // interpolate between the end points
+        
+        const double mA3 = mA * mA * mA;                // pow() is slow - use multiplication
+
+        const double y2 = ((HURLEY_C_COEFF[1] * mA3) + (p_aN[23] * PPOW(mA, p_aN[26])) + (p_aN[24] * PPOW(mA, p_aN[26] + 1.5))) / (p_aN[25] + mA_3 * mA * mA);
+        const double y1 = (p_aN[18] + (p_aN[19] * PPOW(p_aN[17], p_aN[21]))) / (p_aN[20] + PPOW(p_aN[17], p_aN[22]));
+
+        const double gradient  = (y2 - y1) / 0.1;
+        const double intercept = y1 - (gradient * p_aN[17]);
 
         RTMS = (gradient * p_Mass) + intercept;
     }
 
     return RTMS;
+}
 
-#undef a
+
+/*
+ * CalculateRadius_Brcek
+ *
+ * @brief
+ * Calculate radius on the Main Sequence per Brcek et al. 2025
+ * Uses Shikauchi et al. 2024 if possible, otherwise defaults to the method
+ * appropriate for the evolution method and as specified by program options.
+ * 
+ *
+ * double CalculateRadius_Brcek(const double      p_Metallicity,
+ *                                  const double      p_Mass, 
+ *                                  const double      p_Tau,
+ *                                  const double      p_Time,
+ *                                  const double      p_MZAMS,
+ *                                  const double      p_LZAMS,
+ *                                  const double      p_CoreMass,
+ *                                  const double      p_HeAbundanceCore,
+ *                                  const DBL_VECTOR& p_Timescales,
+ *                                  const DBL_VECTOR& p_aN,
+ *                                  const DBL_VECTOR& p_LConsts,
+ *                                  const DBL_VECTOR& p_ShikauchiLCoeffs) const
+ *
+ * @param       p_Metallicity                   (Fractional) metallicity of the star (Msol)
+ * @param       p_Mass                          Mass of the star (Msol)
+ * @param       p_Tau                           MS fractional age of the star
+ * @param       p_Time                          Time elapsed since ZAMS (Myr)
+ * @param       p_MZAMS                         ZAMS mass of the star (Msol)
+ * @param       p_LZAMS                         ZAMS luminosity of the star (Lsol)
+ * @param       p_CoreMass                      MS core mass of the star (Msol)
+ * @param       p_HeAbundanceCore               Helium abundance in the core of the star 
+ * @param       p_Timescales                    Hurley timescales
+ * @param       p_aN                            Hurley a(n) coefficients
+ * @param       p_LConsts                       Hurley luminosity constants
+ * @param       p_ShikauchiLCoeffs              Shikauchi luminosity coefficients
+ * @return                                      MS radius (Rsol)
+ */
+double MainSequence::CalculateRadius_Brcek(const double      p_Metallicity,
+                                               const double      p_Mass, 
+                                               const double      p_Tau,
+                                               const double      p_Time,
+                                               const double      p_MZAMS,
+                                               const double      p_LZAMS,
+                                               const double      p_CoreMass,
+                                               const double      p_HeAbundanceCore,
+                                               const DBL_VECTOR& p_Timescales,
+                                               const DBL_VECTOR& p_aN,
+                                               const DBL_VECTOR& p_LConsts,
+                                               const DBL_VECTOR& p_ShikauchiLCoeffs) const {
+
+
+
+
+double MainSequence::CalculateRadiusTransitionToHG(const double p_Mass, const double p_Tau, const double p_RZAMS) const {
+    HG *clone = HG::Clone(static_cast<HG&>(const_cast<MainSequence&>(*this)), OBJECT_PERSISTENCE::EPHEMERAL);
+    // Select radius at TAMS from the HG clone or current radius (whichever is smaller), relevant for stars that were significantly
+    // stripped as this prevents radius expansion during the hook, and delays possible mass transfer to the start of HG
+    double radiusTAMS = std::min(clone->Radius(), m_Radius);                                                                    // Get radius from clone (with updated Mass0)
+    delete clone; clone = nullptr;                                                                                              // Return the memory allocated for the clone
+    
+    double radiusAtHookStart = CalculateRadiusOnPhase(p_Mass, 0.99, p_RZAMS);                                                   // Hook starts at Tau = 0.99
+    
+    return (radiusAtHookStart * (1.0 - p_Tau) + radiusTAMS * (p_Tau - 0.99)) / 0.01;                                            // Linear interpolation
+}
+
+
+
+
+
+    double luminosity = 0.0;                                                                                        // default return value
+
+    const double hookStartTime = 0.99 * timescales(tMS);                                                            // MS hook start time
+
+    if (p_Tau > hookStartTime) {                                                                                    // star in MS hook?
+                                                                                                                    // yes
+        // calculate luminosity on the transition from MS to HG - interpolate to smoothly
+        // connect the beginning of MS hook and the beginning of HG (@TAMS)
+
+        // luminosity at TAMS (per Hurley!! FIX THIS <<<<<<<<<<<<<<<<<<<<<<<  SHOULD BE GENERIC - DETERMINE EVOLUTION MODE) <<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+        const double luminosityAtTAMS = HG::CalculateLuminosityOnPhase_Hurley_Static(p_Mass, p_Tau, p_Timescales);
+    
+        double luminosityAtHookStart;                                                                               // luminosity at the start of the MS hook
+        if (p_MZAMS >= std::max(SHIKAUCHI_LOWER_MASS_LIMIT, BRCEK_LOWER_MASS_LIMIT)) {                              // mass in Brcek/Shikauchi regime?
+            luminosityAtHookStart = CalculateLuminosity_Shikauchi(p_CoreMass, p_HeAbundanceCore, p_ShikauchiLCoeffs); // yes - in the hook, core helium abundance fixed at 1-Z and core mass is not changing
+        }
+        else {                                                                                                      // no - can't use Shikauchi here
+                                                                                                                    // use default method
+            luminosityAtHookStart = CalculateLuminosity(p_Metallicity, p_Mass, hookStartTime, p_LZAMS, p_Timescales, p_aN, p_LConsts);
+        }
+    
+        // interpolate to determine luminosity
+        const double tMS = p_Timescales[static_cast<int>(TIMESCALE::tMS)];
+        luminosity = (luminosityAtHookStart * (tMS - p_Age) + luminosityAtTAMS * (p_Age - hookStartTime)) / (tMS - hookStartTime);
+    }
+    else {                                                                                                          // not in the MS hook
+        if (utils::Compare(m_MZAMS, 15.0) >= 0) {                                                                   // MZAMS >= 15 Msol?
+            luminosity = CalculateLuminosityShikauchi(p_CoreMass, p_HeAbundanceCore);                               // yes, use Shikauchi
+        }
+        else {                                                                                                      // no, use default method
+            luminosity = CalculateLuminosity(p_Metallicity, p_Mass, p_Time, p_LZAMS, p_Timescales, p_aN, p_LConsts);
+        }
+    }
+
+    return luminosity;
 }
 
 
@@ -700,52 +926,91 @@ double MainSequence::CalculateRadiusAtPhaseEnd(const double p_Mass, const double
  * CalculateRadiusOnPhase_Hurley
  *
  * @brief
- * Calculate radius on the Main Sequence per Hurley et al. 2000
+ * Calculate radius on the Main Sequence per Hurley et al. 2000, eq 13
  *
  *
- * double CalculateRadiusOnPhase_Hurley(const double p_Mass, const double p_Tau, const double p_RZAMS, const DBL_VECTOR p_aCoefficients)
+ * double CalculateRadiusOnPhase_Hurley(const double p_Mass, const double p_Tau, const double p_RZAMS, const DBL_VECTOR& p_aN) const
  *
- * @param       p_Mass                          Current mass of the star (Msol)
+ * @param       p_Mass                          Mass of the star (Msol)
  * @param       p_Tau                           Main Sequence fractional age of the star
  * @param       p_RZAMS                         ZAMS radius of the star (Rsol)
- * @param       p_aCoefficients                 Hurley a(n) coefficients
- * @return                                      Main Sequence radius of the star (Rsol)
+ * @param       p_aN                            Hurley a(n) coefficients
+ * @return                                      MS radius (Rsol)
  */
-double MainSequence::CalculateRadiusOnPhase_Hurley(const double p_Mass, const double p_Tau, const double p_RZAMS, const DBL_VECTOR p_aCoefficients) const {
-#define a p_aCoefficients // for convenience and readability - undefined at end of function
+double MainSequence::CalculateRadiusOnPhase_Hurley(const double p_Mass, const double p_Tau, const double p_RZAMS, const DBL_VECTOR& p_aN) const {
     
-    const double tBGB    = CalculateLifetimeToBGB(p_Mass);
-    const double tMS     = CalculateLifetimeOnPhase(p_Mass, tBGB);
+    const double tBGB   = CalculateLifetimeToBGB(p_Mass);
+    const double tMS    = CalculateLifetimeOnPhase(p_Mass, tBGB);
 
-    const double RTMS    = CalculateRadiusAtPhaseEnd(p_Mass, p_RZAMS);
-    const double alphaR  = CalculateAlphaR(p_Mass);
-    const double betaR   = CalculateBetaR(p_Mass);
-    const double deltaR  = CalculateDeltaR(p_Mass);
-    const double gamma   = CalculateGamma(p_Mass);
+    const double RTMS   = CalculateRadiusAtPhaseEnd(p_Mass, p_RZAMS);
+    const double alphaR = CalculateAlphaR(p_Mass);
+    const double betaR  = CalculateBetaR(p_Mass);
+    const double deltaR = CalculateDeltaR(p_Mass);
+    const double gamma  = CalculateHurleyGamma(p_Mass);
 
-    const double mu      = std::max(0.5, (1.0 - (0.01 * std::max((a[6] / PPOW(p_Mass, a[7])), (a[8] + (a[9] / PPOW(p_Mass, a[10])))))));    // Hurley et al. 2000, eq 7
-    const double tHook   = mu * tBGB;                                                                                                       // ibid, just after eq 5
-    const double time    = tMS * p_Tau;
-    const double tau_1   = std::min(1.0, (time / tHook));                                                                                   // ibid, eq 14
-    const double tau_2   = std::max(0.0, std::min(1.0, (time - ((1.0 - 0.01) * tHook)) / (0.01 * tHook)));                                  // ibid, eq 15, epsilon= 0.01
+    const double mu     = std::max(0.5, (1.0 - (0.01 * std::max((a[6] / PPOW(p_Mass, p_aN[7])), (p_aN[8] + (p_aN[9] / PPOW(p_Mass, p_aN[10]))))))); // Hurley et al. 2000, eq 7
+    const double tHook  = mu * tBGB;                                                                                                    // ibid., just after eq 5
+    const double time   = tMS * p_Tau;
+    const double tau_1  = std::min(1.0, (time / tHook));                                                                                // ibid., eq 14
+    const double tau_2  = std::max(0.0, std::min(1.0, (time - ((1.0 - 0.01) * tHook)) / (0.01 * tHook)));                               // ibid., eq 15, epsilon= 0.01
 
     // pow() is slow - use multiplication where it makes sense
     const double tau3   = p_Tau * p_Tau * p_Tau;
     const double tau_13 = tau_1 * tau_1 * tau_1;
     const double tau_23 = tau_2 * tau_2 * tau_2;
-    const double tau10  = p_Tau < FLOAT_TOLERANCE_ABSOLUTE ? 0.0: tau3 * tau3 * tau3 * p_Tau;                                               // tolerance comparison to avoid underflow
-    const double tau40  = tau_10 < FLOAT_TOLERANCE_ABSOLUTE ? 0.0: tau10 * tau10 * tau10 * tau10;                                           // tolerance comparison to avoid underflow
+    const double tau10  = p_Tau < FLOAT_TOLERANCE_ABSOLUTE ? 0.0: tau3 * tau3 * tau3 * p_Tau;                                           // tolerance comparison to avoid underflow
+    const double tau40  = tau_10 < FLOAT_TOLERANCE_ABSOLUTE ? 0.0: tau10 * tau10 * tau10 * tau10;                                       // tolerance comparison to avoid underflow
 
-    const double logRMS_RZAMS = alphaR * p_Tau + betaR * tau10 + gamma * tau40 + (log10(RTMS / p_RZAMS) - alphaR - betaR - gamma) * tau3 - deltaR * (tau_13 - tau_23); // ibid, eq 13
+    const double logRMS_RZAMS = alphaR * p_Tau + betaR * tau10 + gamma * tau40 + (log10(RTMS / p_RZAMS) - alphaR - betaR - gamma) * tau3 - deltaR * (tau_13 - tau_23); // ibid., eq 13
 
-    return p_RZAMS * PPOW(10.0, logRMS_RZAMS);                                                                                              // rewrite Hurley et al. 2000, eq 13 for R(t)
-
-#undef a
+    return p_RZAMS * PPOW(10.0, logRMS_RZAMS);
 }
 
-double CalculateRadiusOnPhase_Hurley() const {
-    return CalculateRadiusOnPhase(m_StateHistory.CurrentState().mass, m_StateHistory.CurrentState().tau, m_StateHistory.StateZero().mass);
+
+
+
+
+
+
+    
+/*
+ * CalculateZAMSRadius_Tout_Static
+ *
+ * @brief
+ * Calculate the ZAMS radius of a star (in RSol), given the ZAMS mass of the star,
+ * per Tout et al. 1996, eq 2
+ *
+ *
+ * double CalculateZAMSRadius_Tout_Static(const double p_MZAMS, const DBL_VECTOR& p_RCoeffs)
+ *
+ * @param       p_MZAMS                         ZAMS mass of the star (Msol)
+ * @param       p_RCoeffs                       Tout radius coefficients
+ * @return                                      ZAMS radius of the star (Rsol)
+ */
+double MainSequence::CalculateZAMSRadius_Tout_Static(const double p_MZAMS, const DBL_VECTOR& p_RCoeffs) const {
+#define rCoeffs(x) p_RCoeffs[static_cast<int>(TOUT_R_Coeff::x)] // for convenience and readability - undefined at end of function
+
+    // calculate some powers of p_MZAMS - for performance and readability
+    // this function is only called once per star, and at most twice per binary (but probably once), so not too onerous
+    // pow() is slow - use multiplication where it makes sense
+    const double M0_5  = std::sqrt(p_MZAMS);
+    const double M2    = p_MZAMS * p_MZAMS;
+    const double M6    = M2 * M2 * M2;
+    const double M8    = M6 * M2;
+    const double M11   = M8 * M2 * p_MZAMS;
+    const double M19   = M11 * M8;
+    const double M19_5 = M19 * M0_5;
+
+    const double top = (rCoeffs(THETA) * (M2 * M0_5)) + (rCoeffs(IOTA) * M6 * M0_5) + (rCoeffs(KAPPA) * M11) + (rCoeffs(LAMBDA) * M19) + (rCoeffs(MU) * M19_5);
+            
+    return top / (rCoeffs(NU) + (rCoeffs(XI) * M2) + (rCoeffs(OMICRON) * (M8 * M0_5)) + (M6 * M6 * M6 * M0_5) + (rCoeffs(PI) * M19_5));
+
+#undef rCoeffs
 }
+
+
+
+
 
 
 /*
@@ -757,7 +1022,7 @@ double CalculateRadiusOnPhase_Hurley() const {
  * Calculate radius to smoothly connect the beginning of MS hook and the beginning of HG (@TAMS)
  * The MS hook starts at tau = 0.99 on the main sequence
  *
- * GNU_CONST double CalculateRadiusOnPhase_Brcek(const double p_Mass, const double p_Tau, const double p_RZAMS, const double p_Radius, const DBL_VECTOR p_bCoefficients) const
+ * double CalculateRadiusOnPhase_Brcek(const double p_Mass, const double p_Tau, const double p_RZAMS, const double p_Radius, const DBL_VECTOR& p_bCoefficients) const
  *
  * @param       p_Mass                          Current mass of the star (Msol)
  * @param       p_Tau                           Main sequence fractional age of the star
@@ -766,7 +1031,7 @@ double CalculateRadiusOnPhase_Hurley() const {
  * @param       p_bCoefficients                 Hurley b(n) coefficients
  * @return                                      Main sequence radius of the star (Rsol)
  */
-double MainSequence::CalculateRadiusOnPhase_Brcek(const double p_Mass, const double p_Tau, const double p_RZAMS, const double p_Radius, const DBL_VECTOR p_bCoefficients) const {
+double MainSequence::CalculateRadiusOnPhase_Brcek(const double p_Mass, const double p_Tau, const double p_RZAMS, const double p_Radius, const DBL_VECTOR& p_bCoefficients) const {
 
     const double radiusTAMS        = std::min(HG::CalculateRadiusOnPhase_Static(p_Mass, p_Tau, p_RZAMS, p_bCoefficients), p_Radius);
     const double radiusAtHookStart = CalculateRadiusOnPhase_Hurley(mass, 0.99, p_RZAMS); 
@@ -781,7 +1046,7 @@ double MainSequence::CalculateRadiusOnPhase_Brcek(const double p_Mass, const dou
     double heliumAbundanceSurface = m_HeliumAbundanceSurface;
         if (p_Mass < m_InitialMainSequenceCoreMass)
             // By tracing the helium profile in the star, calculate how the surface helium abundance changes if mass drops below the initial core mass
-            heliumAbundanceSurface = m_HeliumAbundanceCoreOut + (p_Mass - m_MainSequenceCoreMass) * (m_HeliumAbundanceSurface - m_HeliumAbundanceCoreOut) / (m_InitialMainSequenceCoreMass - m_MainSequenceCoreMass);
+            heliumAbundanceSurface = m_HeliumAbundanceOutsideCore + (p_Mass - m_MainSequenceCoreMass) * (m_HeliumAbundanceSurface - m_HeliumAbundanceOutsideCore) / (m_InitialMainSequenceCoreMass - m_MainSequenceCoreMass);
         
         // Factor that scales radius based on surface helium abundance
         double surfaceAbundanceFactor = (utils::Compare(m_HeliumAbundanceCore, m_InitialHeliumAbundance) != 0) ? (heliumAbundanceSurface - m_InitialHeliumAbundance) / (m_HeliumAbundanceCore - m_InitialHeliumAbundance) : 0.0;
@@ -797,6 +1062,62 @@ double MainSequence::CalculateRadiusOnPhase_Brcek(const double p_Mass, const dou
 }
 
 
+
+
+
+
+/*
+ * CalculateRadiusOnPhase
+ *
+ * @brief
+ * Calculate radius on the Main Sequence.
+ *
+ * If the Brcek MS core mass prescription was specified by the user, and the star is in the 
+ * Brcek regime, calculate the MS radius per Brcek et al. 2025, otherwise uses the method
+ * appropriate for the evolution method and as specified by program options.
+ * 
+ * Uses globals and state variables - read only.
+ * 
+ * 
+ * double CalculateRadiusOnPhase() const
+ *
+ * @return                                      MS radius (Rsol)
+ */
+double MainSequence::CalculateRadiusOnPhase() const {
+        
+    // common variables
+    const double Z              = GLOBALS->ReferenceMetallicity();                                                              // metallicity of the star
+    const double mass           = m_StateHistory.CurrentState().Mass();                                                         // current mass of the star
+    const double time           = m_StateHistory.CurrentState().Time();                                                         // time elapsed since ZAMS
+    const double mZAMS          = m_StateHistory.ZAMSState().Mass();                                                            // ZAMS mass of the star
+    const double lZAMS          = m_StateHistory.ZAMSState().Luminosity();                                                      // ZAMS luminosity of the star
+    const DBL_VECTOR timescales = GLOBALS->Timescales();                                                                        // Hurley timescales
+
+    double luminosity;
+    if (OPTIONS->MainSequenceCoreMassPrescription() == MS_CORE_MASS_PRESCRIPTION::BRCEK && mZAMS >= BRCEK_LOWER_MASS_LIMIT) {   // in Brcek regime?
+                                                                                                                                // yes
+        const double tau = m_StateHistory.CurrentState().Tau();                                                                 // MS fractional age
+        if (tau > 0.99) {                                                                                                       // star in MS hook?
+                                                                                                                                // yes - use Brcek
+        const double tau                  = m_StateHistory.CurrentState().Tau();                                                // MS fractional age of the star
+        const double coreMass             = m_StateHistory.CurrentState().CoreMass();                                           // current core mass of the star
+        const double HeAbundanceCore      = m_StateHistory.CurrentState().HeAbundanceCore();                                    // core Helium abundance
+        const DBL_VECTOR aCoeffs          = GLOBALS->HurleyACoefficients();                                                     // Hurley a(n) coefficients
+        const DBL_VECTOR ShikauchiLCoeffs = GLOBALS->ShikauchiLCoefficients();                                                  // Shikauchi luminosity coefficients
+        luminosity = CalculateRadius_Brcek(Z, mass, tau, time, mZAMS, lZAMS, coreMass, HeAbundanceCore, timescales, aCoeffs, lConstants, ShikauchiLCoeffs);
+        }
+    }
+    else {                                                                                                                      // no - use default method
+        const DBL_VECTOR aCoeffs    = GLOBALS->HurleyACoefficients();                                                           // Hurley a(n) coefficients
+        const DBL_VECTOR lConstants = GLOBALS->HurleyLConstants();                                                              // Hurley luminosity constants
+        luminosity = CalculateLuminosity(Z, mass, time, lZAMS, timescales, aCoeffs, lConstants);
+    }
+
+    return luminosity;
+}
+
+
+
 /*
  * CalculateRadiusOnPhase
  *
@@ -810,26 +1131,31 @@ double MainSequence::CalculateRadiusOnPhase_Brcek(const double p_Mass, const dou
  */
 double MainSequence::CalculateRadiusOnPhase() const { 
 
-    const double MZAMS  = m_StateHistory.StateZero().mass;
-    const double tau    = m_StateHistory.CurrentState().tau;
-    const double radius = m_StateHistory.CurrentState().radius;
+    const double Z              = GLOBALS->ReferenceMetallicity();                                                              // metallicity of the star
+    const double mass           = m_StateHistory.CurrentState().Mass();                                                         // current mass of the star
+    const double tau           = m_StateHistory.CurrentState().Tau();                                                         // time elapsed since ZAMS
+    const double rZAMS  = m_StateHistory.ZAMSState().Radius();
 
-    double retVal = radius;                                                                 // calculated radius - default is unchanged
+    const double currentRadius = m_StateHistory.CurrentState().radius;
+
+    double radius;
 
     // if the user specified the BRCEK MS core mass prescription, and the star is in the 
     // BRCEK MS core mass prescription regine, and is on the MS hook, calculate the MS radius
     // per Brcek et al., 2025
-    if (BRCEK_MS_CORE_MASS_REGIME(MZAMS)  && // yes - in Brcek MS core mass prescription regime?
+
+
+    if (OPTIONS->MainSequenceCoreMassPrescription() == MS_CORE_MASS_PRESCRIPTION::BRCEK && m_MZAMS >= BRCEK_LOWER_MASS_LIMIT  && // yes - in Brcek MS core mass prescription regime?
         tau > 0.99) {                                                                       // yes - on MS hook?
                                                                                             // yes
-        retVal = CalculateRadiusOnPhase_Brcek(mass, tau, m_StateHistory.StateZero().radius, radius, GLOBALS->bCoefficients);
+        radius = CalculateRadiusOnPhase_Brcek(mass, tau, rZAMS, radius, GLOBALS->HurleyBCoefficients);
     }
     else {
         Switch (OPTIONS->Mode()) {                                                          // which evolution mode?
 
             EVOLUTION_MODE::SSE_HURLEY:                                                     // HURLEY SSE
             EVOLUTION_MODE::BSE_HURLEY:                                                     // HURLEY BSE
-                retVal = CalculateRadiusOnPhase_Hurley();
+                radius = CalculateRadiusOnPhase_Hurley();
                 break;
         
             default:                                                                        // unknown mode
@@ -844,7 +1170,7 @@ double MainSequence::CalculateRadiusOnPhase() const {
         }       
     }
 
-    return retVal;
+    return radius;
 }
 
 
@@ -930,6 +1256,27 @@ double MainSequence::CalculateConvectiveCoreRadius() const {
 
     return (convectiveCoreRadiusZAMS - m_Tau * (convectiveCoreRadiusZAMS - TAMSCoreRadius));
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 ///////////////////////////////////////////////////////////////////////////////////////
@@ -1053,7 +1400,7 @@ double MainSequence::CalculateCoreMass_Brcek(const double p_Mass, const double p
     if (deltaCoreMass > 0.0) {                                                                                                                                  // If the core grows, we need to account for rejuvenation
         if (utils::Compare(newMixingCoreMass, m_InitialMainSequenceCoreMass) < 0) {                                                                             // New core mass less than initial core mass?
             // Common factors
-            double f1 = m_HeliumAbundanceCoreOut - m_InitialHeliumAbundance;
+            double f1 = m_HeliumAbundanceOutsideCore - m_InitialHeliumAbundance;
             double f2 = m_MainSequenceCoreMass - m_InitialMainSequenceCoreMass;
             double f3 = m_MainSequenceCoreMass + deltaCoreMass;
 
@@ -1061,15 +1408,15 @@ double MainSequence::CalculateCoreMass_Brcek(const double p_Mass, const double p
             double deltaYout = f1 / f2 * deltaCoreMass;
 
             // Calculate the change in core helium abundance, assuming linear profile between Yc and Y0, and that the the accreted gas has helium fraction Y0
-            double deltaY             = (m_HeliumAbundanceCoreOut - m_HeliumAbundanceCore) / f3 * deltaCoreMass + 0.5 / f3 * f1 / f2 * deltaCoreMass * deltaCoreMass;
+            double deltaY             = (m_HeliumAbundanceOutsideCore - m_HeliumAbundanceCore) / f3 * deltaCoreMass + 0.5 / f3 * f1 / f2 * deltaCoreMass * deltaCoreMass;
             newCentralHeliumFraction  = m_HeliumAbundanceCore + deltaY;
-            m_HeliumAbundanceCoreOut += deltaYout;
+            m_HeliumAbundanceOutsideCore += deltaYout;
         }
         else {                                                                                                                                                  // New core mass greater or equal to the initial core mass?
             double deltaCoreMass1         = m_InitialMainSequenceCoreMass - m_MainSequenceCoreMass;                                                             // Mass accreted up to the initial core mass
             double deltaCoreMass2         = deltaCoreMass - deltaCoreMass1;                                                                                     // Remaining accreted mass
-            newCentralHeliumFraction      = (m_MainSequenceCoreMass * m_HeliumAbundanceCore + 0.5 * (m_HeliumAbundanceCoreOut + m_InitialHeliumAbundance) * deltaCoreMass1 + deltaCoreMass2 * m_InitialHeliumAbundance) / (m_MainSequenceCoreMass + deltaCoreMass);
-            m_HeliumAbundanceCoreOut      = m_InitialHeliumAbundance;
+            newCentralHeliumFraction      = (m_MainSequenceCoreMass * m_HeliumAbundanceCore + 0.5 * (m_HeliumAbundanceOutsideCore + m_InitialHeliumAbundance) * deltaCoreMass1 + deltaCoreMass2 * m_InitialHeliumAbundance) / (m_MainSequenceCoreMass + deltaCoreMass);
+            m_HeliumAbundanceOutsideCore      = m_InitialHeliumAbundance;
             m_InitialMainSequenceCoreMass = newMixingCoreMass;
         }
     }
@@ -1077,11 +1424,11 @@ double MainSequence::CalculateCoreMass_Brcek(const double p_Mass, const double p
         // If total mass dropped below the initial core mass, partially processed material is exposed and surface abundance needs to be adjusted
         if (utils::Compare(p_Mass + deltaMass, m_InitialMainSequenceCoreMass) < 0) {
             // Set surface helium abundance following the helium abundance profile in the star
-            m_HeliumAbundanceSurface      = m_HeliumAbundanceCoreOut + (p_Mass + deltaMass - m_MainSequenceCoreMass) * (m_HeliumAbundanceSurface - m_HeliumAbundanceCoreOut) / (m_InitialMainSequenceCoreMass - m_MainSequenceCoreMass);
+            m_HeliumAbundanceSurface      = m_HeliumAbundanceOutsideCore + (p_Mass + deltaMass - m_MainSequenceCoreMass) * (m_HeliumAbundanceSurface - m_HeliumAbundanceOutsideCore) / (m_InitialMainSequenceCoreMass - m_MainSequenceCoreMass);
             m_HydrogenAbundanceSurface    = 1.0 - m_Metallicity - m_HeliumAbundanceSurface;
             m_InitialMainSequenceCoreMass = p_Mass + deltaMass;                                                                                                 // Update the initial core mass
         }
-        m_HeliumAbundanceCoreOut = newCentralHeliumFraction;                                                                                                    // If core did not grow, Y_out = Y_c
+        m_HeliumAbundanceOutsideCore = newCentralHeliumFraction;                                                                                                    // If core did not grow, Y_out = Y_c
     }
     
     return std::tuple<double, double> (newMixingCoreMass, std::min(newCentralHeliumFraction, 1.0 - m_Metallicity));
@@ -1276,6 +1623,98 @@ double MainSequence::CalculateZetaEquilibrium() {
     
 
 
+
+
+
+
+///////////////////////////////////////////////////////////////////////////////////////
+//                                                                                   //
+//                            MISCELLANEOUS CALCULATIONS                             //
+//                                  (alphabetical)                                   //
+//                                                                                   //
+///////////////////////////////////////////////////////////////////////////////////////
+
+
+/*
+ * CalculateHeliumAbundanceCoreOnPhase
+ *
+ * @brief
+ * Calculate the helium abundance in the core of the star, given tau
+ * 
+ * Simple linear model from the initial helium abundance to the maximum helium
+ * abundance (assuming that all hydrogen is converted to helium). 
+ * 
+ * When tau = 0, heliumAbundanceCore = InitialHeliumAbundance
+ * When tau = 1, heliumAbundanceCore = heliumAbundanceCoreMax = 1.0 - Metallicity
+ * 
+ * Should be updated to match detailed models.
+ * 
+ *
+ * double CalculateHeliumAbundanceCoreOnPhase(const double p_Tau)
+ * 
+ * @param   [IN]    p_Tau                       Fraction of main sequence lifetime
+ * @return                                      Helium abundance in the core of the star
+ */
+double MainSequence::CalculateHeliumAbundanceCoreOnPhase(const double p_Tau) const {
+    
+    // If BRCEK core mass prescription is used, core helium abundance is calculated with the core mass
+    return (OPTIONS->MainSequenceCoreMassPrescription() == MS_CORE_MASS_PRESCRIPTION::BRCEK && m_MZAMS >= BRCEK_LOWER_MASS_LIMIT)
+            ? m_HeliumAbundanceCore
+            : ((1.0 - m_Metallicity - m_InitialHeliumAbundance) * p_Tau) + m_InitialHeliumAbundance;
+}
+
+
+/*
+ * Calculate the hydrogen abundance in the core of the star
+ * 
+ * Currently just a simple linear model. Assumes that hydrogen in the core of 
+ * the star is burned to helium at a constant rate throughout the lifetime. 
+ * 
+ * Should be updated to match detailed models.
+ *
+ * double CalculateHydrogenAbundanceCoreOnPhase(const double p_Tau)
+ * 
+ * @param   [IN]    p_Tau                       Fraction of main sequence lifetime
+ * @return                                      Hydrogen abundance in the core (X_c)
+ */
+double MainSequence::CalculateHydrogenAbundanceCoreOnPhase(const double p_Tau) const {
+    
+    // If BRCEK core mass prescription is used, core helium abundance is calculated with the core mass
+    return OPTIONS->MainSequenceCoreMassPrescription() == MS_CORE_MASS_PRESCRIPTION::BRCEK && m_MZAMS >= BRCEK_LOWER_MASS_LIMIT
+            ? 1.0 - m_HeliumAbundanceCore - m_Metallicity
+            : m_InitialHydrogenAbundance * (1.0 - p_Tau);
+}
+
+
+
+
+
+
+/*
+ * CalculateTimescales
+ *
+ * @brief
+ * Calculate timescales.  Timescales depend on a star's mass, so timescales should be
+ * calculated whenever the star's mass changes (effectively every timestep).
+ *
+ * Vectors are passed by reference here for performance - preference would be to pass const& and
+ * pass modified value back by functional return, but this way is faster - and this function is
+ * called many, many times.
+ *
+ *
+ * void CalculateTimescales(const double p_Mass, DBL_VECTOR& p_Timescales)
+ *
+ * @param   [IN]        p_Mass                  Mass in Msol
+ * @param   [IN/OUT]    p_Timescales            Timescales (Myr)
+ */
+void MainSequence::CalculateTimescales(const double p_Mass, DBL_VECTOR& p_Timescales) {
+    timescales(tBGB) = CalculateLifetimeToBGB(p_Mass);
+    timescales(tMS)  = CalculateLifetimeOnPhase(p_Mass, timescales(tBGB));
+}
+
+
+
+
 ///////////////////////////////////////////////////////////////////////////////////////
 //                                                                                   //
 //                    MISCELLANEOUS FUNCTIONS / CONTROL FUNCTIONS                    //
@@ -1405,7 +1844,7 @@ void MainSequence::UpdateAfterMerger(double p_Mass, double p_HydrogenMass) {
     m_HeliumAbundanceSurface   = m_HeliumAbundanceCore;                                         // abundances are the same throughout the star, assuming uniform mixing after merger
     m_HydrogenAbundanceSurface = m_HydrogenAbundanceCore;
     
-    if (BRCEK_MS_CORE_MASS_REGIME(m_MZAMS)) {
+    if (OPTIONS->MainSequenceCoreMassPrescription() == MS_CORE_MASS_PRESCRIPTION::BRCEK && m_MZAMS >= BRCEK_LOWER_MASS_LIMIT) {
         m_InitialMainSequenceCoreMass = CalculateInitialMainSequenceCoreMass(p_Mass, m_HeliumAbundanceCore);           // update initial mixing core mass
         m_MainSequenceCoreMass        = m_InitialMainSequenceCoreMass;                                                 // update core mass
     }

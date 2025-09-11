@@ -46,8 +46,14 @@ public:
     static double   CalculateLuminosityOnPhase_Static(const double p_Mass, const double p_Tau);
     static double   CalculateLuminosityAtPhaseEnd_Static(const double p_Mass);
 
-    std::tuple<double, MASS_LOSS_TYPE> HeMS::CalculateMassLossRateBelczynski2010() const;
-           double   CalculateMassLossRateMerritt2025 const();
+std::tuple<double, MASS_LOSS_TYPE> HeMS::CalculateMassLossRateBelczynski2010() const;
+
+std::tuple<double, MASS_LOSS_TYPE> HeMS::CalculateMassLossRateMerritt2025_Static(const double p_Metallicity,
+                                                                                 const double p_Luminosity,
+                                                                                 const double p_Temperature,
+                                                                                 const double p_SigmaHurley,
+                                                                                 const double p_ZetaAnders) const;
+
 
     static DBL_DBL  CalculateRadiusAtPhaseEnd_Static(const double p_Mass, const double p_Luminosity);
     static double   CalculateRadiusAtZAMS_Static(const double p_Mass);

@@ -47,14 +47,7 @@ private:
     // star to the next (e.g. in a population run).
     typdef struct HurleyZdependent {
 
-        double      refZ = -1.0;            // reference metallicty, initially undefined
-
-        double      sigma;                  // Hurley et al. 2000 sigma, p24
-        double      zeta;                   // Hurley et al. 2000 zeta, p5, just before eq 1 (log10(refZ / ZSOL_HURLEY), ZSOL_HURLEY = 0.02)
-        double      zetaAnders;             // zeta using ZSOL_ANDERS instead of ZSOL_HURLEY (i.e. log10(refZ / ZSOL_ANDERS))
-        double      zetaAsplund;            // zeta using ZSOL_ASPLUND instead of ZSOL_HURLEY (i.e. log10(refZ / ZSOL_ASPLUND))
         double      rho;                    // Hurley et al. 2000 rho, p24
-
         double      xExponent;              // Hurley et al. 2000 'x' exponent to which radius depends on Mass (at constant luminosity)
 
         // The following variables are implemented as vectors rather than maps due to prohibitive
@@ -92,30 +85,51 @@ private:
 
 
     // reference metallicity - used to calculate metallicity-dependent globals
+    // The reference metallicity may not exist - it will not exist prior to the
+    // initialisation of the globals, and/or until a valid value is passed via
+    // SetReferenceMetallicity().
+    //
+    // The globals Initialise() function uses the value specified via the 
+    // `--metallicity` option as the reference metallicity, and that should
+    // have been range checked by the options code, so the reference metallicity
+    // should exist and be valid after globals initialisation.
     std::optional<double> m_RefZ;
 
 
     // non Z-dependent values
-    // these are calculated once per run only (in the constructor), and are guaranteed to exist
+    // these are calculated once per run only (in the constructor), and are guaranteed to
+    // exist only if m_RefZ has a value, and then will be correct for the value of m_RefZ 
     
-    double m_BaryonicMassOfMaxNSMass;                                   // baryonic mass for which the gravitational remnant mass will be equal to the max NS mass
+    std::optional<double> m_BaryonicMassOfMaxNSMass;                    // baryonic mass for which the gravitational remnant mass will be equal to the max NS mass
 
 
     // Z-dependent values
-    // these are calculated whenever the reference metallicity changes, and are guaranteed to exist
-    // only if m_RefZ has a value, and then will be correct for the value of m_RefZ 
+    // these are calculated whenever the reference metallicity changes, and are guaranteed
+    // to exist only if m_RefZ has a value, and then will be correct for the value of m_RefZ 
 
     // although the following two values are ZAMS values, they can be calculated for all stars because
     // they only depend on the ZAMS metallicity of the star (COMPAS does not change the metallicity of
     // the star throughout its lifetime, and the metallicity given for a star is the ZAMS metallicity)
-    double m_ZAMSheliumAbundance;                                       // Z-dependent ZAMS helium abundance fraction
-    double m_ZAMShydrogenAbundance;                                     // Z-dependent ZAMS hydrogen abundance fraction
+    std::optional<double> m_ZAMSheliumAbundance;                        // Z-dependent ZAMS helium abundance fraction
+    std::optional<double> m_ZAMShydrogenAbundance;                      // Z-dependent ZAMS hydrogen abundance fraction
 
-    DBL_VECTOR m_LuminosityCoefficients;                                // luminosity coefficients
-    DBL_VECTOR m_RadiusCoefficients;                                    // radius coefficients
+    std::optional<DBL_VECTOR> m_ToutZAMSLuminosityCoefficients;         // Tout luminosity coefficients
+    std::optional<DBL_VECTOR> m_ToutZAMSRadiusCoefficients;             // Tout radius coefficients
 
-    HurleyZdependentT m_HurleyZdependent;                               // Hurley Z-dependent values
-   
+    HurleyZdependentT m_HurleyZdependentValues;                         // Hurley Z-dependent values
+
+    
+    // variables defined in Hurley at al. 2000, but possibly used more widely
+    std::optional<double> m_SigmaHurley;                                // Hurley et al. 2000 p24, sigma = log10(Z)
+
+    std::optional<double> m_ZetaHurley;                                 // Hurley et al. 2000 zeta, p5, just before eq 1 (log10(refZ / ZSOL_HURLEY))
+    std::optional<double> m_ZetaAnders;                                 // Anders zeta (log10(refZ / ZSOL_ANDERS))
+    std::optional<double> m_ZetaAsplund;                                // Asplund zeta (log10(refZ / ZSOL_ASPLUND))
+
+    std::optional<double> m_ZscaledAnders;                              // Z scaled inversely by Anders ZSOL (refZ / ZSOL_ANDERS)
+    std::optional<double> m_ZscaledAsplund;                             // Z scaled inversely by Asplund ZSOL (refZ / ZSOL_ASPLUND)
+    std::optional<double> m_ZscaledHurley;                              // Z scaled inversely by Hurley ZSOL (refZ / ZSOL_HURLEY)
+    
     // ZAMS Z-dependent values
     // these are calculated whenever the reference metallicity changes, and are guaranteed to exist
     // only if m_RefZ has a value *and* the star starts on the main sequence, and then will be correct
@@ -161,18 +175,38 @@ public:
     // if (x) or if (x.has_value()) // "x.value().randomSeed" or "x->randomSeed" or "(*x).randomSeed"
     // return value may not have a value (depends on stack size and lookback count) - caler needs to deal with this possibility
 
+    #define RET_VALUE(x) { if (x.has_value()) { return x.value(); } else { std::cerr << "\nGlobals attribute has no value: program terminated\n"; /*utils::ShowStackTrace();*/ std::exit(1); }}
 
-    double        ReferenceMetallicity() const  { return m_RefZ; } 
+    double ReferenceMetallicity() const { return RET_VALUE(m_RefZ); } 
 
-    DBL_VECTOR    LuminosityCoefficients()      { return m_LuminosityCoefficients; }
+    double SigmaHurley() const          { return RET_VALUE(m_SigmaHurley); }
 
-    std::optional<DBL_VECTOR> ShikauskiAlphaCoefficients()      { return m_ShikauchiACoeffs; }
-    std::optional<DBL_VECTOR> ShikauskifMixCoefficients()       { return m_ShikauchiFCoeffs; }
-    std::optional<DBL_VECTOR> ShikauskiLuminosityCoefficients() { return m_ShikauchiLCoeffs; }
+    double ZetaAnders() const           { return RET_VALUE(m_ZetaAnders); }
+    double ZetaAsplund() const          { return RET_VALUE(m_ZetaAsplund); }
+    double ZetaHurley() const           { return RET_VALUE(m_ZetaHurley); }
+
+    double ZscaledAnders() const        { return RET)VALUE(m_ZscaledAnders); }
+    double ZscaledAsplund() const       { return RET)VALUE(m_ZscaledAsplund); }
+    double ZscaledHurley() const        { return RET)VALUE(m_ZscaledHurley); }
+
+    DBL_VECTOR ShikauschACoefficients() const      { RET_VALUE(m_ShikauchiACoeffs); }
+    DBL_VECTOR ShikauchiFCoefficients() const       { RET_VALUE(m_ShikauchiFCoeffs); }
+    DBL_VECTOR ShikauchiLCoefficients() const { RET_VALUE(m_ShikauchiLCoeffs); }
     
+    std::optional<DBL_VECTOR> ToutZAMSLuminosityCoefficients() const  { return m_ToutZAMSLuminosityCoefficients; }
+    std::optional<DBL_VECTOR> ToutZAMSRadiusCoefficients() const      { return m_ToutZAMSRadiusCoefficients; }
 
+    std::optional<DBL_VECTOR> HurleyACoefficients() const             { return m_HurleyZdependentValues.aCoefficients; }
+    std::optional<DBL_VECTOR> HurleyBCoefficients() const             { return m_HurleyZdependentValues.aCoefficients; }
+    std::optional<DBL_VECTOR> HurleyGammaConstants() const            { return m_HurleyZdependentValues.gammaConstants; }
+    std::optional<DBL_VECTOR> HurleyLuminosityConstants() const       { return m_HurleyZdependentValues.luminosityConstants; }
+    std::optional<DBL_VECTOR> HurleyMassCutoffs() const               { return m_HurleyZdependentValues.massCutoffs; }
+    std::optional<DBL_VECTOR> HurleyRadiusConstants() const           { return m_HurleyZdependentValues.radiusConstants; }
+
+
+    #undev RET_VALUE
     // setters
-    void            SetReferenceMetallicity(const double p_ReferenceMetallicity);
+    void SetReferenceMetallicity(const double p_ReferenceMetallicity);
 
 
 
@@ -186,7 +220,7 @@ public:
                                                                                                 // yes
             refZ = std::max(MAXIMUM_METALLICITY, std::min(refZ, MAXIMUM_METALLICITY));          // clamp it
                                                                                                 // issue warning
-            // ISSUE WARNING & CLAMP TO [MINIMUM, MAXIMUM]  
+            // ISSUE WARNING & CLAMP TO [MINIMUM, MAXIMUM]  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
         }
         
         if (refZ != m_RefZ) {                                                                   // reference metallicity changed?
@@ -195,19 +229,30 @@ public:
 
             // (re)calculate metallicity-dependent values
 
+            m_Sigma          = log10(m_RefZ);
 
-            // the following are evolution-mode independent, and are always recalculated
-            // when the reference metallicity changes
-            m_ZAMSheliumAbundance    = CalculateZAMSHeliumAbundance_Pols_1998(m_RefZ);
-            m_ZAMShydrogenAbundance  = CalculateZAMSHydrogenAbundance_Pols_1998(m_RefZ);
+            m_ZetaAnders     = m_Sigma - LOG10_ZSOL_ANDERS;
+            m_ZetaAsplund    = m_Sigma - LOG10_ZSOL_ASPLUND;
+            m_ZetaHurley     = m_Sigma - LOG10_ZSOL_HURLEY;
+
+            m_ZscaledAnders  = m_RefZ / ZSOL_ANDERS;
+            m_ZscaledAsplund = m_RefZ / ZSOL_ASPLUND;
+            m_ZscaledHurley  = m_RefZ / ZSOL_HURLEY;
+
+            // The following values are evolution-mode independent, and are always recalculated
+            // when the reference metallicity changes.
+            // These values are not wrapped in std::optional<>
+            m_ZAMSheliumAbundance   = CalculateZAMSHeliumAbundance_Pols(m_RefZ);
+            m_ZAMShydrogenAbundance = CalculateZAMSHydrogenAbundance_Pols(m_RefZ);
                                                                                             
-            m_LuminosityCoefficients = CalculateLuminosityCoefficients_Tout_1996(m_HurleyZdependentValues.zeta);
-            m_RadiusCoefficients     = CalculateRadiusCoefficients_Tout_1996(m_HurleyZdependentValues.zeta);
+            m_ToutZAMSLuminosityCoefficients = CalculateZAMSLuminosityCoefficients_Tout(m_ZetaHurley);
+            m_ToutZAMSRadiusCoefficients     = CalculateZAMSRadiusCoefficients_Tout(m_ZetaHurley);
 
             // Shikauchi et al. 2024 coefficients are only calculated if the BRCEK MS core mass
             // prescription was specified, and star starts on the main sequence
+            // These values are wrapped in std::optional<>
             if (OPTIONS->MainSequenceCoreMassPrescription() == MS_CORE_MASS_PRESCRIPTION::BRCEK &&
-                utils::IsOneOf(OPTIONS->StellarType(), STELLAR_TYPE_LIST::MAIN_SEQUENCE)) {
+                utils::IsOneOf(OPTIONS->StellarType(), MAIN_SEQUENCE) {
                 std::tie(m_ShikauchiACoeffs, m_ShikauchiFCoeffs, m_ShikauchiLyCoeffs) = CalculateShikauchiCoefficients(m_RefZ);
             }
 
@@ -217,7 +262,7 @@ public:
 
                 EVOLUTION_MODE::SSE_HURLEY:                                                     // HURLEY SSE
                 EVOLUTION_MODE::BSE_HURLEY:                                                     // HURLEY BSE
-                    m_HurleyZdependentValues = CalculateHurleyZdependentValues(m_RefZ, m_HurleyZdependentValues);
+                    m_HurleyZdependentValues = CalculateHurleyZdependentValues(m_RefZ, m_Sigma, m_ZetaHurley, m_HurleyZdependentValues);
                     break;
         
                 default:                                                                        // unknown mode
@@ -238,11 +283,11 @@ public:
     // member functions
 
 
-    GNU_PURE  DBL_VECTOR CalculateLuminosityCoefficients_Tout_1996(const double p_Zeta) const;
-    GNU_PURE  DBL_VECTOR CalculateRadiusCoefficients_Tout_1996(const double p_Zeta) const;
+    GNU_PURE  DBL_VECTOR CalculateZAMSLuminosityCoefficients_Tout(const double p_Zeta) const;
+    GNU_PURE  DBL_VECTOR CalculateZAMSRadiusCoefficients_Tout(const double p_Zeta) const;
 
-    GNU_CONST double     CalculateZAMSHeliumAbundance_Pols_1998(const double p_RefZ) const;
-    GNU_CONST double     CalculateZAMSHydrogenAbundance_Pols_1998(const double p_RefZ) const;
+    GNU_CONST double     CalculateZAMSHeliumAbundance_Pols(const double p_RefZ) const;
+    GNU_CONST double     CalculateZAMSHydrogenAbundance_Pols(const double p_RefZ) const;
     
     GNU_PURE  HurleyZdependentT CalculateHurleyZdependentValues(const double p_RefZ);
 

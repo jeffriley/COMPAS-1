@@ -51,14 +51,14 @@ class Star {
 
 public:
 
-    Star();
+//    Star();
 
     Star(const STARTING_STELLAR_TYPE p_StartingStellarType,
          const unsigned long int     p_RandomSeed, 
          const double                p_Metallicity, 
          const double                p_Mass, 
          const KickParameters        p_KickParameters,
-         const double                p_RotationalVelocity = -1.0); 
+         const double                p_RotationalFrequency = -1.0); 
 
     Star(const Star& p_Star);
 

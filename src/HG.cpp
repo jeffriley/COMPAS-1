@@ -810,28 +810,37 @@ double HG::CalculateLuminosityAtPhaseEnd(const double p_Mass) const {
 }
 
 
+
+
+
+
 /*
- * Calculate luminosity on the Hertzsprung Gap
+ * CalculateLuminosityOnPhase_Hurley_Static
  *
- * Hurley et al. 2000, eq 26
+ * @brief
+ * Calculate luminosity on the Hertzsprung Gap, per Hurley et al. 2000, eq 26
  *
  *
- * double CalculateLuminosityOnPhase(const double p_Age, const double p_Mass)
+ * double CalculateLuminosityOnPhase_Hurley_Static(const double p_Mass, const double p_Age, const DBL_VECTOR& p_Timescales)
  *
- * @param   [IN]    p_Age                       Effective age in Myr
- * @param   [IN]    p_Mass                      Mass in Msol
- * @return                                      Luminosity on the HG in Lsol
+ * @param       p_Mass                          Mass of the star (Msol)
+ * @param       p_Age                           Effective age of the star (Myr)
+ * @param       p_Timescales                    Hurley timescales
+ * @return                                      HG luminosity (Lsol)
  */
-double HG::CalculateLuminosityOnPhase(const double p_Age, const double p_Mass) const {
+double HG::CalculateLuminosityOnPhase_Hurley_Static(const double p_Mass, const double p_Age, const DBL_VECTOR& p_Timescales) const {
 
-    double LTMS = MainSequence::CalculateLuminosityAtPhaseEnd(p_Mass);
-    double LEHG = CalculateLuminosityAtPhaseEnd(p_Mass);
-    double tMS  = timescales(tMS);
-    double tBGB = timescales(tBGB);
-    double tau  = (p_Age - tMS) / (tBGB - tMS);
+    const double tMS  = p_Timescales[static_cast<int>(TIMESCALE::tMS)];
+    const double tau  = (p_Age - tMS) / (p_Timescales[static_cast<int>(TIMESCALE::tBGB)] - tMS);
+    const double LTMS = MainSequence::CalculateLuminosityAtPhaseEnd(p_Mass);
 
-    return LTMS * PPOW((LEHG / LTMS), tau);
+    return LTMS * PPOW((CalculateLuminosityAtPhaseEnd(p_Mass) / LTMS), tau);
 }
+
+
+
+
+
 
 
 ///////////////////////////////////////////////////////////////////////////////////////
@@ -860,23 +869,34 @@ double HG::CalculateRadiusAtPhaseEnd(const double p_Mass) const {
 
 
 /*
- * Calculate radius on the Hertzsprung Gap
+ * CalculateRadiusOnPhase_Hurley_Static
  *
- * Uses a modified version Hurley et al. 2000, eq 27
- * See Hurley sse code `hrdiag.f` lines 92, 188-203
- * Here we replace the numerator, REHG, with the GB radius if mass is below the threshold for He ignition,
- * and a calculated value if mass is above the threshold for He ignition (see code below)
+ * @brief
+ * Calculate the radius on the Hertzsprung Gap, using a modified version of Hurley et al. 2000, eq 27.
+ * See Hurley SSE code `hrdiag.f` lines 92, 188-203.  Here we replace the numerator, REHG, with the
+ * GB radius if mass is below the threshold for He ignition, and a calculated value if mass is above
+ * the threshold for He ignition (see code below)
  *
  *
- * double CalculateRadiusOnPhase(const double p_Mass, const double p_Tau, const double p_RZAMS)
+ * double CalculateRadiusOnPhase_Hurley_Static(const double      p_Mass, 
+ *                                             const double      p_Tau,
+ *                                             const double      p_RZAMS,
+ *                                             const DBL_VECTOR& p_MassCuttoffs,
+ *                                             const DBL_VECTOR& p_bN) const
  *
- * @param   [IN]    p_Mass                      Mass in Msol
- * @param   [IN]    p_Tau                       Relative age
- * @param   [IN]    p_RZAMS                     Zero Age Main Sequence (ZAMS) Radius
- * @return                                      Radius on the Hertzsprung Gap in Rsol
+ * @param       p_Mass                          Mass of the star (Msol)
+ * @param       p_Tau                           HG fractional age of the star
+ * @param       p_RZAMS                         ZAMS radius of the star (Rsol)
+ * @param       p_bN                            Hurley b(n) coefficients
+ * @return                                      HG radius (Rsol)
  */
-double HG::CalculateRadiusOnPhase(const double p_Mass, const double p_Tau, const double p_RZAMS, const DBL_VECTOR p_bCoefficients) const {
-#define b p_bCoefficients // for convenience and readability - undefined at end of function
+double HG::CalculateRadiusOnPhase_Hurley_Static(const double      p_Mass, 
+                                                const double      p_Tau,
+                                                const double      p_RZAMS,
+                                                const DBL_VECTOR& p_MassCuttoffs,
+                                                const DBL_VECTOR& p_bN) const {
+
+                                                    // p_Alpha1
 
     double RTMS;  
     if ((OPTIONS->MainSequenceCoreMassPrescription() == MS_CORE_MASS_PRESCRIPTION::BRCEK) && (utils::Compare(m_MZAMS, BRCEK_LOWER_MASS_LIMIT) >= 0))
@@ -886,20 +906,23 @@ double HG::CalculateRadiusOnPhase(const double p_Mass, const double p_Tau, const
     else
         RTMS = MainSequence::CalculateRadiusAtPhaseEnd(p_Mass, p_RZAMS);
 
-    double RGB = GiantBranch::CalculateRadiusOnPhase_Static(p_Mass, m_Luminosity, b);
 
-    double rx  = RGB;                                                                                               // Hurley sse terminlogy (rx)
 
-    if (utils::Compare(p_Mass, massCutoffs(MFGB)) > 0) {                                                            // mass above threshold for He ignition?
-                                                                                                                    // yes
+
+    const double RGB = GiantBranch::CalculateRadiusOnPhase_Static(p_Mass, m_Luminosity, p_bN);
+
+    double rx = RGB;                                                                                                   // rx in Hurley SSE Fortran code
+
+    if (p_Mass > p_MassCuttoffs[static_cast<int>(MASS_CUTOFF::MFGB)]) {                                                 // mass above threshold for He ignition?
+                                                                                                                        // yes
         // rMinHe is Hurley et al. 2000, eq 55 - first part (M >= MHeF)
-        double m_b28 = PPOW(p_Mass, b[28]);                                                                         // pow() is slow - do it once only
-        double rMinHe = ((b[24] * p_Mass) + (PPOW((b[25] * p_Mass), b[26]) * m_b28)) / (b[27] + m_b28);             // this is 'rmin' in Hurley sse 
+        const double Mb28   = PPOW(p_Mass, p_bN[28]);                                                                   // pow() is slow - do it once only
+        const double rMinHe = ((p_bN[24] * p_Mass) + (PPOW((p_bN[25] * p_Mass), p_bN[26]) * Mb28)) / (p_bN[27] + Mb28); // rmin in Hurley SSE Fortran code
+        const double lum    = GiantBranch::CalculateLuminosityAtHeIgnition_Static(p_Mass, p_Alpha1, p_MassCuttoffs[static_cast<int>(MASS_CUTOFF::MHeF)], p_bN);
 
-        double lum = GiantBranch::CalculateLuminosityAtHeIgnition_Static(p_Mass, m_Alpha1, massCutoffs(MHeF), b);
-
-        // In the Hurley sse code mt (m_Mass) is used here (mass (m_Mass0) everywhere else)
-        double ry  = EAGB::CalculateRadiusOnPhase_Static(m_Mass, lum, massCutoffs(MHeF), b);                        // Hurley sse terminology (ry)
+        // mt (m_Mass) is used here in the Hurley SSE Fortran code, (mass (m_Mass0) everywhere else)
+        // ry in Hurley SSE Fortran code
+        const double ry = EAGB::CalculateRadiusOnPhase_Static(m_Mass, lum, p_MassCuttoffs[static_cast<int>(MASS_CUTOFF::MHeF)], p_bN);
 
         // calculate radius at He ignition for MFGB < p_Mass < HM
         // Hurley et al. 2000, eq 50
@@ -907,14 +930,14 @@ double HG::CalculateRadiusOnPhase(const double p_Mass, const double p_Tau, const
         rx = std::min(rMinHe, ry);
         
         if (utils::Compare(p_Mass, HIGH_MASS_THRESHOLD) < 0) {
-            double mu = log10(p_Mass / HIGH_MASS_THRESHOLD) / log10(massCutoffs(MFGB) / HIGH_MASS_THRESHOLD);
-            rx        = rMinHe * PPOW(RGB / rMinHe, mu);
+            const double mu = log10(p_Mass / HIGH_MASS_THRESHOLD) / log10(p_MassCuttoffs[static_cast<int>(MASS_CUTOFF::MFGB)] / HIGH_MASS_THRESHOLD);
+            rx = rMinHe * PPOW(RGB / rMinHe, mu);
         }
 
         // this piece of code resets rx if the blue loop is relatively short
-        // see Hurley sse, function tblf() in `zfuncs1.f`
-        double r1 = 1.0 - rMinHe / ry;
-        r1        = std::max(r1, 1.0E-12);     // JR: I suspect this is where the check came from in the dicussion re blue loop in CHeB::CalculateTimescales() - I don't like this much... **Ilya**
+        // see Hurley SSE Fortran code, function tblf() in `zfuncs1.f`
+        // JR: I suspect this is where the check came from in the dicussion re blue loop in CHeB::CalculateTimescales() - I don't like this much... **Ilya**
+        const double r1 = std::max(1.0 - rMinHe / ry, 1.0E-12); 
 
         double tblf = (1.0 - b[47]) * PPOW(p_Mass, b[48]) * PPOW(r1, b[49]);                                        // calculate blue-loop fraction of He-burning
         tblf = std::min(1.0, std::max(0.0, tblf));                                                                  // clamp to [0.0, 1.0]

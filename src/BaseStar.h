@@ -22,19 +22,81 @@
 
 class BaseStar {
     
+
+    class StarState: public State::StarState;
+        
 public:
     
-    BaseStar();
+//    BaseStar();
+
+
+    BaseStar::BaseStar(const STELLAR_TYPE      p_StellarType;
+                       const unsigned long int p_RandomSeed, 
+                       const double            p_Mass,
+                       const double            p_Metallicity,
+                       const KickParameters    p_KickParameters,
+                       const double            p_AngularFrequency) {
+
+        // initialise as much of the first state of the star as possible
+        // The state history stack has already been initialised - the single
+        // entry is the first state of the star
+
+        // set state attributes supplied as parameters
+        m_State.SetAngularFrequency(p_AngularFreqency);
+        m_State.SetMass(p_Mass);
+        m_State.SetMassEffective(p_Mass);
+        m_State.SetMetallicity(p_Metallicity);
+        m_State.SetKickParameters(p_KickParameters);
+        m_State.SetRandomSeed(p_RandomSeed);
+        m_State.SetStellarType(p_StellarType);
+
+        // set, or calculate where possible/necessary, remaining state attributes
+
+        m_State.SetError(ERROR::NONE);
+        m_State.SetEvolutionStatus(EVOLUTION_STATUS::CONTINUE);
+
+        m_State.SetLuminosity(CalculateLuminosityAtZAMS(p_Mass));
+        m_State.SetLuminosityEffective(m_State.Luminosity());
+
+        m_State.SetRadius(CalculateRadiusAtZAMS(p_Mass));
+        m_State.SetRadiusEffective(m_State.Radius());
+
+        m_State.SetTemperature(CalculateTemperatureOnPhase_Static(m_State.Luminosity(), m_State.Radius()));
+
+        m_State.SetTime(0.0);
+        m_State.SetTau(0.0);
+
+
+//m_AngularMomentum                          = CalculateMomentOfInertiaAU() * m_OmegaZAMS;
+
+
+
+
+
+    //stateZero.coreMass            = 0.0;                        // to be calculated
+    //stateZero.coreMassMS          = 0.0;                        // to be calculated
+    //stateZero.coreMassCO          = 0.0;                        // to be calculated
+    //stateZero.coreMassHe          = 0.0;                        // to be calculated
+    
+  
+
+
+    //stateZero.dt                  = 0.0;                        // initially
+    //stateZero.dMdt                = 0.0;                        // initially
+
+
+    }
+        
     virtual ~BaseStar() {}
 
-    /*
-    BaseStar(const unsigned long int p_RandomSeed,
-             const double            p_MZAMS,
-             const double            p_Metallicity,
-             const KickParametersT   p_KickParameters,
-             const double            p_RotationalVelocity = -1.0);
-    */
     
+
+
+
+
+
+
+
     /*
      * The following Clone() functions should be used to clone a star - any steller type, including BaseStar.
      * The BaseStar functions will never actually be executed - the derived functions will be called as required.
@@ -81,8 +143,8 @@ public:
 
 
 
-    STELLAR_TYPE                StartingStellarType() const                             { return m_StartingStellarType; }
-    STELLAR_TYPE                StellarType() const                                     { return m_StellarType; }
+//    STELLAR_TYPE                StartingStellarType() const                             { return m_StartingStellarType; }
+//    STELLAR_TYPE                StellarType() const                                     { return m_StellarType; }
 //    STELLAR_TYPE                StellarTypePrev() const                                 { return m_StellarTypePrev; }
     
     
@@ -211,6 +273,9 @@ public:
     //
     // *** setter implementations should generally be very short
 
+
+ 
+
     void                        AdvanceAgeAndTime(const double p_dt)                            {
                                                                                                     if (p_dt > 0.0) {                                                               // Only if delta > 0.0 (don't use utils::Compare() here)
                                                                                                         m_Age  += p_dt;                                                             // Advance age of star
@@ -220,7 +285,6 @@ public:
     void                        AdvanceAgeAndTime()                                             { AdvanceAgeAndTime(m_dt); }                                        // Use class member variable
 
     void                        SetAngularMomentum(double p_AngularMomentum)                    { m_AngularMomentum = std::max(p_AngularMomentum, 0.0); }
-    void                        SetInitialType(const STELLAR_TYPE p_InitialType)                { m_InitialStellarType = p_InitialType; }
     void                        SetError(const ERROR p_Error)                                   { m_Error = p_Error; }
     void                        SetObjectId(const OBJECT_ID p_ObjectId)                         { m_ObjectId = p_ObjectId; }
     void                        SetPersistence(const OBJECT_PERSISTENCE p_Persistence)          { m_ObjectPersistence = p_Persistence; }
@@ -312,7 +376,7 @@ public:
     
     double                      CalculateNuclearMassLossRate()                                                  { return m_Mass / CalculateRadialExpansionTimescaleDuringMassTransfer(); }
         
-    double                      CalculateOmegaCHE(const double p_MZAMS, const double p_Metallicity) const;
+    GNU_PURE double CalculateCHEAngularFrequency_Static(const double p_MZAMS, const double p_Metallicity) const;
 
     double                      CalculateRadialChange() const                                                   { return (utils::Compare(m_RadiusPrev,0) <= 0)? 0 : std::abs(m_Radius - m_RadiusPrev) / m_RadiusPrev; } // Return fractional radial change (if previous radius is negative or zero, return 0 to avoid NaN
     double                      CalculateRadialExpansionTimescale() const                                       { return CalculateRadialExpansionTimescale_Static(m_StellarType, m_StellarTypePrev, m_Radius, m_RadiusPrev, m_dtPrev); } // Use class member variables
@@ -419,8 +483,8 @@ protected:
     OBJECT_ID               m_ObjectId;                                 // Instantiated object's unique object id
     OBJECT_PERSISTENCE      m_ObjectPersistence;                        // Instantiated object's persistence (permanent or ephemeral)
 
-
-    StateHistory                m_StateHistory;
+    StarState               m_State;
+    StateHistory            m_StateHistory(m_State);
 
 
 
@@ -626,7 +690,7 @@ protected:
 
 
     virtual std::tuple<double, MASS_LOSS_TYPE>  CalculateMassLossRate() const;
-    virtual double                              CalculateMassLossRateBelczynski2010() const;
+    virtual double CalculateMassLossRateBelczynski2010() const;
 
     /*
      * CalculateMassLossRateEnhancementForRotatingStars
@@ -650,9 +714,9 @@ protected:
     }
 
     /*
-     * CalculateMassLossRateHeliumStarVink2017
+     * CalculateMassLossRateHeliumStarVink2017_Static
      *
-     * Calculate the mass-loss rate for helium stars per Vink 2017
+     * Calculate the mass-loss rate for low-mass helium stars per Vink 2017
      * https://ui.adsabs.harvard.edu/abs/2017A%26A...607L...8V/abstract eq. 1
      *
      * Uses current values of:
@@ -660,12 +724,16 @@ protected:
      *    - m_Luminosity
      * 
      * 
-     * double CalculateMassLossRateHeliumStarVink2017() const
+     * std::tuple<double, MASS_LOSS_TYPE> CalculateMassLossRateHeliumStarVink2017_Static(const double, p_Luminosity, const double p_ZetaAnders) const
      *
-     * @return                                      Mass loss rate (Msol yr^-1)
+     * @param       p_Luminosity                    Luminosity of the star (Lsol)
+     * @param       p_ZetaAnders                    Zeta using ZSOL_ANDERS (see GLOBALS class)
+     * @return                                      Tuple containing:
+     *                                                   DOUBLE         Mass loss rate (Msol yr^-1)
+     *                                                   MASS_LOSS_TYPE dominant mass loss type (will be MASS_LOSS_TYPE::WR)
      */
-    double CalculateMassLossRateHeliumStarVink2017() const {
-        return PPOW(10.0, -13.3 + 1.36 * log10(m_Luminosity) + 0.61 * LogMetallicityXiAnders());
+    GNU_CONST inline static std::tuple<double, MASS_LOSS_TYPE> CalculateMassLossRateHeliumStarVink2017_Static(const double, p_Luminosity, const double p_ZetaAnders) const {
+        return std::make_tuple(PPOW(10.0, -13.3 + 1.36 * log10(p_Luminosity) + 0.61 * p_ZetaAnders), MASS_LOSS_TYPE:WR);
     }
 
 
@@ -855,35 +923,39 @@ protected:
     
     
     
-    double              CalculateMassLossRateWolfRayetSanderVink2020(const double p_Mu) const;
-    virtual double      CalculateMassLossRateWolfRayetShenar2019() const;
+    static std::tuple<double, MASS_LOSS_TYPE> CalculateMassLossRateWRSanderVink2020_Static(const double p_Luminosity, const double p_Mu, const double p_ZetaAnders) const;
+
+
     double              CalculateMassLossRateWolfRayetTemperatureCorrectionSander2023(const double p_Mdot) const;
 
 
     /*
-     * CalculateMassLossRateWolfRayetZDependent
+     * CalculateMassLossRateWRZDependent_Static
      *
-     * Calculate the Wolf-Rayet like mass loss rate for small hydrogen-envelope mass (when mu < 1.0).
-     * Belczynski et al. 2010, eq 9 (taken from Hamann, Koesterke & Wessolowski 1995, Hamann & Koesterke 1998)
+     * @brief
+     * Calculate the Wolf-Rayet like mass loss rate for small hydrogen-envelope mass (mu < 1.0),
+     * per Belczynski et al. 2010, eq 9
+     * (taken from Hamann, Koesterke & Wessolowski 1995, Hamann & Koesterke 1998)
      *
-     * Note that the reduction of this formula is imposed to match the observed number of black holes in binaries (Hurley et al. 2000)
-     *
-     * Uses current values of:
-     * 
-     *    - m_Luminosity
-     *    - m_Metallicity
+     * Note that the reduction of this formula is imposed to match the observed number of black holes
+     * in binaries (Hurley et al. 2000)
      *
      *
-     * double CalculateMassLossRateWolfRayetZDependent(const double p_Mu) const
+     * std::tuple<double, MASS_LOSS_TYPE> CalculateMassLossRateWRZDependent_Static(const double p_Metallicity, const double p_Luminosity, const double p_Mu) const
      *
-     * @param   [IN]    p_Mu                        Small envelope parameter (see Hurley et al. 2000, eq 97 & 98)
-     * @return                                      Mass loss rate (Msol yr^-1)
+     * @param       p_Metallicity                   (Fractional) wetallicity of the star
+     * @param       p_Luminosity                    Luminosity of the star (Lsol)
+     * @param       p_Mu                            Small envelope parameter (see Hurley et al. 2000, eq 97 & 98)
+     * @return                                      Tuple containing:
+     *                                                   DOUBLE         WR mass loss rate (Msol yr^-1)
+     *                                                   MASS_LOSS_TYPE dominant mass loss type (will be MASS_LOSS_TYPE::WR)
      */
-    double BaseStar::CalculateMassLossRateWolfRayetZDependent(const double p_Mu) const {
-    // StarTrack may still do something different here.  There are references to Hamann & Koesterke 1998
-    // and Vink and de Koter 2005.
-    // TW - Haven't seen StarTrack but I think H&K gives the original equation and V&dK gives the Z dependence
-        return p_Mu >= 1.0 ? 0.0 : 1.0E-13 * PPOW(m_Luminosity, 1.5) * PPOW(m_Metallicity / ZSOL_ANDERS, 0.86) * (1.0 - p_Mu);  // don't use utils::Compare() for thresholds
+    std::tuple<double, MASS_LOSS_TYPE> BaseStar::CalculateMassLossRateWRZDependent_Static(const double p_Metallicity, const double p_Luminosity, const double p_Mu) const {
+        // StarTrack may still do something different here.
+        // There are references to Hamann & Koesterke 1998 and Vink and de Koter 2005.
+        // TW - Haven't seen StarTrack but I think H&K gives the original equation and V&dK gives the Z dependence
+        const double dMdt = p_Mu >= 1.0 ? 0.0 : 1.0E-13 * PPOW(p_Luminosity, 1.5) * PPOW(p_Metallicity / ZSOL_ANDERS, 0.86) * (1.0 - p_Mu);
+        return std::make_tuple(dMdt, MASS_LOSS_TYPE::WR);
     }    
 
 
@@ -943,7 +1015,8 @@ protected:
 
     void                CalculateRCoefficients(const double p_LogMetallicityXi, DBL_VECTOR &p_RCoefficients) const;
 
-    double              CalculateRotationalVelocity(double p_MZAMS);
+    GNU_PURE double CalculateZAMSAngularFrequency_Hurley_Static(const double p_MZAMS, const double p_RZAMS);
+    GNU_PURE double CalculateZAMSRotationalVelocity_Static(double p_MZAMS);
 
     virtual double      CalculateTauOnPhase() const                                                                     { return m_Tau; }                                                           // Default is NO-OP
     virtual double      CalculateTauAtPhaseEnd() const                                                                  { return m_Tau; }                                                           // Default is NO-OP
@@ -958,7 +1031,6 @@ protected:
     virtual void        CalculateTimescales()                                                                           { CalculateTimescales(m_Mass0, m_Timescales); }                             // Use class member variables
     virtual void        CalculateTimescales(const double p_Mass, DBL_VECTOR &p_Timescales) { }                                                                                                      // Default is NO-OP
 
-    double              CalculateZAMSAngularFrequency(const double p_MZAMS, const double p_RZAMS);
 
     double              CalculateZetaAdiabaticHurley2002(const double p_CoreMass) const;
     double              CalculateZetaAdiabaticSPH(const double p_CoreMass) const;
@@ -1167,30 +1239,25 @@ inline double BaseStar::CalculateLuminosityAtBAGB(double p_Mass) const {
 
 
 /*
- * CalculateMassLossRateWolfRayetShenar2019
+ * CalculateMassLossRateWRShenar2019_Static
  *
- * Calculate the mass-loss rate for Wolf--Rayet stars according to the
- * prescription of Shenar et al. 2019 (https://ui.adsabs.harvard.edu/abs/2019A%26A...627A.151S/abstract)
+ * Calculate the mass-loss rate for Wolf--Rayet stars per Shenar et al. 2019, eq 6, tbl 5
+ * (https://ui.adsabs.harvard.edu/abs/2019A%26A...627A.151S/abstract)
  * 
- * See their Eq. 6 and Table 5
- * 
- * We use the fitting coefficients for hydrogen rich WR stars (e.g., WNh)
- * The C4 (X_He) term is = 0 and is omitted
- *
- * Uses current values of:
- * 
- *    - m_Log10Metallicity
- *    - m_Luminosity
- *    - m_Temperature
+ * We use the fitting coefficients for hydrogen rich WR stars (e.g., WNh).
+ * The C4 (X_He) term is = 0 and is omitted.
  *  
  * 
- * double CalculateMassLossRateWolfRayetShenar2019()
+ * std::tuple<double, MASS_LOSS_TYPE> CalculateMassLossRateWRShenar2019_Static(const double p_Luminosity, const double p_Temperature, const double p_SigmaHurley) const
  *
+ * @param       p_Luminosity                    Luminosity of the star (Lsol)
+ * @param       p_Temperature                   Temperature of the star (Tsol)
+ * @param       p_SigmaHurley                   Sigma from Hurley et al. 2000 p24, sigma = log10(Z)
  * @return                                      Tuple containing:
  *                                                   DOUBLE         WR mass loss rate (Msol yr^-1)
  *                                                   MASS_LOSS_TYPE dominant mass loss type (will be MASS_LOSS_TYPE::WR)
  */
-std::tuple<double, MASS_LOSS_TYPE> BaseStar::CalculateMassLossRateWolfRayetShenar2019() const {
+std::tuple<double, MASS_LOSS_TYPE> BaseStar::CalculateMassLossRateWRShenar2019_Static(const double p_Luminosity, const double p_Temperature, const double p_SigmaHurley) const {
 
     // For H-rich WR stars (X_H > 0.4)
     constexpr double C1 = -6.78;
@@ -1198,7 +1265,7 @@ std::tuple<double, MASS_LOSS_TYPE> BaseStar::CalculateMassLossRateWolfRayetShena
     constexpr double C3 = -0.12;
     constexpr double C5 =  0.74;
 
-    return std::make_tuple(PPOW(10.0, C1 + (C2 * log10(m_Luminosity)) + (C3 * log10(m_Temperature * TSOL)) + (C5 * m_Log10Metallicity)), MASS_LOSS_TYPE::WR);
+    return std::make_tuple(PPOW(10.0, C1 + (C2 * log10(p_Luminosity)) + (C3 * log10(p_Temperature * TSOL)) + (C5 * p_SigmaHurley)), MASS_LOSS_TYPE::WR);
 }
 
 

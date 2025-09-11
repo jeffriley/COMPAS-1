@@ -1,51 +1,74 @@
-#include "Star.h"
+// star class is a container holding the underlying object of the required stellar type
+// needs to be done this way so that underlying object can be deleted and reconstructed
+// as the required class for the stellar type
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
 #include <algorithm>
 #include <csignal>
 #include <fenv.h>
 
+#include "Star.h"
+
+
 // Default constructor
-Star::Star() : m_Star(new BaseStar()) {
+//Star::Star() : m_Star(new BaseStar()) {
+//
+//    m_ObjectId          = globalObjectId++;                                                                             // set object id
+//    m_ObjectPersistence = OBJECT_PERSISTENCE::PERMANENT;                                                                // set object persistence
+//}
 
-    m_ObjectId          = globalObjectId++;                                                                         // set object id
-    m_ObjectPersistence = OBJECT_PERSISTENCE::PERMANENT;                                                            // set object persistence
-}
 
-
-// Regular constructor - with parameters for RandomSeed, MZAMS, Metallicity, and KickParameters
 Star::Star(const STARTING_STELLAR_TYPE p_StartingStellarType,
            const unsigned long int     p_RandomSeed,
            const double                p_Metallicity, 
            const double                p_Mass,
            const KickParameters        p_KickParameters,
-           const double                p_RotationalVelocity) {
+           const double                p_RotationalFrequency) {
 
     m_ObjectId          = globalObjectId++;                                                                             // set object id
     m_ObjectPersistence = OBJECT_PERSISTENCE::PERMANENT;                                                                // set object persistence
-   
-    m_Star = new BaseStar();                                                                                            // create underlying BaseStar object
 
-    // switch the star to the specified starting stellar type
-    // if specified starting stellar type is main seqiuence, check whether the star is
-    // spinning fast enough for it to be chemically homogeneous, and if so, switch to CH
+    double angularFrequency = (p_RotationalFrequency >= 0.0) ? SECONDS_IN_YEAR * _2_PI * p_RotationalFrequency : 0.0;   // use rotational frequency if supplied
+
+    // We need to convert the starting stellar type passed in to an actual stellar type so we can construct
+    // a star of that type.  For most stellar types the mapping from starting stellar type to actual stellar
+    // type is 1:1, but for the MS starting stellar type we need to deterine if the actual stellar type will
+    // be MS_LTE_07, MS_GT_07, or CH (Chemically Homeogeneous).
+    //
+    // If CHE is enabled (OPTIONS->CHEMode(), program option `--chemically-homogeneous-evolution-mode`), and
+    // if the ZAMS angular frequency of the star is greater than the threshold for CHE to occur, the stellar
+    // type of the star will be CH, otherwise MS_LTE_07 or MS_GT_07 depending upon the ZAMS mass of the star.
+
     STELLAR_TYPE startingStellarType = static_cast<STELLAR_TYPE>(static_cast<int>(p_StartingStellarType));              // fix up starting stellar type
-    if (utils::IsOneOf(startingStellarType, MAIN_SEQUENCE)) {                                                           // starting stellar type MS?
-        if (OPTIONS->CHEMode() != CHE_MODE::NONE && utils::Compare(m_Star->Omega(), m_Star->OmegaCHE()) >= 0) {         // yes - fast enough to be CH?
-            startingStellarType = STELLAR_TYPE::CHEMICALLY_HOMOGENEOUS;                                                 // yes - set starting stellar type to CH
-            (void)SwitchTo(STELLAR_TYPE::CHEMICALLY_HOMOGENEOUS, true);                                                 // switch to CH
+
+    if (utils::IsOneOf(startingStellarType, MAIN_SEQUENCE)) {                                                           // starting stellar type MS (won't be CH here)?
+        if (OPTIONS->CHEMode() != CHE_MODE::NONE) {                                                                     // yes - CHE enabled?
+                                                                                                                        // yes
+            if (p_RotationalFrequency < 0.0) {                                                                          // rotational frequency supplied?
+                const double RZAMS = CalculateZAMSRadius_Tout_Static(p_Mass, GLOBALS->ToutRadiusCoefficients());        // no
+                angularFrequency   = BaseStar::CalculateZAMSAngularFrequency_Hurley_Static(p_Mass, RZAMS);              // calculate ZAMS omega
+            }
+            
+            if (angularFrequency >= BaseStar::CalculateCHEAngularFrequency_Static(p_Mass, p_Metallicity)) {             // rotating fast enough to be CH?
+                startingStellarType = STELLAR_TYPE::CHEMICALLY_HOMOGENEOUS;                                             // yes - set starting stellar type to CH
+            }
         }
-        else if (p_Mass <= 0.7) {                                                                                       // no, not CH - initial mass determines actual type
-            (void)SwitchTo(STELLAR_TYPE::MS_LTE_07, true);                                                              // mass <= 0.7 Msol: switch to MS_LTE_07
-        }
-        else {
-            (void)SwitchTo(STELLAR_TYPE::MS_GT_07, true);                                                               // mass > 0.7 Msol: switch to MS_GT_07
+
+        if (startingStellarType != STELLAR_TYPE::CHEMICALLY_HOMOGENEOUS) {                                              // CH?
+            if (p_Mass <= 0.7) {                                                                                        // no - mass <= 0.7?
+                startingStellarType = STELLAR_TYPE::MS_LTE_07;                                                          // yes, set starting stellar type to MS_LTE_07
+            }
+            else {                                                                                                      // no
+                startingStellarType = STELLAR_TYPE::MS_GT_07;                                                           // set starting stellar type to MS_GT_07
+            }
         }
     }
-    else (void)SwitchTo(stellarType, true);                                                                             // no, not MS - switch to specified starting stellar type
 
-    // initialise the state history of the star
-    // since the star has now switched to the specified starting stellar type, each
-    // star is able to determine its starting state according to its stellar type.
-    m_Star->InitialiseState(p_RandomSeed, p_Metallicity, p_Mass, p_KickParameters, p_RotationalVelocity);
+    // construct a BaseStar object
+    m_Star = new BaseStar(startingStellarType, p_RandomSeed, p_Metallicity, p_Mass, p_KickParameters, angularFrequency);                                                                                            // create underlying BaseStar object
+    
+    // switch to specified starting stellar type
+    (void)SwitchTo(startingStellarType, true);
 
     // thresholds flags for system snapshot output file
     if (OPTIONS->SystemSnapshotAgeThresholds().size()  > 0) m_SystemSnapshotAgeFlags.assign(OPTIONS->SystemSnapshotAgeThresholds().size(), -1.0);
@@ -121,7 +144,7 @@ STELLAR_TYPE Star::SwitchTo(const STELLAR_TYPE p_StellarType, bool p_SetInitialT
             delete m_Star;
             m_Star = ptr;
 
-            if (p_SetInitialType) m_Star->SetInitialType(p_StellarType);
+            if (p_SetInitialType) m_Star->SetInitialType(p_StellarType);   // CHECK THIS - NOT INITIAL, JUST TYPE????????????????????????????????
         }
 
         // write to switch log file if required

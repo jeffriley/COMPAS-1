@@ -103,7 +103,17 @@ protected:
     double          CalculateLambdaLoveridge(const double p_EnvMass, const bool p_IsMassLoss = false) const;
     double          CalculateLambdaNanjingStarTrack(const double p_Mass, const double p_Metallicity) const;
     double          CalculateLambdaNanjingEnhanced(const int p_MassIndex, const STELLAR_POPULATION p_StellarPop) const;
+
     
+
+
+GNU_CONST double CalculateLuminosityOnPhase_Hurley_Static(const double p_Mass, const double p_Age, const DBL_VECTOR& p_Timescales) const;
+
+GNU_CONST double CalculateRadiusOnPhase_Hurley_Static(const double p_Mass, const double p_Tau, const double p_RZAMS, const DBL_VECTOR& p_bN) const;
+
+
+
+
     double          CalculateLuminosityAtPhaseEnd(const double p_Mass) const;
     double          CalculateLuminosityAtPhaseEnd() const                           { return CalculateLuminosityAtPhaseEnd(m_Mass0);}                                           // Use class member variables
     double          CalculateLuminosityOnPhase(const double p_Age, const double p_Mass) const;

@@ -200,6 +200,7 @@ enum class STARTING_STELLAR_TYPE: int { // Hurley
 
 
 const COMPASUnorderedMap<STARTING_STELLAR_TYPE, std::string> STARTING_STELLAR_TYPE_LABEL = {
+    { STARTING_STELLAR_TYPE::ms,    "MS" },
     { STARTING_STELLAR_TYPE::MS,    "MS" },
     { STARTING_STELLAR_TYPE::HG,    "HG" },
     { STARTING_STELLAR_TYPE::FGB,   "FGB" },

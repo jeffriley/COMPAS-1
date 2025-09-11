@@ -408,8 +408,8 @@ void GiantBranch::PerturbLuminosityAndRadius() { }
  */
 double GiantBranch::CalculateLuminosityAtPhaseBase_Static(const double p_Mass, const DBL_VECTOR &p_An) {
 
-    double top    = (p_An[27] * PPOW(p_Mass, p_An[31])) + (p_An[28] * PPOW(p_Mass, C_COEFF.at(2)));
-    double bottom = p_An[29] + (p_An[30] * PPOW(p_Mass, C_COEFF.at(3))) + PPOW(p_Mass, p_An[32]);
+    double top    = (p_An[27] * PPOW(p_Mass, p_An[31])) + (p_An[28] * PPOW(p_Mass, HURLEY_C_COEFF[2]));
+    double bottom = p_An[29] + (p_An[30] * PPOW(p_Mass, HURLEY_C_COEFF[3])) + PPOW(p_Mass, p_An[32]);
 
     return top / bottom;
 }
@@ -463,31 +463,22 @@ double GiantBranch::CalculateLuminosityOnZAHB_Static(const double      p_Mass,
 
 
 /*
- * Calculate luminosity at Helium Ignition
+ * CalculateLuminosityAtHeIgnition_Hurley_Static
  *
- * Hurley et al. 2000, eq 49
+ * @brief
+ * Calculate luminosity at Helium Ignition, per Hurley et al. 2000, eq 49
  *
  *
- * double CalculateLuminosityAtHeIgnition_Static(const double      p_Mass,
- *                                               const double      p_Alpha1,
- *                                               const double      p_MHeF,
- *                                               const DBL_VECTOR &p_Bn)
- *
+ * double CalculateLuminosityAtHeIgnition_Hurley_Static(const double p_Mass, const double p_Alpha1, const double p_MHeF, const DBL_VECTOR& p_bN) const
  * @param   [IN]    p_Mass                      Mass in Msol
  * @param   [IN]    p_Alpha1                    alpha1 in Hurley et al. 2000 (just after eq 49)
  * @param   [IN]    p_MHeF                      Maximum initial mass for which helium ignites degenerately in a Helium Flash
- * @param   [IN]    p_Bn                        b(n) coefficients
- * @return                                      Luminosity at Helium Ignition in Lsol
- *
- * p_Alpha1, p_MHeF and p_Bn passed as parameter so function can be declared static
+ * @param   [IN]    p_bN                        b(n) coefficients
+ * @return                                      Luminosity at Helium Ignition (Lsol)
  */
-double GiantBranch::CalculateLuminosityAtHeIgnition_Static(const double      p_Mass,
-                                                           const double      p_Alpha1,
-                                                           const double      p_MHeF,
-                                                           const DBL_VECTOR &p_Bn) {
-    return (utils::Compare(p_Mass, p_MHeF) < 0)
-            ? (p_Bn[9] * PPOW(p_Mass, p_Bn[10])) / (1.0 + (p_Alpha1 * exp(15.0 * (p_Mass - p_MHeF))))
-            : (p_Bn[11] + (p_Bn[12] * PPOW(p_Mass, 3.8))) / (p_Bn[13] + (p_Mass * p_Mass));
+double GiantBranch::CalculateLuminosityAtHeIgnition_Hurley_Static(const double p_Mass, const double p_Alpha1, const double p_MHeF, const DBL_VECTOR& p_bN) const {
+    return (p_Mass < p_MHeF) ? (p_bN[9] * PPOW(p_Mass, p_bN[10])) / (1.0 + (p_Alpha1 * exp(15.0 * (p_Mass - p_MHeF))))
+                             : (p_bN[11] + (p_bN[12] * PPOW(p_Mass, 3.8))) / (p_bN[13] + (p_Mass * p_Mass));
 }
 
 
@@ -517,24 +508,22 @@ double GiantBranch::CalculateRemnantLuminosity() const {
 
 
 /*
- * Calculate radius on the Giant Branch
+ * CalculateRadiusOnPhase_Hurley_Static
  *
- * Hurley et al. 2000, eq 46
+ * @brief
+ * Calculate radius on the Giant Branch, per Hurley et al. 2000, eq 46
  *
  *
- * double CalculateRadiusOnPhase_Static(const double p_Mass, const double p_Luminosity, const DBL_VECTOR &p_Bn)
+ * double CalculateRadiusOnPhase_Hurley_Static(const double p_Mass, const double p_Luminosity, const DBL_VECTOR& p_bN) const
  *
- * @param   [IN]    p_Mass                      Mass in Msol
- * @param   [IN]    p_Luminosity                Luminosity in Lsol
- * @param   [IN]    p_Bn                        b(n) coefficients
- * @return                                      Radius on the First Giant Branch in Rsol
- *
- * p_Bn passed as parameter so function can be declared static
+ * @param       p_Mass                          Mass of the star (Msol)
+ * @param       p_Luminosity                    Luminosity of the star (Lsol)
+ * @param       p_bN                            Hurley b(n) coefficients
+ * @return                                      GB Radius (Rsol)
  */
-double GiantBranch::CalculateRadiusOnPhase_Static(const double p_Mass, const double p_Luminosity, const DBL_VECTOR &p_Bn) {
-
-    double A = std::min((p_Bn[4] * PPOW(p_Mass, -p_Bn[5])), (bn[6] * PPOW(p_Mass, -p_Bn[7])));      // Hurley et al. 2000, just before eq 47
-    return A * (PPOW(p_Luminosity, p_Bn[1]) + (p_Bn[2] * PPOW(p_Luminosity, p_Bn[3])));             // Hurley et al. 2000, eq 46
+double GiantBranch::CalculateRadiusOnPhase_Hurley_Static(const double p_Mass, const double p_Luminosity, const DBL_VECTOR& p_bN) const {
+    double A = std::min((p_bN[4] * PPOW(p_Mass, -p_bN[5])), (p_bN[6] * PPOW(p_Mass, -p_bN[7])));    // Hurley et al. 2000, just before eq 47
+    return A * (PPOW(p_Luminosity, p_bN[1]) + (p_bN[2] * PPOW(p_Luminosity, p_bN[3])));             // Hurley et al. 2000, eq 46
 }
 
 
