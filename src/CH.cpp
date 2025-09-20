@@ -184,7 +184,7 @@ std::tuple<double, MASS_LOSS_TYPE> CH::CalculateMLRateBelczynski2010(const doubl
         
         dMdt = (OBfraction * dMdt) + ((1.0 - OBfraction) * dMdtWR);                                     // combined mass loss rate
 
-        if (OBfraction <= 0.5) dominantMLType = MASS_LOSS_TYPE::WR;                                     // determine dominant mass loss rate
+        if (((1.0 - fractionOB) * MdotWR) > (fractionOB * MdotOB)) dominantMLType = MASS_LOSS_TYPE::WR; // determine dominant mass loss rate
     }
 
     // return mass loss rate, enhanced due to rotation, and dominant mass loss type

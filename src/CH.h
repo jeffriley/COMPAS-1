@@ -248,7 +248,7 @@ inline double CH::CalculateLogLuminositiesRatio(const double p_Mass) const {
  * 
  * The model described in Yoon et al. 2006 (also Szecsi et al. 2015) uses OB mass loss while the
  * He surface abundance is below 0.55, WR mass loss when the surface He abundance is above 0.7,
- * and linearly interpolate when the He surface abundance is between those limits.
+ * and linearly interpolates when the He surface abundance is between those limits.
  * 
  * This function calculates the fraction of mass loss attributable to OB mass loss, based on
  * the He surface abundance and the abundance limits described in Yoon et al. 2006.  The value
@@ -267,7 +267,7 @@ inline double CH::CalculateMassLossFractionOB(const double p_HeAbundanceSurface)
     constexpr double limOB = 0.55;      // per Yoon et al. 2006
     constexpr double limWR = 0.70;      // per Yoon et al. 2006
 
-    return p_HeAbundanceSurface <= limOB ? 1.0 : (p_HeAbundanceSurface >= limWR ? 0.0 : (limWR - p_HeAbundanceSurface) / (limWR - limOB));
+    return std::min(1.0, std::max (0.0, (limWR - p_HeAbundanceSurface) / (limWR - limOB)));
 }
 
 #endif // __CH_h__
