@@ -38,9 +38,9 @@ public:
     static  double      CalculateLuminosityOnPhase_Static()                         { return 1.0E-10; }                                                 // Hurley et al. 2000, eq 96
     static  double      CalculateNeutrinoMassLoss_Static(const double p_BaryonicMass);
 
-    static  double      CalculateSchwarzschildRadius_Static(const double p_Mass)    { return 4.24E-6 * p_Mass; }                                        // Schwarzschild radius of black hole
-    static  double      CalculateRadiusOnPhase_Hurley_Static(const double p_Mass)   { return CalculateSchwarzschildRadius_Static(p_Mass); }             // Hurley et al. 2000, eq 94
-     
+
+
+
     static  double      ReweightSupernovaKickByMass_Static(const double p_vK, const double p_FallbackFraction, const double p_BlackHoleMass);
    
     
@@ -63,12 +63,36 @@ protected:
     double  CalculateConvergedMassStepZetaNuclear() const                           { return 0.0; }
     double  CalculateEddingtonCriticalRate() const                                  { return 2.6E-8 * m_Mass * MYR_TO_YEAR; }                           // E.g., Marchant+, 2017, Eq. 3, assuming accretion efficiency of 10%
     double  CalculateLuminosityOnPhase() const                                      { return CalculateLuminosityOnPhase_Static(); }
-    std::tuple<double, MASS_LOSS_TYPE> CalculateMassLossRate() { return std::make_tuple(0.0, MASS_LOSS_TYPE::NONE); } // Ensure that NSs don't lose mass in winds
+
+    
     double  CalculateMomentOfInertia() const                                        { return (2.0 / 5.0) * m_Mass * m_Radius * m_Radius; }
 
-    double  CalculateRadiusOnPhase_Hurley() const override                          { return CalculateRadiusOnPhase_Hurley_Static(m_Mass); }                   // Use class member variables - returns radius in Rsol
 
-//    double  CalculateRadiusOnPhase(double p_Mass, double p_Luminosity) const        { return CalculateRadiusOnPhase(); }        // not a meaningful calculation for BH, ignore arguments
+///// ON PHASE FUNCTIONS   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+inline MASS_LOSS_T CalculateMassLossRate() const override { return std::make_tuple(0.0, MASS_LOSS_TYPE::NONE); } // Ensure that NSs don't lose mass in winds
+
+GNU_CONST inline double CalculateRadius_Hurley2000() const override {
+    return CalculateRadius_Hurley2000_Static(m_StateHistory.CurrentState.Mass());
+}
+
+GNU_CONST static inline double CalculateRadius_Hurley2000_Static(const double p_Mass) { 
+    return CalculateSchwarzschildRadius_Static(p_Mass);         // Hurley et al. 2000, eq 94
+}
+
+GNU_CONST static inline double CalculateSchwarzschildRadius_Static(const double p_Mass) {
+    return 4.24E-6 * p_Mass;                                    // Schwarzschild radius of black hole
+}
+
+
+
+
+
+///// PHASE END, ETC.      <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
     
 };
 

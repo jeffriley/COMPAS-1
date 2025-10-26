@@ -37,9 +37,22 @@ public:
         return clone;
     }
     
-    MT_CASE DetermineMassTransferTypeAsDonor() const { return MT_CASE::B; }                                                                                                     // Always case B
     
-    
+private:
+
+GNU_CONST double CalculateCoreMassAtPhaseEnd_Hurley2000(const double      p_Mass,
+                                                        const DBL_VECTOR& p_GBparams,
+                                                        const double      p_MHeF,
+                                                        const double      p_MFGB,
+                                                        const DBL_VECTOR& p_aN) const;                                         
+GNU_CONST double CalculateCoreMass_Hurley2000(const double p_Mass, const double p_Tau, const double p_CoreMass) const;
+GNU_CONST double CalculateCoreMass_Hurley2000_Unconstrained(const double p_Mass, const double p_Tau) const;
+GNU_CONST double CalculateEffectiveInitialMass_Hurley2000(const double p_Mass, const double p_Tau, const double p_Coremass, const double p_MassEffectiveInitial) const;
+GNU_CONST double CalculateRho_Hurley2000(const double p_Mass) const;
+GNU_CONST double CalculateTau_Hurley2000(const double p_Age, const double p_tMS, const double p_tBGB) const;
+
+
+
 protected:
     
     void Initialise() {
@@ -47,7 +60,7 @@ protected:
         m_Tau = 0.0;                                                                                                                                                            // Start of phase
         
         // update stellar properties at start of HG phase (since core definition changes)
-        CalculateGBParams();
+        CalculateGBparams();
         CalculateTimescales();
         // Initialise timescales
         m_Age = m_Timescales[static_cast<int>(TIMESCALE::tMS)];                                                                                                                 // Set age appropriately
@@ -61,7 +74,7 @@ protected:
             if (m_Mass0 <= 0.0) {                                                                                                                                               // no root found - no solution for estimated core mass
                 m_Mass0 = m_Mass;                                                                                                                                               // if no root found we keep m_Mass0 equal to the total mass
             }
-            CalculateGBParams();
+            CalculateGBparams();
             CalculateTimescales();
             m_Age = m_Timescales[static_cast<int>(TIMESCALE::tMS)];
         }
@@ -70,46 +83,27 @@ protected:
     
     
     // member functions - alphabetically
-    double          CalculateCOCoreMassAtPhaseEnd() const                           { return 0.0; }                                                                             // McCO(HG) = 0.0
-    double          CalculateCOCoreMassOnPhase() const                              { return 0.0; }                                                                             // McCO(HG) = 0.0
-    
-    double          CalculateCoreMassAt2ndDredgeUp(const DBL_VECTOR &p_GBParams)    { return p_GBParams[static_cast<int>(GBP::McDU)]; }                                         // NO-OP
-    double          CalculateCoreMassAtPhaseEnd(const double p_Mass) const;
-    double          CalculateCoreMassAtPhaseEnd() const                             { return CalculateCoreMassAtPhaseEnd(m_Mass0); }                                            // Use class member variables
-    double          CalculateCoreMassOnPhase(const double p_Mass, const double p_Time) const;
-    double          CalculateCoreMassOnPhase() const                                { return CalculateCoreMassOnPhase(m_Mass0, m_Age); }                                        // Use class member variables
-    double          CalculateCoreMassOnPhaseIgnoringPreviousCoreMass(const double p_Mass, const double p_Time) const;                                                           //  Ignore previous core mass constraint when computing expected core mass
-    
-    double          CalculateCriticalMassRatioClaeys14(const bool p_AccretorIsDegenerate) const;
-    double          CalculateCriticalMassRatioHurleyHjellmingWebbink() const        { return HURLEY_HJELLMING_WEBBINK_QCRIT_HG; }
-    
+
+
+
+
+
     double          CalculateHeCoreMassAtPhaseEnd() const                           { return m_CoreMass; }                                                                      // McHe(HG) = Core Mass
     double          CalculateHeCoreMassOnPhase() const                              { return m_CoreMass; }                                                                      // McHe(HG) = Core Mass
     
     double          CalculateHeliumAbundanceCoreAtPhaseEnd() const                  { return 1.0 - m_Metallicity; }
-    double          CalculateHeliumAbundanceCoreOnPhase() const                     { return 1.0 - m_Metallicity; }                                                             // Use class member variables
     
     double          CalculateHeliumAbundanceSurfaceAtPhaseEnd() const               { return CalculateHeliumAbundanceSurfaceOnPhase(); }
-    double          CalculateHeliumAbundanceSurfaceOnPhase() const                  { return m_HeliumAbundanceSurface; }                                                        // Use class member variables
     
     double          CalculateHydrogenAbundanceCoreAtPhaseEnd() const                { return CalculateHydrogenAbundanceCoreOnPhase(); }
-    double          CalculateHydrogenAbundanceCoreOnPhase(const double p_Tau) const;
-    double          CalculateHydrogenAbundanceCoreOnPhase() const                   { return 0.0; }                                                                             // Star has exhausted hydrogen in its core
     
     double          CalculateHydrogenAbundanceSurfaceAtPhaseEnd() const             { return CalculateHydrogenAbundanceSurfaceOnPhase(); }
-    double          CalculateHydrogenAbundanceSurfaceOnPhase() const                { return m_HydrogenAbundanceSurface; }                                                      // Use class member variables
-    
-    double          CalculateLambdaDewi() const;
-    double          CalculateLambdaLoveridge(const double p_EnvMass, const bool p_IsMassLoss = false) const;
-    double          CalculateLambdaNanjingStarTrack(const double p_Mass, const double p_Metallicity) const;
-    double          CalculateLambdaNanjingEnhanced(const int p_MassIndex, const STELLAR_POPULATION p_StellarPop) const;
 
     
 
 
 GNU_CONST double CalculateLuminosityOnPhase_Hurley_Static(const double p_Mass, const double p_Age, const DBL_VECTOR& p_Timescales) const;
 
-GNU_CONST double CalculateRadiusOnPhase_Hurley_Static(const double p_Mass, const double p_Tau, const double p_RZAMS, const DBL_VECTOR& p_bN) const;
 
 
 
@@ -119,20 +113,91 @@ GNU_CONST double CalculateRadiusOnPhase_Hurley_Static(const double p_Mass, const
     double          CalculateLuminosityOnPhase(const double p_Age, const double p_Mass) const;
     double          CalculateLuminosityOnPhase() const                              { return CalculateLuminosityOnPhase(m_Age, m_Mass0); }                                      // Use class member variables
     
-    double          CalculateMassTransferRejuvenationFactor()                       { return 1.0; }
-    
-    double          CalculateRadiusAtPhaseEnd(const double p_Mass) const;
-    double          CalculateRadiusAtPhaseEnd() const                               { return CalculateRadiusAtPhaseEnd(m_Mass); }                                               // Use class member variables
+    // Radius
+
+GNU_CONST double CalculateRadiusOnPhase_Hurley(const double p_Mass, const double p_Tau, const double p_RZAMS, const DBL_VECTOR& p_bN) const;
+
     double          CalculateRadiusOnPhase(const double p_Mass, const double p_Tau, const double p_RZAMS) const;
-    double          CalculateRadiusOnPhase() const                                  { return CalculateRadiusOnPhase(m_Mass0, m_Tau, m_RZAMS0); }                                // Use class member variables
     double          CalculateRadiusOnPhase(const double p_Mass, const double p_Luminosity) const    { return GiantBranch::CalculateRadiusOnPhase(p_Mass, p_Luminosity); }                                // Treats HG stars as GB stars
     
-    double          CalculateRho(const double p_Mass) const;
+double CalculateRadiusOnPhase() const override; { return CalculateRadiusOnPhase(m_Mass0, m_Tau, m_RZAMS0); } // Use class member variables
 
-    double          CalculateTauAtPhaseEnd() const                                  { return 1.0; }                                                                             // tau = 1.0 at end of HG
-    double          CalculateTauOnPhase() const;
     
-    double          CalculateZetaEquilibrium()                                      { return -std::numeric_limits<double>::infinity(); }                                         // Nuclear timescale MT should be impossible from HG stars that evolve on a thermal timescale
+
+
+
+    double          CalculateRadiusAtPhaseEnd(const double p_Mass) const;
+    double          CalculateRadiusAtPhaseEnd() const                               { return CalculateRadiusAtPhaseEnd(m_Mass); }      
+
+
+
+
+
+
+
+
+
+///// ON PHASE FUNCTIONS   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+inline double CalculateCoreMass_Hurley2000() const override {
+    return CalculateCoreMass_Hurley2000(m_StateHistory.CurrentState.Mass(),
+                                        m_StateHistory.CurrentState.Tau(),
+                                        m_StateHistory.CurrentState.CoreMass());
+}
+
+GNU_CONST inline double CalculateCOCoreMass() const override { return 0.0; } // McCO = 0.0 for HG stars
+
+inline double CalculateTau_Hurley2000() const override {
+    return CalculateTau_Hurley2000(m_StateHistory.CurrentState.Age(),
+                                   m_StateHistory.CurrentState.Timescales(tMS),
+                                   m_StateHistory.CurrentState.Timescales(tBGB));
+}
+
+inline double CalculateEffectiveInitialMass_Hurley2000() const override {
+    return CalculateEffectiveInitialMass_Hurley2000(m_StateHistory.CurrentState.Mass(),
+                                                    m_StateHistory.CurrentState.Tau(),
+                                                    m_StateHistory.CurrentState.Coremass(),
+                                                    m_StateHistory.CurrentState.MassEffectiveInitial());
+}
+
+
+
+
+
+GNU_CONST inline double CalculateHAbundanceCore() const override { return 0.0; } // No hydrogen in the core for HG stars
+inline double CalculateHAbundanceSurface() const override { return m_StateHistory.CurrentState.HAbundanceSurface(); }
+    
+GNU_CONST inline double CalculateHeAbundanceCore() const override { return 1.0 - m_StateHistory.CurrentState.Metallicity(); }
+inline double CalculateHeAbundanceSurface() const override { return m_StateHistory.CurrentState.HeAbundanceSurface(); }
+
+ 
+
+
+
+///// PHASE END, ETC.      <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+double CalculateCoreMassAtPhaseEnd_Hurley2000() const override {
+    return CalculateCoreMassAtPhaseEnd_Hurley2000(m_StateHistory.CurrentState.MassEffectiveInitial(),
+                                                  m_StateHistory.CurrentState.GBparams(),
+                                                  m_StateHistory.CurrentState.MassCutoffs(p_MHeF),
+                                                  m_StateHistory.CurrentState.MassCutoffs(p_MFGB)
+                                                  m_StateHistory.CurrentState.HurleyACoefficients());
+}
+
+GNU_CONST inline double CalculateCOCoreMassAtPhaseEnd() const override { return 0.0; } // McCO = 0.0 for HG stars
+
+
+GNU_CONST inline double CalculateHAbundanceCoreAtPhaseEnd() const override { return CalculateHAbundanceCore(); }
+inline double CalculateHAbundanceSurfaceAtPhaseEnd() const override { return CalculateHAbundanceSurface(); }
+
+GNU_CONST inline double CalculateHeAbundanceCoreAtPhaseEnd() const override { return CalculateHeAbundanceCore(); }
+inline double CalculateHeAbundanceSurfaceAtPhaseEnd() const override { return CalculateHeAbundanceSurface(); }
+
+
+
+
 
     double          ChooseTimestep(const double p_Time) const;
 
@@ -151,33 +216,13 @@ GNU_CONST double CalculateRadiusOnPhase_Hurley_Static(const double p_Mass, const
     bool            ShouldSkipPhase() const                                         { return false; }                                                                           // Never skip HG phase
 
     double          CalculateTAMSCoreMass() const                                   { return 0.0; }
-    void            UpdateAfterMerger(double p_Mass, double p_HydrogenMass) { }                                                                                                 // Nothing to do for stars beyond the Main Sequence for now
-    void            UpdateAgeAfterMassLoss();                                                                                                                                   // Per Hurley et al. 2000, section 7.1
 
-    /*
-     * CalculateEffectiveInitialMass
-     *
-     * Calculate effective initial mass per Hurley et al. 2000, section 7.1.
-     * 
-     * The effective initial mass on the HG tracks the stellar mass, unless it would yield an
-     * unphysical decrease in the core mass.
-     * 
-     * Only update mass0 on mass loss if the current mass would yield a core mass larger than
-     * or equal to the current core mass (i.e., no unphysical core mass decrease would ensue).
-     * 
-     * Do not update mass0 on mass gain on the HG - there is no instruction for doing so in Hurley.
-     * This check also avoids difficulties for the BRCEK rejuvenation prescription, when mass0 may
-     * be set to enforce a core mass that is lower than would be expected for the current mass value
-     * according to the Hurley prescription).
-     *
-     * 
-     * void CalculateEffectiveInitialMass() const
-     *
-     * @return                                      Calculate effective initial mass (may be unchanged)
-     */
-    double HG::CalculateEffectiveInitialMass() const {
-        return utils::Compare(m_Mass0, m_Mass) > 0 && utils::Compare(m_CoreMass, HG::CalculateCoreMassOnPhaseIgnoringPreviousCoreMass(m_Mass, m_Age)) <= 0 ? m_Mass : m_Mass0;
-    }
+
+double CalculateAgeAfterMassLoss() const override;
+GNU_PURE  double CalculateAgeAfterMassLoss_Hurley(const double p_Mass, const double p_Age, const DBL_VECTOR& p_tScales, const DBL_VECTOR& p_aN) const;
+
+
+
 
 
     void            UpdateEffectiveZAMSLandR()                                      { BaseStar::UpdateEffectiveZAMSLandR(); }                                                   // Skip MainSequence
@@ -317,5 +362,336 @@ GNU_CONST double CalculateRadiusOnPhase_Hurley_Static(const double p_Mass, const
         return root.first + (root.second - root.first) / 2.0;                                               // midway between brackets is our result, if necessary we could return the result as an interval here.
     }
 };
+
+
+
+///// INLINE CANDIDATES <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+///////////////////////////////////////////////////////////////////////////////////////
+//                                                                                   //
+//                      COEFFICIENTS, CONSTANTS etc. FUNCTIONS                       //
+//                                                                                   //
+///////////////////////////////////////////////////////////////////////////////////////
+
+
+/*
+ * CalculateRho_Hurley2000
+ *
+ * @brief
+ * Calculate the parameter rho for the Hertzsprung Gap, per Hurley et al. 2000, eq 29.
+ *
+ * Rho is calculated such that McTMS = Rho * McEHG
+ * 
+ *
+ * double CalculateRho_Hurley2000(const double p_Mass) const
+ *
+ * @param   [IN]    p_Mass                      Mass of the star (Msol)
+ * @return                                      HG rho
+ */
+GNU_CONST inline double HG::CalculateRho_Hurley2000(const double p_Mass) const {
+    const double m5_25 = utils::intPow(p_Mass, 5) * std::sqrt(std::sqrt(p_Mass)); // sqrt() is much faster than pow()
+    return (1.586 + m5_25) / (2.434 + (1.02 * m5_25));
+}
+
+
+///////////////////////////////////////////////////////////////////////////////////////
+//                                                                                   //
+//                             LIFETIME / AGE FUNCTIONS                              //
+//                                                                                   //
+///////////////////////////////////////////////////////////////////////////////////////
+
+
+/*
+ * CalculateTau_Hurley2000
+ *
+ * @brief
+ * Calculate the HG-relative age (fractional Hertzsprung Gap age) of the star,
+ * per Hurley et al. 2000, eq 25
+ *
+ * 
+ * double CalculateTau_Hurley2000(const double p_Age, const double p_tMS, const double p_tBGB) const
+ *
+ * @param       p_Age                           Age of the star (Myr)
+ * @param       p_tMS                           MS lifetime (Myr)
+ * @param       p_tBGB                          Lifetime to Base of Giant Branch, tBGB (Myr)
+ * @return                                      HG-relative age, [0, 1]
+ */
+GNU_CONST inline double HG::CalculateTau_Hurley2000(const double p_Age, const double p_tMS, const double p_tBGB) const {
+    return std::max(0.0, std::min(1.0, (p_Age - p_tMS) / (p_tBGB - p_tMS)));
+}
+
+
+/*
+ * CalculateAgeAfterMassLoss
+ *
+ * @brief
+ * Recalculate the star's age after mass loss.
+ * 
+ * Calls relevant age function based on the evolutionary mode given in program options.
+ *
+ *
+ * double CalculateAgeAfterMassLoss() const
+ *
+ * @return                                      Age of the star after mass loss (Myr)
+ */
+inline double HG::CalculateAgeAfterMassLoss() const {
+
+    double age;
+
+    Switch (OPTIONS->Mode()) {                                                                                  // which evolution mode?
+
+        EVOLUTION_MODE::SSE_HURLEY:                                                                             // HURLEY SSE
+        EVOLUTION_MODE::BSE_HURLEY:                                                                             // HURLEY BSE
+            age = CalculateAgeAfterMassLoss_Hurley2000(m_StateHistory.CurrentState.MassEffectiveInitial(),
+                                                       m_StateHistory.CurrentState.Age(),
+                                                       m_StateHistory.CurrentState.Timescales(tMS),
+                                                       m_StateHistory.CurrentState.Timescales(tBGB)
+                                                       GLOBALS->HurleyACoefficients());
+            break;
+
+        default:                                                                                                // unknown mode
+            // the only way this can happen is if someone added an EVOLUTION_MODE
+            // and it isn't accounted for in this code.  We should not default here, with or without a warning.
+            // We are here because the user chose a mode this code doesn't account for, and that should
+            // be flagged as an error and result in termination of the evolution of the star or binary.
+            // The correct fix for this is to add code for the missing mode or, if the missing mode is
+            // superfluous, remove it from the option.
+
+            THROW_ERROR(ERROR::UNKNOWN_EVOLUTION_MODE);                                                         // throw error
+    }
+
+    return age;
+}
+
+
+/*
+ * CalculateAgeAfterMassLoss_Hurley2000
+ *
+ * @brief
+ * Recalculate the star's age after mass loss, per Hurley et al. 2000, section 7.1
+ *
+ *
+ * double CalculateAgeAfterMassLoss_Hurley2000(const double      p_MassEffectiveInitial,
+ *                                             const double      p_Age,
+ *                                             const double      p_tMS,
+ *                                             const double      p_BGB,
+ *                                             const DBL_VECTOR& p_aN) const
+ *
+ * @param       p_MassEffectiveInitial          Effective initial mass of the star (Msol)
+ * @param       p_Age                           Current age of the star (Myr)
+ * @param       p_tMS                           MS lifetime, tMS (Myr)
+ * @param       p_tBGB                          Lifetime to Base of Giant Branch, tBGB (Myr)
+ * @param       p_aN                            Hurley a(n) coefficients
+ * @return                                      Age of the star after mass loss (Myr)
+ */
+GNU_CONST inline double HG::CalculateAgeAfterMassLoss_Hurley2000(const double      p_MassEffectiveInitial,
+                                                                 const double      p_Age,
+                                                                 const double      p_tMS,
+                                                                 const double      p_tBGB,
+                                                                 const DBL_VECTOR& p_aN) const {
+
+    const double tBGBprime = CalculateLifetimeToBGB_Hurley(p_MassEffectiveInitial, p_aN);
+    const double tMSprime  = MainSequence::CalculateLifetimeOnPhase(p_MassEffectiveInitial, tBGBprime);
+
+    return tMSprime + (((tBGBprime - tMSprime) / (p_tBGB - p_tMS)) * (p_Age - p_tMS));
+}
+
+
+///////////////////////////////////////////////////////////////////////////////////////
+//                                                                                   //
+//                                  MASS FUNCTIONS                                   //
+//                                                                                   //
+///////////////////////////////////////////////////////////////////////////////////////
+
+/*
+ * CalculateCoreMassAtPhaseEnd_Hurley2000
+ *
+ * @brief
+ * Calculate core mass at the end of the Hertzsprung Gap, per Hurley et al. 2000, eq 28.
+ *
+ *
+ * double CalculateCoreMassAtPhaseEnd_Hurley2000(const double      p_Mass,
+ *                                               const DBL_VECTOR& p_GBparams,
+ *                                               const double      p_MHeF,
+ *                                               const double      p_MFGB,
+ *                                               const DBL_VECTOR& p_aN) const {
+ *
+ * @param       p_Mass                          Mass of the star (Msol)
+ * @param       p_GBparams                      Hurley GB parameters
+ * @param       p_MHeF                          Maximum initial mass at Helium Flash (Hurley masscutoffs[MHeF]) (Msol)
+ * @param       p_MFGB                          Maximum initial mass at helium ignition on the FGB (Hurley masscutoffs[MFGB]) (Msol)
+ * @param       p_aN                            Hurley a(n) coefficients
+ * @return                                      TAHG core mass (Base of the Giant Branch) (Msol)
+ */
+GNU_CONST inline double HG::CalculateCoreMassAtPhaseEnd_Hurley2000(const double      p_Mass,
+                                                                   const DBL_VECTOR& p_GBparams,
+                                                                   const double      p_MHeF,
+                                                                   const double      p_MFGB,
+                                                                   const DBL_VECTOR& p_aN) const {
+    double coreMass;
+
+    if (p_Mass < p_MHeF) {
+        coreMass = BaseStar::CalculateCoreMass_Hurley2000_Static(GiantBranch::CalculateLuminosityAtPhaseBase_Static(p_Mass, p_aN), p_GBparams);
+    }
+    else if (p_Mass < p_MFGB) {
+        coreMass = p_GBparams[static_cast<int>(GBP::McBGB)];
+    }
+    else {
+        coreMass = CalculateCoreMassAtHeI_Hurley2000(p_Mass);
+    }
+
+    return coreMass;
+}
+
+
+/*
+ * CalculateCoreMass_Hurley2000
+ *
+ * Calculate core mass on the Hertzsprung Gap, per Hurley et al. 2000, eq 30
+ * (see Section 7
+ *
+ * The core mass returned is clamped to a minimum value of the current value of the
+ * core mass of the star (passed as a parameter) - if the star is losing mass we don't
+ * reduce the size of the core (per Hurley).
+ *
+ *
+ * double CalculateCoreMass_Hurley2000(const double p_Mass, const double p_Tau, const double p_CoreMass) const
+ *
+ * @param       p_Mass                          Mass of the star (Msol)
+ * @param       p_Tau                           HG lifetime (Myr)
+ * @param       p_CoreMass                      Current core mass of the star (Msol)
+ * @return                                      HG core mass (Msol)
+ */
+GNU_CONST inline double HG::CalculateCoreMass_Hurley2000(const double p_Mass, const double p_Tau, const double p_CoreMass) const {
+    return std::max(CalculateCoreMass_Hurley2000_Unconstrained(p_Mass, p_Tau), p_CoreMass);
+}
+
+
+/*
+ * CalculateCoreMass_Hurley2000_Unconstrained
+ *
+ * Calculate core mass on the Hertzsprung Gap without accounting for previous core mass.
+ *
+ * This ignores the previous core mass constraint (see section 7 of Hurley et al. 2000)
+ * when computing the expected core mass, and just follows eq. 30.  This is useful for
+ * asking what the core mass would be for the given mass without considering that the
+ * core mass should not be allowed to drop.
+ *
+ *
+ * double CalculateCoreMass_Hurley2000_Unconstrained(const double p_Mass, const double p_Tau) const
+ *
+ * @param       p_Mass                          Mass of the star (Msol)
+ * @param       p_Tau                           HG lifetime (Myr)
+ * @return                                      HG core mass (Msol)
+ */
+GNU_CONST inline double HG::CalculateCoreMass_Hurley2000_Unconstrained(const double p_Mass, const double p_Tau) const {
+    const double McEHG = CalculateCoreMassAtPhaseEnd_Hurley2000(p_Mass, p_GBparams, p_MHeF, p_MFGB, p_aN);
+    return (((1.0 - p_Tau) * CalculateRho_Hurley2000(p_Mass)) + p_Tau) * McEHG;
+}
+
+
+/*
+ * CalculateEffectiveInitialMass_Hurley2000
+ *
+ * @brief
+ * Calculate effective initial mass of an HG star, per Hurley et al. 2000, section 7.1.
+ * 
+ * On the HG, the effective initial mass on the HG tracks the stellar mass, unless it would
+ * yield an unphysical decrease in the core mass.
+ * 
+ * Only update effective initial mass on mass loss if the current mass would yield a core
+ * mass larger than or equal to the current core mass (i.e. no unphysical core mass decrease
+ * would ensue).
+ * 
+ * Do not update effective initial mass on mass gain on the HG - there is no instruction for
+ * doing so in Hurley.  This check also avoids difficulties for the BRCEK rejuvenation
+ * prescription, when effective initial mass may be set to enforce a core mass that is lower
+ * than would be expected for the current mass value according to the Hurley prescription).
+ *
+ * 
+ * double CalculateEffectiveInitialMass_Hurley2000(const double p_Mass, const double p_Tau, const double p_Coremass, const double p_MassEffectiveInitia) const
+ * 
+ * @param       p_Mass                          Mass of the star (Msol)
+ * @param       p_Tau                           HG lifetime (Myr)
+ * @param       p_CoreMass                      Core mass of the star (Msol)
+ * @param       p_MassEffectiveInitial          Current effective initial mass of the star (Msol)
+ * @return                                      HG effective initial mass (Msol) (may be unchanged)
+ */
+GNU_CONST inline double HG::CalculateEffectiveInitialMass_Hurley2000(const double p_Mass, const double p_Tau, const double p_Coremass, const double p_MassEffectiveInitial) const {
+    return ((p_MassEffectiveInitial > p_Mass) && (p_Coremass <= CalculateCoreMass_Hurley2000_Unconstrained(p_Mass, p_Tau))) ? p_Mass : p_MassEffectiveInitial;
+}
+
+
+
+
+
+
+/// HG_Constituent <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+class HG_Constituent: virtual public BinaryConstituentStar, public HG {
+
+public:
+
+
+protected:
+
+};
+
+     
+    MT_CASE DetermineMassTransferTypeAsDonor() const { return MT_CASE::B; }                                                                                                     // Always case B
+
+    
+
+    double          CalculateMTRejuvenationFactor()                       { return 1.0; }
+
+
+    void            UpdateAfterMerger(double p_Mass, double p_HydrogenMass) { }                                                                                                 // Nothing to do for stars beyond the Main Sequence for now
+
+    
+    double          CalculateZetaEquilibrium()                                      { return -std::numeric_limits<double>::infinity(); }                                         // Nuclear timescale MT should be impossible from HG stars that evolve on a thermal timescale
+
+
+    
+    double          CalculateCELambda_Dewi() const;
+    double          CalculateLambdaLoveridge(const double p_EnvMass, const bool p_IsMassLoss = false) const;
+    double          CalculateLambdaNanjingStarTrack(const double p_Mass, const double p_Metallicity) const;
+    double          CalculateLambdaNanjingEnhanced(const int p_MassIndex, const STELLAR_POPULATION p_StellarPop) const;
+
+
+
+
+double CalculateCriticalMassRatio_Claeys2014(const bool p_AccretorIsDegenerate) const;
+
+double CalculateCriticalMassRatio_Hurley2002() const { return HURLEY_HJELLMING_WEBBINK_QCRIT_HG; }
+
+
+
+/*
+ * CalculateCriticalMassRatio_Claeys2014
+ *
+ * @brief
+ * Calculate the critical mass ratio, per Claeys et al. 2014
+ * 
+ * The critical mass ratio indicates whether the mass transfer is unstable.
+ *
+ * See Claeys et al. 2014, de Mink et al. 2013, and Ge et al. 2010, 2015, and 2020, for discussions.
+ *
+ * Assumes this star is the donor.
+ * 
+ * Critical mass ratio is defined as qCrit = Maccretor / Mdonor.
+ * 
+ *
+ * double CalculateCriticalMassRatio_Claeys2014(const bool p_AccretorIsDegenerate) const
+ *
+ * @param       p_AccretorIsDegenerate          Boolean indicating if accretor is degenerate
+ * @return                                      Critical mass ratio for unstable MT 
+ */
+inline double HG_Constituent::CalculateCriticalMassRatio_Claeys2014(const bool p_AccretorIsDegenerate) const {                                                                                                          
+    return p_AccretorIsDegenerate
+            ? OPTIONS->MassTransferCriticalMassRatioHGDegenerateAccretor()      // degenerate accretor
+            : OPTIONS->MassTransferCriticalMassRatioHGNonDegenerateAccretor();  // non-degenerate accretor
+}
+
 
 #endif // __HG_h__

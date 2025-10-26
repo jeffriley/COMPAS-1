@@ -1,64 +1,9 @@
 #include "CH.h"
 
 
-/*
- * CalculateAgeAfterMassLoss_Hurley
- *
- * @brief
- * Recalculate the star's age after mass loss, per Hurley et al. 2000, section 7.1
- * 
- * Note that the CH timescales should be recalculated after recalculating the star's age.
- *
- *
- * CalculateAgeAfterMassLoss_Hurley(const double p_Mass, const double p_Age) const
- *
- * @param       p_Mass                          Mass of the star (Msol)
- * @param       p_Age                           Current age of the star (Myr)
- * @param       p_tMS                           MS timescale (Myr)
- * @return                                      Age of the star after mass loss (Myr)
- */
-double CH::CalculateAgeAfterMassLoss_Hurley(const double p_Mass, const double p_Age, const double p_tMS) const {
-
-    // calculate tMS for mass as passed (tMS')
-    double tMSprime = MainSequence::CalculateLifetimeOnPhase(p_Mass, CalculateLifetimeToBGB(p_Mass));
-
-    if (OPTIONS->EnhanceCHELifetimesLuminosities()) {   // enhance lifetime of CH stars?                      
-        tMSprime *= CalculateLifetimesRatio(p_Mass);    // yes
-    }
-
-    return p_Age * tMSprime / p_tMS;
-}
 
 
-/*
- * CalculateLuminosityAtPhaseEnd
- *
- * @brief
- * Calculate the luminosity of a CH star at the end of the (CH) MS.  The luminosity will be
- * enhanced if option `--enhance-CHE-lifetimes-luminosities` was specified.
- * 
- * 
- * double CalculateLuminosityAtPhaseEnd(const double p_Mass) const
- *
- * @param       p_Mass                          Mass of the star (Msol)
- * @return                                      TAMS CH luminosity (Lsol)
- */
-double CH::CalculateLuminosityAtPhaseEnd(const double p_Mass) const {
 
-    // unenhanced CH luminosity at the end of the MS is just MS luminosity at the end of the MS
-    const double luminosity = MainSequence::CalculateLuminosityAtPhaseEnd(p_Mass);
-    
-    if (OPTIONS->EnhanceCHELifetimesLuminosities()) {                       // enhance luminosity of CH stars?
-                                                                            // yes
-        const double ratio = CalculateLogLuminositiesRatio(p_Mass);         // log(L_CH) / log(L_MS)
-
-        // apply enhancement, which at TAMS is just the ratio log(L_CH) / log(L_MS)
-        // enhancement should not reduce luminosity, so ratio is clamped to a minimum of +1.0
-        luminosity = PPOW(10.0, log10(luminosity) * std::max(ratio, 1.0));
-    }
-
-    return luminosity;
-}
 
 
 /*
@@ -73,16 +18,16 @@ double CH::CalculateLuminosityAtPhaseEnd(const double p_Mass) const {
  *                                   const double      p_Mass,
  *                                   const double      p_Time,
  *                                   const double      p_LZAMS,
- *                                   const DBL_VECTOR& p_Timescales,
- *                                   const DBL_VECTOR& p_aCoefficients,
+ *                                   const DBL_VECTOR& p_tScales,
+ *                                   const DBL_VECTOR& p_aN,
  *                                   const DBL_VECTOR& p_LConstants) const
  *
- * @param       p_Metallicity                   (Fractional) metallicity of the star
+ * @param       p_Metallicity                   Metallicity of the star
  * @param       p_Mass                          Mass of the star (Msol)
  * @param       p_Time                          Time elapsed since ZAMS (Myr)
  * @param       p_LZAMS                         ZAMS luminosity of the star (Lsol)
- * @param       p_Timescales                    Hurley timescales
- * @param       p_aCoefficients                 Hurley a(n) coefficients
+ * @param       p_tScales                       Phase timescales
+ * @param       p_aN                            Hurley a(n) coefficients
  * @param       p_LConstants                    Hurley luminosity constants
  * @return                                      CH luminosity (Lsol)
  */
@@ -90,8 +35,8 @@ double CH::CalculateLuminosityOnPhase(const double      p_Metallicity,
                                       const double      p_Mass,
                                       const double      p_Time,
                                       const double      p_LZAMS,
-                                      const DBL_VECTOR& p_Timescales,
-                                      const DBL_VECTOR& p_aCoefficients,
+                                      const DBL_VECTOR& p_tScales,
+                                      const DBL_VECTOR& p_aN,
                                       const DBL_VECTOR& p_LConstants) const {
 
     // unenhanced CH luminosity is just MS luminosity
@@ -99,16 +44,15 @@ double CH::CalculateLuminosityOnPhase(const double      p_Metallicity,
     const double mass  = m_StateHistory.CurrentState().Mass();
     const double time  = m_StateHistory.CurrentState().Time();
 
-    double luminosity = MainSequence::CalculateLuminosity(p_Metallicity, p_Mass, p_Time, p_LZAMS, p_Timescales, p_aCoefficients, p_LConstants);
+    double luminosity = MainSequence::CalculateLuminosity(p_Metallicity, p_Mass, p_Time, p_LZAMS, p_tScales, p_aN, p_LConstants);
 
     if (OPTIONS->EnhanceCHELifetimesLuminosities()) {                           // enhance luminosity of CH stars?
                                                                                 // yes
-        const double tau   = m_StateHistory.CurrentState().Tau();
-        const double ratio = CalculateLogLuminositiesRatio(mass);               // log(L_CH) / log(L_MS)
+        const double tau = m_StateHistory.CurrentState().Tau();
 
         // enhancement should not reduce luminosity, so ratio is clamped to a minimum of +1.0
         // enhancement amount grows from 1 to logLuminosityRatio over main-sequence
-        const double enhancement = 1.0 + (std::max(ratio, 1.0) - 1.0) * tau * tau;
+        const double enhancement = 1.0 + (std::max(CalculateLogLuminositiesRatio(mass), 1.0) - 1.0) * tau * tau;
 
         luminosity = PPOW(10.0, log10(luminosity) * enhancement);               // apply enhancement
     }
@@ -118,115 +62,223 @@ double CH::CalculateLuminosityOnPhase(const double      p_Metallicity,
 
 
 /*
- * CalculateTimescales
+ * CalculateTimescales_Hurley2000
  *
  * @brief
- * (Re)calculate the CH timescales given the mass of the star.  Only timescales
- * relevant to CH are modified.  Since timescales depend on a star's mass, they
- * need to be calculated whenever the mass of the star changes (at least at each
- * timestep).
+ * (Re)calculate timescales given the mass of the star, per Hurley at al. 2000.
+ * 
+ * Since timescales depend on a star's mass, they need to be calculated whenever
+ * the mass of the star changes (probably every timestep).
  *
  *
- * DBL_VECTOR CalculateTimescales(const double p_Mass, const DBL_VECTOR& p_Timescales) const
+ * DBL_VECTOR CalculateTimescales_Hurley2000(const double      p_Mass,
+ *                                           const double      p_ZetaHurley,
+ *                                           const DBL_VECTOR& p_GBparams,
+ *                                           const DBL_VECTOR& p_MassCutoffs,
+ *                                           const DBL_VECTOR& p_Timescales,
+ *                                           const double      p_Alpha3,
+ *                                           const DBL_VECTOR& p_aN,
+ *                                           const DBL_VECTOR& p_bN) const
  *
  * @param       p_Mass                          Mass of the star (Msol)
- * @param       p_Timescales                    Timescales vector
- * @return                                      Mutated timescales vector
+ * @param       p_ZetaHurley                    Hurley zeta value (log10(Z / ZSOL_HURLEY))
+ * @param       p_GBparams                      Hurley GB parameters
+ * @param       p_MassCutoffs                   Hurley mass cutoffs (Msol)
+ * @param       p_tScales                       Hurley timescales (Myr)
+ * @param       p_Alpha3                        Hurley alpha3 constant
+ * @param       p_aN                            Hurley a(n) coefficients
+ * @param       p_bN                            Hurley b(n) coefficients
+ * @return                                      Mutated timescales (Myr)
  */
-DBL_VECTOR CH::CalculateTimescales(const double p_Mass, const DBL_VECTOR& p_Timescales) const {
+DBL_VECTOR CH::CalculateTimescales_Hurley2000(const double      p_Mass,
+                                              const double      p_ZetaHurley,
+                                              const DBL_VECTOR& p_GBparams,
+                                              const DBL_VECTOR& p_MassCutoffs,
+                                              const DBL_VECTOR& p_tScales,
+                                              const double      p_Alpha3,
+                                              const DBL_VECTOR& p_aN,
+                                              const DBL_VECTOR& p_bN) const {
 
-    DBL_VECTOR timescales = p_Timescales;                               // copy given timescales
+    DBL_VECTOR tScales = p_tScales;                     // copy given timescales
 
-    // (re)calculate tBGB and tMS
-    timescales[static_cast<int>(TIMESCALE::tBGB)] = CalculateLifetimeToBGB(p_Mass);
-    timescales[static_cast<int>(TIMESCALE::tMS)]  = CalculateLifetimeOnPhase(p_Mass, timescales[static_cast<int>(TIMESCALE::tBGB)]);
+    // (re)calculate MS timescales
+    tScales = MainSequence::CalculateTimescales_Hurley2000(p_Mass, p_ZetaHurley, p_GBparams, p_MassCutoffs, tScales, p_Alpha3, p_aN, p_bN);
 
-    if (OPTIONS->EnhanceCHELifetimesLuminosities()) {                   // enhance lifetime of CH stars?
-                                                                        // yes
-        const double lifetimesRatio = CalculateLifetimesRatio(p_Mass);
+    // enhamce lifetimes as appropriate
+    if (OPTIONS->EnhanceCHELifetimesLuminosities()) {   // enhance lifetime of CH stars?
+                                                        // yes
+        const double lifetimesRatio = CalculateLifetimesRatio_Szecsi2020(p_Mass);
 
-        timescales[static_cast<int>(TIMESCALE::tBGB)] *= lifetimesRatio;
-        timescales[static_cast<int>(TIMESCALE::tMS)]  *= lifetimesRatio;
+        tScales[static_cast<int>(TIMESCALE::tBGB)] *= lifetimesRatio;
+        tScales[static_cast<int>(TIMESCALE::tMS)]  *= lifetimesRatio;
     }
 
     // return timescales vector by value - NRVO takes care of performance/efficiency
-    return timescales;
+    return tScales;
 }
 
 
 /*
- * CalculateMLRateBelczynski2010
+ * CalculateMLRate_Belczynski2010
  *
  * @brief
  * Calculate the mass loss rate, per Belczynski et al. 2010, based on the StarTrack
  * implementation, and modified for CH stars.
- * 
- * 
- * std::tuple<double, MASS_LOSS_TYPE> CalculateMLRateBelczynski2010(const double p_Metallicity, const double p_Luminosity, const double p_HeAbundanceSurface) const
  *
- * @param       p_Metallicity                   (Fractional) metallicity of the star
+ * If option `--scale-CHE-mass-loss-with-surface-helium-abundance` was specified,
+ * the mass loss rate will be scaled with the surface helium abundance.
+ * 
+ * If option `--enable-rotationally-enhanced-mass-loss` was specified, the  mass
+ * loss rate will be enhanced for rotation.
+ * 
+ * 
+ * MASS_LOSS_T CalculateMLRate_Belczynski2010(const double                     p_Metallicity,
+ *                                            const double                     p_Mass,
+ *                                            const double                     p_Radius,
+ *                                            const double                     p_Luminosity,
+ *                                            const double                     p_Temperature,
+ *                                            const double                     p_PerturbationMu,
+ *                                            const double                     p_ZscaledHurley,
+ *                                            const double                     p_HeAbundanceSurface,
+ *                                            const double                     p_CoolWindsMultiplier,
+ *                                            const double                     p_WRfactor,
+ *                                            const bool                       p_ScaleWithSurfaceHe,
+ *                                            const LBV_MASS_LOSS_PRESCRIPTION p_LBVprescription) const
+ *
+ * @param       p_Metallicity                   Metallicity of the star
+ * @param       p_Mass                          Mass of the star (Msol)
+ * @param       p_Radius                        Radius of the star (Rsol)
  * @param       p_Luminosity                    Luminosity of the star (Lsol)
+ * @param       p_Temperature                   Temperature of the star (Tsol)
+ * @param       p_PerturbationMu                Small envelope perturbation parameter, mu
+ * @param       p_ZscaledHurley                 Z inversely scaled by Hurley ZSOL (Z / ZSOL_HURLEY)
  * @param       p_HeAbundanceSurface            Helium abundance at the surface of the star
+ * @param       p_CoolWindsMultiplier           Cool winds mass loss multiplier
+ * @param       p_WRfactor                      WR mass loss factor
+ * @param       p_ScaleWithSurfaceHelium        Indicates whether mass loss should be scaled with surface He abundance
+ * @param       p_LBVprescription               LBV mass loss prescription to use
  * @return                                      Tuple containing:
  *                                                   DOUBLE         Mass loss rate (Msol yr^-1)
  *                                                   MASS_LOSS_TYPE dominant mass loss type
  *                                                                  (will be MASS_LOSS_TYPE::WR or MASS_LOSS_TYPE::OB)
  */
-std::tuple<double, MASS_LOSS_TYPE> CH::CalculateMLRateBelczynski2010(const double p_Metallicity, const double p_Luminosity, const double p_HeAbundanceSurface) const {
+COMPAS_PURE MASS_LOSS_T CH::CalculateMLRate_Belczynski2010(const double                     p_Metallicity,
+                                                           const double                     p_Mass,
+                                                           const double                     p_Radius,
+                                                           const double                     p_Luminosity,
+                                                           const double                     p_Temperature,
+                                                           const double                     p_PerturbationMu,
+                                                           const double                     p_ZscaledHurley,
+                                                           const double                     p_HeAbundanceSurface,
+                                                           const double                     p_CoolWindsMultiplier,
+                                                           const double                     p_WRfactor,
+                                                           const bool                       p_ScaleWithSurfaceHe,
+                                                           const LBV_MASS_LOSS_PRESCRIPTION p_LBVprescription) const {
+    // set defaults
+    MASS_LOSS_TYPE dominantMLType = MASS_LOSS_TYPE::OB;
+    double dMdt = BaseStar::CalculateMLRate_Belczynski2010(p_Metallicity,
+                                                           p_Mass,
+                                                           p_Radius,
+                                                           p_Luminosity,
+                                                           p_Temperature,
+                                                           p_PerturbationMu,
+                                                           p_ZscaledHurley,
+                                                           p_HeAbundanceSurface,
+                                                           p_CoolWindsMultiplier,
+                                                           p_WRfactor,
+                                                           p_ScaleWithSurfaceHe,
+                                                           p_LBVprescription);
 
-    MASS_LOSS_TYPE dominantMLType = MASS_LOSS_TYPE::OB;                                                 // set default dominant mass loss type
-    double dMdt                   = BaseStar::CalculateMLRateBelczynski2010();                          // set default mass loss rate (OB)
-
-    if (OPTIONS->ScaleCHEMassLossWithSurfaceHeliumAbundance()) {                                        // transition between OB and WR mass loss rates?
+    // scale mass loss with the surface helium abundance if necessary
+    if (p_ScaleWithSurfaceHe) {                                                                         // transition between OB and WR mass loss rates?
                                                                                                         // yes
-        const double dMdtWR     = BaseStar::CalculateMLRateWRZDependent_Static(p_Luminosity, p_Metallicity, 0.0); // WR mass loss rate
-        const double OBfraction = CalculateMassLossFractionOB(p_HeAbundanceSurface);                    // mass loss fraction attributable to OB mass loss
+        const double dMdtWR     = BaseStar::CalculateMLRateWR_ZDependent_Static(p_Luminosity, p_Metallicity, 0.0); // WR mass loss rate
+        const double fractionOB = CalculateMLFractionOB(p_HeAbundanceSurface);                          // mass loss fraction attributable to OB mass loss
         
-        dMdt = (OBfraction * dMdt) + ((1.0 - OBfraction) * dMdtWR);                                     // combined mass loss rate
+        if (((1.0 - fractionOB) * dMdtWR) > (fractionOB * dMdt)) dominantMLType = MASS_LOSS_TYPE::WR;   // dominant mass loss type
 
-        if (((1.0 - fractionOB) * MdotWR) > (fractionOB * MdotOB)) dominantMLType = MASS_LOSS_TYPE::WR; // determine dominant mass loss rate
+        dMdt = (fractionOB * dMdt) + ((1.0 - fractionOB) * dMdtWR);                                     // combined mass loss rate
     }
 
-    // return mass loss rate, enhanced due to rotation, and dominant mass loss type
-    return std::make_tuple(dMdt * CalculateMLRateEnhancementRotation(), dominantMLType);
+    // calculate mass loss enhancement due to rotation, and dominant mass loss type
+    const double rotEnhancement = OPTIONS->EnableRotationallyEnhancedMassLoss() ? CalculateMLRateRotationEnhancement_Langer1998() : 1.0;
+
+    return std::make_tuple(dMdt * rotEnhancement, dominantMLType);
 }
 
 
 /*
- * CalculateMLRateMerritt2025
+ * CalculateMLRate_Merritt2025
  *
  * @brief
  * Calculate the mass loss rate, per Merritt et al. 2024, modified for CH stars.
  *
+ * If option `--scale-CHE-mass-loss-with-surface-helium-abundance` was specified,
+ * the mass loss rate will be scaled with the surface helium abundance.
  * 
- * std::tuple<double, MASS_LOSS_TYPE> CalculateMLRateMerritt2025(const double p_Metallicity, const double p_Luminosity, const double p_HeAbundanceSurface) const
+ * If option `--enable-rotationally-enhanced-mass-loss` was specified, the  mass
+ * loss rate will be enhanced for rotation.
  * 
- * @param       p_Metallicity                   (Fractional) metallicity of the star
+ * 
+ * MASS_LOSS_T CalculateMLRate_Merritt2025(const double p_Metallicity, const double p_Luminosity, const double p_HeAbundanceSurface) const
+ * 
+ * @param       p_Metallicity                   Metallicity of the star
+ * @param       p_Mass                          Mass of the star (Msol)
+ * @param       p_Radius                        Radius of the star (Rsol)
  * @param       p_Luminosity                    Luminosity of the star (Lsol)
+ * @param       p_Temperature                   Temperature of the star (Tsol)
+ * @param       p_PerturbationMu                Small envelope perturbation parameter, mu
+ * @param       p_mStart                        Mass of the star at the start of the simulation (first state) (Msol)
+ * @param       p_SigmaHurley                   Hurley sigma value (log10(Z))
+ * @param       p_ZetaAnders                    Anders zeta value (log10(Z / ZSOL_ANDERS))
+ * @param       p_ZetaAsplund                   Asplund zeta value (log10(Z / ZSOL_ASPLUND))
+ * @param       p_ZscaledHurley                 Z inversely scaled by Hurley ZSOL (Z / ZSOL_HURLEY)
  * @param       p_HeAbundanceSurface            Helium abundance at the surface of the star
+ * @param       p_WRfactor                      WR mass loss factor
+ * @param       p_TerminalWindScalePower        Power with which to scale terminal wind velocity with metallicity
  * @return                                      Tuple containing:
  *                                                   DOUBLE         Mass loss rate (Msol yr^-1)
  *                                                   MASS_LOSS_TYPE dominant mass loss type
  *                                                                  (will be MASS_LOSS_TYPE::WR or MASS_LOSS_TYPE::OB)
  */
-std::tuple<double, MASS_LOSS_TYPE> CH::CalculateMLRateMerritt2025(const double p_Metallicity, const double p_Luminosity, const double p_HeAbundanceSurface) const {
+COMPAS_PURE MASS_LOSS_T CH::CalculateMLRate_Merritt2025(const double p_Metallicity,
+                                                        const double p_Mass,
+                                                        const double p_Radius,
+                                                        const double p_Luminosity,
+                                                        const double p_Temperature,
+                                                        const double p_PerturbationMu,
+                                                        const double p_mStart,
+                                                        const double p_SigmaHurley,
+                                                        const double p_ZetaAnders,
+                                                        const double p_ZetaAsplund,
+                                                        const double p_ZscaledHurley,
+                                                        const double p_HeAbundanceSurface,
+                                                        const double p_WRfactor,
+                                                        const double p_TerminalWindScalePower) const {
 
-    MASS_LOSS_TYPE dominantMLType = MASS_LOSS_TYPE::OB;                                                 // set default dominant mass loss type
-    double dMdt                   = BaseStar::CalculateMLRateOB(OPTIONS->OBMassLossPrescription());     // set default mass loss rate (OB)
+    // set defaults
+    MASS_LOSS_TYPE dominantMLType = MASS_LOSS_TYPE::OB;
+    double dMdt = BaseStar::CalculateMLRateOB(p_Metallicity, p_Mass, p_Luminosity, p_Temperature, p_ZetaAnders, p_ZetaAsplund, p_TerminalWindScalePower, OPTIONS->OBMassLossPrescription());
 
+    // scale mass loss with the surface helium abundance if necessary
     if (OPTIONS->ScaleCHEMassLossWithSurfaceHeliumAbundance()) {                                        // transition between OB and WR mass loss rates?
                                                                                                         // yes
         const double dMdtWR     = HeMS::CalculateMLRateMerritt2025_Static(p_Metallicity, p_Luminosity, p_Temperature, p_SigmaHurley, p_ZetaAnders); // WR mass loss rate
-        const double OBfraction = CalculateMassLossFractionOB(p_HeAbundanceSurface);                    // mass loss fraction attributable to OB mass loss
+        const double fractionOB = CalculateMLFractionOB(p_HeAbundanceSurface);                          // mass loss fraction attributable to OB mass loss
 
-        dMdt = (OBfraction * dMdt) + ((1.0 - OBfraction) * dMdtWR);                                     // combined mass loss rate
+        if ((1.0 - fractionOB) * dMdtWR > fractionOB * dMdt) dominantMLType = MASS_LOSS_TYPE::WR;       // dominant mass loss type
 
-        if (OBfraction <= 0.5) dominantMLType = MASS_LOSS_TYPE::WR;                                     // determine dominant mass loss rate
+        dMdt = (fractionOB * dMdt) + ((1.0 - fractionOB) * dMdtWR);                                     // combined mass loss rate
     }
 
-    // return mass loss rate, enhanced due to rotation, and dominant mass loss type
-    return std::make_tuple(dMdt * CalculateMLRateEnhancementRotation(), dominantMLType);
+    // calculate mass loss enhancement due to rotation, and dominant mass loss type
+    const double rotEnhancement = OPTIONS->EnableRotationallyEnhancedMassLoss() ? CalculateMLRateRotationEnhancement_Langer1998() : 1.0;
+
+    return std::make_tuple(dMdt * rotEnhancement, dominantMLType);
 }
+
+
+
 
 
 STELLAR_TYPE CH::EvolveToNextPhase() {

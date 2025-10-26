@@ -103,6 +103,16 @@ operator ~(Enum rhs) {
 
 
 
+
+// put these somewhere appropriate <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+ 
+typedef std::tuple<double, MASS_LOSS_TYPE> MASS_LOSS_T;
+
+
+
+
+
 // enum class types
 // ================
 //
@@ -431,11 +441,11 @@ const COMPASUnorderedMap<CHE_MODE, std::string> CHE_MODE_LABEL = {
 };
 
 // main sequence core mass prescription
-enum class MS_CORE_MASS_PRESCRIPTION: int { ZERO, MANDEL, BRCEK };
+enum class MS_CORE_MASS_PRESCRIPTION: int { BRCEK, HURLEY, MANDEL };
 const COMPASUnorderedMap<MS_CORE_MASS_PRESCRIPTION, std::string> MS_CORE_MASS_PRESCRIPTION_LABEL = {
-    { MS_CORE_MASS_PRESCRIPTION::ZERO,   "ZERO" },
-    { MS_CORE_MASS_PRESCRIPTION::MANDEL, "MANDEL" },
-    { MS_CORE_MASS_PRESCRIPTION::BRCEK,  "BRCEK" }
+    { MS_CORE_MASS_PRESCRIPTION::BRCEK,  "BRCEK" },
+    { MS_CORE_MASS_PRESCRIPTION::HURLEY, "HURLEY" },
+    { MS_CORE_MASS_PRESCRIPTION::MANDEL, "MANDEL" }
 };
 
 // logfile delimiters
@@ -551,7 +561,7 @@ enum class HURLEY_GAMMA_CONSTANTS: int { B_GAMMA, C_GAMMA, COUNT };
 
 // symbolic names for Giant Branch Parameters
 // these must be left as default values - their order can be changed with the caveat that the sentinel "COUNT" must stay at the end
-// it's a bit of a hack, but it lets me calculate the number of Timescales
+// it's a bit of a hack, but it lets me calculate the number of GB parameters
 enum class GBP: int {
     AH,                     // Hydrogen rate constant.  Hurley et al. 2000, p553
     AHHe,                   // Effective combined rate constant for both hydrogen and helium shell burning.  Hurley et al. 2000, eq 71
@@ -646,7 +656,7 @@ const COMPASUnorderedMap<LOVERIDGE_GROUP, std::string> LOVERIDGE_GROUP_LABEL = {
 
 // symbolic names for mass cutoffs
 // these must be left as default values - their order can be changed with the caveat that the sentinel "COUNT" must stay at the end
-// it's a bit of a hack, but it lets me calculate the number of Timescales
+// it's a bit of a hack, but it lets me calculate the number of mass cutoffs
 enum class HURLEY_MASS_CUTOFF: int {
     MHook,                  // Mass above which hook appears on MS (in Msol)
     MHeF,                   // Maximum initial mass for which helium ignites degenerately in a Helium Flash (HeF)
@@ -829,14 +839,13 @@ const COMPASUnorderedMap<ORBITAL_PERIOD_DISTRIBUTION, std::string> ORBITAL_PERIO
 };
 
 // pulsational pair instability prescriptions
-enum class PPI_PRESCRIPTION: int { WOOSLEY, STARTRACK, MARCHANT, FARMER, HENDRIKS, COMPAS };
+enum class PPI_PRESCRIPTION: int { WOOSLEY, STARTRACK, MARCHANT, FARMER, HENDRIKS };
 const COMPASUnorderedMap<PPI_PRESCRIPTION, std::string> PPI_PRESCRIPTION_LABEL = {
     { PPI_PRESCRIPTION::WOOSLEY,   "WOOSLEY" },
     { PPI_PRESCRIPTION::STARTRACK, "STARTRACK" },
     { PPI_PRESCRIPTION::MARCHANT,  "MARCHANT" },
     { PPI_PRESCRIPTION::FARMER,    "FARMER" },
-    { PPI_PRESCRIPTION::HENDRIKS,  "HENDRIKS" },
-    { PPI_PRESCRIPTION::COMPAS,    "COMPAS" }               // DEPRECATED Feb 2025 - remove June 2025
+    { PPI_PRESCRIPTION::HENDRIKS,  "HENDRIKS" }
 };
 
 // program status
@@ -863,7 +872,7 @@ const COMPASUnorderedMap<PULSAR_BIRTH_SPIN_PERIOD_DISTRIBUTION, std::string> PUL
 enum class HURLEY_R_CONSTANTS: int { B_ALPHA_R, C_ALPHA_R, B_BETA_R, C_BETA_R, B_DELTA_R, COUNT };
 
 // remnant mass prescriptions
-enum class REMNANT_MASS_PRESCRIPTION: int { HURLEY2000, BELCZYNSKI2002, FRYER2012, FRYER2022, MULLER2016, MULLERMANDEL, SCHNEIDER2020, SCHNEIDER2020ALT, MALTSEV2024};
+enum class REMNANT_MASS_PRESCRIPTION: int { HURLEY2000, BELCZYNSKI2002, FRYER2012, FRYER2022, MULLER2016, MULLERMANDEL, SCHNEIDER2020, SCHNEIDER2020ALT, MALTSEV2025};
 const COMPASUnorderedMap<REMNANT_MASS_PRESCRIPTION, std::string> REMNANT_MASS_PRESCRIPTION_LABEL = {
     { REMNANT_MASS_PRESCRIPTION::HURLEY2000,       "HURLEY2000" },
     { REMNANT_MASS_PRESCRIPTION::BELCZYNSKI2002,   "BELCZYNSKI2002" },
@@ -873,7 +882,7 @@ const COMPASUnorderedMap<REMNANT_MASS_PRESCRIPTION, std::string> REMNANT_MASS_PR
     { REMNANT_MASS_PRESCRIPTION::MULLERMANDEL,     "MULLERMANDEL" },
     { REMNANT_MASS_PRESCRIPTION::SCHNEIDER2020,    "SCHNEIDER2020" },
     { REMNANT_MASS_PRESCRIPTION::SCHNEIDER2020ALT, "SCHNEIDER2020ALT" },
-    { REMNANT_MASS_PRESCRIPTION::MALTSEV2024,      "MALTSEV2024" }
+    { REMNANT_MASS_PRESCRIPTION::MALTSEV2025,      "MALTSEV2025" }
 };
 
 // maltsev remnant mass prescription variant
@@ -988,7 +997,7 @@ const COMPASUnorderedMap<SN_STATE, std::string> SN_STATE_LABEL = {
 };
 
 // stellar populations
-enum class STELLAR_POPULATION: int { POPULATION_I, POPULATION_II }; // JR FIX popI was 1, popII 0
+enum class STELLAR_POPULATION: int { POPULATION_I, POPULATION_II };
 const COMPASUnorderedMap<STELLAR_POPULATION, std::string> STELLAR_POPULATION_LABEL = {
     { STELLAR_POPULATION::POPULATION_I,  "POPULATION_I" },
     { STELLAR_POPULATION::POPULATION_II, "POPULATION_II" }
@@ -1045,7 +1054,21 @@ const COMPASUnorderedMap<QCRIT_PRESCRIPTION, std::string> QCRIT_PRESCRIPTION_LAB
     { QCRIT_PRESCRIPTION::CLAEYS,                   "CLAEYS" },
     { QCRIT_PRESCRIPTION::GE_IC,                    "GE_IC" },
     { QCRIT_PRESCRIPTION::GE,                       "GE" },
-    { QCRIT_PRESCRIPTION::HURLEY_HJELLMING_WEBBINK, "HURLEY_HJELLMING_WEBBINK" },
+    { QCRIT_PRESCRIPTION::HURLEY_HJELLMING_WEBBINK, "HURLEY_HJELLMING_WEBBINK" }
+};
+
+// Ge critical mass ratio table 
+typedef std::tuple<DBL_VECTOR, std::vector<std::tuple<DBL_VECTOR, std::vector<DBL_VECTOR>>>> GE_QCRIT_TABLE;
+
+// Ge critical mass ratio models
+enum class GE_QCRIT_MODEL: int { ST_FULL, ST_HALF, ST_NON_C, IC_FULL, IC_HALF, IC_NON_C};
+const COMPASUnorderedMap<GE_QCRIT_MODEL, std::string> GE_QCRIT_MODEL_LABEL = {
+    { GE_QCRIT_MODEL::ST_FULL,  "ST_FULL" },
+    { GE_QCRIT_MODEL::ST_HALF,  "ST_HALF" },
+    { GE_QCRIT_MODEL::ST_NON_C, "ST_NON_C" },
+    { GE_QCRIT_MODEL::IC_FULL,  "IC_FULL" },
+    { GE_QCRIT_MODEL::IC_HALF,  "IC_HALF" },
+    { GE_QCRIT_MODEL::IC_NON_C, "IC_NON_C" }
 };
 
 // RSG mass loss prescriptions
@@ -1194,22 +1217,26 @@ typedef struct SNEvents {
 // we need to know if these values were actually specified
 // by the user via options - hence the boolean values
 
-typedef struct KickParameters {
-    bool   magnitudeRandomSpecified;                        // SSE and BSE
-    double magnitudeRandom;                                 // SSE and BSE
+typedef struct StellarKickParams {
 
-    bool   magnitudeSpecified;                              // SSE and BSE
-    double magnitude;                                       // SSE and BSE
+    std::optional<double> magnitude;        // Kick magnitude the system received during the supernova (km s^-1)
+    std::optional<double> magnitudeRandom; // Random number U(0,1) for choosing the supernova kick magnitude
 
-    bool   phiSpecified;                                    // BSE only
-    double phi;                                             // BSE only
+} StellarKickParamsT;
 
-    bool   thetaSpecified;                                  // BSE only
-    double theta;                                           // BSE only
+typedef struct ConstituentKickParams {
 
-    bool   meanAnomalySpecified;                            // BSE only
-    double meanAnomaly;                                     // BSE only
-} KickParametersT;
+    std::optional<double> eccentricAnomaly;                        // Eccentric anomaly at instataneous time of the SN
+    std::optional<double> trueAnomaly;                             // True anomaly at instantaneous time of the SN
+    std::optional<double> meanAnomaly;          // Mean anomaly at instantaneous time of the SN - uniform in [0, 2pi]
+    std::optional<double> phi;                  // Kick angle in the orbital plane, defined CCW from the radial vector pointed away from the Companion (rad) [0, 2pi)
+    std::optional<double> theta;                // Kick angle out of the orbital plane, toward the orbital angular momentum axis (rad) [-pi/2, pi/2]
+
+    double rocketKickMagnitude;                     // Rocket kick magnitude the system received after the supernova (km s^-1)
+    double rocketKickPhi;                           // Rocket kick azimuthal angle phi the system received after the supernova
+    double rocketKickTheta;                         // Rocket kick polar angle theta the system received after the supernova
+
+} ConstituentKickParamsT;
 
 
 // struct for supernova attributes of the base star
@@ -1217,32 +1244,65 @@ typedef struct KickParameters {
 // easier (and more logical I think (for now, anyway) to
 // keep all SN-related attributes in the same place
 
-typedef struct SupernovaDetails {                           // Holds attributes, flags - if the star went supernova
-
-    KickParameters initialKickParameters;                   // User-supplied initial kick parameters - if present used in place of drawing randomly/from distributions
+typedef struct StellarSNDetails {                           // Holds attributes, flags - if the star went supernova
     
-    double         coreMassAtCOFormation;                   // Core mass of this star when it formed a compact object
-    double         coreRadiusAtCOFormation;                 // Core radius of this star when it formed a compact object
-    double         COCoreMassAtCOFormation;                 // Carbon Oxygen core mass of the star when it goes supernova and forms a compact object
-    double         drawnKickMagnitude;                      // Kick magnitude the system received during the supernova (km s^-1)
-    double         eccentricAnomaly;                        // Eccentric anomaly at instataneous time of the SN
-    SNEventsT      events;                                  // Record of supernova events undergone by the star
-    double         fallbackFraction;                        // Fallback fraction during a supernova event
-    double         HeCoreMassAtCOFormation;                 // Helium core mass of the star when it goes supernova and forms a compact object
-    bool           isHydrogenPoor;                          // Flag to indicate if exploding star is hydrogen-poor. We consider an H-rich star all SN progenitors that have an H envelope, otherwise H-poor
-    double         kickMagnitude;                           // Kick magnitude the system received during the supernova (km s^-1)
-    double         kickMagnitudeRandom;                     // Random number U(0,1) for choosing the supernova kick magnitude - drawn once at star creation
-    double         rocketKickMagnitude;                     // Rocket kick magnitude the system received after the supernova (km s^-1)
-    double         rocketKickPhi;                           // Rocket kick azimuthal angle phi the system received after the supernova 
-    double         rocketKickTheta;                         // Rocket kick polar angle theta the system received after the supernova 
-    double         meanAnomaly;                             // Mean anomaly at instantaneous time of the SN - uniform in [0, 2pi]
-    double         phi;                                     // Kick angle in the orbital plane, defined CCW from the radial vector pointed away from the Companion (rad) [0, 2pi)
+    STELLAR_TYPE stellarTypePreCOFormation;                   // Stellar type immediately prior to CO formation
+    STELLAR_TYPE stellarTypePostCOFormation;                   // Stellar type at/immediately post CO formation
+
+    double massAtCOFormation;                 // Total mass of the star when it goes supernova and forms a compact object
+    double coreMassAtCOFormation;                  // Core mass of this star when it formed a compact object
+    double COCoreMassAtCOFormation;                // Carbon Oxygen core mass of the star when it goes supernova and forms a compact object
+    double HeCoreMassAtCOFormation;                // Helium core mass of the star when it goes supernova and forms a compact object
+
+    double radiusAtCOFormation;               // Total radius of the star when it goes supernova and forms a compact object
+    double coreRadiusAtCOFormation;                // Core radius of this star when it formed a compact object
+
+    double fallbackFraction;                       // Fallback fraction during a supernova event
+    bool   isHydrogenPoor;                         // Flag to indicate if exploding star is hydrogen-poor. We consider an H-rich star all SN progenitors that have an H envelope, otherwise H-poor
+
+    StellarKickParamsT suppliedKickParams;          // User-supplied initial kick parameters - if present used in place of drawing randomly/from distributions
+    StellarKickParamsT currentKickParams;           // Current kick parameters
+
+    SN_EVENT currentEvent;                               // Supernova event at the current timestep: NONE if no supernova event happening
+    SN_EVENT pastEvent;                                  // Supernova event at any past timestep   : NONE if no supernova event happened in any past timestep
+
+} StellarSNDetailsT;
+
+
+typedef struct ConstituentSNDetails {                           // Holds attributes, flags - if the star went supernova
+   
+    ConstituentKickParamsT suppliedKickParams;          // User-supplied initial kick parameters - if present used in place of drawing randomly/from distributions
+    ConstituentKickParamsT currentKickParams;          // Current kick parameters
+
     SN_STATE       supernovaState;                          // Indicates which star (or stars) are undergoing / have undergone a supernova event
-    double         theta;                                   // Kick angle out of the orbital plane, toward the orbital angular momentum axis (rad) [-pi/2, pi/2]
-    double         totalMassAtCOFormation;                  // Total mass of the star when it goes supernova and forms a compact object
-    double         totalRadiusAtCOFormation;                // Total radius of the star when it goes supernova and forms a compact object
-    double         trueAnomaly;                             // True anomaly at instantaneous time of the SN
-} SupernovaDetailsT;
+
+} ConstituentSNDetailsT;
+
+
+
+typedef struct MTEvent {                           // Details of a mass transfer event
+  
+    STELLAR_TYPE donor;                 // Stellar type of the donor star
+    STELLAR_TYPE accretor;              // Stellar type of the accretor star
+    MT_CASE      MTcase;                // MT_CASE for this evene
+
+} MTEventT;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 // pulsar parameters (if star becomes a Neutron Star)

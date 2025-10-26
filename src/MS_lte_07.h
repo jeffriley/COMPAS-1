@@ -45,11 +45,68 @@ protected:
 
 
     // member functions - alphabetically
-    double      CalculateCriticalMassRatioClaeys14(const bool p_AccretorIsDegenerate) const ;
-    double      CalculateCriticalMassRatioHurleyHjellmingWebbink() const                    { return HURLEY_HJELLMING_WEBBINK_QCRIT_MS_LTE_07; }
-    double      CalculateMassTransferRejuvenationFactor()                                   { return 1.0; }
+
+
+
 
     ENVELOPE    DetermineEnvelopeType() const                                               { return ENVELOPE::CONVECTIVE; }    // Always CONVECTIVE
 };
+
+
+
+
+
+
+
+
+
+/// MS_lte_07_Constituent <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+class MS_lte_07_Constituent: virtual public BinaryConstituentStar, public MS_lte_07 {
+
+public:
+
+
+protected:
+
+};
+
+
+
+    double      CalculateMTRejuvenationFactor()                                   { return 1.0; }
+
+
+double CalculateCriticalMassRatio_Claeys2014(const bool p_AccretorIsDegenerate) const ;
+double CalculateCriticalMassRatio_Hurley2002() const { return HURLEY_HJELLMING_WEBBINK_QCRIT_MS_LTE_07; }
+
+
+
+/*
+ * CalculateCriticalMassRatio_Claeys2014
+ *
+ * @brief
+ * Calculate the critical mass ratio, per Claeys et al. 2014
+ * 
+ * The critical mass ratio indicates whether the mass transfer is unstable.
+ *
+ * See Claeys et al. 2014, de Mink et al. 2013, and Ge et al. 2010, 2015, and 2020, for discussions.
+ *
+ * Assumes this star is the donor.
+ * 
+ * Critical mass ratio is defined as qCrit = Maccretor / Mdonor.
+ * 
+ *
+ * double CalculateCriticalMassRatio_Claeys2014(const bool p_AccretorIsDegenerate) const
+ *
+ * @param       p_AccretorIsDegenerate          Boolean indicating if accretor is degenerate
+ * @return                                      Critical mass ratio for unstable MT 
+ */
+inline double MS_lte_07_Constituent::CalculateCriticalMassRatio_Claeys2014(const bool p_AccretorIsDegenerate) const {                                                                                                          
+    return p_AccretorIsDegenerate
+            ? OPTIONS->MassTransferCriticalMassRatioMSLowMassDegenerateAccretor()       // degenerate accretor
+            : OPTIONS->MassTransferCriticalMassRatioMSLowMassNonDegenerateAccretor();   // non-degenerate accretor
+}
+
 
 #endif // __MS_lte_07_h__

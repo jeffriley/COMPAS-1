@@ -93,7 +93,7 @@
 //                                       removed compiler version checks from Makefile - they seemed to only work for native Ubuntu and were more of a nuisance than anything...  (old version exists as Makefile-checks)
 //                                   Defect repairs:
 //                                       added recalculation of gbParams Mx & Lx in HeHG calculateGbParams()
-//                                       created HeHG::CalculateGBParams_Static() and GiantBranch::CalculateGBParams_Static(), called from EAGB::ResolveEnvelopeLoss() to facilitate calculation of attributes for new stellar type before actually switching.  Needed to rewrite some other functions as static.  Note: this needs to be revisited and a more elegant solution implemented.
+//                                       created HeHG::CalculateGBparams_Static() and GiantBranch::CalculateGBparams_Static(), called from EAGB::ResolveEnvelopeLoss() to facilitate calculation of attributes for new stellar type before actually switching.  Needed to rewrite some other functions as static.  Note: this needs to be revisited and a more elegant solution implemented.
 //                                       added CalculateRadiusAndStellarTypeOnPhase() for HeHG and HeGBstars, and changed call to calculateRadiusOnPhase() to CalculateRadiusAndStellarTypeOnPhase() in BaseStar::EvolveOnPhase().  This allows for HeHG and HeGB stars to change stellar type based on radius (previously missed).
 //                                       set M = McBAGB for EAGB & TPAGB only (was being set for all types >= TPAGB)
 //                                       added extra print detailed in BaseBinaryStar:Evolve() - sometimes missing a switch type in detailed output if only 1 timestep
@@ -1582,7 +1582,7 @@
 //  03.20.03   IM - June 18, 2025       - Defect repair, enhancement:
 //                                          - TPAGB stars should no longer experience supernovae if SN conditions are not satisfied, rather than defaulting to CCSN (corrects the partial fix in 03.10.02)
 //                                          - Added new parameter (threshold mass, generally expected to be MCH or MECS) to CalculateCoreMassAtSupernova_Static()
-//                                          - Removed McSN from GBParams, instead computed on the fly when needed
+//                                          - Removed McSN from GBparams, instead computed on the fly when needed
 //  03.20.04   AB - Jun 23, 2025        - Defect repair, enhancement:
 //                                          - Fixes to MS mergers and CHE when BRCEK core mass prescription is used -- MS core mass is now correctly initialised after full mixing in MS
 //                                            mergers and CH stars that spun down
@@ -1667,6 +1667,8 @@
 //  03.26.00  IM - September 2, 2025    - Enhancement, defect repairs:
 //                                          - First (simplified) implementation of the Lau+ (2024) Hamstars thermally limited accretion prescription
 //                                          - Corrected errors in combining OB and WR winds in CH::CalculateMassLossRateBelczynski2010(), CalculateMassLossRateMerritt2025() and CH::CalculateMassLossFractionOB() [previously CalculateMassLossRateWeightOB()]
+//  03.26.01  AB - October 24, 2025     - Option name change:
+//                                          - Main sequence core mass prescription ZERO renamed to HURLEY; deprecated ZERO
 //
 // Version string format is MM.mm.rr, where
 //
@@ -1677,7 +1679,7 @@
 // if MM is incremented, set mm and rr to 00, even if defect repairs and minor enhancements were also made
 // if mm is incremented, set rr to 00, even if defect repairs were also made
 
-const std::string VERSION_STRING = "03.26.00";
+const std::string VERSION_STRING = "03.26.0q";
 
 
 # endif // __changelog_h__

@@ -58,12 +58,16 @@ protected:
 
     // member functions
 
-    double          CalculateHeliumAbundanceCoreOnPhase() const                     { return 0.0; };
-    double          CalculateHeliumAbundanceSurfaceOnPhase() const                  { return 0.0; };
+
+GNU_CONST inline double CalculateHAbundanceCoreOnPhase(const double p_Tau, const double p_InitialHAbundance) const override{ return 0.0; };
+GNU_CONST inline double CalculateHAbundanceSurfaceOnPhase(const double p_Tau, const double p_InitialHAbundance) const override { return 0.0; };
+
+GNU_CONST inline double CalculateHeAbundanceCoreOnPhase(const double p_Metallicity, const double p_Tau, const double p_InitialHeAbundance = 0.0) const override { return 0.0; };
+GNU_CONST inline double CalculateHeAbundanceSurfaceOnPhase(const double p_Metallicity, const double p_Tau, const double p_InitialHeAbundance) const override{ return 0.0; };
     
-    double          CalculateHydrogenAbundanceCoreOnPhase() const                   { return 0.0; };
-    double          CalculateHydrogenAbundanceSurfaceOnPhase() const                { return 0.0; };
-    
+
+
+
     double          CalculateLuminosityOnPhase(const double p_Mass,
                                                 const double p_Time,
                                                 const double p_Metallicity) const   { return CalculateLuminosityOnPhase_Static(p_Mass, p_Time, p_Metallicity); }

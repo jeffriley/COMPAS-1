@@ -62,13 +62,15 @@ protected:
 
 
     // member functions - alphabetically
-    double          CalculateHeliumAbundanceCoreOnPhase() const                                             { return 1.0 - m_Metallicity; }
-    double          CalculateHeliumAbundanceSurfaceOnPhase() const                                          { return 1.0 - m_Metallicity; }
+
+
+GNU_CONST inline double CalculateHAbundanceCoreOnPhase(const double p_Tau, const double p_InitialHAbundance) const override { return 0.0; }
+GNU_CONST inline double CalculateHAbundanceSurfaceOnPhase(const double p_Tau, const double p_InitialHAbundance) const override { return 0.0; }
+GNU_CONST inline double CalculateHeAbundanceCoreOnPhase(const double p_Metallicity, const double p_Tau, const double p_InitialHeAbundance = 0.0) const override { return 1.0 - p_Metallicity; }
+GNU_CONST inline double CalculateHeAbundanceSurfaceOnPhase(const double p_Metallicity, const double p_Tau, const double p_InitialHeAbundance) const override { return 1.0 - p_Metallicity; }
     
-    double          CalculateHydrogenAbundanceCoreOnPhase() const                                           { return 0.0; }
-    double          CalculateHydrogenAbundanceSurfaceOnPhase() const                                        { return 0.0; }
     
-    double          CalculateLambdaDewi() const                                                             { return BaseStar::CalculateLambdaDewi(); }
+    double          CalculateCELambda_Dewi() const                                                             { return BaseStar::CalculateCELambda_Dewi(); }
     double          CalculateLambdaNanjingStarTrack(const double p_Mass, const double p_Metallicity) const  { return BaseStar::CalculateLambdaNanjingStarTrack(0.0, 0.0); }
     double          CalculateLambdaNanjingEnhanced(const int p_MassIndex, const STELLAR_POPULATION p_StellarPop) const { return CalculateLambdaNanjingStarTrack(0.0, 0.0); }
     double          CalculateLuminosityOnPhase(const double p_Mass,
@@ -82,9 +84,11 @@ protected:
                                                 const double p_AccretorMassRate,
                                                 const bool   p_IsHeRich)                                    { return CalculateMassAcceptanceRate(p_DonorMassRate, p_IsHeRich); }            // Ignore the input accretion rate for WDs
 
-    double          CalculateRadiusOnPhase(const double p_Mass) const                                       { return CalculateRadiusOnPhase_Static(p_Mass); }
-    double          CalculateRadiusOnPhase(double p_Mass, double p_Luminosity) const                        { return CalculateRadiusOnPhase(p_Mass); }                                      // ignore luminosity argument for WDs
-    double          CalculateRadiusOnPhase() const                                                          { return CalculateRadiusOnPhase(m_Mass); }                                      // Use class member variables
+////    double          CalculateRadiusOnPhase(const double p_Mass) const                                       { return CalculateRadiusOnPhase_Static(p_Mass); }
+////    double          CalculateRadiusOnPhase(double p_Mass, double p_Luminosity) const                        { return CalculateRadiusOnPhase(p_Mass); }                                      // ignore luminosity argument for WDs
+////    double          CalculateRadiusOnPhase() const                                                          { return CalculateRadiusOnPhase(m_Mass); }                                      // Use class member variables
+
+
     std::tuple <double, STELLAR_TYPE> CalculateRadiusAndStellarTypeOnPhase() const                          { return BaseStar::CalculateRadiusAndStellarTypeOnPhase(); }
 
     STELLAR_TYPE    EvolveToNextPhase();                                                                                                                                                    // Allow evolution, either SN or Rejuvenation

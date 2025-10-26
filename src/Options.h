@@ -123,7 +123,7 @@ const std::string NOT_PROVIDED_STR(1, static_cast<char>(NOT_PROVIDED_CHAR));
 // to the COMPAS default.  Note that this is different from the question of whether the option
 // value is equal to the COMPAS default - this macro indicates how the option value was set:
 // was it provided by the user, or was it set to the default value because a value was not
-// provided by the user.
+// provided by the user?
 //
 // This is a reasonable proxy for the Option::OptionSpecified() function, but only if the
 // `optName` argument is actually a valid option name.
@@ -237,12 +237,11 @@ private:
     };
 
     std::vector<std::tuple<std::string, std::string, std::string, bool, std::string>> deprecatedOptionValues = {
-        { "critical-mass-ratio-prescription",          "GE20",        "GE",          false, "20241118" },
-        { "critical-mass-ratio-prescription",          "GE20_IC",     "GE_IC",       false, "20241118" },
         { "pulsational-pair-instability-prescription", "COMPAS",      "WOOSLEY",     false, "20250208" },
 	    { "pulsar-birth-spin-period-distribution",     "ZERO",        "NOSPIN",      false, "20250303" },
         { "tides-prescription",                        "KAPIL2024",   "KAPIL2025",   false, "20250525" },
         { "mass-loss-prescription",                    "MERRITT2024", "MERRITT2025", false, "20250717" },
+        { "main-sequence-core-mass-prescription",      "ZERO",        "HURLEY",      false, "20251024" },
         { "use-mass-loss",                             "TRUE",        "MERRITT2025", true,  "20250809" },
         { "use-mass-loss",                             "ON",          "MERRITT2025", true,  "20250809" },
         { "use-mass-loss",                             "YES",         "MERRITT2025", true,  "20250809" },
@@ -912,7 +911,7 @@ public:
             double                                              m_InitialMassFunctionPower;                                     // single IMF power law set manually
 
             // Maltsev remnant mass model
-            double                                              m_MaltsevFallback;                                              // fallback fraction for Maltsev fallback black holes
+            double                                              m_MaltsevFallbackFraction;                                      // fallback fraction for Maltsev fallback black holes
             ENUM_OPT<MALTSEV_MODE>                              m_MaltsevMode;                                                  // Maltsev remnant mass mode (which variant of the prescription)
 
             // Mass ratio
@@ -1004,8 +1003,8 @@ public:
             double                                              m_NeutrinoMassLossValueBH;                                      // Value (corresponding to assumption) for neutrino mass loss for BH formation
 
 
-            double                                              m_Fryer22fmix;                                                  // Parameter describing the mixing growth time when using Fryer 2022 remnant mass presc. 
-            double                                              m_Fryer22Mcrit;                                                 // Critical mass for black hole formation when using Fryer 2022 remnant mass presc. 
+            double                                              m_Fryer2022fmix;                                                // Parameter describing the mixing growth time when using Fryer 2022 remnant mass presc. 
+            double                                              m_Fryer2022Mcrit;                                               // Critical mass for black hole formation when using Fryer 2022 remnant mass presc. 
 
             // Fixed uk options
             bool                                                m_UseFixedUK;                                                   // Whether to fix uk to a certain value (default is to NOT fix uk)
@@ -1597,7 +1596,7 @@ public:
     
     MS_CORE_MASS_PRESCRIPTION                   MainSequenceCoreMassPrescription() const                                { return OPT_VALUE("main-sequence-core-mass-prescription", m_MainSequenceCoreMassPrescription.type, true); }
 
-    double                                      MaltsevFallback() const                                                 { return OPT_VALUE("maltsev-fallback", m_MaltsevFallback, true); }
+    double                                      MaltsevFallbackFraction() const                                         { return OPT_VALUE("maltsev-fallback", m_MaltsevFallbackFraction, true); }
     MALTSEV_MODE                                MaltsevMode() const                                                     { return OPT_VALUE("maltsev-mode", m_MaltsevMode.type, true); }
 
     double                                      Mass() const                                                            { return OPT_VALUE("mass", m_Mass, true); }

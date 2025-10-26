@@ -12,7 +12,7 @@ namespace utils {
     /*
      * Iterative binary search
      *
-     * For a given number x and a sorted array arr, return the lower and upper bin edges of x in arr.
+     * For a given floating-point x, and a sorted array arr, return the lower and upper bin edges of x in arr.
      *
      *
      * INT_VECTOR binarySearch(const std::vector<double> p_Arr, const double p_x)
@@ -20,16 +20,16 @@ namespace utils {
      * @param   [IN]    p_Arr               Sorted array to search over
      * @param   [IN]    p_x                 Value to search for
      * 
-     * @return                              Vector containing indices of the lower and upper
-     *                                      bin edges containing x. If x < min(Arr), return
-     *                                      {-1, 0}. If x > max(Arr), return {0, -1}. If x
-     *                                      is equal to an array element, return index of that
-     *                                      element.
+     * @return                              Vector containing integer indices of the lower and upper
+     *                                      bin edges containing x.
+     *                                      If x < min(Arr), return {-1, 0}
+     *                                      If x > max(Arr), return {0, -1}
+     *                                      If x is equal to an array element, return index of that element i.e. {idx, idx}
      */
     INT_VECTOR BinarySearch(const std::vector<double> p_Arr, const double p_x) {
-        int low = 0;
-        int up = p_Arr.size() - 1;
-        int mid = 0;
+        size_t low = 0;
+        size_t up  = p_Arr.size() - 1;
+        size_t mid = 0;
 
         // If x is not within array limits...
         if      (p_x < p_Arr[low]) { return {-1, 0}; }
@@ -1325,9 +1325,9 @@ namespace utils {
 
 
     /*
-     * Solve Kepler's Equation using root finding techniques. Here we use Newton-Raphson.
+     * Solve Kepler's Equation using Newton-Raphson iteration.
      *
-     * For a definition of all the anomalies see here:
+     * For a definition of the anomalies seen here:
      *
      *    https://en.wikipedia.org/wiki/Mean_anomaly
      *    https://en.wikipedia.org/wiki/True_anomaly
@@ -1336,8 +1336,8 @@ namespace utils {
      *
      * std::tuple<ERROR, double, double> SolveKeplersEquation(const double p_MeanAnomaly, const double p_Eccentricity)
      *
-     * @param   [IN]    p_MeanAnomaly               The mean anomaly
-     * @param   [IN]    p_Eccentricity              Eccentricity of the binary
+     * @param           p_MeanAnomaly               The mean anomaly
+     * @param           p_Eccentricity              Eccentricity of the binary
      * @return                                      Tuple containing (in order): error value, eccentric anomaly, true anomaly
      *                                              The error value returned will be:
      *                                                  ERROR::NONE if no error occurred
@@ -1350,10 +1350,10 @@ namespace utils {
 
         ERROR error = ERROR::NONE;                                                                                                      // error
 
-        double e = p_Eccentricity;
-        double M = p_MeanAnomaly;
-        double E = p_MeanAnomaly;                                                                                                       // initial guess at E is M - correct for e = 0
+        const double e = p_Eccentricity;
+        const double M = p_MeanAnomaly;
 
+        double E      = p_MeanAnomaly;                                                                                                       // initial guess at E is M - correct for e = 0
         double kepler = E - (e * sin(E)) - M;                                                                                           // let f(E) = 0.  Equation (92) in my "A simple toy model" document
 
         int iteration = 0;
@@ -1367,8 +1367,8 @@ namespace utils {
 
         double nu = 2.0 * atan((std::sqrt((1.0 + e) / (1.0 - e))) * tan(0.5 * E));                                                      // convert eccentric anomaly into true anomaly.  Equation (96) in "A simple toy model" document
 
-        if (utils::Compare(E, M_PI) >= 0 && utils::Compare(E, _2_PI) <= 0) nu += _2_PI;                                                 // add 2PI if necessary
-        else if (utils::Compare(E, 0.0) < 0 || utils::Compare(E, _2_PI) > 0) error = ERROR::OUT_OF_BOUNDS;                              // E < 0 or E > 2pi
+        if (utils::Compare(E, M_PI) >= 0 && utils::Compare(E, _2_PI) <= 0) nu += _2_PI;                     // add 2PI if necessary
+        else if (utils::Compare(E, 0.0) < 0 || utils::Compare(E, _2_PI) > 0) error = ERROR::OUT_OF_BOUNDS;  // E < 0 or E > 2pi
 
         return std::make_tuple(error, E, nu);
     }

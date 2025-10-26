@@ -123,22 +123,25 @@ double WhiteDwarfs::CalculateEtaPTY(const double p_MassTransferRate) {
 
 
 /*
- * Calculate the luminosity of a White Dwarf as it cools
+ * CalculateLuminosityOnPhase_Hurley2000_Static
  *
- * Hurley et al. 2000, eq 90
+ * @brief
+ * Calculate the luminosity of a White Dwarf as it cools, per Hurley et al. 2000, eq 90
  *
  *
- * double CalculateLuminosityOnPhase_Static(const double p_Mass, const double p_Time, const double p_Metallicity, const double p_BaryonNumber)
+ * double CalculateLuminosityOnPhase_Hurley2000_Static(const double p_Metallicity, const double p_Mass, const double p_Time, const double p_BaryonNumbe)
  *
- * @param   [IN]    p_Mass                      Mass in Msol
- * @param   [IN]    p_Time                      Time since White Dwarf formation in Myr
- * @param   [IN]    P_Metallicity               Metallicity of White Dwarf
- * @param   [IN]    p_BaryonNumber              Baryon number - differs per White Dwarf type (HeWD, COWD, ONeWD)
- * @return                                      Luminosity of a White Dwarf in Lsol
+ * @param       P_Metallicity                   Metallicity of the star
+ * @param       p_Mass                          Mass of the star (Msol)
+ * @param       p_Time                          Time since White Dwarf formation (Myr) <<<<<<<<<<<<<<<<<<< is that right?  or time since birth?????
+ * @param       p_BaryonNumber                  Baryon number - differs per White Dwarf type (HeWD, COWD, ONeWD).
+ *                                              See `WD_Baryon_Number` in constants.h
+ * @return                                      Luminosity of the White Dwarf (Lsol)
  */
-double WhiteDwarfs::CalculateLuminosityOnPhase_Static(const double p_Mass, const double p_Time, const double p_Metallicity, const double p_BaryonNumber) {
+double WhiteDwarfs::CalculateLuminosityOnPhase_Hurley2000_Static(const double p_Metallicity, const double p_Mass, const double p_Time, const double p_BaryonNumber) {
     return (635.0 * p_Mass * PPOW(p_Metallicity, 0.4)) / PPOW(p_BaryonNumber * (p_Time + 0.1), 1.4);
 }
+
 
 /* Calculate:
  *
@@ -174,36 +177,53 @@ DBL_DBL WhiteDwarfs::CalculateMassAcceptanceRate(const double p_DonorMassRate, c
 }
 
 /*
- * Calculate the radius of a white dwarf - good for all types of WD
+ * CalculateRadius_Marsh2004_Static
  *
- * Originally from Eggleton 1986, quoted in Verbunt & Rappaport 1988 and Marsh et al. 2004 (eq. 24).
- * Compared to the Hurley et al. 2000 prescription, the additional factor that includes WD_MP allows
- * for the change to a constant density configuration at low masses (e.g., Zapolsky & Salpeter 1969)
- * after mass loss episodes.
+ * @brief
+ * Calculate the radius of a white dwarf, per Marsh et al. 2004 eq 24.
+ * (See https://academic.oup.com/mnras/article/350/1/113/986306)
  *
- * double CalculateRadiusOnPhase_Static(const double p_Mass)
+ * Originally from Eggleton 1986, quoted in Verbunt & Rappaport 1988, equation
+ * from Marsh et al. 2004.
+ * 
+ * Compared to the Hurley et al. 2000 prescription, the additional factor that
+ * includes WD_MP allows for the change to a constant density configuration at
+ * low masses (e.g., Zapolsky & Salpeter 1969) after mass loss episodes.
+ * 
+ * Since a WD is ~Earth-size, expect the returned WD mass to be ~0.009 for 
+ * p_Mass > 0.0.  If p_Mass is above the Chandrasekhar mass, the returned WD
+ * radius will be the radius of a nuetron star (NEUTRON_STAR_RADIUS).  Zero
+ * (or below!) mass means zero radius.
  *
- * @param   [IN]    p_Mass                      Mass in Msol
- * @return                                      Radius of a White Dwarf in Rsol (since WD is ~ Earth sized, expect answer around 0.009)
+ * 
+ * double CalculateRadius_Marsh2004_Static(const double p_Mass)
+ *
+ * @param       p_Mass                          Mass of the star (Msol)
+ * @return                                      WD radius (Rsol)
  */
-double WhiteDwarfs::CalculateRadiusOnPhase_Static(const double p_Mass) {
+GNU_CONST double WhiteDwarfs::CalculateRadius_Marsh2004_Static(const double p_Mass) {
 
-    // sanity check for mass - just return 0.0 if mass <= 0
-    if (utils::Compare(p_Mass, 0.0) <= 0) return 0.0;
-    
-    if (utils::Compare(p_Mass, MCH) >= 0) return NEUTRON_STAR_RADIUS;                               // only expected to come up if asking for the core or remnant radius of a giant star
-    
-    const double MCH_Mass_one_third  = std::cbrt(MCH / p_Mass); 
-    const double MCH_Mass_two_thirds = MCH_Mass_one_third * MCH_Mass_one_third;
-    
-    double MP_Mass = WD_MP / p_Mass;
-    double MP_Mass_two_thirds = MP_Mass / std::cbrt(WD_MP / p_Mass); 
+    double radius = 0.0;                    // default return value
 
-    double firstFactor = std::sqrt((MCH_Mass_two_thirds - 1.0 / MCH_Mass_two_thirds));
-    double preSecondFactor = 1.0 + 3.5 * MP_Mass_two_thirds + MP_Mass;
-    double secondFactor = std::cbrt(preSecondFactor) / preSecondFactor;
+    if (p_Mass > 0.0) {                     // mass of star > zero?
+        if (p_Mass >= MCH) {                // yes - mass > Chandrasekhar mass?
+            radius = NEUTRON_STAR_RADIUS;   // yes - giant star core/remnant
+        }
+        else {                              // use Marsh et al. 2004 eq 24
+    
+            const double MCH_Mass_1_3 = std::cbrt(MCH / p_Mass); 
+            const double MCH_Mass_2_3 = MCH_Mass_1_3 * MCH_Mass_1_3;
+    
+            const double MP_Mass      = WD_MP / p_Mass;
+            const double MP_Mass_2_3  = MP_Mass / std::cbrt(WD_MP / p_Mass); 
 
-    return std::max(NEUTRON_STAR_RADIUS, 0.0114 * firstFactor * secondFactor);
+            const double f = 1.0 + 3.5 * MP_Mass_2_3 + MP_Mass;
+
+            radius = std::max(NEUTRON_STAR_RADIUS, 0.0114 * std::sqrt((MCH_Mass_2_3 - 1.0 / MCH_Mass_2_3)) * std::cbrt(f) / f);
+        }
+    }
+
+    return radius;
 }
 
 

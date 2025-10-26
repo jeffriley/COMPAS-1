@@ -23,7 +23,6 @@ public:
     
     // member functions
     
-    static  double  CalculateRemnantMass_Static(const double p_COCoreMass)                                      {  return utils::Compare(p_COCoreMass, 7.0)< 0 ? 1.17 + (0.09 * p_COCoreMass) : p_COCoreMass; }                                                                                  // Hurley et al., eq 92; Hurley says that a >7.0 CO core leads to a collapse into a BH, but is ambiguous about the BH mass in this case -- we will assume it's just the CO core
     
             double  CalculateRemnantRadius() const                                                              { return Radius(); }
 
@@ -32,49 +31,47 @@ protected:
 
 
     // member functions - alphabetically
-    double          CalculateCOCoreMassOnPhase() const                                                          { return m_Mass; }                                                      // Return m_Mass
+
+
+
+
+
+///// ON PHASE FUNCTIONS   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+inline double CalculateCOCoreMass() const override { return m_StateHistory.CurrentState.Mass(); } // McCO = M for remnants
 
     double          CalculateConvectiveCoreRadius() const                                                       { return m_Radius; }                                                    // All core
     DBL_DBL         CalculateConvectiveEnvelopeMass() const                                                     { return std::tuple<double, double> (0.0, 0.0); }
 
     double          CalculateCoreMassOnPhase() const                                                            { return m_Mass; }                                                      // Return m_Mass
 
-    double          CalculateCriticalMassRatio(const bool p_AccretorIsDegenerate,
-                                               const double p_massTransferEfficiencyBeta) const                 { return 0.0; }                                                         // Should not be called (but if it is, mass transfer from a neutron star always treated as stable)
 
-    double          CalculateCriticalMassRatioClaeys14(const bool p_AccretorIsDegenerate) const                 { return 0.0; }
-    double          CalculateCriticalMassRatioGeEtAl(const QCRIT_PRESCRIPTION p_qCritPrescription,
-                                                     const double p_massTransferEfficiencyBeta)                 { return 0.0; }
-    double          CalculateCriticalMassRatioHurleyHjellmingWebbink() const                                    { return 0.0; }
+GNU_CONST inline DBL_DBL CalculateRemnantMass(const double p_COCoreMass) { return CalculateRemnantMass_Static(const double p_COCoreMass); }
+GNU_CONST static DBL_DBL CalculateRemnantMass_Static(const double p_COCoreMass);
+GNU_CONST static DBL_DBL CalculateRemnantMass_Hurley2000_Static(const double p_COCoreMass);
 
-    void            CalculateGBParams(const double p_Mass, DBL_VECTOR &p_GBParams)                              { GiantBranch::CalculateGBParams(p_Mass, p_GBParams); }                 // Default to GiantBranch  
-    void            CalculateGBParams()                                                                         { CalculateGBParams(m_Mass0, m_GBParams); }                             // Use class member variables
 
-    double          CalculateHeliumAbundanceCoreOnPhase() const                                                 { return 0.0; };
-    double          CalculateHeliumAbundanceSurfaceOnPhase() const                                              { return 0.0; };
+
+// per Hurley SSE code, we don't (re)calculate gbparams for anything above and including whitedwarfs
+///    void            CalculateGBparams(const double p_Mass, DBL_VECTOR &p_GBparams)                              { GiantBranch::CalculateGBparams(p_Mass, p_GBparams); }                 // Default to GiantBranch  
+///    void            CalculateGBparams()                                                                         { CalculateGBparams(m_Mass0, m_GBparams); }                             // Use class member variables
+
+
+GNU_CONST inline double CalculateHAbundanceCoreOnPhase(const double p_Tau, const double p_InitialHAbundance) const override { return 0.0; };
+GNU_CONST inline double CalculateHAbundanceSurfaceOnPhase(const double p_Tau, const double p_InitialHAbundance) const override { return 0.0; };
+
+GNU_CONST inline double CalculateHeAbundanceCoreOnPhase(const double p_Metallicity, const double p_Tau, const double p_InitialHeAbundance = 0.0) const override { return 0.0; };
+GNU_CONST inline double CalculateHeAbundanceSurfaceOnPhase(const double p_Metallicity, const double p_Tau, const double p_InitialHeAbundance) const override { return 0.0; };
     
-    double          CalculateHydrogenAbundanceCoreOnPhase() const                                               { return 0.0; };
-    double          CalculateHydrogenAbundanceSurfaceOnPhase() const                                            { return 0.0; };
     
     double          CalculateHeCoreMassOnPhase() const                                                          { return m_Mass; }                                                      // Return m_Mass
 
-    DBL_DBL_DBL_DBL CalculateImKnmDynamical(const double p_Omega, const double p_SemiMajorAxis, const double p_M2) const   { return std::make_tuple(0.0, 0.0, 0.0, 0.0); }              // Default is no tidal response
-    DBL_DBL_DBL_DBL CalculateImKnmEquilibrium(const double p_Omega, const double p_SemiMajorAxis, const double p_M2) const { return std::make_tuple(0.0, 0.0, 0.0, 0.0); }              // Default is no tidal response
-
     double          CalculateInitialSupernovaMass() const                                                       { return GiantBranch::CalculateInitialSupernovaMass(); }                // Use GiantBranch
 
-    double          CalculateLambdaDewi() const                                                                 { return BaseStar::CalculateLambdaDewi(); }
-    double          CalculateLambdaNanjingStarTrack(const double p_Mass, const double p_Metallicity) const      { return BaseStar::CalculateLambdaNanjingStarTrack(0.0, 0.0); }
-
-    DBL_DBL         CalculateMassAcceptanceRate(const double p_DonorMassRate,
-                                                const double p_AccretorMassRate);
-    DBL_DBL         CalculateMassAcceptanceRate(const double p_DonorMassRate,
-                                                const double p_AccretorMassRate,
-                                                const bool   p_IsHeRich)                                        { return CalculateMassAcceptanceRate(p_DonorMassRate, p_AccretorMassRate); } // Ignore the He content for non-WDs
 
     double          CalculateMassLossRateHurley()                                                               { m_DominantMassLossRate = MASS_LOSS_TYPE::NONE ; return 0.0; }
 
-std::tuple<double, MASS_LOSS_TYPE> CalculateMassLossRateBelczynski2010(const double p_Metallicity, const double p_Luminosity, const double p_HeAbundanceSurface) { return make_tuple(0.0, MASS_LOSS_TYPE::NONE); }
+MASS_LOSS_T CalculateMassLossRateBelczynski2010(const double p_Metallicity, const double p_Luminosity, const double p_HeAbundanceSurface) { return make_tuple(0.0, MASS_LOSS_TYPE::NONE); }
 
     double          CalculateMassLossRateMerritt2025()                                                          { m_DominantMassLossRate = MASS_LOSS_TYPE::NONE ; return 0.0; }                                                         // 
 
@@ -83,8 +80,6 @@ std::tuple<double, MASS_LOSS_TYPE> CalculateMassLossRateBelczynski2010(const dou
     double          CalculateRadialExtentConvectiveEnvelope() const                                             { return 0.0; }         // WD stars don't have a convective envelope
 
     std::tuple <double, STELLAR_TYPE> CalculateRadiusAndStellarTypeOnPhase() const                              { return BaseStar::CalculateRadiusAndStellarTypeOnPhase(); }
-    
-    double          CalculateTauOnPhase() const                                                                 { return m_Tau; }                                                       // NO-OP
    
     double          CalculateThermalTimescale(const double p_Radius = 1.0) const                                { return CalculateDynamicalTimescale(); }                               // Parameter is ignored
     double          CalculateThermalTimescale() const                                                           { return CalculateThermalTimescale(m_Radius); }                         // Use inheritance hierarchy
@@ -94,13 +89,26 @@ std::tuple<double, MASS_LOSS_TYPE> CalculateMassLossRateBelczynski2010(const dou
     void            CalculateTimescales(const double p_Mass, DBL_VECTOR &p_Timescales)                          { return TPAGB::CalculateTimescales(p_Mass, p_Timescales); }            // Use TPAGB
     void            CalculateTimescales()                                                                       { CalculateTimescales(m_Mass0, m_Timescales); }                         // Use class member variables
 
-    double          CalculateZetaConstantsByEnvelope(ZETA_PRESCRIPTION p_ZetaPrescription)                      { return 0.0; }                                                         // Should never be called...
-    
-    double          CalculateZetaEquilibrium()                                      { return -std::numeric_limits<double>::infinity(); }                                         // Nuclear timescale MT should be impossible from remnant stars; should never be called
-
     double          ChooseTimestep(const double p_Time) const;
     
     ENVELOPE        DetermineEnvelopeType() const                                                               { return ENVELOPE::REMNANT; }                                           // Always REMNANT
+
+
+
+
+
+
+
+///// PHASE END, ETC.      <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+
+
+
+
+
 
     STELLAR_TYPE    EvolveToNextPhase()                                                                         { return BaseStar::EvolveToNextPhase(); }                               // Default to BaseStar
 
@@ -133,5 +141,133 @@ std::tuple<double, MASS_LOSS_TYPE> CalculateMassLossRateBelczynski2010(const dou
     bool            ShouldSkipPhase() const                                                                     { return false; }                                                       // Don't skip WD phase
 
 };
+
+
+
+/// inline candidates <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+/*
+ * CalculateRemnantMass_Hurley2000_Static
+ *
+ * @brief
+ * Calculate remnant mass, per Hurley et al. 2000, eq 92.
+ * 
+ * Hurley et al. 2000 indicates a star with a CO core > 7.0 Msol leads to a collapse into a BH,
+ * but is ambiguous about the BH mass in this case - we assume here that it's just the CO core.
+ *
+ * 
+ * static DBL_DBL CalculateRemnantMass_Hurley2000_Static(const double p_COCoreMass)
+ *
+ * @param       p_COCoreMass                    Pre-SN Carbon Oxygen (CO) core mass of the star (Msol)
+ * @return                                      Tuple containing:
+ *                                                   DOUBLE Remnant mass (Msol)
+ *                                                   DOUBLE Fraction of mass falling back onto compact object [0.0, 1.0]
+ */
+GNU_CONST static inline double Remnants::CalculateRemnantMass_Hurley2000_Static(const double p_COCoreMass) {
+    return std::make_tuple((p_COCoreMass > 7.0 ? p_COCoreMass : 1.17 + (0.09 * p_COCoreMass)), 0.0); // fallback fraction not defined by Hurley
+}
+
+
+/*
+ * CalculateRemnantMass_Static
+ *
+ * @brief
+ * Calculate remnant mass.
+ * 
+ * Calls relevant remnant mass function based on the evolutionary mode given in program options.
+ * 
+ * 
+ * static DBL_DBL CalculateRemnantMass_Static(const double p_COCoreMass)
+ *
+ * @param       p_COCoreMass                    Pre-SN Carbon Oxygen (CO) core mass of the star (Msol)
+ * @return                                      Tuple containing:
+ *                                                   DOUBLE Remnant mass (Msol)
+ *                                                   DOUBLE Fraction of mass falling back onto compact object [0.0, 1.0]
+ */
+GNU_CONST static inline DBL_DBL Remnants::CalculateRemnantMass_Static(const double p_COCoreMass) {
+
+    double mass;
+    double fallbackFraction;
+
+    Switch (OPTIONS->Mode()) {                                              // which evolution mode?
+
+        EVOLUTION_MODE::SSE_HURLEY:                                         // HURLEY SSE
+        EVOLUTION_MODE::BSE_HURLEY:                                         // HURLEY BSE
+            std::tie(mass, fallbackFraction) = CalculateRemnantMass_Hurley2000_Static(const double p_COCoreMass);
+            break;
+        
+        default:                                                            // unknown mode
+            // the only way this can happen is if someone added an EVOLUTION_MODE and it isn't
+            // accounted for in this code.  We should not default here, with or without a warning.
+            // We are here because the user chose a mode this code doesn't account for, and that should
+            // be flagged as an error and result in termination of the evolution of the star or binary.
+            // The correct fix for this is to add code for the missing mode or, if the missing mode is
+            // superfluous, remove it from the option.
+
+            THROW_ERROR(ERROR::UNKNOWN_EVOLUTION_MODE);                     // throw error
+    }       
+
+    return std::make_tuple(mass, fallbackFraction);
+}
+
+
+
+
+
+
+/// Remnants_Constituent <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+class Remnants_Constituent: virtual public BinaryConstituentStar, public Remnants {
+
+public:
+
+
+protected:
+
+};
+
+
+    
+
+
+
+
+
+    double          CalculateZetaAdiabatic_ByEnvelopeType(ZETA_PRESCRIPTION p_ZetaPrescription)                      { return 0.0; }                                                         // Should never be called...
+    
+    double          CalculateZetaEquilibrium()                                      { return -std::numeric_limits<double>::infinity(); }                                         // Nuclear timescale MT should be impossible from remnant stars; should never be called
+
+
+
+    double          CalculateCELambda_Dewi() const                                                                 { return BaseStar::CalculateCELambda_Dewi(); }
+    double          CalculateLambdaNanjingStarTrack(const double p_Mass, const double p_Metallicity) const      { return BaseStar::CalculateLambdaNanjingStarTrack(0.0, 0.0); }
+
+    DBL_DBL         CalculateMassAcceptanceRate(const double p_DonorMassRate,
+                                                const double p_AccretorMassRate);
+    DBL_DBL         CalculateMassAcceptanceRate(const double p_DonorMassRate,
+                                                const double p_AccretorMassRate,
+                                                const bool   p_IsHeRich)                                        { return CalculateMassAcceptanceRate(p_DonorMassRate, p_AccretorMassRate); } // Ignore the He content for non-WDs
+
+
+                                                
+    DBL_DBL_DBL_DBL CalculateImKnmDynamical(const double p_Omega, const double p_SemiMajorAxis, const double p_M2) const   { return std::make_tuple(0.0, 0.0, 0.0, 0.0); }              // Default is no tidal response
+    DBL_DBL_DBL_DBL CalculateImKnmEquilibrium(const double p_Omega, const double p_SemiMajorAxis, const double p_M2) const { return std::make_tuple(0.0, 0.0, 0.0, 0.0); }              // Default is no tidal response
+
+
+double CalculateCriticalMassRatio(const double p_Mass,
+                                  const double p_Radius,
+                                  const double p_CoreMass,
+                                  const bool   p_AccretorIsDegenerate,
+                                  const double p_MTefficiency = 0.0) const { return 0.0; } // Should not be called (but if it is, mass transfer from a neutron star always treated as stable)
+
+double CalculateCriticalMassRatio_Claeys2014(const bool p_AccretorIsDegenerate) const { return 0.0; }
+
+double CalculateCriticalMassRatio_Ge2020(const double p_MTefficiency) { return 0.0; }
+
+double CalculateCriticalMassRatio_Hurley2002() const { return 0.0; }
+
+
 
 #endif // __Remnants_h__

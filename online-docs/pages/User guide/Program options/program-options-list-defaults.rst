@@ -316,7 +316,7 @@ Default = 1.28
 
 **--critical-mass-ratio-prescription** |br|
 Critical mass ratio stability prescription (if any). |br|
-Options: { NONE, ZERO, CLAEYS, GE, GE_IC, HURLEY_HJELLMING_WEBBINK } |br|
+Options: { NONE, CLAEYS, GE, GE_IC, HURLEY_HJELLMING_WEBBINK } |br|
 ``NONE``    defaults to the zeta prescription for stability. |br|
 ``CLAEYS``  uses qCrit values from Claeys et al. 2014. |br|
 ``GE``      uses qCrit values from Ge et al. series (Papers I-V) (adiabatic assumption). |br|
@@ -812,10 +812,10 @@ Default = 4.2
 
 **--main-sequence-core-mass-prescription** |br|
 Main sequence core mass prescription. |br|
-Options: {ZERO, MANDEL, BRCEK} |br|
-``ZERO``   : No core mass treatment, set to zero |br|
-``MANDEL`` : The core following case A mass transfer is set equal to the expected core mass of a newly formed HG star with mass equal to that of the donor, scaled by the fraction of the donor's MS lifetime at mass transfer |br|
+Options: {BRCEK, HURLEY, MANDEL} |br|
 ``BRCEK``  : Core mass according to Shikauchi et al. (2024) with added rejuvenation of MS accretors and updated stellar tracks |br|
+``HURLEY`` : Treatment from Hurley et al. (2000), in which MS stars do not have a distinct core and core evolution is not tracked |br|
+``MANDEL`` : The core following case A mass transfer is set equal to the expected core mass of a newly formed HG star with mass equal to that of the donor, scaled by the fraction of the donor's MS lifetime at mass transfer |br|
 Default = MANDEL
 
 **--maltsev-fallback** |br|
@@ -1349,7 +1349,7 @@ Default = 0.01
 Prescription for convective donor radial response zeta. |br|
 Options: { SOBERMAN, HURLEY, ARBITRARY } |br|
 The prescription only applies to stars with convective envelopes. |br|
-Stars with radiative envelopes take the values from ``--zeta-main-sequence`` or ``--zeta-radiative-giant-star``. |br|
+Stars with radiative envelopes take the values from ``--zeta-main-sequence`` or ``--zeta-radiative-envelope-giant``. |br|
 ``SOBERMAN`` uses zeta from Soberman, Phinney, and van den Heuvel (1997). |br|
 ``HURLEY`` uses zeta from Hurley, Pols, Tout (2002). |br|
 ``ARBITRARY`` uses fixed value set in ``--zeta-adiabatic-arbitrary``. |br|
@@ -1495,7 +1495,7 @@ Default = :math:`1.0 \times 10^4`
 Value of logarithmic derivative of radius with respect to mass, :math:`\zeta` on the main sequence. |br|
 Default = 2.0
 
-**--zeta-radiative-giant-star** |br|
+**--zeta-radiative-envelope-giant** |br|
 Value of logarithmic derivative of radius with respect to mass, :math:`\zeta` for radiative-envelope giant-like stars
 (including Hertzsprung Gap (HG) stars). |br|
 Default = 6.5
@@ -1552,7 +1552,7 @@ Go to :ref:`the top of this page <options-props-top>` for the full alphabetical 
 --critical-mass-ratio-white-dwarf-non-degenerate-accretor, --eddington-accretion-factor, --mass-transfer, --use-mass-transfer, --mass-transfer-accretion-efficiency-prescription, 
 --mass-transfer-angular-momentum-loss-prescription, --mass-transfer-fa, --mass-transfer-jloss, --mass-transfer-jloss-linear-fraction-degen, --mass-transfer-jloss-linear-fraction-non-degen, 
 --mass-transfer-rejuvenation-prescription, --mass-transfer-thermal-limit-accretor, --mass-transfer-thermal-limit-accretor-multiplier, --mass-transfer-thermal-limit-C, --retain-core-mass-during-caseA-mass-transfer, 
---stellar-zeta-prescription, --zeta-adiabatic-arbitrary, --zeta-main-sequence, --zeta-radiative-giant-star 
+--stellar-zeta-prescription, --zeta-adiabatic-arbitrary, --zeta-main-sequence, --zeta-radiative-envelope-giant 
 
 --circulariseBinaryDuringMassTransfer, --angular-momentum-conservation-during-circularisation, --tides-prescription, 
 --response-to-spin-up

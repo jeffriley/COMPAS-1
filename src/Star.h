@@ -78,15 +78,28 @@ public:
     // getters - alphabetically
     inline double               Age() const                                                                 { return m_Star->Age(); }
     inline double               AngularMomentum() const                                                     { return m_Star->AngularMomentum(); }
-    inline double               CalculateCriticalMassRatio(const bool p_AccretorIsDegenerate, 
-                                                   const double p_massTransferEfficiencyBeta) const         { return m_Star->CalculateCriticalMassRatio(p_AccretorIsDegenerate, p_massTransferEfficiencyBeta); }
-    inline double               CalculateCriticalMassRatioClaeys14(const bool p_AccretorIsDegenerate) const { return m_Star->CalculateCriticalMassRatioClaeys14(p_AccretorIsDegenerate); }
-    inline double               CalculateCriticalMassRatioHurleyHjellmingWebbink() const                    { return m_Star->CalculateCriticalMassRatioHurleyHjellmingWebbink(); }
+
+
+
+inline double CalculateCriticalMassRatio(const double p_Mass,
+                                         const double p_Radius,
+                                         const double p_CoreMass,
+                                         const bool   p_AccretorIsDegenerate,
+                                         const double p_MTefficiency = 0.0) const { return m_Star->CalculateCriticalMassRatio(p_Mass, p_Radius, p_CoreMass, p_AccretorIsDegenerate, p_MTefficiency); }
+
+inline double CalculateCriticalMassRatio_Claeys2014(const bool p_AccretorIsDegenerate) const { return m_Star->CalculateCriticalMassRatio_Claeys2014(p_AccretorIsDegenerate); }
+
+inline double CalculateCriticalMassRatio_Hurley2002() const                    { return m_Star->CalculateCriticalMassRatio_Hurley2002(); }
+    
+    
+    
+    
+    
     inline double               CalculateDynamicalTimescale() const                                         { return m_Star->CalculateDynamicalTimescale(); }
     inline double               CalculateLambdaLoveridge() const                                            { return m_Star->CalculateLambdaLoveridge(); }
-    inline double               CalculateLambdaNanjing() const                                              { return m_Star->CalculateLambdaNanjing(); }
-    inline double               CalculateLambdaKruckow() const                                              { return m_Star->CalculateLambdaKruckow(); }
-    inline double               CalculateLambdaDewi() const                                                 { return m_Star->CalculateLambdaDewi(); }
+    inline double               CalculateCELambda_Nanjing() const                                              { return m_Star->CalculateCELambda_Nanjing(); }
+    inline double               CalculateCELambdaKruckow() const                                            { return m_Star->CalculateCELambdaKruckow(); }
+    inline double               CalculateCELambda_Dewi() const                                                 { return m_Star->CalculateCELambda_Dewi(); }
     inline double               CalculateRadialExpansionTimescale() const                                   { return m_Star->CalculateRadialExpansionTimescale(); }
     inline double               CalculateThermalTimescale() const                                           { return m_Star->CalculateThermalTimescale(); }
     inline double               COCoreMass() const                                                          { return m_Star->COCoreMass(); }
@@ -234,7 +247,7 @@ public:
     inline double               CalculateTimestep()                                                                                 { return m_Star->CalculateTimestep(); }
 
     inline double               CalculateZetaAdiabatic() const                                                                      { return m_Star->CalculateZetaAdiabatic(); }
-    inline double               CalculateZetaConstantsByEnvelope(ZETA_PRESCRIPTION p_ZetaPrescription)                              { return m_Star->CalculateZetaConstantsByEnvelope(p_ZetaPrescription); }
+    inline double               CalculateZetaAdiabatic_ByEnvelopeType(ZETA_PRESCRIPTION p_ZetaPrescription)                              { return m_Star->CalculateZetaAdiabatic_ByEnvelopeType(p_ZetaPrescription); }
     inline double               CalculateZetaEquilibrium()                                                                          { return m_Star->CalculateZetaEquilibrium(); }
 
     inline ACCRETION_REGIME     DetermineAccretionRegime(const double p_DonorThermalMassLossRate, const bool p_HeRich)              { return m_Star->DetermineAccretionRegime(p_DonorThermalMassLossRate, p_HeRich); }
@@ -245,9 +258,15 @@ public:
 
     STELLAR_TYPE                EvolveOneTimestep(const double p_Dt);
 
-    inline double               InterpolateGeEtAlQCrit(const QCRIT_PRESCRIPTION p_qCritPrescription, const double p_massTransferEfficiencyBeta) {
-                                    return m_Star->InterpolateGeEtAlQCrit(p_qCritPrescription, p_massTransferEfficiencyBeta);
-                                }
+
+
+
+inline double CalculateCriticalMassRatio_Ge2020_Interpolate(const double p_Mass, const double p_Radius, const double p_MTefficiency = 0.0) {
+    return m_Star->CalculateCriticalMassRatio_Ge2020_Interpolate(p_Mass, p_Radius, p_MTefficiency);
+}
+
+
+
 
     inline void                 HaltWinds()                                                                                         { m_Star->HaltWinds(); }
 
@@ -270,7 +289,7 @@ public:
     
     inline void                 SpinDownIsolatedPulsar(const double p_Stepsize)                                                     { m_Star->SpinDownIsolatedPulsar(p_Stepsize); }
 
-    STELLAR_TYPE                SwitchTo(const STELLAR_TYPE p_StellarType, bool p_SetInitialType = false);
+    STELLAR_TYPE                SwitchTo(const STELLAR_TYPE p_StellarType, bool p_SetStartingType = false, p_NoLog = false);
     
     inline double               CalculateTAMSCoreMass() const                                                                       { return m_Star->CalculateTAMSCoreMass(); }
 

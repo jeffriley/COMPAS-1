@@ -52,7 +52,7 @@ protected:
             m_MainSequenceCoreMass        = m_InitialMainSequenceCoreMass;
             m_Luminosity                  = MainSequence::CalculateLuminosityOnPhase(m_Age, m_Mass0, BaseStar::CalculateLuminosityAtZAMS(m_Mass0));
             m_Radius                      = MainSequence::CalculateRadiusOnPhase(m_Mass, m_Tau, m_RZAMS0);
-            m_Temperature                 = BaseStar::CalculateTemperatureOnPhase_Static(m_Luminosity, m_Radius);
+            m_Temperature                 = BaseStar::CalculateTemperatureOnPhase(m_Luminosity, m_Radius);
         }
     }
 
@@ -125,9 +125,9 @@ protected:
 
         state.temperature         = CalculateTemperatureOnPhase(state.luminosity, state.radius);
 
-        state.massEffective       = 0.0;
-        state.radiusEffective     = 0.0;
-        state.luminosityEffective = 0.0;
+        state.massEffectiveInitial       = 0.0;
+        state.radiusEffectiveInitial     = 0.0;
+        state.luminosityEffectiveInitial = 0.0;
 
         state.angularFrequency = p_RotationalFrequency >= 0.0                           // valid rotational frequency passed in?
         ? _2_PI * p_RotationalFrequency                     // yes - convert from cycles/yr to rad/yr and use it
@@ -143,12 +143,67 @@ m_AngularMomentum                          = CalculateMomentOfInertiaAU() * m_Om
 
     // member functions - alphabetically
 
-    double      CalculateCriticalMassRatioClaeys14(const bool p_AccretorIsDegenerate) const ;
-    double      CalculateCriticalMassRatioHurleyHjellmingWebbink() const { return HURLEY_HJELLMING_WEBBINK_QCRIT_MS_GT_07; }
-    double      CalculateMassLossRateHurley();
-    double      CalculateMassTransferRejuvenationFactor();
+
+GNU_CONST MASS_LOSS_T CalculateMLRate_Hurley2000(const double p_Mass,
+                                                 const double p_Radius,
+                                                 const double p_Luminosity,
+                                                 const double p_PerturbationMu,
+                                                 const double p_ZscaledHurley,
+                                                 const double p_WRfactor) const override;
 
     ENVELOPE    DetermineEnvelopeType() const;
 };
+
+
+
+
+
+
+/// MS_gt_07_Constituent <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+class MS_gt_07_Constituent: virtual public BinaryConstituentStar, public MS_gt_07 {
+
+public:
+
+
+protected:
+
+};
+
+
+    double      CalculateMTRejuvenationFactor();
+
+
+double CalculateCriticalMassRatio_Claeys2014(const bool p_AccretorIsDegenerate) const ;
+double CalculateCriticalMassRatio_Hurley2002() const { return HURLEY_HJELLMING_WEBBINK_QCRIT_MS_GT_07; }
+
+
+/*
+ * CalculateCriticalMassRatio_Claeys2014
+ *
+ * @brief
+ * Calculate the critical mass ratio, per Claeys et al. 2014
+ * 
+ * The critical mass ratio indicates whether the mass transfer is unstable.
+ *
+ * See Claeys et al. 2014, de Mink et al. 2013, and Ge et al. 2010, 2015, and 2020, for discussions.
+ *
+ * Assumes this star is the donor.
+ * 
+ * Critical mass ratio is defined as qCrit = Maccretor / Mdonor.
+ * 
+ *
+ * double CalculateCriticalMassRatio_Claeys2014(const bool p_AccretorIsDegenerate) const
+ *
+ * @param       p_AccretorIsDegenerate          Boolean indicating if accretor is degenerate
+ * @return                                      Critical mass ratio for unstable MT 
+ */
+inline double MS_gt_07_Constituent::CalculateCriticalMassRatio_Claeys2014(const bool p_AccretorIsDegenerate) const {                                                                                                          
+    return p_AccretorIsDegenerate
+            ? OPTIONS->MassTransferCriticalMassRatioMSHighMassDegenerateAccretor()       // degenerate accretor
+            : OPTIONS->MassTransferCriticalMassRatioMSHighMassNonDegenerateAccretor();   // non-degenerate accretor
+}
+
 
 #endif // __MS_gt_07_h__

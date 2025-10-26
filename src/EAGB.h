@@ -42,8 +42,6 @@ public:
                                                   const double      p_MHeF,
                                                   const DBL_VECTOR &p_BnCoefficients);
 
-    MT_CASE         DetermineMassTransferTypeAsDonor() const                                        { return MT_CASE::C; }                                              // Always case C
-
 
 protected:
 
@@ -55,19 +53,50 @@ protected:
 
 
     // member functions - alphabetically
-    double          CalculateCOCoreMassAtPhaseEnd() const                                           { return m_GBParams[static_cast<int>(GBP::McDU)]; }                 // McCO(EAGB) = McDU at phase end (Hurley et al. 2000, section 5.4)
-    double          CalculateCOCoreMassOnPhase(const double p_Time) const;
-    double          CalculateCOCoreMassOnPhase() const                                              { return CalculateCOCoreMassOnPhase(m_Age); }                       // Use class member variables
 
-    double          CalculateCoreMassAtPhaseEnd() const                                             { return m_GBParams[static_cast<int>(GBP::McDU)]; }                 // Mc(EAGB) = McDU at phase end (Hurley et al. 2000, section 5.4)
-    double          CalculateCoreMassOnPhase() const                                                { return m_GBParams[static_cast<int>(GBP::McBAGB)]; }               // Mc(EAGB) = McHe(EAGB) = McBAGB on phase (Hurley et al. 2000, section 5.4)
 
-    double          CalculateCriticalMassRatioHurleyHjellmingWebbink() const                        { return GiantBranch::CalculateCriticalMassRatioHurleyHjellmingWebbink(); }
+
+
+
+
+///// ON PHASE FUNCTIONS   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+inline double CalculateCOCoreMass_Hurley2000() const override {
+    return CalculateCOCoreMass_Hurley2000(m_StateHistory.CurrentState.Age(),
+                                          m_StateHistory.CurrentState.GBparams(),
+                                          m_StateHistory.CurrentState.Timescales());
+}
+GNU_CONST double CalculateCOCoreMass_Hurley2000(const double p_Age, const DBL_VECTOR& p_GBparams, const DBL_VECTOR& p_tScales) const;
+
+
+inline double CalculateLuminosityOnPhase_Hurley2000() const override {
+    // use Hurley core mass - luminosity relationship, per Hurley et al. eq 37
+    return CalculateLuminosityGivenCoreMass_Hurley2000(m_StateHistory.CurrentState.CoreMass(), m_StateHistory.CurrentState.GBparams());
+}
+
+double CalculateTau_Hurley2000() const override { return 0.0; }; // Tau (relative age) is not used for EAGB stars in Hurley et al. 2000, so we return 0.0
+
+
+
+
+
+
+
+///// PHASE END, ETC.      <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+GNU_CONST inline double CalculateCOCoreMassAtPhaseEnd_Hurley2000() const override {
+    return m_StateHistory.CurrentState.GBparams(McDU); }    // McCO = McDU at phase end for EAGB stars, per Hurley et al. 2000, section 5.4
+}
+
+
+
+    double          CalculateCoreMassAtPhaseEnd() const                                             { return m_GBparams[static_cast<int>(GBP::McDU)]; }                 // Mc(EAGB) = McDU at phase end (Hurley et al. 2000, section 5.4)
+    double          CalculateCoreMassOnPhase() const                                                { return m_GBparams[static_cast<int>(GBP::McBAGB)]; }               // Mc(EAGB) = McHe(EAGB) = McBAGB on phase (Hurley et al. 2000, section 5.4)
 
     double          CalculateHeCoreMassAtPhaseEnd() const                                           { return CalculateHeCoreMassOnPhase(); }                            // Same as on phase
     double          CalculateHeCoreMassOnPhase() const                                              { return m_HeCoreMass; }                                            // NO-OP
 
-    double          CalculateInitialSupernovaMass() const                                           { return m_GBParams[static_cast<int>(GBP::McBAGB)]; }               // For EAGB & TPAGB we use the mass at Base Asymptotic Giant Branch to determine SN type
+    double          CalculateInitialSupernovaMass() const                                           { return m_GBparams[static_cast<int>(GBP::McBAGB)]; }               // For EAGB & TPAGB we use the mass at Base Asymptotic Giant Branch to determine SN type
 
     double          CalculateLambdaNanjingStarTrack(const double p_Mass, const double p_Metallicity) const;
     double          CalculateLambdaNanjingEnhanced(const int p_MassIndex, const STELLAR_POPULATION p_StellarPop) const;
@@ -79,7 +108,16 @@ protected:
     double          CalculateLuminosityOnPhase(const double p_CoreMass) const;
     double          CalculateLuminosityOnPhase() const                                              { return CalculateLuminosityOnPhase(m_COCoreMass); }
 
-    std::tuple<double, MASS_LOSS_TYPE> CalculateMassLossRateHurley();
+
+
+GNU_CONST MASS_LOSS_T CalculateMLRate_Hurley2000(const double p_Mass,
+                                                 const double p_Radius,
+                                                 const double p_Luminosity,
+                                                 const double p_PerturbationMu,
+                                                 const double p_ZscaledHurley,
+                                                 const double p_WRfactor) const override;
+
+
 
     double          CalculateRadiusAtPhaseEnd(const double p_Mass, const double p_Luminosity) const { return CalculateRadiusOnPhase(p_Mass, p_Luminosity); }            // Same as on phase
     double          CalculateRadiusAtPhaseEnd() const                                               { return CalculateRadiusAtPhaseEnd(m_Mass, m_Luminosity); }         // Use class member variables
@@ -89,8 +127,10 @@ protected:
     double          CalculateRemnantLuminosity() const;
     double          CalculateRemnantRadius() const;
 
-    double          CalculateTauAtPhaseEnd() const                                                  { return m_Tau; }                                                   // NO-OP
-    double          CalculateTauOnPhase() const                                                     { return m_Tau; }                                                   // NO-OP
+
+
+
+
 
     void            CalculateTimescales(const double p_Mass, DBL_VECTOR &p_Timescales);
     void            CalculateTimescales()                                                           { CalculateTimescales(m_Mass0, m_Timescales); }                     // Use class member variables
@@ -112,5 +152,119 @@ protected:
     bool            ShouldSkipPhase() const;
 
 };
+
+
+
+
+///////////// inline candidates <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+///////////////////////////////////////////////////////////////////////////////////////
+//                                                                                   //
+//                             LIFETIME / AGE FUNCTIONS                              //
+//                                                                                   //
+///////////////////////////////////////////////////////////////////////////////////////
+
+
+
+
+
+///////////////////////////////////////////////////////////////////////////////////////
+//                                                                                   //
+//                                  MASS FUNCTIONS                                   //
+//                                                                                   //
+///////////////////////////////////////////////////////////////////////////////////////
+
+
+/*
+ * CalculateCOCoreMass_Hurley2000
+ *
+ * @brief
+ * Calculate CO core mass on the Early Asymptotic Giant Branch,
+ * per Hurley et al. 2000, eq 39, modified as described in Section 5.4
+ *
+ *
+ * double CalculateCOCoreMass_Hurley2000(const double p_Time, const DBL_VECTOR& p_GBparams, const DBL_VECTOR& p_tScales)
+ *
+ * @param       p_Age                           Effective age of the star (Myr)
+ * @param       p_GBparams                      Hurley GB parameters
+ * @param       p_tScales                       Hurley timescales (Myr)
+ * @return                                      EAGB CO core mass (Msol)
+ */
+GNU_CONST inline double EAGB::CalculateCOCoreMass_Hurley2000(const double p_Age, const DBL_VECTOR& p_GBparams, const DBL_VECTOR& p_tScales) const {
+// #defines for convenience and readability - undefined at end of function
+#define GBparams(x) p_GBparams[static_cast<int>(GBP::x)]
+#define tScales(x) p_tScales[static_cast<int>(TIMESCALE::x)]
+
+    return p_Age <= tScales(tMx_FAGB)
+            ? PPOW((GBparams(p) - 1.0) * GBparams(AHe) * GBparams(D) * (tScales(tinf1_FAGB) - p_Age), 1.0 / (1.0 - GBparams(p)))
+            : PPOW((GBparams(q) - 1.0) * GBparams(AHe) * GBparams(B) * (tScales(tinf2_FAGB) - p_Age), 1.0 / (1.0 - GBparams(q)));
+
+#undef tScales
+#undef GBparams
+}
+
+
+///////////////////////////////////////////////////////////////////////////////////////
+//                                                                                   //
+//                                 RADIUS FUNCTIONS                                  //
+//                                                                                   //
+///////////////////////////////////////////////////////////////////////////////////////
+
+/*
+ * Calculate radius of the remnant the star would become if it lost all of its
+ * envelope immediately (i.e. M = Mc, coreMass)
+ *
+ * Hurley et al. 2000, just after eq 105
+ *
+ *
+ * double CalculateRemnantRadius()
+ *
+ * @return                                      Radius of remnant core in Rsol
+ */
+double EAGB::CalculateRemnantRadius() const {
+    double R1, R2;
+    std::tie(R1, R2) = HeGB::CalculateRadiusOnPhase_Static(m_HeCoreMass, CalculateRemnantLuminosity());
+
+    return std::min(m_Radius, std::min(R1, R2));
+}
+
+
+///////////////////////////////////////////////////////////////////////////////////////
+//                                                                                   //
+//                               LUMINOSITY FUNCTIONS                                //
+//                                                                                   //
+///////////////////////////////////////////////////////////////////////////////////////
+
+
+
+
+
+/*
+ * Calculate luminosity of the remnant the star would become if it lost all of its
+ * envelope immediately (i.e. M = Mc, coreMass)
+ *
+ * Hurley et al. 2000, just after eq 105
+ *
+ *
+ * double CalculateRemnantLuminosity()
+ *
+ * @return                                      Luminosity of remnant core in Lsol
+ */
+double EAGB::CalculateRemnantLuminosity() const {
+    return HeGB::CalculateLuminosityOnPhase_Static(m_COCoreMass, gbParams(B), gbParams(D));
+}
+
+
+
+
+///////// constituent functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+    MT_CASE         DetermineMassTransferTypeAsDonor() const                                        { return MT_CASE::C; }                                              // Always case C
+
+double CalculateCriticalMassRatio_Hurley2002() const { return GiantBranch_Constituent::CalculateCriticalMassRatio_Hurley2002(); }
+
+
 
 #endif // __EAGB_h__

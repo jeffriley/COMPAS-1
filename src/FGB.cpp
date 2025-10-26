@@ -70,31 +70,20 @@ double FGB::CalculateCoreMassOnPhase(const double p_Mass, const double p_Time) c
 
     double tau   = std::max(0.0, std::min(1.0, (p_Time - timescales(tBGB)) / (timescales(tHeI) - timescales(tBGB))));
 
-    return utils::Compare(p_Mass, massCutoffs(MHeF)) < 0 ? McGB : gbParams(McBGB) + ((CalculateCoreMassAtHeIgnition(p_Mass) - gbParams(McBGB)) * tau);
+    return utils::Compare(p_Mass, massCutoffs(MHeF)) < 0 ? McGB : gbParams(McBGB) + ((CalculateCoreMassAtHeI_Hurley2000(p_Mass) - gbParams(McBGB)) * tau);
 }
 
 
 ///////////////////////////////////////////////////////////////////////////////////////
 //                                                                                   //
-//                            LIFETIME / AGE CALCULATIONS                            //
+//                             LIFETIME / AGE FUNCTIONS                              //
 //                                                                                   //
 ///////////////////////////////////////////////////////////////////////////////////////
 
 
-/*
- * Calculate relative age on the First Giant Branch
- *
- * Hurley et al. 2000, just after eq 45
- * Naturally bounded by [0, 1], but clamp here anyway
- *
- * double CalculateTauOnPhase()
- *
- * @return                                      FGB relative age, clamped to [0, 1]
- */
 
-double FGB::CalculateTauOnPhase() const {
-    return std::max(0.0, std::min(1.0, (m_Age - timescales(tBGB)) / (timescales(tHeI) - timescales(tBGB))));
-}
+
+
 
 
 ///////////////////////////////////////////////////////////////////////////////////////
@@ -136,7 +125,7 @@ double FGB::ChooseTimestep(const double p_Time) const {
  *
  *     - m_StellarType
  *     - m_Timescales
- *     - m_GBParams
+ *     - m_GBparams
  *     - m_Luminosity
  *     - m_Radius
  *     - m_Mass
@@ -170,7 +159,7 @@ STELLAR_TYPE FGB::ResolveEnvelopeLoss(bool p_Force) {
             stellarType = STELLAR_TYPE::HELIUM_WHITE_DWARF;
 
             m_Age       = 0.0;
-            m_Radius    = HeWD::CalculateRadiusOnPhase_Static(m_Mass);
+            m_Radius    = WhiteDwarfs::CalculateRadius_Hurley2000_Static(m_Mass);
         }
         else {                                                                                      // Star evolves to Zero age Naked Helium Main Star
 
@@ -178,7 +167,7 @@ STELLAR_TYPE FGB::ResolveEnvelopeLoss(bool p_Force) {
 
             m_Mass0     = m_Mass;
             m_Age       = 0.0;
-            m_Radius    = HeMS::CalculateRadiusAtZAMS_Static(m_Mass);
+            m_Radius    = HeMS::CalculateRadiusAtZAHeMS_Hurley2000_Static(m_Mass);
         }
     }
 

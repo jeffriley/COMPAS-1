@@ -189,15 +189,15 @@ void BinaryConstituentStar::CalculateCommonEnvelopeValues() {
             break;
 
         case CE_LAMBDA_PRESCRIPTION::NANJING:
-            m_CEDetails.lambda = CalculateLambdaNanjing();
+            m_CEDetails.lambda = CalculateCELambda_Nanjing();
             break;
 
         case CE_LAMBDA_PRESCRIPTION::KRUCKOW:
-            m_CEDetails.lambda = CalculateLambdaKruckow();
+            m_CEDetails.lambda = CalculateCELambdaKruckow();
             break;
             
         case CE_LAMBDA_PRESCRIPTION::DEWI:
-            m_CEDetails.lambda = CalculateLambdaDewi();
+            m_CEDetails.lambda = CalculateCELambda_Dewi();
             break;
 
         default:                                                                                                // unknown prescription

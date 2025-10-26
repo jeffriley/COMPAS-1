@@ -365,7 +365,7 @@ void Options::OptionValues::Initialise() {
     m_BlackHoleKicksMode.type                                       = BLACK_HOLE_KICKS_MODE::FALLBACK;
     m_BlackHoleKicksMode.typeString                                 = BLACK_HOLE_KICKS_MODE_LABEL.at(m_BlackHoleKicksMode.type);
 
-    m_MaltsevFallback                                               = 0.5;
+    m_MaltsevFallbackFraction                                       = 0.5;
     m_MaltsevMode.type                                              = MALTSEV_MODE::BALANCED;
     m_MaltsevMode.typeString                                        = MALTSEV_MODE_LABEL.at(m_MaltsevMode.type);
 
@@ -390,8 +390,8 @@ void Options::OptionValues::Initialise() {
     m_FryerSupernovaEngine.type                                     = SN_ENGINE::DELAYED;
     m_FryerSupernovaEngine.typeString                               = SN_ENGINE_LABEL.at(m_FryerSupernovaEngine.type);
 
-    m_Fryer22fmix                                                   = 0.5;                                                  // default is similar to DELAYED engine in Fryer 2012
-    m_Fryer22Mcrit                                                  = 5.75;
+    m_Fryer2022fmix                                                 = 0.5;                                                  // default is similar to DELAYED engine in Fryer 2012
+    m_Fryer2022Mcrit                                                = 5.75;
 
     m_NeutrinoMassLossAssumptionBH.type                             = NEUTRINO_MASS_LOSS_PRESCRIPTION::FIXED_MASS;
     m_NeutrinoMassLossAssumptionBH.typeString                       = NEUTRINO_MASS_LOSS_PRESCRIPTION_LABEL.at(m_NeutrinoMassLossAssumptionBH.type);
@@ -1309,14 +1309,14 @@ bool Options::AddOptions(OptionValues *p_Options, po::options_description *p_Opt
             ("Fix dimensionless kick magnitude uk to this value (default = " + std::to_string(p_Options->m_FixedUK) + ", -ve values false, +ve values true)").c_str()
         )
         (
-            "fryer-22-fmix",                                        
-            po::value<double>(&p_Options->m_Fryer22fmix)->default_value(p_Options->m_Fryer22fmix),                                                                                  
-            ("parameter describing the mixing growth time when using the 'FRYER2022' remnant mass distribution (default = " + std::to_string(p_Options->m_Fryer22fmix) + ")").c_str()
+            "fryer-22-fmix",   // DEPRECATE in favour of "fryer-2022-fmix" <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<                                    
+            po::value<double>(&p_Options->m_Fryer2022fmix)->default_value(p_Options->m_Fryer2022fmix),                                                                                  
+            ("parameter describing the mixing growth time when using the 'FRYER2022' remnant mass distribution (default = " + std::to_string(p_Options->m_Fryer2022fmix) + ")").c_str()
         )
         (
-            "fryer-22-mcrit",                                        
-            po::value<double>(&p_Options->m_Fryer22Mcrit)->default_value(p_Options->m_Fryer22Mcrit),                                                                                  
-            ("Critical CO core mass for black hole formation when using the 'FRYER2022' remnant mass distribution (default = " + std::to_string(p_Options->m_Fryer22Mcrit) + ")").c_str()
+            "fryer-22-mcrit",   // DEPRECATE in favour of "fryer-2022-fmix" <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<                                
+            po::value<double>(&p_Options->m_Fryer2022Mcrit)->default_value(p_Options->m_Fryer2022Mcrit),                                                                                  
+            ("Critical CO core mass for black hole formation when using the 'FRYER2022' remnant mass distribution (default = " + std::to_string(p_Options->m_Fryer2022Mcrit) + ")").c_str()
         )
 
         (
@@ -1459,9 +1459,9 @@ bool Options::AddOptions(OptionValues *p_Options, po::options_description *p_Opt
         )
 
         (
-            "maltsev-fallback",
-            po::value<double>(&p_Options->m_MaltsevFallback)->default_value(p_Options->m_MaltsevFallback),
-            ("Fallback fraction for Maltsev black holes (ignored otherwise) (default = " + std::to_string(p_Options->m_MaltsevFallback) + ")").c_str()
+            "maltsev-fallback",  // deprecate in favour of maltsev-fallback-fraction <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+            po::value<double>(&p_Options->m_MaltsevFallbackFraction)->default_value(p_Options->m_MaltsevFallbackFraction),
+            ("Fallback fraction for Maltsev black holes (ignored otherwise) (default = " + std::to_string(p_Options->m_MaltsevFallbackFraction) + ")").c_str()
         )
 
         (
@@ -2621,7 +2621,7 @@ std::string Options::OptionValues::CheckAndSetOptions() {
  
         COMPLAIN_IF(m_LuminousBlueVariableFactor < 0.0, "LBV multiplier (--luminous-blue-variable-multiplier) < 0");
         
-        COMPLAIN_IF(m_MaltsevFallback < 0.0 || m_MaltsevFallback > 1.0, "Maltsev fallback fraction (--maltsev-fallback) must be between 0 and 1, inclusive");
+        COMPLAIN_IF(m_MaltsevFallbackFraction < 0.0 || m_MaltsevFallbackFraction > 1.0, "Maltsev fallback fraction (--maltsev-fallback-fraction) must be between 0 and 1, inclusive");
 
         COMPLAIN_IF(m_MassChangeFraction <= 0.0, "Mass change fraction per timestep (--mass-change-fraction) <= 0");
 
@@ -5021,7 +5021,7 @@ COMPAS_VARIABLE Options::OptionValue(const T_ANY_PROPERTY p_Property) const {
         case PROGRAM_OPTION::LBV_FACTOR                                     : value = LuminousBlueVariableFactor();                                         break;
         case PROGRAM_OPTION::LBV_MASS_LOSS_PRESCRIPTION                     : value = static_cast<int>(LBVMassLossPrescription());                          break;
 
-        case PROGRAM_OPTION::MALTSEV_FALLBACK                               : value = MaltsevFallback();                                                    break;                     
+        case PROGRAM_OPTION::MALTSEV_FALLBACK_FRACTION                      : value = MaltsevFallbackFraction();                                            break;                     
         case PROGRAM_OPTION::MALTSEV_MODE                                   : value = static_cast<int>(MaltsevMode());                                      break;                     
 
         case PROGRAM_OPTION::MASS_LOSS_PRESCRIPTION                         : value = static_cast<int>(MassLossPrescription());                             break;

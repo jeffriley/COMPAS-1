@@ -16,7 +16,7 @@ class BinaryConstituentStar: virtual public Star {
 
 public:
 
-    BinaryConstituentStar() : Star() { };
+    BinaryConstituentStar() : Star() { };  ///// Needs to inherit from ConstituentStar - the constituent equivalent of Star
 
     BinaryConstituentStar(const unsigned long int p_RandomSeed, 
                           const double            p_Mass, 

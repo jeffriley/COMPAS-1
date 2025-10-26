@@ -95,8 +95,8 @@ ACCRETION_REGIME HeWD::DetermineAccretionRegime(const double p_DonorMassRate, co
 STELLAR_TYPE HeWD::EvolveToNextPhase() {
 
     m_CoreMass   = m_Mass;
-    m_Radius     = HeMS::CalculateRadiusAtZAMS_Static(m_CoreMass);
-    m_Luminosity = HeMS::CalculateLuminosityAtZAMS_Static(m_CoreMass);
+    m_Radius     = HeMS::CalculateRadiusAtZAHeMS_Hurley2000_Static(m_CoreMass);
+    m_Luminosity = HeMS::CalculateLuminosityAtZAHeMS_Hurley2000_Static(m_CoreMass);
     m_Tau        = 0;
 
     return STELLAR_TYPE::NAKED_HELIUM_STAR_MS;

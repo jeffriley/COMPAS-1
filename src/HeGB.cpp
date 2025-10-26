@@ -44,8 +44,8 @@ std::tuple<double, double> HeGB::CalculateRadiusOnPhase_Static(const double p_Ma
     // sanity check for mass and luminosity - just return 0.0 if mass or luminosity <= 0
     if (utils::Compare(p_Mass, 0.0) <= 0 || utils::Compare(p_Luminosity, 0.0) <= 0) return std::make_tuple(0.0, 0.0);
 
-    double RZHe = HeMS::CalculateRadiusAtZAMS_Static(p_Mass);
-    double LTHe = CalculateLuminosityAtPhaseEnd_Static(p_Mass);
+    double RZHe = HeMS::CalculateRadiusAtZAHeMS_Hurley2000_Static(p_Mass);
+    double LTHe = HeMS::CalculateLuminosityAtPhaseEnd_Hurley2000_Static(p_Mass);
 
     // pow() is slow - use multiplication (srqt() is much faster than pow())
     double m_2   = p_Mass * p_Mass;
@@ -131,28 +131,28 @@ std::tuple <double, STELLAR_TYPE> HeGB::CalculateRadiusAndStellarTypeOnPhase(con
  * double CalculateAgeOnPhase_Static(const double      p_Mass,
  *                                   const double      p_CoreMass,
  *                                   const double      p_tHeMS,
- *                                   const DBL_VECTOR &p_GBParams)
+ *                                   const DBL_VECTOR &p_GBparams)
  *
  * @param   [IN]    p_Mass                      Mass in Msol
  * @param   [IN]    p_CoreMass                  Core mass in Msol
  * @param   [IN]    p_tHeMS                     Naked Helium Star central helium burning lifetime
- * @param   [IN]    p_GBParams                  Giant Branch parameters
+ * @param   [IN]    p_GBparams                  Giant Branch parameters
  * @return                                      Age in Myr
  *
- * p_tHeMS and p_GBParams passed as parameters so function can be declared static
+ * p_tHeMS and p_GBparams passed as parameters so function can be declared static
  */
 double HeGB::CalculateAgeOnPhase_Static(const double      p_Mass,
                                         const double      p_CoreMass,
                                         const double      p_tHeMS,
-                                        const DBL_VECTOR &p_GBParams) {
-#define gbParams(x) p_GBParams[static_cast<int>(GBP::x)]    // for convenience and readability - undefined at end of function
+                                        const DBL_VECTOR &p_GBparams) {
+#define gbParams(x) p_GBparams[static_cast<int>(GBP::x)]    // for convenience and readability - undefined at end of function
 
     double age;
 
     double p1    = gbParams(p) - 1.0;
     double p1_p  = p1 / gbParams(p);
 
-    double LtHe  = HeMS::CalculateLuminosityAtPhaseEnd_Static(p_Mass);
+    double LtHe  = HeMS::CalculateLuminosityAtPhaseEnd_Hurley2000_Static(p_Mass);
     double tinf1 = p_tHeMS + ((1.0 / (p1 * gbParams(AHe) * gbParams(D))) * PPOW(gbParams(D) / LtHe, p1_p));
 
     if (utils::Compare(p_CoreMass, gbParams(Mx)) > 0) {
@@ -175,74 +175,45 @@ double HeGB::CalculateAgeOnPhase_Static(const double      p_Mass,
 
 
 /*
- * Calculate the core mass on the Helium Giant Branch
+ * CalculateCoreMass_Hurley2000_Static
  *
- * Hurley et al. 2000, eq 39 (core mass - t relation, modified as described after eq 84)
+ * @brief
+ * Calculate the core mass on the Helium Giant Branch, per Hurley et al. 2000, eq 39
+ * (core mass - t relation, modified as described after eq 84)
  *
  *
- * double CalculateCoreMassOnPhase_Static(const double      p_Mass,
- *                                        const double      p_Time,
- *                                        const double      p_tHeMS,
- *                                        const DBL_VECTOR &p_GBParams)
+ * static double CalculateCoreMass_Hurley2000_Static(const double p_Mass, const double p_Age, const double p_tHeMS, const DBL_VECTOR &p_GBparams)
  *
- * @param   [IN]    p_Mass                      Mass in Msol
- * @param   [IN]    p_Time                      Time in Myr
- * @param   [IN]    p_tHeMS                     Naked Helium Star central helium burning lifetime
- * @param   [IN]    p_GBParams                  Giant Branch parameters
- * @return                                      Age in Myr
- *
- * p_tHeMS and p_GBParams passed as parameters so function can be declared static
+ * @param       p_Mass                          Mass of the star (Msol)
+ * @param       p_Age                           Effective age of the star (Myr)
+ * @param       p_GBparams                      Hurley GB parameters
+ * @param       p_tHeMS                         HeMs lifetime (Myr)
+ * @return                                      HeGB core mass (Msol)
  */
-double HeGB::CalculateCoreMassOnPhase_Static(const double      p_Mass,
-                                             const double      p_Time,
-                                             const double      p_tHeMS,
-                                             const DBL_VECTOR &p_GBParams) {
-#define gbParams(x) p_GBParams[static_cast<int>(GBP::x)]// for convenience and readability - undefined at end of function
+GNU_CONST double HeGB::CalculateCoreMass_Hurley2000_Static(const double p_Mass, const double p_Age, const DBL_VECTOR &p_GBparams, const double p_tHeMS) {
+#define GBparams(x) p_GBparams[static_cast<int>(GBP::x)] // for convenience and readability - undefined at end of function
 
     double coreMass;
 
-    double p1   = gbParams(p) - 1.0;
-    double p1_p = p1 / gbParams(p);
+    const double p1   = GBparams(p) - 1.0;
+    const double p1_p = p1 / GBparams(p);
 
-    double LtHe  = HeMS::CalculateLuminosityAtPhaseEnd_Static(p_Mass);
-    double tinf1 = p_tHeMS + ((1.0 / (p1 * gbParams(AHe) * gbParams(D))) * PPOW(gbParams(D) / LtHe, p1_p));
-    double tx    = tinf1 - (tinf1 - p_tHeMS) * PPOW((LtHe / gbParams(Lx)), p1_p);
+    const double ltHe  = HeMS::CalculateLuminosityAtPhaseEnd_Hurley2000_Static(p_Mass);
+    const double tinf1 = p_tHeMS + ((1.0 / (p1 * GBparams(AHe) * GBparams(D))) * PPOW(GBparams(D) / LtHe, p1_p));
+    const double tx    = tinf1 - (tinf1 - p_tHeMS) * PPOW((LtHe / GBparams(Lx)), p1_p);
     
-    if (utils::Compare(p_Time, tx) > 0) {
-        double q1    = gbParams(q) - 1.0;
-        double tinf2 = tx + ((1.0 / (q1 * gbParams(AHe) * gbParams(B))) * PPOW(gbParams(B) / gbParams(Lx), q1 / gbParams(q)));
-        coreMass = PPOW(q1 * gbParams(AHe) * gbParams(B) * (tinf2 - p_Time), 1.0 / (1.0 - gbParams(q)));
+    if (p_Age > tx) {
+        const double q1    = GBparams(q) - 1.0;
+        const double tinf2 = tx + ((1.0 / (q1 * GBparams(AHe) * GBparams(B))) * PPOW(GBparams(B) / GBparams(Lx), q1 / GBparams(q)));
+        coreMass = PPOW(q1 * GBparams(AHe) * GBparams(B) * (tinf2 - p_Age), 1.0 / (1.0 - GBparams(q)));
     }
     else {
-        coreMass = PPOW(p1 * gbParams(AHe) * gbParams(D) * (tinf1 - p_Time), 1.0 / (1.0 - gbParams(p)));
+        coreMass = PPOW(p1 * GBparams(AHe) * GBparams(D) * (tinf1 - p_Age), 1.0 / (1.0 - GBparams(p)));
     }
 
     return coreMass;
 
-#undef gbParams
+#undef GBparams
 }
 
 
-/*
- * Determines if mass transfer is unstable according to the critical mass ratio.
- *
- * See e.g de Mink et al. 2013, Claeys et al. 2014, and Ge et al. 2010, 2015, 2020 for discussions.
- *
- * Assumes this star is the donor; relevant accretor details are passed as parameters.
- * Critical mass ratio is defined as qCrit = mAccretor/mDonor.
- *
- * double HeGB::CalculateCriticalMassRatioClaeys14(const bool p_AccretorIsDegenerate) 
- *
- * @param   [IN]    p_AccretorIsDegenerate      Boolean indicating if accretor in degenerate (true = degenerate)
- * @return                                      Critical mass ratio for unstable MT 
- */
-double HeGB::CalculateCriticalMassRatioClaeys14(const bool p_AccretorIsDegenerate) const {
-
-    double qCrit;
-                                                                                                                            
-    qCrit = p_AccretorIsDegenerate
-                ? OPTIONS->MassTransferCriticalMassRatioHeliumGiantDegenerateAccretor()     // degenerate accretor
-                : OPTIONS->MassTransferCriticalMassRatioHeliumGiantNonDegenerateAccretor(); // non-degenerate accretor
-                                                                                                                        
-    return qCrit;
-}

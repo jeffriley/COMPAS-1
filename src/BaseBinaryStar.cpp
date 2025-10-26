@@ -1215,7 +1215,27 @@ void BaseBinaryStar::ResolveSupernova() {
 #define angleBetween(x,y) Vector3d::AngleBetween(x, y)
 #define mag               Magnitude()
 #define hat               UnitVector()
-    
+
+
+// m_EccentricityPreSN
+// m_SemiMajorAxisPreSN
+// m_OrbitalVelocityPreSN
+// m_NormalizedOrbitalAngularMomentumVector
+// m_Eccentricity
+// m_SemiMajorAxis
+// m_Unbound
+// m_ThetaE
+// m_PhiE
+// m_PsiE
+// m_IPrime
+// m_CosIPrime
+
+
+
+
+
+
+
     // set relevant pre-SN parameters 
     m_EccentricityPreSN     = m_Eccentricity;                                                                                   // eccentricity pre-SN                                                 
     m_SemiMajorAxisPreSN    = m_SemiMajorAxis;                                                                                  // semi-major axis pre-SN                                            
@@ -2141,7 +2161,7 @@ void BaseBinaryStar::CalculateMassTransfer(const double p_Dt) {
     }
     else if (OPTIONS->QCritPrescription() != QCRIT_PRESCRIPTION::NONE) {                                                        // determine stability based on critical mass ratios
         // NOTE: Critical mass ratio is defined as mAccretor/mDonor
-        double qCrit = m_Donor->CalculateCriticalMassRatio(m_Accretor->IsDegenerate(), m_FractionAccreted);
+        double qCrit = m_Donor->CalculateCriticalMassRatio(m_Mass, m_Radius, m_CoreMass, m_Accretor->IsDegenerate(), m_FractionAccreted);
         isUnstable   = utils::Compare((m_Accretor->Mass() / m_Donor->Mass()), qCrit) < 0;
     }
     else {                                                                                                                      // determine stability based on zetas

@@ -102,12 +102,11 @@ protected:
             double          CalculateBirthMagneticField();
             double          CalculateBirthSpinPeriod();
     
-            double          CalculateCriticalMassRatioHurleyHjellmingWebbink() const { return 0.0; }
+ double CalculateCriticalMassRatio_Hurley2002() const { return 0.0; }
 
     static  double          CalculateLuminosityOnPhase_Static(const double p_Mass, const double p_Time);
             double          CalculateLuminosityOnPhase() const                  { return CalculateLuminosityOnPhase_Static(m_Mass, m_Age); }                    // Use class member variables
 
-    std::tuple<double, MASS_LOSS_TYPE> CalculateMassLossRate() { return std::make_tuple(0.0, MASS_LOSS_TYPE::NONE); } // Ensure that NSs don't lose mass in winds
     
     static  double          CalculateMomentOfInertiaCGS_Static(const double p_Mass, const double p_Radius);                                                     // MoI in CGS            
             double          CalculateMomentOfInertiaCGS() const                 { return CalculateMomentOfInertiaCGS_Static(m_Mass * MSOL_TO_G, m_Radius * RSOL_TO_CM); } // MOI in CGS - use member variables
@@ -140,6 +139,26 @@ protected:
                                                        const double p_Stepsize,
                                                        const double p_MassGainPerTimeStep,
                                                        const double p_Epsilon);
+
+
+
+
+
+
+///// ON PHASE FUNCTIONS   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+inline MASS_LOSS_T CalculateMassLossRate() const override { return std::make_tuple(0.0, MASS_LOSS_TYPE::NONE); } // Ensure that NSs don't lose mass in winds
+
+
+
+
+
+
+
+
+///// PHASE END, ETC.      <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
 
 };
 

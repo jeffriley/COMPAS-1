@@ -5,62 +5,110 @@
 
 
 /*
- * Calculate timescales in units of Myr
+ * CalculateTimescales_Hurley2000
  *
- * Timescales depend on a star's mass, so this needs to be called at least each timestep
+ * @brief
+ * (Re)calculate timescales given the mass of the star, per Hurley at al. 2000.
+ * 
+ * Since timescales depend on a star's mass, they need to be calculated whenever
+ * the mass of the star changes (probably every timestep).
  *
- * Vectors are passed by reference here for performance - preference would be to pass const& and
- * pass modified value back by functional return, but this way is faster - and this function is
- * called many, many times.
  *
+ * DBL_VECTOR CalculateTimescales_Hurley2000(const double      p_Mass,
+ *                                           const double      p_ZetaHurley,
+ *                                           const DBL_VECTOR& p_GBparams,
+ *                                           const DBL_VECTOR& p_MassCutoffs,
+ *                                           const DBL_VECTOR& p_Timescales,
+ *                                           const double      p_Alpha3,
+ *                                           const DBL_VECTOR& p_aN,
+ *                                           const DBL_VECTOR& p_bN) const
  *
- * void CalculateTimescales(const double p_Mass, DBL_VECTOR &p_Timescales)
- *
- * @param   [IN]        p_Mass                  Mass in Msol
- * @param   [IN/OUT]    p_Timescales            Timescales
+ * @param       p_Mass                          Mass of the star (Msol)
+ * @param       p_ZetaHurley                    Hurley zeta value (log10(Z / ZSOL_HURLEY))
+ * @param       p_GBparams                      Hurley GB parameters
+ * @param       p_MassCutoffs                   Hurley mass cutoffs (Msol)
+ * @param       p_tScales                       Hurley timescales (Myr)
+ * @param       p_Alpha3                        Hurley alpha3 constant
+ * @param       p_aN                            Hurley a(n) coefficients
+ * @param       p_bN                            Hurley b(n) coefficients
+ * @return                                      Mutated timescales (Myr)
  */
-void HeHG::CalculateTimescales(const double p_Mass, DBL_VECTOR &p_Timescales) {
+DBL_VECTOR HeHG::CalculateTimescales_Hurley2000(const double      p_Mass,
+                                                const double      p_ZetaHurley,
+                                                const DBL_VECTOR& p_GBparams,
+                                                const DBL_VECTOR& p_MassCutoffs,
+                                                const DBL_VECTOR& p_tScales,
+                                                const double      p_Alpha3,
+                                                const DBL_VECTOR& p_aN,
+                                                const DBL_VECTOR& p_bN) const {
 
-    HeMS::CalculateTimescales(p_Mass, p_Timescales);    // calculate common values
+// #defines for convenience and readability - undefined at end of function
+#define GBparams(x) p_GBparams[static_cast<int>(GBP::x)]
+#define tScales(x) tScales[static_cast<int>(TIMESCALE::x)]
 
-    double p1   = gbParams(p) - 1.0;
-    double q1   = gbParams(q) - 1.0;
-    double p1_p = p1 / gbParams(p);
-    double q1_q = q1 / gbParams(q);
+    double p1   = GBparams(p) - 1.0;
+    double q1   = GBparams(q) - 1.0;
+    double p1_p = p1 / GBparams(p);
+    double q1_q = q1 / GBparams(q);
 
     double LTHe = HeMS::CalculateLuminosityAtPhaseEnd(p_Mass);
 
-    timescales(tinf1_HeGB) = timescales(tHeMS) + (1.0 / ((p1 * gbParams(AHe) * gbParams(D))) * PPOW((gbParams(D) / LTHe), p1_p));
-    timescales(tx_HeGB)    = timescales(tinf1_HeGB) - (timescales(tinf1_HeGB) - timescales(tHeMS)) * PPOW((LTHe / gbParams(Lx)), p1_p);
-    timescales(tinf2_HeGB) = timescales(tx_HeGB) + ((1.0 / (q1 * gbParams(AHe) * gbParams(B))) * PPOW((gbParams(B) / gbParams(Lx)), q1_q));
+    DBL_VECTOR tScales = p_tScales; // copy given timescales
+
+    // (re)calculate HeMS timescales (Note: HeMS does not recalculate earlier timescales) <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+    tScales = HeMS::CalculateTimescales_Hurley2000(p_Mass, p_ZetaHurley, p_GBparams, p_MassCutoffs, tScales, p_Alpha3, p_aN, p_bN);
+
+    tScales[static_cast<int>(TIMESCALE::tinf1_HeGB)] = tScales(tHeMS) + (1.0 / ((p1 * GBparams(AHe) * GBparams(D))) * PPOW((GBparams(D) / LTHe), p1_p));
+    tScales[static_cast<int>(TIMESCALE::tx_HeGB)]    = tScales(tinf1_HeGB) - (tScales(tinf1_HeGB) - tScales(tHeMS)) * PPOW((LTHe / GBparams(Lx)), p1_p);
+    tScales[static_cast<int>(TIMESCALE::tinf2_HeGB)] = tScales(tx_HeGB) + ((1.0 / (q1 * GBparams(AHe) * GBparams(B))) * PPOW((GBparams(B) / GBparams(Lx)), q1_q));
+
+    // return timescales vector by value - NRVO takes care of performance/efficiency
+    return tScales;
+
+#undef timescales
+#undef GBparams
 }
 
 
 /*
+ * CalculateGBparams_Hurley2000
+ *
+ * @brief
  * Calculate Giant Branch (GB) parameters per Hurley et al. 2000
  *
- * Giant Branch Parameters depend on a star's mass, so this needs to be called at least each timestep
+ * Since Giant Branch parameters depend on a star's mass, they need to be calculated
+ * whenever the mass of the star changes (probably every timestep).
  *
- * Vectors are passed by reference here for performance - preference would be to pass const& and
- * pass modified value back by functional return, but this way is faster - and this function is
- * called many, many times.
  *
- * void CalculateGBParams(const double p_Mass, DBL_VECTOR &p_GBParams)
+ * void CalculateGBparams_Hurley2000(const double      p_Mass,
+ *                                   const DBL_VECTOR& p_GBparams,
+ *                                   const double      p_MHef,
+ *                                   const DBL_VECTOR& p_aN,
+ *                                   const DBL_VECTOR& p_bN) const
  *
- * @param   [IN]        p_Mass                  Mass in Msol
- * @param   [IN/OUT]    p_GBParams              Giant Branch Parameters - calculated here
+ * @param       p_Mass                          Mass of the star (Msol)
+ * @param       p_GBparams                      Hurley GB parameters
+ * @param       p_MHef                          Maximum initial mass at Helium Flash (Hurley masscutoffs[MHeF]) (Msol)
+ * @param       p_aN                            Hurley a(n) coefficients
+ * @param       p_bN                            Hurley b(n) coefficients
+ * @return                                      Mutated GB parameters (Myr)
  */
-void HeHG::CalculateGBParams(const double p_Mass, DBL_VECTOR &p_GBParams) {
-#define gbParams(x) p_GBParams[static_cast<int>(GBP::x)]    // for convenience and readability - undefined at end of function
+void HeHG::CalculateGBparams_Hurley2000(const double      p_Mass,
+                                        const DBL_VECTOR& p_GBparams,
+                                        const double      p_MHef,
+                                        const DBL_VECTOR& p_aN,
+                                        const DBL_VECTOR& p_bN) const {
 
-    HeMS::CalculateGBParams(p_Mass, p_GBParams);    // calculate common values
+    DBL_VECTOR GBparams = p_GBparams;                       // copy given GBparams
 
-    // recalculate HeHG specific values
+    GBparams = HeMS::CalculateGBparams(p_Mass, GBparams);   // (re)calculate HeMS GB parameters
 
-	gbParams(McBAGB) = CalculateCoreMassAtBAGB();
-	gbParams(McBGB)  = CalculateCoreMassAtBGB(p_Mass, p_GBParams);
+    GBparams[static_cast<int>(GBP::Lx)]     = GiantBranch::CalculateCoreMass_Luminosity_Lx_Hurley2000(GBparams);
+	GBparams[static_cast<int>(GBP::McBAGB)] = CalculateCoreMassAtBAGB_Hurley2000(p_Mass, p_bN);
+	GBparams[static_cast<int>(GBP::McBGB)]  = CalculateCoreMassAtBGB_Hurley2000(p_Mass, GBparams, p_MHef, p_aN);
 
-#undef gbParams
+    // return GB parameters vector by value - NRVO takes care of performance/efficiency
+    return GBparams;
 }
 
 
@@ -82,13 +130,13 @@ void HeHG::CalculateGBParams(const double p_Mass, DBL_VECTOR &p_GBParams) {
  *     switch (see evolveOneTimestep() in star.cpp for EAGB stars in the legacy code).
  *
  *
- * void CalculateGBParams_Static(const double      p_Mass0, 
+ * void CalculateGBparams_Static(const double      p_Mass0, 
  *                               const double      p_Mass, 
  *                               const double      p_LogMetallicityXi, 
  *                               const DBL_VECTOR &p_MassCutoffs, 
  *                               const DBL_VECTOR &p_AnCoefficients, 
  *                               const DBL_VECTOR &p_BnCoefficients,
- *                                     DBL_VECTOR &p_GBParams)
+ *                                     DBL_VECTOR &p_GBparams)
  *
  * @param   [IN]        p_Mass0                 Mass0 in Msol
  * @param   [IN]        p_Mass                  Mass in Msol
@@ -96,34 +144,33 @@ void HeHG::CalculateGBParams(const double p_Mass, DBL_VECTOR &p_GBParams) {
  * @param   [IN]        p_MassCutoffs           Mass cutoffs
  * @param   [IN]        p_AnCoefficients        a(n) coefficients
  * @param   [IN]        p_BnCoefficients        b(n) coefficients
- * @param   [IN/OUT]    p_GBParams              Giant Branch Parameters - calculated here
+ * @param   [IN/OUT]    p_GBparams              Giant Branch Parameters - calculated here
  */
-void HeHG::CalculateGBParams_Static(const double      p_Mass0, 
+void HeHG::CalculateGBparams_Static(const double      p_Mass0, 
                                     const double      p_Mass, 
                                     const double      p_LogMetallicityXi, 
                                     const DBL_VECTOR &p_MassCutoffs, 
                                     const DBL_VECTOR &p_AnCoefficients, 
                                     const DBL_VECTOR &p_BnCoefficients, 
-                                          DBL_VECTOR &p_GBParams) {
+                                          DBL_VECTOR &p_GBparams) {
     
-    GiantBranch::CalculateGBParams_Static(p_Mass, p_LogMetallicityXi, p_MassCutoffs, p_AnCoefficients, p_BnCoefficients, p_GBParams);                                     // calculate common values (actually, all)
 
     // recalculate HeHG specific values
 
-	gbParams(B)      = CalculateCoreMass_Luminosity_B_Static();
-	gbParams(D)      = CalculateCoreMass_Luminosity_D_Static(p_Mass);
+	gbParams(B)      = HeMS::CalculateCoreMass_Luminosity_B_Hurley2000_Static(p_Mass);
+	gbParams(D)      = HeMS::CalculateCoreMass_Luminosity_D_Hurley2000_Static(p_Mass);
 
-    gbParams(Mx)     = GiantBranch::CalculateCoreMass_Luminosity_Mx_Static(p_GBParams);      // depends on B, D, p & q - recalculate if any of those are changed
-    gbParams(Lx)     = GiantBranch::CalculateCoreMass_Luminosity_Lx_Static(p_GBParams);      // depends on B, D, p, q & Mx - recalculate if any of those are changed
+    gbParams(Mx)     = GiantBranch::CalculateCoreMass_Luminosity_Mx_Hurley2000_Static(p_GBparams);
+    gbParams(Lx)     = GiantBranch::CalculateCoreMass_Luminosity_Lx_Hurley2000_Static(p_GBparams);
 
-    // need to reset p and q to HeHG specific versions -- while they are set in GiantBranch::CalculateGBParams_Static(), that uses
+    // need to reset p and q to HeHG specific versions -- while they are set in GiantBranch::CalculateGBparams_Static(), that uses
     // the GiantBranch versions of CalculateCoreMass_Luminosity_p_Static and CalculateCoreMass_Luminosity_q_Static
     // should return to this and understand desired behavior - *ILYA*
     gbParams(p) = CalculateCoreMass_Luminosity_p_Static(p_Mass, p_MassCutoffs);
     gbParams(q) = CalculateCoreMass_Luminosity_q_Static(p_Mass, p_MassCutoffs);
     
 	gbParams(McBAGB) = p_Mass0;
-	gbParams(McBGB)  = GiantBranch::CalculateCoreMassAtBGB_Static(p_Mass, p_MassCutoffs, p_AnCoefficients, p_GBParams);
+	gbParams(McBGB)  = GiantBranch::CalculateCoreMassAtBGB_Hurley2000_Static(p_Mass, p_MassCutoffs, p_AnCoefficients, p_GBparams);
 }
 
 
@@ -138,7 +185,7 @@ void HeHG::CalculateGBParams_Static(const double      p_Mass0,
  * @return                                      Luminosity for a Helium HertzSprung Gap star
  */
 double HeHG::CalculateLuminosityOnPhase() const {
-#define gbParams(x) m_GBParams[static_cast<int>(GBP::x)]    // for convenience and readability - undefined at end of function
+#define gbParams(x) m_GBparams[static_cast<int>(GBP::x)]    // for convenience and readability - undefined at end of function
     return HeGB::CalculateLuminosityOnPhase_Static(m_COCoreMass, gbParams(B), gbParams(D));
 #undef gbParams
 }
@@ -200,18 +247,6 @@ std::tuple <double, STELLAR_TYPE> HeHG::CalculateRadiusAndStellarTypeOnPhase(con
 }
 
 
-/*
- * Calculate CO Core Mass for a Helium Hertzsprung Gap star
- *
- *
- * double CalculateCOCoreMassOnPhase()
- *
- * @return                                      HeHG CoCoreMass in Msol
- */
-double HeHG::CalculateCOCoreMassOnPhase() const {
-    return HeGB::CalculateCoreMassOnPhase_Static(m_Mass0, m_Age, timescales(tHeMS), m_GBParams);
-}
-
 
 /*
  * Calculate the perturbation parameter mu
@@ -228,20 +263,6 @@ double HeHG::CalculatePerturbationMu() const {
     return std::max(5.0 * ((McMax - m_CoreMass) / McMax), 0.0);         //return non-negative value to avoid round-off issues
 }
 
-/*
- * Calculate radius of the remnant the star would become if it lost all of its
- * envelope immediately (i.e. M = Mc, coreMass)
- *
- * Hurley et al. 2000, end of section 6
- *
- *
- * double CalculateRemnantRadius()
- *
- * @return                                      Radius of remnant core in Rsol
- */
-double HeHG::CalculateRemnantRadius() const {
-    return HeWD::CalculateRadiusOnPhase_Static(m_CoreMass);
-}
 
 
 ///////////////////////////////////////////////////////////////////////////////////////
@@ -336,29 +357,7 @@ ENVELOPE HeHG::DetermineEnvelopeType() const {
 }
 
 
-/*
- * Determines if mass transfer is unstable according to the critical mass ratio.
- *
- * See e.g de Mink et al. 2013, Claeys et al. 2014, and Ge et al. 2010, 2015, 2020 for discussions.
- *
- * Assumes this star is the donor; relevant accretor details are passed as parameters.
- * Critical mass ratio is defined as qCrit = mAccretor/mDonor.
- *
- * double HeHG::CalculateCriticalMassRatioClaeys14(const bool p_AccretorIsDegenerate) 
- *
- * @param   [IN]    p_AccretorIsDegenerate      Boolean indicating if accretor in degenerate (true = degenerate)
- * @return                                      Critical mass ratio for unstable MT 
- */
-double HeHG::CalculateCriticalMassRatioClaeys14(const bool p_AccretorIsDegenerate) const {
 
-    double qCrit;
-                                                                                                                            
-    qCrit = p_AccretorIsDegenerate
-                ? OPTIONS->MassTransferCriticalMassRatioHeliumHGDegenerateAccretor()        // degenerate accretor
-                : OPTIONS->MassTransferCriticalMassRatioHeliumHGNonDegenerateAccretor();    // non-degenerate accretor
-                                                                                                                        
-    return qCrit;
-}
 
 /*
  * Choose timestep for evolution
@@ -394,7 +393,7 @@ double HeHG::ChooseTimestep(const double p_Time) const {
 bool HeHG::ShouldEvolveOnPhase() const {
 
     double McMax = CalculateMaximumCoreMass(m_Mass);
-    double McSN  = CalculateCoreMassAtSupernova_Static(MECS, m_GBParams[static_cast<int>(GBP::McBAGB)]);
+    double McSN  = CalculateCoreMassAtSN_Static(MECS, m_GBparams[static_cast<int>(GBP::McBAGB)]);
     return ((utils::Compare(m_COCoreMass, McMax) <= 0 || utils::Compare(McMax, McSN) >= 0) && !ShouldEnvelopeBeExpelledByPulsations());    // Evolve on HeHG phase if McCO <= McMax or McMax >= McSN and envelope is not ejected by pulsations
 }
 
@@ -408,7 +407,7 @@ bool HeHG::ShouldEvolveOnPhase() const {
  *
  *     - m_StellarType
  *     - m_Timescales
- *     - m_GBParams
+ *     - m_GBparams
  *     - m_Luminosity
  *     - m_Radius
  *     - m_Mass
@@ -462,7 +461,7 @@ bool HeHG::IsSupernova() const {
         return (utils::Compare(m_Mass, MECS) > 0);
     }
         
-    return (utils::Compare(m_COCoreMass, CalculateCoreMassAtSupernova_Static(MECS, m_GBParams[static_cast<int>(GBP::McBAGB)])) >= 0); // Go supernova if CO core mass large enough
+    return (utils::Compare(m_COCoreMass, CalculateCoreMassAtSN_Static(MECS, m_GBparams[static_cast<int>(GBP::McBAGB)])) >= 0); // Go supernova if CO core mass large enough
 }
 
 /*
@@ -475,7 +474,7 @@ bool HeHG::IsSupernova() const {
  */
 double HeHG::CalculateInitialSupernovaMass() const {
     if (utils::Compare(m_CoreMass, m_Mass) == 0) {      // special case of ultra-stripped-star -- use current mass
-        return std::max(m_Mass, m_GBParams[static_cast<int>(GBP::McBAGB)]);
+        return std::max(m_Mass, m_GBparams[static_cast<int>(GBP::McBAGB)]);
     }
     return GiantBranch::CalculateInitialSupernovaMass();
 }

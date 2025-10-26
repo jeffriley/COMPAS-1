@@ -1,8 +1,8 @@
 #include "BH.h"
 
 /*
- * Calculate the gravitational mass of the Black Hole in Msol
- *
+ * 
+ * Calculate the gravitational mass due to neutrino mass loss
  *
  * double CalculateNeutrinoMassLoss_Static(const double p_BaryonicMass)
  *

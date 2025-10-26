@@ -28,66 +28,77 @@ protected:
 
     // member functions - alphabetically (sort of - some are grouped by functionality)
             double          CalculateConvectiveCoreMass() const                                             { return m_CoreMass; }
-            double          CalculateConvectiveCoreRadius () const                                          { return std::min(CalculateRemnantRadius(), m_Radius); }                // Last paragraph of section 6 of Hurley+ 2000
             DBL_DBL         CalculateConvectiveEnvelopeMass() const;
-    static  double          CalculateCoreMassAt2ndDredgeUp_Static(const double p_McBAGB);
-            double          CalculateCoreMassAtBAGB(const double p_Mass) const;
-    static  double          CalculateCoreMassAtBAGB_Static(const double p_Mass, const DBL_VECTOR &p_BnCoefficients);
-            double          CalculateCoreMassAtBGB(const double p_Mass, const DBL_VECTOR &p_GBParams);
-    static  double          CalculateCoreMassAtBGB_Static(const double p_Mass, const DBL_VECTOR &p_MassCutoffs, const DBL_VECTOR &p_AnCoefficients, const DBL_VECTOR &p_GBParams);
-            double          CalculateCoreMassAtHeIgnition(const double p_Mass) const;
-    static  double          CalculateCoreMassAtSupernova_Static(const double p_Mthreshold, const double p_McBAGB);
 
-    static  double          CalculateCoreMass_Luminosity_B_Static(const double p_Mass);
-    static  double          CalculateCoreMass_Luminosity_D_Static(const double p_Mass, const double p_LogMetallicityXi, const DBL_VECTOR &p_MassCutoffs);
-    static  double          CalculateCoreMass_Luminosity_p_Static(const double p_Mass, const DBL_VECTOR &p_MassCutoffs);
-    static  double          CalculateCoreMass_Luminosity_q_Static(const double p_Mass, const DBL_VECTOR &p_MassCutoffs);
-    static  double          CalculateCoreMass_Luminosity_Lx_Static(const DBL_VECTOR &p_GBParams);
-    static  double          CalculateCoreMass_Luminosity_Mx_Static(const DBL_VECTOR &p_GBParams);
 
-            double          CalculateCriticalMassRatioClaeys14(const bool p_AccretorIsDegenerate) const; 
-            double          CalculateCriticalMassRatioHurleyHjellmingWebbink() const; 
 
-            void            CalculateGBParams(const double p_Mass, DBL_VECTOR &p_GBParams);
-    static  void            CalculateGBParams_Static(const double p_Mass, const double p_LogMetallicityXi, const DBL_VECTOR &p_MassCutoffs, const DBL_VECTOR &p_AnCoefficients, const DBL_VECTOR &p_BnCoefficients, DBL_VECTOR &p_GBParams);
-            void            CalculateGBParams()                                                             { CalculateGBParams(m_Mass0, m_GBParams); }                         // Use class member variables
 
-    static  double          CalculateHRateConstant_Static(const double p_Mass);
+
+
+
+ double CalculateCoreMassAtHeI_Hurley2000(const double p_Mass) const;
+
+
+
+    static  double          CalculateCoreMassAtSN_Static(const double p_Mthreshold, const double p_McBAGB);
+
+
+
+
+
+// radius
+
+
+double          CalculateConvectiveCoreRadius() const { return std::min(CalculateRemnantRadius(), m_Radius); } // Last paragraph of section 6 of Hurley+ 2000
+
+
+
+
+
+
+/////    static  void            CalculateGBparams_Static(const double p_Mass, const double p_LogMetallicityXi, const DBL_VECTOR &p_MassCutoffs, const DBL_VECTOR &p_AnCoefficients, const DBL_VECTOR &p_BnCoefficients, DBL_VECTOR &p_GBparams);
+/////            void            CalculateGBparams()                                                             { CalculateGBparams(m_Mass0, m_GBparams); }                         // Use class member variables
+
+
+
     
+
     virtual double          CalculateInitialSupernovaMass() const                                           { return m_Mass; }                                                  // Use class member variables
 
             double          CalculateLifetimeToHeIgnition(const double p_Mass, const double p_Tinf1_FGB, const double p_Tinf2_FGB);
 
-    static  double          CalculateLuminosityAtHeIgnition_Static(const double      p_Mass,
-                                                                   const double      p_Alpha,
-                                                                   const double      p_MHeF,
-                                                                   const DBL_VECTOR &p_BnCoefficients);
 
-    static  double          CalculateLuminosityAtPhaseBase_Static(const double p_Mass, const DBL_VECTOR &p_AnCoefficients);
-    static  double          CalculateLuminosityOnZAHB_Static(const double      p_Mass,
-                                                             const double      p_CoreMass,
-                                                             const double      p_Alpha1,
-                                                             const double      p_MHeF,
-                                                             const double      p_MFGB,
-                                                             const double      p_MinimumLuminosityOnPhase,
-                                                             const DBL_VECTOR &p_BnCoefficients);
+
+
+
+
 
             double          CalculateMassLossRateHurley();
 
-            double          CalculateBaryonicRemnantMass(const double p_ProtoMass, double p_FallbackMass);
-            double          CalculateFallbackBHMassMullerMandel(const double p_COCoreMass, const double p_HeCoreMass);
-            double          CalculateFallbackByBelczynski2002(const double p_COCoreMass);
-            double          CalculateFallbackFractionDelayed(const double p_PreSNMass, const double p_ProtoMass, const double p_COCoreMass);
+
+
+
+
+
+            
+            
+            
+            double          CalculateFallbackFraction_Fryer2012_Delayed(const double p_PreSNMass, const double p_ProtoMass, const double p_COCoreMass);
+
+
             double          CalculateFallbackFractionRapid(const double p_PreSNMass, const double p_ProtoMass, const double p_COCoreMass);
-            double          CalculateFallbackMass(const double p_PreSNMass, const double p_ProtoMass, const double p_Fallback);
+
+
+
+            
+            
             double          CalculateGravitationalRemnantMass(const double p_BaryonicRemnantMass);
-            double          CalculateProtoCoreMassDelayed(const double p_COCoreMass);
-            double          CalculateRemnantMassByBelczynski2002(const double p_Mass, const double p_COCoreMass, const double p_FallbackFraction);
-            DBL_DBL         CalculateRemnantMassByFryer2012(const double p_Mass, const double p_COCoreMass);
-            DBL_DBL         CalculateRemnantMassByFryer2022(const double p_Mass, const double p_COCoreMass);
-            double          CalculateRemnantMassByMaltsev2024(const double p_COCoreMass, const double p_HeCoreMass);
-            double          CalculateRemnantMassByMuller2016(const double p_Mass, const double p_COCoreMass);
+
+
+
+
             double          CalculateRemnantMassByMullerMandel(const double p_COCoreMass, const double p_HeCoreMass);
+            
             double          CalculateRemnantMassBySchneider2020(const double p_COCoreMass, const bool p_UseSchneiderAlt = false);
             double          CalculateRemnantMassBySchneider2020Alt(const double p_COCoreMass)               { return CalculateRemnantMassBySchneider2020(p_COCoreMass, true); }
             double          CalculateRemnantNSMassMullerMandel(const double p_COCoreMass, const double p_HeCoreMass);
@@ -95,44 +106,49 @@ protected:
 
             double          CalculateMomentOfInertia() const;
 
-            double          CalculatePerturbationMu() const;
+
+
+
 
             double          CalculateRadialExtentConvectiveEnvelope() const;
 
-            double          CalculateRadiusAtHeIgnition(const double p_Mass) const;
+
+
+
+
+
+
             double          CalculateRadiusOnMassChange(double p_dM)                                        { return CalculateRadiusOnPhase(m_Mass + p_dM, m_Luminosity); }
+
+
+
+
     virtual double          CalculateRadiusOnPhase(const double p_Mass, const double p_Luminosity) const    { return CalculateRadiusOnPhase_Static(p_Mass, p_Luminosity, m_BnCoefficients); }
+
+
+
             double          CalculateRadiusOnPhase() const                                                  { return CalculateRadiusOnPhase(m_Mass, m_Luminosity); }
 
 
 
-GNU_CONST static double CalculateRadiusOnPhase_Hurley_Static(const double p_Mass, const double p_Luminosity, const DBL_VECTOR &p_bN) const;
-
-CalculateRadiusOnPhase_Static(const double p_Mass, const double p_Luminosity, const DBL_VECTOR &p_BnCoefficients) const; // DEFINE THIS - MUST DO SWITCH MODE
-
-GNU_CONST static double CalculateLuminosityAtHeIgnition_Hurley_Static(const double p_Mass, const double p_Alpha1, const double p_MHeF, const DBL_VECTOR& p_bN) const;
-
-CalculateLuminosityAtHeIgnition_Static(const double p_Mass, const double p_Alpha1, const double p_MHeF, const DBL_VECTOR& p_bN) const; // DEFINE THIS - MUST DO SWITCH MODE
 
 
-    static  double          CalculateRadiusOnZAHB_Static(const double      p_Mass,
-                                                         const double      p_CoreMass,
-                                                         const double      p_Alpha1,
-                                                         const double      p_MHeF,
-                                                         const double      p_MFGB,
-                                                         const double      p_MinimumLuminosityOnPhase,
-                                                         const DBL_VECTOR &p_BnCoefficients);
 
-    virtual double          CalculateRemnantLuminosity() const;
-            STELLAR_TYPE    CalculateRemnantTypeByMuller2016(const double p_COCoreMass);
+
+
+
+
+
 	
+
+
 
             double          CalculateThermalMassLossRate() const                                            { return (m_Mass - m_CoreMass) / CalculateThermalTimescale(); }     // Use class member variables
 
             void            CalculateTimescales(const double p_Mass, DBL_VECTOR &p_Timescales);
             void            CalculateTimescales()                                                           { CalculateTimescales(m_Mass0, m_Timescales); }                     // Use class member variables
 
-            double          CalculateZetaConstantsByEnvelope(ZETA_PRESCRIPTION p_ZetaPrescription);
+            double          CalculateZetaAdiabatic_ByEnvelopeType(ZETA_PRESCRIPTION p_ZetaPrescription);
             double          CalculateZetaConvectiveEnvelopeGiant(ZETA_PRESCRIPTION p_ZetaPrescription);
 
     virtual void            PerturbLuminosityAndRadius();
@@ -142,14 +158,727 @@ CalculateLuminosityAtHeIgnition_Static(const double p_Mass, const double p_Alpha
             STELLAR_TYPE    ResolveCoreCollapseSN();
             STELLAR_TYPE    ResolveElectronCaptureSN();
             STELLAR_TYPE    ResolvePairInstabilitySN();
-            STELLAR_TYPE    ResolvePulsationalPairInstabilitySN();
+            STELLAR_TYPE    ProcessPPISN();
     
             void            UpdateAgeAfterMassLoss() { }                                                                                                                        // NO-OP for most stellar types
 
-            double            CalculateEffectiveInitialMass()                                               { return m_Mass0; }                                                 // NO-OP for most stellar types
+
+}
     
             void            UpdateMainSequenceCoreMass(const double p_Dt, const double p_TotalMassLossRate) { }                                                                 // NO-OP for most stellar types
 
+
+
+
+///// ON PHASE FUNCTIONS   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+inline double CalculateEffectiveInitialMass_Hurley2000() const override { return BaseStar::CalculateEffectiveInitialMass_Hurley2000(); } // per Hurley et al. 2000, section 7.1
+
+
+ 
+GNU_CONST inline STELLAR_TYPE GiantBranch::CalculateRemnantType_Muller2016(const double p_COCoreMass) const;
+
+GNU_CONST inline double CalculatePerturbationMu_Hurley2000(const double p_Mass, const double p_Luminosity, const double p_CoreMass) const;
+
+
+GNU_CONST double CalculateProtoCoreMass_Fryer2012_Delayed(const double p_COCoreMass) const;
+
+GNU_CONST DBL_DBL CalculateRemnantMass_Belczynski2002(const double p_Mass, const double p_COCoreMass) const;
+
+GNU_CONST DBL_DBL CalculateRemnantMass_Fryer2012(const double p_Mass, const double p_COCoreMass, const double p_NSmaxBaryonicMass, const SN_ENGINE p_SNenginePrescription) const;
+
+GNU_CONST DBL_DBL CalculateRemnantMass_Fryer2022(const double    p_Mass,
+                                                 const double    p_COCoreMass,
+                                                 const double    p_NSmaxBaryonicMass,
+                                                 const double    p_fMix,
+                                                 const double    p_mCrit
+                                                 const SN_ENGINE p_SNenginePrescription) const;
+
+
+
+
+GNU_CONST DBL_DBL CalculateRemnantMass_Maltsev2025(const double p_COCoreMass, const double p_HeCoreMass);
+
+
+
+
+GNU_CONST double CalculateRemnantMass_Muller2016(const double p_Mass, const double p_COCoreMass) const;
+
+
+GNU_CONST double CalculateBaryonicRemnantMass_Fryer2012(const double p_ProtoMass, double p_FallbackMass) const;
+
+
+GNU_CONST double CalculateFallbackMass_Fryer2012(const double p_PreSNMass, const double p_ProtoMass, const double p_FallbackFraction) const;
+
+
+double CalculateBHMassAfterFallback_MullerMandel2020(const double p_COCoreMass, const double p_HeCoreMass) const;
+
+
+GNU_CONST double GiantBranch::CalculateHRateConstant_Hurley2000(const double p_Mass) const;
+
+
+
+
+
+GNU_CONST static double CalculateRadiusOnPhase_Hurley2000_Static(const double p_Mass, const double p_Luminosity, const DBL_VECTOR& p_bN);
+GNU_CONST static double CalculateRadiusOnPhase_Static(const double p_Mass, const double p_Luminosity, const DBL_VECTOR& p_bN);
+GNU_CONST static double CalculateRadiusOnZAHB_Hurley2000_Static(const double      p_Mass,
+                                                                const double      p_CoreMass,
+                                                                const double      p_MHeF,
+                                                                const double      p_MinLuminosity,
+                                                                const double      p_Alpha1,
+                                                                const DBL_VECTOR& p_bN);
+GNU_CONST double CalculateRemnantRadius_Hurley2000(const double p_Mass, const double p_CoreMass, const double p_MHeF) const;
+GNU_CONST double CalculateRadiusAtHeIgnition_Hurley2000(const double      p_Mass,
+                                                        const double      p_CoreMass,
+                                                        const double      p_MHeF,
+                                                        const double      p_MFGB,
+                                                        const double      p_MinLuminosity,
+                                                        const double      p_Alpha1,
+                                                        const DBL_VECTOR& p_bN) const;
+
+
+
+
+
+// radius
+CalculateRadiusOnPhase() const { return CalculateRadiusOnPhase_Static(const double p_Mass, const double p_Luminosity, const DBL_VECTOR& p_bN) };
+
+
+
+// Luminosity
+GNU_PURE  double CalculateLuminosityAtBGB_Hurley2000(const double p_Mass, const DBL_VECTOR& p_aN) const;
+GNU_CONST static double CalculateLuminosityAtHeI_Hurley2000_Static(const double p_Mass, const double p_MHeF, const double p_Alpha1, const DBL_VECTOR& p_bN);
+GNU_CONST static double CalculateLuminosityAtHeIgnition_Static(const double p_Mass, const double p_MHeF, const double p_Alpha1, const DBL_VECTOR& p_bN);
+GNU_CONST static double CalculateLuminosityOnZAHB_Hurley2000_Static(const double      p_Mass,
+                                                                    const double      p_CoreMass,
+                                                                    const double      p_MHeF,
+                                                                    const double      p_MinLuminosity,
+                                                                    const double      p_Alpha1,
+                                                                    const DBL_VECTOR& p_bN);
+GNU_CONST virtual double CalculateRemnantLuminosity_Hurley2000(const double p_Metallicity, const double p_Mass, const double p_CoreMass, const double p_MHeF) const;
+
+
+
+// constants etc.
+GNU_CONST virtual double CalculateCoreMass_Luminosity_B_Hurley2000(const double p_Mass) const;
+GNU_CONST virtual double CalculateCoreMass_Luminosity_D_Hurley2000(const double p_Mass, const double p_ZetaHurley = 0.0, const double p_MHeF = 0.0) const;
+GNU_CONST virtual double CalculateCoreMass_Luminosity_p_Hurley2000(const double p_Mass, const double p_MHeF) const;
+GNU_CONST virtual double CalculateCoreMass_Luminosity_q_Hurley2000(const double p_Mass, const double p_MHeF) const;
+
+GNU_CONST virtual DBL_VECTOR CalculateGBparams_Hurley2000(const double p_Mass, const double p_ZetaHurley, const DBL_VECTOR& p_GBparams, const DBL_VECTOR& p_MassCutoffs) const;
+
+GNU_CONST double CalculateCoreMass_Luminosity_Lx_Hurley2000(const DBL_VECTOR& p_GBparams) const;
+GNU_CONST double CalculateCoreMass_Luminosity_Mx_Hurley2000(const DBL_VECTOR& p_GBparams) const;
+
+
+// mass
+GNU_CONST double CalculateCoreMassAt2ndDredgeUp_Hurley2000(const double p_McBAGB) const;
+GNU_CONST double CalculateCoreMassAtBAGB_Hurley2000(const double p_Mass, const DBL_VECTOR& p_bN) const;
+GNU_CONST double CalculateCoreMassAtBGB_Hurley2000(const double p_Mass, const DBL_VECTOR& p_GBparams, const double p_MHef, const DBL_VECTOR& p_aN) const;
+
+
+
+///// PHASE END, ETC.      <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+
+
 };
+
+
+// inline candidates <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+/*
+ * CalculateHRateConstant_Hurley2000
+ *
+ * @brief
+ * Calculate the Hydrogen rate constant AH', per Hurley et al. 2000,
+ * just after eq 43 (before eq 44)
+ *
+ *
+ * double CalculateHRateConstant_Hurley2000(const double p_Mass) const
+ *
+ * @param       p_Mass                          Mass of the star (Msol)
+ * @return                                      Hydrogen rate constant (Msol Lsol^-1 Myr^-1)
+ */
+GNU_CONST inline double GiantBranch::CalculateHRateConstant_Hurley2000(const double p_Mass) const {
+    return PPOW(10.0, std::max(-4.8, std::min((-5.7 + (0.8 * p_Mass)), (-4.1 + (0.14 * p_Mass)))));
+}
+
+
+
+/*
+ * CalculatePerturbationMu_Hurley2000
+ *
+ * @brief
+ * Calculate the small envelope perturbation parameter, mu, per Hurley et al. 2000, eqs 97 & 98
+ *
+ *
+ * double CalculatePerturbationMu_Hurley2000(const double p_Mass, const double p_Luminosity, const double p_CoreMass) const
+ *
+ * @param       p_Mass                          Mass of the star (Msol)
+ * @param       p_Luminosity                    Luminosity of the star (Lsol)
+ * @param       p_CoreMass                      Core mass of the star (Msol)
+ * @return                                      Small envelope perturbation parameter, mu
+ */
+GNU_CONST inline double GiantBranch::CalculatePerturbationMu_Hurley2000(const double p_Mass, const double p_Luminosity, const double p_CoreMass) const {
+    constexpr double kappa = -0.5;
+    constexpr double L0    = 7.0E4;
+    return ((p_Mass - p_CoreMass) / p_Mass) * (std::min(5.0, std::max(1.2, PPOW((p_Luminosity / L0), kappa))));
+}
+
+
+/*
+ * CalculateCoreMass_Luminosity_Lx_Hurley2000
+ *
+ * @brief
+ * Calculate First Giant Branch (FGB) Core mass - Luminosity relation parameter, Lx, per Hurley et al. 2000, eq 37
+ *
+ *
+ * double CalculateCoreMass_Luminosity_Lx_Hurley2000(const DBL_VECTOR& p_GBparams) const
+ *
+ * @param       p_GBparams                      Hurley GB parameters
+ * @return                                      Core mass - Luminosity relation parameter, Lx
+ */
+GNU_CONST inline double GiantBranch::CalculateCoreMass_Luminosity_Lx_Hurley2000(const DBL_VECTOR& p_GBparams) const {
+#define GBparams(x) p_GBparams[static_cast<int>(GBP::x)] // for convenience and readability - undefined at end of function
+    // since the mass used here is the mass at crossover (Mx), these
+    // should give the same answer - but we'll take the minimum anyway
+    return std::min((GBparams(B) * PPOW(GBparams(Mx), GBparams(q))), (GBparams(D) * PPOW(GBparams(Mx), GBparams(p))));
+#undef GBparams
+}
+
+
+/*
+ * CalculateCoreMass_Luminosity_Mx_Hurley2000
+ *
+ * @brief
+ * Calculate the Core mass - Luminosity relation parameter, Mx, per Hurley et al. 2000, eq 38
+ *
+ * Mx is the point at which the low- and high-luminosity approximations cross
+ *
+ *
+ * double CalculateCoreMass_Luminosity_Mx_Hurley2000(const DBL_VECTOR& p_GBparams) const
+ *
+ * @param       p_GBparams                      Hurley GB parameters
+ * @return                                      Core mass - Luminosity relation parameter, Mx
+ */
+GNU_CONST inline double GiantBranch::CalculateCoreMass_Luminosity_Mx_Hurley2000(const DBL_VECTOR &p_GBparams) const {
+#define GBparams(x) p_GBparams[static_cast<int>(GBP::x)] // for convenience and readability - undefined at end of function
+    return PPOW(GBparams(B) / GBparams(D), (1.0 / (GBparams(p) - GBparams(q))));
+#undef GBparams
+}
+
+
+/*
+ * CalculateCoreMass_Luminosity_B_Hurley2000
+ *
+ * @brief
+ * Calculate the Core mass - Luminosity relation parameter, B, 
+ * per Hurley et al. 2000, eqs 31 - 38
+ *
+ *
+ * double CalculateCoreMass_Luminosity_B_Hurley2000(const double p_Mass) const
+ *
+ * @param       p_Mass                          Mass of the star (Msol)
+ * @return                                      Core mass - Luminosity relation parameter, B
+ */
+GNU_CONST inline double GiantBranch::CalculateCoreMass_Luminosity_B_Hurley2000(const double p_Mass) const {
+    return std::max(3.0E4, (500.0 + (1.75E4 * PPOW(p_Mass, 0.6))));
+}
+
+
+
+
+
+///////////////////////////////////////////////////////////////////////////////////////
+//                                                                                   //
+//                                  MASS FUNCTIONS                                   //
+//                                                                                   //
+///////////////////////////////////////////////////////////////////////////////////////
+
+
+/*
+ * CalculateCoreMassAt2ndDredgeUp_Hurley2000
+ *
+ * @brief
+ * Calculate the mass of the core during second dredge up, per Hurley et al. 2000, eq 69
+ * (not numbered in the paper, but between eqs 68 & 70)
+ *
+ *
+ * double CalculateCoreMassAt2ndDredgeUp_Hurley2000(const double p_McBAGB) const
+ *
+ * @param       p_McBAGB                        Core mass at the Base of the Asymptotic Giant Branch (Msol)
+ * @return                                      Core Mass at second dredge up (Msol)
+ */
+GNU_CONST inline double GiantBranch::CalculateCoreMassAt2ndDredgeUp_Hurley2000(const double p_McBAGB) const {
+    return p_McBAGB >= 0.8 ? ((0.44 * p_McBAGB) + 0.448) : p_McBAGB;
+}
+
+
+/*
+ * CalculateCoreMassAtBAGB_Hurley2000
+ *
+ * @brief
+ * Calculate core mass at the Base of the Asymptotic Giant Branch,
+ * per Hurley et al. 2000, eq 66
+ *
+ *
+ * double CalculateCoreMassAtBAGB_Hurley2000(const double p_Mass, const DBL_VECTOR& p_bN) const
+ *
+ * @param       p_Mass                          Mass of the star (Msol)
+ * @param       p_bN                            Hurley b(n) coefficients
+ * @return                                      Core mass at the Base of the Asymptotic Giant Branch (Msol)
+ */
+GNU_CONST inline double GiantBranch::CalculateCoreMassAtBAGB_Hurley2000(const double p_Mass, const DBL_VECTOR& p_bN) const {
+    return std::sqrt(std::sqrt((p_bN[36] * PPOW(p_Mass, p_bN[37])) + p_bN[38]));    // sqrt() is much faster than PPOW()
+}
+
+
+/*
+ * CalculateCoreMassAtSN_Static
+ *
+ * @brief
+ * Calculate the core mass at which the Asymptotic Giant Branch phase
+ * is terminated in a SN/loss of envelope, per Hurley et al. 2000, eq 75
+ * 
+ * The mass returned is clamped to a minimum CO core mass (passed as p_mThreshold), which
+ * is MCH in Hurley et al. eq 75, but we deviate from Hurley for stars that may explode in
+ * ECSNe and use MECS (instead of MCH) in those cases.
+ *
+ *
+ * static double CalculateCoreMassAtSN_Static(const double p_mThreshold, const double p_McBAGB)
+ *
+ * @param       p_mThreshold                    Threshold mass (see notes above) (Msol)
+ * @param       p_McBAGB                        Core mass at the Base of the Asymptotic Giant Branch (Msol)
+ * @return                                      Maximum core mass pre-SN on the Asymptotic Giant Branch (Msol)
+ */
+GNU_CONST static inline double GiantBranch::CalculateCoreMassAtSN_Static(const double p_mThreshold, const double p_McBAGB) {
+    return std::max(p_mThreshold, (0.773 * p_McBAGB) - 0.35);
+}
+
+
+/*
+ * CalculateFallbackMass_Fryer2012
+ *
+ * @brief
+ * Calculate the mass falling back onto the proto compact object,
+ * per Fryer et al. 2012, eq 11
+ *
+ *
+ * double CalculateFallbackMass_Fryer2012(const double p_PreSNMass, const double p_ProtoMass, const double p_Fallback) const
+ *
+ * @param       p_PreSNMass                     Pre-SN mass of the star (Msol)
+ * @param       p_ProtoMass                     Pre-SN Carbon Oxygen (CO) core mass of the star (Msol)
+ * @param       p_FallbackFraction              Fraction of mass falling back onto proto object [0.0, 1.0]
+ * @return                                      Mass falling back onto proto object (Msol)
+ */
+GNU_CONST inline double GiantBranch::CalculateFallbackMass_Fryer2012(const double p_PreSNMass, const double p_ProtoMass, const double p_FallbackFraction) const {
+    return p_FallbackFraction * (p_PreSNMass - p_ProtoMass);
+}
+
+
+/*
+ * CalculateProtoCoreMass_Fryer2012_Delayed
+ *
+ * @brief
+ * Calculate the mass of the proto core, using the delayed supernova mechanism,
+ * per Fryer et al. 2012, eq 18.
+ *
+ *
+ * double CalculateProtoCoreMass_Fryer2012_Delayed(const double p_COCoreMass) const
+ *
+ * @param       p_COCoreMass                    Pre-SN Carbon Oxygen (CO) core mass of the star (Msol)
+ * @return                                      Mass of the Fe/Ni proto core (Msol)
+ */
+GNU_CONST inline double GiantBranch::CalculateProtoCoreMass_Fryer2012_Delayed(const double p_COCoreMass) const {
+    return p_COCoreMass < 3.5 ? 1.2 : (p_COCoreMass < 6.0 ? 1.3 : (p_COCoreMass < 11.0 ? 1.4 : 1.6));
+}
+
+
+/*
+ * CalculateRemnantMass_Belczynski2002
+ *
+ * @brief
+ * Calculate remnant mass, per Belczynski et al. 2002
+ *
+ * This is also used in Hurley SSE code
+ * (equation from Belczynski et al. 2002, not documented in Hurley et al. 2000)
+ *
+ *
+ * DBL_DBL CalculateRemnantMass_Belczynski2002(const double p_Mass, const double p_COCoreMass) const
+ *
+ * @param       p_Mass                          Pre-SN mass of the star (Msol)
+ * @param       p_COCoreMass                    Pre-SN Carbon Oxygen (CO) core mass of the star (Msol)
+ * @return                                      Tuple containing:
+ *                                                   DOUBLE Remnant mass (Msol)
+ *                                                   DOUBLE Fraction of mass falling back onto compact object [0.0, 1.0]
+ */
+GNU_CONST inline DBL_DBL GiantBranch::CalculateRemnantMass_Belczynski2002(const double p_Mass, const double p_COCoreMasson) const {
+    const double fallbackFraction = p_COCoreMass <= 5.0 ? 0.0 : (p_COCoreMass < 7.6 ? (p_COCoreMass - 5.0) / 2.6 : 1.0);
+    const double McFeNi           = p_COCoreMass < 2.5 ? (0.161767 * p_COCoreMass) + 1.067055 : (0.314154 * p_COCoreMass) + 0.686088; // iron core mass
+    return std::make_tuple(McFeNi + (fallbackFraction * (p_Mass - McFeNi)), fallbackFraction);
+}
+
+
+/*
+ * CalculateBaryonicRemnantMass_Fryer2012
+ *
+ * @brief
+ * Calculate the baryonic mass of the remnant, per Fryer et al. 2012, eq 12
+ *
+ *
+ * double CalculateBaryonicRemnantMass_Fryer2012(const double p_ProtoMass, double p_FallbackMass) const
+ *
+ * @param       p_ProtoMass                     Mass of proto compact object (Msol)
+ * @param       p_FallbackMass                  Mass falling back onto proto compact object (Msol)
+ * @return                                      Baryonic mass of the remnant (Msol)
+ */
+GNU_CONST inline double GiantBranch::CalculateBaryonicRemnantMass_Fryer2012(const double p_ProtoMass, double p_FallbackMass) const {
+    return p_ProtoMass + p_FallbackMass;
+}
+
+
+///////////////////////////////////////////////////////////////////////////////////////
+//                                                                                   //
+//                                 RADIUS FUNCTIONS                                  //
+//                                                                                   //
+///////////////////////////////////////////////////////////////////////////////////////
+
+
+/*
+ * CalculateRadiusOnPhase_Hurley2000_Static
+ *
+ * @brief
+ * Calculate radius on the Giant Branch, per Hurley et al. 2000, eq 46
+ *
+ *
+ * static double CalculateRadiusOnPhase_Hurley2000_Static(const double p_Mass, const double p_Luminosity, const DBL_VECTOR& p_bN)
+ *
+ * @param       p_Mass                          Mass of the star (Msol)
+ * @param       p_Luminosity                    Luminosity of the star (Lsol)
+ * @param       p_bN                            Hurley b(n) coefficients
+ * @return                                      GB Radius (Rsol)
+ */
+GNU_CONST static inline double GiantBranch::CalculateRadiusOnPhase_Hurley2000_Static(const double p_Mass, const double p_Luminosity, const DBL_VECTOR& p_bN) {
+    const double a = std::min((p_bN[4] * PPOW(p_Mass, -p_bN[5])), (p_bN[6] * PPOW(p_Mass, -p_bN[7])));  // Hurley et al. 2000, just before eq 47
+    return a * (PPOW(p_Luminosity, p_bN[1]) + (p_bN[2] * PPOW(p_Luminosity, p_bN[3])));                 // Hurley et al. 2000, eq 46
+}
+
+
+/*
+ * CalculateRadiusOnPhase_Static
+ *
+ * @brief
+ * Calculate radius on the Giant Branch.
+ * 
+ * Calls relevant radius function based on the evolutionary mode given in program options.
+ * 
+ * 
+ * static double CalculateRadiusOnPhase_Static(const double p_Mass, const double p_MHeF, const double p_Alpha1, const DBL_VECTOR& p_bN)
+ *
+ * @param       p_Mass                          Mass of the star (Msol)
+ * @param       p_Luminosity                    Luminoisty of the star (Lsol)
+ * @param       p_bN                            Hurley b(n) coefficients
+ * @return                                      Luminosity at Helium Ignition (Lsol)
+ */
+ GNU_CONST static double GiantBranch::CalculateRadiusOnPhase_Static(const double p_Mass, const double p_Luminosity, const DBL_VECTOR& p_bN) {
+
+    double radius;
+
+    Switch (OPTIONS->Mode()) {                                              // which evolution mode?
+
+        EVOLUTION_MODE::SSE_HURLEY:                                         // HURLEY SSE
+        EVOLUTION_MODE::BSE_HURLEY:                                         // HURLEY BSE
+            radius = CalculateRadiusOnPhase_Hurley2000_Static(p_Mass, p_Luminosity, p_bN);
+            break;
+        
+        default:                                                            // unknown mode
+            // the only way this can happen is if someone added an EVOLUTION_MODE and it isn't
+            // accounted for in this code.  We should not default here, with or without a warning.
+            // We are here because the user chose a mode this code doesn't account for, and that should
+            // be flagged as an error and result in termination of the evolution of the star or binary.
+            // The correct fix for this is to add code for the missing mode or, if the missing mode is
+            // superfluous, remove it from the option.
+
+            THROW_ERROR(ERROR::UNKNOWN_EVOLUTION_MODE);                     // throw error
+    }       
+
+    return radius;
+}
+
+
+/*
+ * CalculateRemnantRadius_Hurley2000
+ *
+ * @brief
+ * Calculate radius of the remnant the star would become if it lost all of its
+ * envelope immediately (i.e. mass = coreMass), per Hurley et al. 2000, just after eq 105
+ *
+ *
+ * double CalculateRemnantRadius_Hurley2000(const double p_Mass, const double p_CoreMass, const double p_MHeF) const
+ *
+ * @param       p_Mass                          Mass of the star (Msol) (typically effective mass, mass0)
+ * @param       p_CoreMass                      Core mass of the star (Msol)
+ * @param       p_MHeF                          Maximum initial mass at Helium Flash (Hurley masscutoffs[MHeF]) (Msol)
+ * @return                                      Radius of remnant core (Rsol)
+ */
+GNU_CONST inline double GiantBranch::CalculateRemnantRadius_Hurley2000(const double p_Mass, const double p_CoreMass, const double p_MHeF) const {
+    return p_Mass > p_MHeF ? HeMS::CalculateRadiusAtZAHeMS_Hurley2000_Static(p_CoreMass) : WhiteDwarfs::CalculateRadiusOnPhase_Marsh2004_Static(p_CoreMass);
+}
+
+
+///////////////////////////////////////////////////////////////////////////////////////
+//                                                                                   //
+//                               LUMINOSITY FUNCTIONS                                //
+//                                                                                   //
+///////////////////////////////////////////////////////////////////////////////////////
+
+
+/*
+ * CalculateLuminosityAtBGB_Hurley2000
+ *
+ * @brief
+ * Calculate luminosity at the base of the giant branch (BGB),
+ * per Hurley et al. 2000, eq 10
+ *
+ *
+ * double CalculateLuminosityAtBGB_Hurley2000(const double p_Mass, const DBL_VECTOR& p_An) const
+ *
+ * @param       p_Mass                          Mass of the star (Msol)
+ * @param       p_aN                            Hurley a(n) coefficients
+ * @return                                      Luminosity at the Base of the Giant Branch (Lsol)
+ */
+GNU_PURE inline double GiantBranch::CalculateLuminosityAtBGB_Hurley2000(const double p_Mass, const DBL_VECTOR& p_aN) const {
+    const double top = (p_aN[27] * PPOW(p_Mass, p_aN[31])) + (p_aN[28] * PPOW(p_Mass, HURLEY_C_COEFF[2]));
+    return top / p_aN[29] + (p_aN[30] * PPOW(p_Mass, HURLEY_C_COEFF[3])) + PPOW(p_Mass, p_aN[32]);
+}
+
+
+/*
+ * CalculateLuminosityAtHeI_Hurley2000_Static
+ *
+ * @brief
+ * Calculate luminosity at Helium Ignition, per Hurley et al. 2000, eq 49
+ *
+ *
+ * static double CalculateLuminosityAtHeI_Hurley2000_Static(const double p_Mass, const double p_MHeF, const double p_Alpha1, const DBL_VECTOR& p_bN)
+ * 
+ * @param       p_Mass                          Mass of the star (Msol)
+ * @param       p_MHeF                          Maximum initial mass at Helium Flash (Hurley masscutoffs[MHeF]) (Msol)
+ * @param       p_Alpha1                        Hurley alpha1 constant
+ * @param       p_bN                            Hurley b(n) coefficients
+ * @return                                      Luminosity at Helium Ignition (Lsol)
+ */
+GNU_CONST static inline double GiantBranch::CalculateLuminosityAtHeI_Hurley2000_Static(const double p_Mass, const double p_MHeF, const double p_Alpha1, const DBL_VECTOR& p_bN) {
+    return p_Mass < p_MHeF
+            ? (p_bN[9] * PPOW(p_Mass, p_bN[10])) / (1.0 + (p_Alpha1 * exp(15.0 * (p_Mass - p_MHeF))))
+            : (p_bN[11] + (p_bN[12] * PPOW(p_Mass, 3.8))) / (p_bN[13] + (p_Mass * p_Mass));
+}
+
+
+/*
+ * CalculateLuminosityAtHeIgnition_Static
+ *
+ * @brief
+ * Calculate the luminosity of a star at Helium Ignition.
+ * 
+ * Calls relevant luminosity function based on the evolutionary mode given in program options.
+ * 
+ * 
+ * static double CalculateLuminosityAtHeIgnition_Static(const double p_Mass, const double p_MHeF, const double p_Alpha1, const DBL_VECTOR& p_bN)
+ *
+ * @param       p_Mass                          Mass of the star (Msol)
+ * @param       p_MHeF                          Maximum initial mass at Helium Flash (Hurley masscutoffs[MHeF]) (Msol)
+ * @param       p_Alpha1                        Hurley alpha1 constant
+ * @param       p_bN                            Hurley b(n) coefficients
+ * @return                                      Luminosity at Helium Ignition (Lsol)
+ */
+ GNU_CONST static double GiantBranch::CalculateLuminosityAtHeIgnition_Static(const double p_Mass, const double p_MHeF, const double p_Alpha1, const DBL_VECTOR& p_bN) {
+
+    double luminosity;
+
+    Switch (OPTIONS->Mode()) {                                              // which evolution mode?
+
+        EVOLUTION_MODE::SSE_HURLEY:                                         // HURLEY SSE
+        EVOLUTION_MODE::BSE_HURLEY:                                         // HURLEY BSE
+            luminosity = CalculateLuminosityAtHeI_Hurley2000_Static(p_Mass, p_MHeF, p_Alpha1, p_bN);
+            break;
+        
+        default:                                                            // unknown mode
+            // the only way this can happen is if someone added an EVOLUTION_MODE and it isn't
+            // accounted for in this code.  We should not default here, with or without a warning.
+            // We are here because the user chose a mode this code doesn't account for, and that should
+            // be flagged as an error and result in termination of the evolution of the star or binary.
+            // The correct fix for this is to add code for the missing mode or, if the missing mode is
+            // superfluous, remove it from the option.
+
+            THROW_ERROR(ERROR::UNKNOWN_EVOLUTION_MODE);                     // throw error
+    }       
+
+    return luminosity;
+}
+
+
+/*
+ * CalculateLuminosityOnZAHB_Hurley2000_Static
+ *
+ * @brief
+ * Calculate luminosity on the Zero Age Horizontal Branch, for Low Mass stars,
+ * per Hurley et al. 2000, eq 53
+ *
+ *
+ * static double CalculateLuminosityOnZAHB_Hurley2000_Static(const double      p_Mass,
+ *                                                           const double      p_CoreMass,
+ *                                                           const double      p_MHeF,
+ *                                                           const double      p_MinLuminosity,
+ *                                                           const double      p_Alpha1,
+ *                                                           const DBL_VECTOR& p_bN)
+ *
+ * @param       p_Mass                          Mass of the star (Msol)
+ * @param       p_CoreMass                      Core mass of the star (Msol)
+ * @param       p_MHeF                          Maximum initial mass at Helium Flash (Hurley masscutoffs[MHeF]) (Msol)
+ * @param       p_MinLuminosity                 Minimum luminosity on phase (Lsol)
+ * @param       p_Alpha1                        Hurley alpha1 constant
+ * @param       p_bN                            Hurley b(n) coefficients
+ * @return                                      Luminosity on the Zero Age Horizontal Branch (Lsol)
+ */
+GNU_CONST static inline double GiantBranch::CalculateLuminosityOnZAHB_Hurley2000_Static(const double      p_Mass,
+                                                                                        const double      p_CoreMass,
+                                                                                        const double      p_MHeF,
+                                                                                        const double      p_MinLuminosity,
+                                                                                        const double      p_Alpha1,
+                                                                                        const DBL_VECTOR& p_bN) {
+
+    const double mu   = (p_Mass - p_CoreMass) / (p_MHeF - p_CoreMass);
+    const double lZHe = HeMS::CalculateLuminosityAtZAHeMS_Hurley2000_Static(p_CoreMass);
+    const double tmp  = (p_bN[18] * PPOW(mu, p_bN[19])) / (1.0 + (p_bN[18] + lZHe - p_MinLuminosity) / (p_MinLuminosity - lZHe) * exp(15.0 * (p_Mass - p_MHeF)));
+
+    return lZHe + ((1.0 + p_p_bNBn[20]) / (1.0 + (p_bN[20] * PPOW(mu, 1.6479))) * tmp);
+}
+
+
+/*
+ * CalculateRemnantLuminosity_Hurley2000
+ *
+ * @brief
+ * Calculate the luminosity of the remnant the star would become if it lost all of its
+ * envelope immediately (i.e. mass = coreMass), per Hurley et al. 2000, just after eq 105
+ *
+ *
+ * double CalculateRemnantLuminosity_Hurley2000(const double p_Metallicity, const double p_Mass, const double p_CoreMass, const double p_MHeF) const
+ *
+ * @param       p_Metallicity                   Metallicity of the star
+ * @param       p_Mass                          Mass of the star (Msol) (typically effective mass, mass0)
+ * @param       p_CoreMass                      Core mass of the star (Msol)
+ * @param       p_MHeF                          Maximum initial mass at Helium Flash (Hurley masscutoffs[MHeF]) (Msol)
+ * @return                                      Luminosity of remnant core (Lsol)
+ */
+GNU_CONST inline double GiantBranch::CalculateRemnantLuminosity_Hurley2000(const double p_Metallicity, const double p_Mass, const double p_CoreMass, const double p_MHeF) const {
+    return p_Mass > p_MHeF
+            ? HeMS::CalculateLuminosityAtZAHeMS_Hurley2000_Static(p_CoreMass)
+            : WhiteDwarfs::CalculateLuminosityOnPhase_Hurley2000_Static(p_CoreMass, 0.0, p_Metallicity, WD_Baryon_Number.at(STELLAR_TYPE::HELIUM_WHITE_DWARF));
+}
+
+
+
+
+
+/*
+ * CalculateRemnantType_Muller2016
+ *
+ * @brief
+ * Calculate remnant type given, per Muller et al. 2016.
+ * 
+ * As presented in Vigna-Gomez et al. 2018, appendix B (See arXiv:1805.07974)
+ *
+ *
+ * STELLAR_TYPE CalculateRemnantType_Muller2016(const double p_COCoreMass) const
+ *
+ * @param       p_COCoreMass                    CO core mass of the star (Msol)
+ * @return                                      Remnant stellar type (STELLAR_TYPE)
+ */
+GNU_CONST inline STELLAR_TYPE GiantBranch::CalculateRemnantType_Muller2016(const double p_COCoreMass) const {
+
+    STELLAR_TYPE stellarType;
+
+         if (p_COCoreMass < 3.6 ) stellarType = STELLAR_TYPE::NEUTRON_STAR;
+    else if (p_COCoreMass < 4.05) stellarType = STELLAR_TYPE::BLACK_HOLE;
+    else if (p_COCoreMass < 4.6 ) stellarType = STELLAR_TYPE::NEUTRON_STAR;
+    else if (p_COCoreMass < 5.7 ) stellarType = STELLAR_TYPE::BLACK_HOLE;
+    else if (p_COCoreMass < 6.0 ) stellarType = STELLAR_TYPE::NEUTRON_STAR;
+    else                          stellarType = STELLAR_TYPE::BLACK_HOLE;
+
+    return stellarType;
+}
+
+
+
+/// GiantBranch_Constituent <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+class GiantBranch_Constituent: virtual public BinaryConstituentStar, public GiantBranch {
+
+public:
+
+
+protected:
+
+};
+
+
+
+COMPAS_PURE double CalculateCriticalMassRatio_Claeys2014(const double p_Mass, const double p_HeCoreMass, const bool p_AccretorIsDegenerate) const; 
+double CalculateCriticalMassRatio_Claeys2014(const bool p_AccretorIsDegenerate) const {
+    return CalculateCriticalMassRatio_Claeys2014(m_StateHistory.CurrentState().Mass(), m_StateHistory.CurrentState().HeCoreMass(), p_AccretorIsDegenerate);
+}
+
+
+
+GNU_CONST double CalculateCriticalMassRatio_Hurley2002(const double p_Mass, const double p_CoreMass) const; 
+double CalculateCriticalMassRatio_Hurley2002() const {
+    return CalculateCriticalMassRatio_Hurley2002(m_StateHistory.CurrentState().Mass(), m_StateHistory.CurrentState().CoreMass());
+}; 
+
+
+
+/*
+ * CalculateCriticalMassRatio_Hurley2002
+ *
+ * @brief
+ * Calculate the critical mass ratio for unstable mass transfer, per Hurley et al. 2002 sect. 2.6.1.
+ *
+ * See Hurley et al. 2002 sect. 2.6.1, and Hjellming & Webbink 1987.
+ *
+ * Assumes this star is the donor.
+ * 
+ * Critical mass ratio is defined as qCrit = Maccretor / Mdonor.
+ * Note: mass ratio is defined as Mdonor / Maccretor in Hurley et al. 2002, so need to invert here.
+ *
+ *
+ * double CalculateCriticalMassRatio_Hurley2002(const double p_Mass, const double p_CoreMass) const 
+ *
+ * @param       p_Mass                          Mass of the star (Msol)
+ * @param       p_CoreMass                      Core mass of the star (Msol)
+ * @return                                      Critical mass ratio for unstable MT 
+ */
+inline GNU_CONST double GiantBranch_Constituent::CalculateCriticalMassRatio_Hurley2002(const double p_Mass, const double p_CoreMass) const {
+    return 1.0 / (0.362 + 1.0 / (3.0 * (1.0 - p_CoreMass / p_Mass)));   // Hurley et al. 2002, just after eq. 57
+}
+
+
+
+
+
+
+
+
+
 
 #endif // __GiantBranch_h__

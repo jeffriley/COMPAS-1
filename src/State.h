@@ -83,17 +83,19 @@ value assigned will result in undefined bahaviour.
 
 
 
-// StarState class - state for individual stars
+// StarState class - state for isolated single stars
 class StarState {       
+
+    #define FAIL         { std::cerr << "\nState attribute has no value: program terminated\n"; utils::ShowStackTrace(); std::exit(1); }
+    #define RET_VALUE(x) { if (x.has_value()) { return x.value(); } else FAIL }
         
 private:
         
     std::optional<double>            m_AngularFrequency;
         
+    std::optional<double>            m_COCoreMass;
     std::optional<double>            m_CoreMass;
-    std::optional<double>            m_CoreMassCO;
     std::optional<double>            m_CoreMassEffective;
-    std::optional<double>            m_CoreMassHe;
         
     std::optional<double>            m_dMdt;
         
@@ -104,21 +106,25 @@ private:
     std::optional<ERROR>             m_Error;
     std::optional<EVOLUTION_STATUS>  m_EvolutionStatus;
         
-    std::optional<double>            m_HAbundance;
-    std::optional<double>            m_HeAbundance;
+    std::optional<double>            m_HAbundanceCore;
+    std::optional<double>            m_HAbundanceSurface;
+    std::optional<double>            m_HeAbundanceCore;
+    std::optional<double>            m_HeAbundanceSurface;
+
+    std::optional<double>            m_HeCoreMass;
         
     std::optional<KickParametersT>   m_KickParameters;
-        
+
     std::optional<double>            m_Luminosity;
-    std::optional<double>            m_LuminosityEffective;
+    std::optional<double>            m_LuminosityEffectiveInitial;
         
     std::optional<double>            m_Mass;
-    std::optional<double>            m_MassEffective;
+    std::optional<double>            m_MassEffectiveInitial;
         
     std::optional<double>            m_Metallicity;
         
     std::optional<double>            m_Radius;
-    std::optional<double>            m_RadiusEffective;
+    std::optional<double>            m_RadiusEffectiveInitial;
         
     std::optional<unsigned long int> m_RandomSeed;
         
@@ -129,19 +135,37 @@ private:
     std::optional<double>            m_Temperature;
         
     std::optional<double>            m_Time;       
-        
+
+    // timescales and GB parameters vectors (see Hurley et al. 2000)
+    // Each vector is constructed here with the correct number of elements, and each
+    // element is wrapped in std::optional<>, and initialised to std::nullopt.
+    // The vector is guaranteed to exist, but each element is optional.
+
+    OPT_DBL_VECTOR m_HurleyTimescales;
+    OPT_DBL_VECTOR m_HurleyGBparams;
+
         
 public:
-            
-    StarState() {}
+
+    // StarState class
+    // constructor
+    StarState() {
+
+        // create GB parameters and timescales vectors
+        // construct vectors of required sizes and initialise each element to std::nullopt
+        for (size_t idx = 0; idx < static_cast<int>(GBP::COUNT); idx++) m_HurleyGBparams.push_back(std::nullopt);
+        for (size_t idx = 0; idx < static_cast<int>(TIMESCALE::COUNT); idx++) m_HurleyTimescales.push_back(std::nullopt);
+    }
         
+
     // setters
+
     void SetAngularFrequency(const double p_AngularFrequency)                 { m_AngularFrequency = p_AngularFrequency; }
         
+    void SetCOCoreMass(const double p_COCoreMass)                             { m_COCoreMass = p_COCoreMass; }
     void SetCoreMass(const double p_CoreMass)                                 { m_CoreMass = p_CoreMass; }
-    void SetCoreMassCO(const double p_CoreMassCO)                             { m_CoreMassCO = p_CoreMassCO; }
     void SetCoreMassEffective(const double p_CoreMass)                        { m_CoreMassEffective = p_CoreMass; }
-    void SetCoreMassHe(const double p_CoreMassHe)                             { m_CoreMassHe = p_CoreMassHe; }
+    void SetHeCoreMass(const double p_HeCoreMass)                             { m_HeCoreMass = p_HeCoreMass; }
         
     void SetDMdt(const double p_dMdt)                                         { m_dMdt = p_dMdt; }
         
@@ -152,21 +176,26 @@ public:
     void SetError(const ERROR p_Error)                                        { m_Error = p_Error; }
     void SetEvolutionStatus(const EVOLUTION_STATUS p_EvolutionStatus)         { m_EvolutionStatus = p_EvolutionStatus; }
         
-    void SetHAbundance(const double p_HAbundance)                             { m_HAbundance = p_HAbundance; }
-    void SetHeAbundance(const double p_HeAbundance)                           { m_HeAbundance = p_HeAbundance; }
+    void SetGBparams(const OPT_DBL_VECTOR p_GBparams)                         { m_HurleyGBparams = p_GBparams; }
+    void SetGBparams(const GBP p_GBParam, const double p_Value)               { m_HurleyGBparams[static_cast<int>(p_GBParam)] = p_Value; }
+
+    void SetHAbundanceCore(const double p_HAbundance)                         { m_HAbundanceCore = p_HAbundance; }
+    void SetHAbundanceSurface(const double p_HAbundance)                      { m_HAbundanceSurface = p_HAbundance; }
+    void SetHeAbundanceCore(const double p_HeAbundance)                       { m_HeAbundanceCore = p_HeAbundance; }
+    void SetHeAbundanceSurface(const double p_HeAbundance)                    { m_HeAbundanceSurface = p_HeAbundance; }
         
     void SetKickParameters(const KickParametersT p_KickParameters)            { m_KickParameters = p_KickParameters; }
         
     void SetLuminosity(const double p_Luminosity)                             { m_Luminosity = p_Luminosity; }
-    void SetLuminosityEffective(const double p_LuminosityEffective)           { m_LuminosityEffective = p_LuminosityEffective; }
+    void SetLuminosityEffectiveInitial(const double p_Luminosity)             { m_LuminosityEffectiveInitial = p_Luminosity; }
         
     void SetMass(const double p_Mass)                                         { m_Mass = p_Mass; }
-    void SetMassEffective(const double p_MassEffective)                       { m_MassEffective = p_MassEffective; }
+    void SetMassEffectiveInitial(const double p_Mass)                         { m_MassEffectiveInitial = p_Mass; }
         
     void SetMetallicity(const double p_Metallicity)                           { m_Metallicity = p_Metallicity; }
         
     void SetRadius(const double p_Radius)                                     { m_Radius = p_Radius; }
-    void SetRadiusEffective(const double p_RadiusEffective)                   { m_RadiusEffective = p_RadiusEffective; }
+    void SetRadiusEffectiveInitial(const double p_Radius)                     { m_RadiusEffectiveInitial = p_Radius; }
         
     void SetRandomSeed(const unsigned long int p_RandomSeed)                  { m_RandomSeed = p_RandomSeed; }
         
@@ -177,103 +206,217 @@ public:
     void SetTemperature(const double p_Temperature)                           { m_Temperature = p_Temperature; }
         
     void SetTime(const double p_Time)                                         { m_Time = p_Time; }
+
+    void SetTimescales(const OPT_DBL_VECTOR p_Timescales)                     { m_HurleyTimescales = p_Timescales; }
+    void SetTimescales(const TIMESCALE p_Timescale, const double p_Value)     { m_HurleyTimescales[static_cast<int>(p_Timescale)] = p_Value; }
                
         
     // getters
 
-    #define FAIL         { std::cerr << "\nState attribute has no value: program terminated\n"; utils::ShowStackTrace(); std::exit(1); }
-    #define RET_VALUE(x) { if (x.has_value()) { return x.value(); } else FAIL }
+    double AngularFrequency() const                      { RET_VALUE(m_AngularFrequency); }
+        
+    double COCoreMass() const                            { RET_VALUE(m_COCoreMass); }
+    double CoreMass() const                              { RET_VALUE(m_CoreMass); }
+    double CoreMassEffective() const                     { RET_VALUE(m_CoreMassEffective); }
+        
+    double dMdt() const                                  { RET_VALUE(m_dMdt); }
+        
+    MASS_LOSS_TYPE DominantMassLossType() const          { RET_VALUE(m_DominantMassLossType); }
+        
+    double dt() const                                    { RET_VALUE(m_dt); }
+        
+    ERROR Error() const                                  { RET_VALUE(m_Error); }
+    EVOLUTION_STATUS EvolutionStatus() const             { RET_VALUE(m_EvolutionStatus); }
 
-    double AngularFrequency() const             { RET_VALUE(m_AngularFrequency); }
+    DBL_VECTOR GBparams() const                          { return UnPackOptDblVector(m_HurleyGBparams); }
+    double GBparams(const GBP p_GBParam) const           { RET_VALUE(m_HurleyGBparams[static_cast<int>(p_GBParam)]); }
         
-    double CoreMass() const                     { RET_VALUE(m_CoreMass); }
-    double CoreMassCO() const                   { RET_VALUE(m_CoreMassCO); }
-    double CoreMassEffective() const            { RET_VALUE(m_CoreMassEffective); }
-    double CoreMassHe() const                   { RET_VALUE(m_CoreMassHe); }
-        
-    double dMdt() const                         { RET_VALUE(m_dMdt); }
-        
-    MASS_LOSS_TYPE DominantMassLossType() const { RET_VALUE(m_DominantMassLossType); }
-        
-    double dt() const                           { RET_VALUE(m_dt); }
-        
-    ERROR Error() const                         { RET_VALUE(m_Error); }
-    EVOLUTION_STATUS EvolutionStatus() const    { RET_VALUE(m_EvolutionStatus); }
-        
-    double HAbundance() const                   { RET_VALUE(m_HAbundance); }
-    double HeAbundance() const                  { RET_VALUE(m_HeAbundance); }
-        
-    KickParametersT KickParameters() const      { RET_VALUE(m_KickParameters); }
-        
-    double Luminosity() const                   { RET_VALUE(m_Luminosity); }
-    double LuminosityEffective() const          { RET_VALUE(m_LuminosityEffective); }
-        
-    double Mass() const                         { RET_VALUE(m_Mass); }
-    double MassEffective() const                { RET_VALUE(m_MassEffective); }
-        
-    double Metallicity() const                  { RET_VALUE(m_Metallicity); }
-        
-    double Radius() const                       { RET_VALUE(m_Radius); }
-    double RadiusEffective() const              { RET_VALUE(m_RadiusEffective); }
-        
-    unsigned long int RandomSeed() const        { RET_VALUE(m_RandomSeed); }
-        
-    STELLAR_TYPE StellarType() const            { RET_VALUE(m_StellarType); }
-        
-    double Tau() const                          { RET_VALUE(m_Tau); }
-        
-    double Temperature() const                  { RET_VALUE(m_Temperature); }
-        
-    double Time() const                         { RET_VALUE(m_Time); }   
+    double HAbundanceCore() const                        { RET_VALUE(m_HAbundanceCore); }
+    double HAbundanceSurface() const                     { RET_VALUE(m_HAbundanceSurface); }
+    double HeAbundanceCore() const                       { RET_VALUE(m_HeAbundanceCore); }
+    double HeAbundanceSurface() const                    { RET_VALUE(m_HeAbundanceSurface); }
 
-    #undef RET_VALUE
-    #undef FAIL
+    double HeCoreMass() const                            { RET_VALUE(m_HeCoreMass); }
+        
+    KickParametersT KickParameters() const               { RET_VALUE(m_KickParameters); }
+        
+    double Luminosity() const                            { RET_VALUE(m_Luminosity); }
+    double LuminosityEffectiveInitial() const            { RET_VALUE(m_LuminosityEffectiveInitial); }
+        
+    double Mass() const                                  { RET_VALUE(m_Mass); }
+    double MassEffectiveInitial() const                  { RET_VALUE(m_MassEffectiveInitial); }
+        
+    double Metallicity() const                           { RET_VALUE(m_Metallicity); }
+        
+    double Radius() const                                { RET_VALUE(m_Radius); }
+    double RadiusEffectiveInitial() const                { RET_VALUE(m_RadiusEffectiveInitial); }
+        
+    unsigned long int RandomSeed() const                 { RET_VALUE(m_RandomSeed); }
+        
+    STELLAR_TYPE StellarType() const                     { RET_VALUE(m_StellarType); }
+        
+    double Tau() const                                   { RET_VALUE(m_Tau); }
+        
+    double Temperature() const                           { RET_VALUE(m_Temperature); }
+        
+    double Time() const                                  { RET_VALUE(m_Time); }   
+
+    DBL_VECTOR Timescales() const                        { return UnPackOptDblVector(m_HurleyTimescales); }
+    double Timescales(const TIMESCALE p_Timescale) const { RET_VALUE(m_HurleyTimescales[static_cast<int>(p_Timescale)]); }
 
 
     // has value
-    bool AngularFrequency_HasValue() const     { return m_AngularFrequency.has_value(); }
+
+    bool AngularFrequency_HasValue() const                      { return m_AngularFrequency.has_value(); }
         
-    bool CoreMass_HasValue() const             { return m_CoreMass.has_value(); }
-    bool CoreMassCO_HasValue() const           { return m_CoreMassCO.has_value(); }
-    bool CoreMassEffective_HasValue() const    { return m_CoreMassEffective.has_value(); }
-    bool CoreMassHe_HasValue() const           { return m_CoreMassHe.has_value(); }
+    bool COCoreMass_HasValue() const                            { return m_COCoreMass.has_value(); }
+    bool CoreMass_HasValue() const                              { return m_CoreMass.has_value(); }
+    bool CoreMassEffective_HasValue() const                     { return m_CoreMassEffective.has_value(); }
         
-    bool dMdt_HasValue() const                 { return m_dMdt.has_value(); }
+    bool dMdt_HasValue() const                                  { return m_dMdt.has_value(); }
         
-    bool DominantMassLossType_HasValue() const { return m_DominantMassLossType.has_value(); }
+    bool DominantMassLossType_HasValue() const                  { return m_DominantMassLossType.has_value(); }
         
-    bool dt_HasValue() const                   { return m_dt.has_value(); }
+    bool dt_HasValue() const                                    { return m_dt.has_value(); }
         
-    bool Error_HasValue() const                { return m_Error.has_value(); }
-    bool EvolutionStatus_HasValue() const      { return m_EvolutionStatus.has_value(); }
+    bool Error_HasValue() const                                 { return m_Error.has_value(); }
+    bool EvolutionStatus_HasValue() const                       { return m_EvolutionStatus.has_value(); }
+
+    bool GBparams_HasValue() const                              { // returns true iff all elements have values, else false
+                                                                    for (size_t idx = 0; idx < m_HurleyGBparams.size(); idx++) {
+                                                                        if (!m_HurleyGBparams[idx].has_value()) return false;
+                                                                    }
+                                                                    return true;
+                                                                }
+    bool GBparams_HasValue(const GBP p_GBParam) const           { return m_HurleyGBparams[static_cast<int>(p_GBParam)].has_value(); }
         
-    bool HAbundance_HasValue() const           { return m_HAbundance.has_value(); }
-    bool HeAbundance_HasValue() const          { return m_HeAbundance.has_value(); }
+    bool HAbundanceCore_HasValue() const                        { return m_HAbundanceCore.has_value(); }
+    bool HAbundanceSurface_HasValue() const                     { return m_HAbundanceCore.has_value(); }
+    bool HeAbundanceCore_HasValue() const                       { return m_HeAbundanceCore.has_value(); }
+    bool HeAbundanceSurface_HasValue() const                    { return m_HeAbundanceCore.has_value(); }
+
+    bool HeCoreMass_HasValue() const                            { return m_HeCoreMass.has_value(); }
         
-    bool KickParameters_HasValue() const       { return m_KickParameters.has_value(); }
+    bool KickParameters_HasValue() const                        { return m_KickParameters.has_value(); }
         
-    bool Luminosity_HasValue() const           { return m_Luminosity.has_value(); }
-    bool LuminosityEffective_HasValue() const  { return m_LuminosityEffective.has_value(); }
+    bool Luminosity_HasValue() const                            { return m_Luminosity.has_value(); }
+    bool LuminosityEffectiveInitial_HasValue() const            { return m_LuminosityEffectiveInitial.has_value(); }
         
-    bool Mass_HasValue() const                 { return m_Mass.has_value(); }
-    bool MassEffective_HasValue() const        { return m_MassEffective.has_value(); }
+    bool Mass_HasValue() const                                  { return m_Mass.has_value(); }
+    bool MassEffectiveInitial_HasValue() const                  { return m_MassEffectiveInitial.has_value(); }
         
-    bool Metallicity_HasValue() const          { return m_Metallicity.has_value(); }
+    bool Metallicity_HasValue() const                           { return m_Metallicity.has_value(); }
         
-    bool Radius_HasValue() const               { return m_Radius.has_value(); }
-    bool RadiusEffective_HasValue() const      { return m_RadiusEffective.has_value(); }
+    bool Radius_HasValue() const                                { return m_Radius.has_value(); }
+    bool RadiusEffectiveInitial_HasValue() const                { return m_RadiusEffectiveInitial.has_value(); }
         
-    bool RandomSeed_HasValue() const           { return m_RandomSeed.has_value(); }
+    bool RandomSeed_HasValue() const                            { return m_RandomSeed.has_value(); }
         
-    bool StellarType_HasValue() const          { return m_StellarType.has_value(); }
+    bool StellarType_HasValue() const                           { return m_StellarType.has_value(); }
         
-    bool Tau_HasValue() const                  { return m_Tau.has_value(); }
+    bool Tau_HasValue() const                                   { return m_Tau.has_value(); }
         
-    bool Temperature_HasValue() const          { return m_Temperature.has_value(); }
+    bool Temperature_HasValue() const                           { return m_Temperature.has_value(); }
         
-    bool Time_HasValue() const                 { return m_Time.has_value(); }
+    bool Time_HasValue() const                                  { return m_Time.has_value(); }
+
+    bool Timescales_HasValue() const                            { // returns true iff all elements have values, else false
+                                                                    for (size_t idx = 0; idx < m_HurleyTimescales.size(); idx++) {
+                                                                        if (!m_HurleyTimescales[idx].has_value()) return false;
+                                                                    }
+                                                                    return true;
+                                                                }
+    bool Timescales_HasValue(const TIMESCALE p_Timescale) const { return m_HurleyTimescales[static_cast<int>(p_Timescale)].has_value(); }
+
+
+    // member functions
+
+    /*
+     * UnPackOptDblVector
+     *
+     * @brief
+     * Unpacks an OPT_DB_VECTOR to a DBL_VECTOR.
+     * Converts the vector of std::optional<<double>> values to a vector of double values.
+     * 
+     * If any of the values in the std::optional<<double>> do not have a value assigned,
+     * this function will fail and terminate the program. 
+     * 
+     * 
+     * std::optional<T> Push(const T p_State)
+     * 
+     * @param       p_State                         Element to add to the stack (at TOS)
+     * @return                                      std::optional<T> object containing removed element (if it exits)
+     */
+    DBL_VECTOR UnPackOptDblVector(const OPT_DBL_VECTOR p_Vec) {
+        DBL_VECTOR unpacked;
+        for (size_t idx = 0; idx < p_Vec.size(); idx++) unpacked.push_back(RET_VALUE(p_Vec[idx].value()));
+        return unpacked;
+    }
+
+    #undef RET_VALUE
+    #undef FAIL
 };
 
+
+// BinaryStarState class - state for individual binary stars
+class BinaryStarState {       
+
+    #define FAIL         { std::cerr << "\nState attribute has no value: program terminated\n"; utils::ShowStackTrace(); std::exit(1); }
+    #define RET_VALUE(x) { if (x.has_value()) { return x.value(); } else FAIL }
+        
+private:
+        
+    std::vector<MTEventT> m_MTdonorHistory;     // historical list of MT events as the donor - empty vector indicates no events
+
+public:
+
+    // BinaryStarState class
+    // constructor
+    BinaryStarState() {}
+        
+
+    // setters
+
+    void AddMtdonorEvent(const STELLAR_TYPE p_DonorST, const STELLAR_TYPE p_AccretorST, const MT_CASE p_MTcase) { 
+
+        if (!m_MTdonorHistory.has_value() || m_MTdonorHistory.empty()) {                    // first MT donor event?
+            m_MTdonorHistory = { p_DonorST, p_AccretorST, p_MTcase };                       // yes - set first event
+        }                                                                                   // no - have existing events
+        else if (!utils::IsOneOf(p_DonorST, { m_MTdonorHistory.back().m_StellarType })) {   // first MT donor event as donor stellar type?
+            m_MTdonorHistory.push_back({ p_DonorST, p_AccretorST, p_MTcase });              // yes - add new event
+        }
+    }
+
+
+    // getters
+
+    std::vector<MTEventT> MTdonorHistory() const { return m_MTdonorHistory; }
+    
+    MTEventT LatestMTdonorEvent() const { return m_MTdonorHistory.empty() ? { STELLAR_TYPE::NONE, STELLAR_TYPE::NONE, MT_CASE::NONE } : m_MTdonorHistory.back(); }
+
+
+    // has value
+
+    bool MTdonorHistory_HasValue() const { return !m_MTdonorHistory.empty(); } // true iff vector is not empty
+
+
+
+};
+
+
+// StellarBinaryState class - state for stellar binary systems
+class StellarBinaryState {       
+
+    #define FAIL         { std::cerr << "\nState attribute has no value: program terminated\n"; utils::ShowStackTrace(); std::exit(1); }
+    #define RET_VALUE(x) { if (x.has_value()) { return x.value(); } else FAIL }
+        
+private:
+        
+    std::optional<double>            m_AngularFrequency;
+
+
+
+};
 
 
 template <typename T>
@@ -286,15 +429,13 @@ private:
 
 public:
 
-
-
-    // StateHistrory class
+    // StateHistory class
     // constructor
-    StateHistory(const T p_FirstState, const size_t p_Capacity = DEFAULT_STATE_HISTORY_STACK_SIZE) {
+    StateHistory(const T p_StartState, const size_t p_Capacity = DEFAULT_STATE_HISTORY_STACK_SIZE) {
         m_Capacity = p_Capacity == 0 ? 0 : std::max(3, static_cast<int>(p_Capacity));
         m_History.clear();
-        auto state = std::make_unique<T>(p_FirstState);                                     // allocate entry for list
-        m_History.push_back(std::make_unique<T>(p_FirstState)); 
+        auto state = std::make_unique<T>(p_StartState);                                     // allocate entry for list
+        m_History.push_back(std::make_unique<T>(p_StartState)); 
     }
 
 
@@ -432,14 +573,14 @@ public:
 
 
     // functions to determine if defined states exist
-    // FirstState and CurrentState are guaranteed to exist (see constructor)
-    bool HaveZAMSState() const     { return utils::IsOneOf(FirstState().StellarType(), MAIN_SEQUENCE); }
+    // StartState and CurrentState are guaranteed to exist (see constructor)
+    bool HaveZAMSState() const     { return utils::IsOneOf(StartState().StellarType(), MAIN_SEQUENCE); }
     bool HavePreviousState() const { return m_History.size() > 1; }
 
 
     // defined state getters
     // 
-    //    - FirstState and CurrentState are guaranteed to exist (see constructor)
+    //    - StartState and CurrentState are guaranteed to exist (see constructor)
     // 
     //    - ZAMSState may not exist (if star being simulated did not start on the MS),and the
     //      getter will fail if called when the state does not exist.  If there is doubt,
@@ -450,10 +591,10 @@ public:
     //       should use HavePreviousState() to check if PreviousState exists.
     #define FAIL { std::cerr << "\nState does not exist: program terminated\n"; utils::ShowStackTrace(); std::exit(1); }
 
-    T FirstState() const    { return BOS(); }
+    T StartState() const    { return BOS(); }
     T CurrentState() const  { return TOS(); }
 
-    T ZAMSState() const     { if (!HaveZAMSState()) FAIL else return FirstState(); }
+    T ZAMSState() const     { if (!HaveZAMSState()) FAIL else return StartState(); }
     T PreviousState() const { if (!HavePreviousState()) FAIL else return Peek(1); }
 
     #undef FAIL

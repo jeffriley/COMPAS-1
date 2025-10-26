@@ -11,43 +11,77 @@
 
 
 /*
- * Calculate timescales in units of Myr
+ * CalculateTimescales_Hurley2000
  *
- * Timescales depend on a star's mass, so this needs to be called at least each timestep
+ * @brief
+ * (Re)calculate timescales given the mass of the star, per Hurley at al. 2000.
+ * 
+ * Since timescales depend on a star's mass, they need to be calculated whenever
+ * the mass of the star changes (probably every timestep).
  *
- * Vectors are passed by reference here for performance - preference would be to pass const& and
- * pass modified value back by functional return, but this way is faster - and this function is
- * called many, many times.
  *
+ * DBL_VECTOR CalculateTimescales_Hurley2000(const double      p_Mass,
+ *                                           const double      p_ZetaHurley,
+ *                                           const DBL_VECTOR& p_GBparams,
+ *                                           const DBL_VECTOR& p_MassCutoffs,
+ *                                           const DBL_VECTOR& p_Timescales,
+ *                                           const double      p_Alpha3,
+ *                                           const DBL_VECTOR& p_aN,
+ *                                           const DBL_VECTOR& p_bN) const
  *
- * void CalculateTimescales(const double p_Mass, DBL_VECTOR &p_Timescales)
- *
- * @param   [IN]        p_Mass                  Mass in Msol
- * @param   [IN/OUT]    p_Timescales            Timescales
+ * @param       p_Mass                          Mass of the star (Msol)
+ * @param       p_ZetaHurley                    Hurley zeta value (log10(Z / ZSOL_HURLEY))
+ * @param       p_GBparams                      Hurley GB parameters
+ * @param       p_MassCutoffs                   Hurley mass cutoffs (Msol)
+ * @param       p_tScales                       Hurley timescales (Myr)
+ * @param       p_Alpha3                        Hurley alpha3 constant
+ * @param       p_aN                            Hurley a(n) coefficients
+ * @param       p_bN                            Hurley b(n) coefficients
+ * @return                                      Mutated timescales (Myr)
  */
-void TPAGB::CalculateTimescales(const double p_Mass, DBL_VECTOR &p_Timescales) {
+DBL_VECTOR TPAGB::CalculateTimescales_Hurley2000(const double      p_Mass,
+                                                 const double      p_ZetaHurley,
+                                                 const DBL_VECTOR& p_GBparams,
+                                                 const DBL_VECTOR& p_MassCutoffs,
+                                                 const DBL_VECTOR& p_tScales,
+                                                 const double      p_Alpha3,
+                                                 const DBL_VECTOR& p_aN,
+                                                 const DBL_VECTOR& p_bN) const {
 
-    EAGB::CalculateTimescales(p_Mass, p_Timescales);    // calculate common values
+// #defines for convenience and readability - undefined at end of function
+#define GBparams(x) p_GBparams[static_cast<int>(GBP::x)]
+#define tScales(x) tScales[static_cast<int>(TIMESCALE::x)]
 
-    double p1   = gbParams(p) - 1.0;
-    double q1   = gbParams(q) - 1.0;
-    double p1_p = p1 / gbParams(p);
-    double q1_q = q1 / gbParams(q);
+    double p1   = GBparams(p) - 1.0;
+    double q1   = GBparams(q) - 1.0;
+    double p1_p = p1 / GBparams(p);
+    double q1_q = q1 / GBparams(q);
 
-    double LDU  = CalculateLuminosityGivenCoreMass(gbParams(McDU));
+    double lDU  = CalculateLuminosityGivenCoreMass(GBparams(McDU));
 
-    timescales(tP) = CalculateLifetimeTo2ndDredgeUp(timescales(tinf1_FAGB), timescales(tinf2_FAGB));
+    DBL_VECTOR tScales = p_tScales; // copy given timescales
 
-    if (utils::Compare(LDU, gbParams(Lx)) > 0) {
-        timescales(tinf1_SAGB) = timescales(tinf1_FAGB);
-        timescales(tMx_SAGB)   = timescales(tMx_FAGB);
-        timescales(tinf2_SAGB) = timescales(tP) + ((1.0 / (q1 * gbParams(AHHe) * gbParams(B))) * PPOW((gbParams(B) / LDU), q1_q));
+    // (re)calculate EAGB timescales (Note: EAGB does not recalculate earlier timescales) <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+    tScales = EAGB::CalculateTimescales_Hurley(p_Mass, p_ZetaHurley, p_GBparams, p_MassCutoffs, tScales, p_Alpha3, p_aN, p_bN);
+
+    tScales[static_cast<int>(TIMESCALE::tP)] = CalculateLifetimeTo2ndDredgeUp(tScales(tinf1_FAGB), tScales(tinf2_FAGB));
+
+    if (lDU > GBparams(Lx)) {
+        tScales[static_cast<int>(TIMESCALE::tinf1_SAGB)] = tScales(tinf1_FAGB);
+        tScales[static_cast<int>(TIMESCALE::tMx_SAGB)]   = tScales(tMx_FAGB);
+        tScales[static_cast<int>(TIMESCALE::tinf2_SAGB)] = tScales(tP) + ((1.0 / (q1 * GBparams(AHHe) * GBparams(B))) * PPOW((GBparams(B) / LDU), q1_q));
     }
     else {
-        timescales(tinf1_SAGB) = timescales(tP) + ((1.0 / (p1 * gbParams(AHHe) * gbParams(D) )) * PPOW((gbParams(D) / LDU), p1_p));
-        timescales(tMx_SAGB)   = timescales(tinf1_SAGB) - ((timescales(tinf1_SAGB) - timescales(tP)) * PPOW((LDU / gbParams(Lx)), p1_p));
-        timescales(tinf2_SAGB) = timescales(tMx_SAGB) + ((1.0 / (q1 * gbParams(AHHe) * gbParams(B))) * PPOW((gbParams(B) / gbParams(Lx)), q1_q));
+        tScales[static_cast<int>(TIMESCALE::tinf1_SAGB)] = tScales(tP) + ((1.0 / (p1 * GBparams(AHHe) * GBparams(D) )) * PPOW((GBparams(D) / LDU), p1_p));
+        tScales[static_cast<int>(TIMESCALE::tMx_SAGB)]   = tScales(tinf1_SAGB) - ((tScales(tinf1_SAGB) - tScales(tP)) * PPOW((LDU / GBparams(Lx)), p1_p));
+        tScales[static_cast<int>(TIMESCALE::tinf2_SAGB)] = tScales(tMx_SAGB) + ((1.0 / (q1 * GBparams(AHHe) * GBparams(B))) * PPOW((GBparams(B) / GBparams(Lx)), q1_q));
     }
+
+    // return timescales vector by value - NRVO takes care of performance/efficiency
+    return tScales;
+
+#undef timescales
+#undef GBparams
 }
 
 
@@ -69,11 +103,11 @@ void TPAGB::CalculateTimescales(const double p_Mass, DBL_VECTOR &p_Timescales) {
  * Missing (A.6),(A.7),(A.8),(A.9),(A.10),(A.11) and (A.12), which have to do with ionization energy
  *
  *
- * double CalculateLambdaDewi()
+ * double CalculateCELambda_Dewi()
  *
  * @return                                      Dewi lambda for use in common envelope
  */
-double TPAGB::CalculateLambdaDewi() const {
+double TPAGB::CalculateCELambda_Dewi() const {
 
     double lambda3 = std::min(-0.9, 0.58 + (0.75 * log10(m_Mass))) - (0.08 * log10(m_Luminosity));                          // (A.4) Claeys+2014
     double lambda1 = std::max(1.0, std::max(lambda3, -3.5 - (0.75 * log10(m_Mass)) + log10(m_Luminosity)));                 // (A.5) Bottom, Claeys+2014
@@ -89,303 +123,112 @@ double TPAGB::CalculateLambdaDewi() const {
 	return	lambdaCE;
 }
 
+
 /*
- * Calculate the common envelope lambda parameter using the enhanced "Nanjing" prescription
- * from X.-J. Xu and X.-D. Li arXiv:1004.4957 (v1, 28Apr2010)
+ * CalculateCELambda_Nanjing_Enhanced
  *
- * This function good for TPAGB stars.
+ * @brief
+ * Calculate the common envelope lambda parameter, per Xu & Li, 2010 (Nanjing - for the university)
+ * (https://arxiv.org/abs/1004.4957, v1, 28Apr2010)
+ * (https://iopscience.iop.org/article/10.1088/0004-637X/716/1/114)
+ *
+ * This function good for TPGB stars.
  *
  *
- * double CalculateLambdaNanjingEnhanced(const int p_MassIndex, const STELLAR_POPULATION p_StellarPop)
+ * double CalculateCELambda_Nanjing_Enhanced(const double             p_Mass,
+ *                                           const double             p_Radius,
+ *                                           const double             p_CoreMass,
+ *                                           const size_t             p_MassIndex,
+ *                                           const STELLAR_POPULATION p_StellarPop) const
  *
- * @param   [IN]    p_MassIndex                 Mass index
- * @param   [IN]    p_StellarPop                The stellar population for metallicity (POP I or POP II)
- *
- * @return                                      Nanjing lambda for use in common envelope
+ * @param       p_Mass                          Mass of the star (Msol)
+ * @param       p_Radius                        Radius of the star (Rsol)
+ * @param       p_CoreMass                      Core mass of the star (Msol)
+ * @param       p_MassIndex                     Index of mass bin in NANJING_MASSES (see constants.h)
+ * @param       p_StellarPop                    Stellar population (POP I or POP II)
+ * @return                                      Common envelope lambda parameter
  */
-double TPAGB::CalculateLambdaNanjingEnhanced(const int p_MassIndex, const STELLAR_POPULATION p_StellarPop) const {
+double TPAGB::CalculateCELambda_Nanjing_Enhanced(const double             p_Mass,
+                                                 const double             p_Radius,
+                                                 const double             p_CoreMass,
+                                                 const size_t             p_MassIndex,
+                                                 const STELLAR_POPULATION p_StellarPop) const {
 
-	DBL_VECTOR maxBG    = {};                                                       // [0] = maxB, [1] = maxG
-	DBL_VECTOR lambdaBG = {};                                                       // [0] = lambdaB, [1] = lambdaG
-	DBL_VECTOR a        = {};                                                       // 0..5 a_coefficients
-	DBL_VECTOR b        = {};                                                       // 0..5 b_coefficients
-    double     Rmax     = std::numeric_limits<double>::max();                       // Upper R limit to applicability of Nanjing polynomials.
+    constexpr size_t evolStage   = 3;                                                       // TPAGB evolutionary stage from Xu & Li, 2010
 
-    switch (p_StellarPop) {
-        // Pop. I metallicity
-        case STELLAR_POPULATION::POPULATION_I:
-            switch (p_MassIndex) {
-                case 0: {
-                    maxBG       = { 2.5, 1.5 };
-                    Rmax        = 200.0;
-                    double R_in = std::min(Rmax, m_Radius);
-                    double tmp  = 0.1 - ( R_in * 3.57E-04);
-                    lambdaBG    = { tmp, tmp };
-                    break;
-                }
-                case 1:
-                    maxBG = { 4.0, 2.0 };
-                    Rmax  = 340.0;
-                    a     = { 0.88954, 0.0098 , -3.1411E-05 , 7.66979E-08,  0.0       , 0.0 };
-                    b     = { 0.48271, 0.00584, -6.22051E-05, 2.41531E-07, -3.1872E-10, 0.0 };
-                    break;
-                case 2:
-                    maxBG = { 500.0, 10.0 };
-                    Rmax  = 400.0;
-                    a     = { -0.04669, 0.00764, -4.32726E-05, 9.31942E-08, 0.0        ,  0.0 };
-                    b     = {  0.44889, 0.01102, -6.46629E-05, 5.66857E-09, 7.21818E-10, -1.2201E-12 };
-                    break;
-                case 3:
-                    maxBG = { 1000.0, 8.0 };
-                    Rmax  = 410.0;
-                    a     = { -0.37322, 0.00943, -3.26033E-05, 5.37823E-08, 0.0, 0.0 };
-                    b     = {  0.13153, 0.00984, -2.89832E-05, 2.63519E-08, 0.0, 0.0 };
-                    break;
-                case 4:
-                    maxBG = { 1000.0, 8.0 };
-                    Rmax  = 430.0;
-                    a     = { -0.80011, 0.00992, -3.03247E-05,  5.26235E-08, 0.0, 0.0 };
-                    b     = { -0.00456, 0.00426,  4.71117E-06, -1.72858E-08, 0.0, 0.0 };
-                    break;
-                case 5:
-                    maxBG = { 25.5, 5.0 };
-                    Rmax  = 440.0;
-                    a     = { -2.7714 ,  0.06467, -4.01537E-04,  7.98466E-07, 0.0, 0.0 };
-                    b     = {  0.23083, -0.00266,  2.21788E-05, -2.35696E-08, 0.0, 0.0 };
-                    break;
-                case 6:
-                    maxBG = { 9.0, 3.0 };
-                    Rmax  = 420.0;
-                    a     = { -0.63266,  0.02054, -1.3646E-04 ,  2.8661E-07 , 0.0, 0.0 };
-                    b     = {  0.26294, -0.00253,  1.32272E-05, -7.12205E-09, 0.0, 0.0 };
-                    break;
-                case 7:
-                    maxBG = { 7.0, 3.0 };
-                    Rmax  = 490.0;
-                    a     = { -0.1288 ,  0.0099 , -6.71455E-05,  1.33568E-07, 0.0, 0.0 };
-                    b     = {  0.26956, -0.00219,  7.97743E-06, -1.53296E-09, 0.0, 0.0 };
-                    break;
-                case 8:
-                    maxBG = { 4.0, 2.0 };
-                    Rmax  = 530.0;
-                    a     = { 1.19804, -0.01961, 1.28222E-04, -3.41278E-07, 3.35614E-10, 0.0 };
-                    b     = { 0.40587, -0.0051 , 2.73866E-05, -5.74476E-08, 4.90218E-11, 0.0 };
-                    break;
-                case 9:
-                    maxBG = { 3.0, 1.5 };
-                    Rmax  = 600.0;
-                    a     = { 0.3707 ,  2.67221E-04, -9.86464E-06, 2.26185E-08, 0.0, 0.0 };
-                    b     = { 0.25549, -0.00152    ,  3.35239E-06, 2.24224E-10, 0.0, 0.0 };
-                    break;
-                case 10: {
-                    maxBG = { 1.5, 1.0 };
-                    Rmax  = 850.0;
-                    double R_in = std::min(Rmax, m_Radius);
-                    if (utils::Compare(R_in, 0.0) > 0 && utils::Compare(R_in, 350.0) <= 0) {
-                        a = { 1.28593, -0.02209, 1.79764E-04, -6.21556E-07, 7.59444E-10, 0.0 };
-                        b = { 0.68544, -0.01394, 1.20845E-04, -4.29071E-07, 5.29169E-10, 0.0 };
-                    }
-                    else if (utils::Compare(R_in, 350.0) > 0 && utils::Compare(R_in, 600.0) <= 0) {
-                        a = { -11.99537,  0.0992, -2.8981E-04,  3.62751E-07, -1.65585E-10, 0.0 };
-                        b = {   0.46156, -0.0066,  3.9625E-05, -9.98667E-08, -8.84134E-11, 0.0 };
-                    }
-                    else {
-                        a = { -58.03732, 0.23633, -3.20535E-04, 1.45129E-07, 0.0, 0.0 };
-                        b = { -15.11672, 0.06331, -8.81542E-05, 4.0982E-08 , 0.0, 0.0 };
-                    }
-                    break;
-                }
-                case 11:
-                    maxBG = { 1.5, 1.0 };
-                    Rmax  = 1000.0;
-                    a     = { -106.90553, 0.36469, -4.1472E-04 , 1.57349E-07, 0.0, 0.0 };
-                    b     = {  -39.93089, 0.13667, -1.55958E-04, 5.94076E-08, 0.0, 0.0 };
-                    break;
-                case 12:
-                    maxBG = { 1.5, 1.0 };
-                    Rmax  = 1050.0;
-                    a     = { -154.70559, 0.46718, -4.70169E-04, 1.57773E-07, 0.0, 0.0 };
-                    b     = {  -65.39602, 0.19763, -1.99078E-04, 6.68766E-08, 0.0, 0.0 };
-                    break;
-                case 13:
-                    maxBG = { 1.5, 1.0 };
-                    Rmax  = 1200.0;
-                    a     = { -260484.85724, 4.26759E+06, -2.33016E+07, 4.24102E+07, 0.0, 0.0 };
-                    b     = { -480055.67991, 7.87484E+06, -4.30546E+07, 7.84699E+07, 0.0, 0.0 };
-                    break;
-                case 14:
-                    maxBG = { 1.0, 0.5 };
-                    a     = { 0.31321, -7.50384E-04, 5.38545E-07, -1.16946E-10, 0.0, 0.0 };
-                    b     = { 0.159  , -3.94451E-04, 2.88452E-07, -6.35132E-11, 0.0, 0.0 };
-                    break;
-                case 15:
-                    maxBG = { 1.0, 0.5 };
-                    a     = { 0.376 , -0.0018 , 2.81083E-06, -1.67386E-09, 3.35056E-13, 0.0 };
-                    b     = { 0.2466, -0.00121, 1.89029E-06, -1.12066E-09, 2.2258E-13 , 0.0 };
-                    break;
+    size_t           coeffsBGidx = 0;                                                       // index into coefficients array
+    bool             useLambdas  = false;                                                   // flag - use lambdas defined in the paper
 
-                default:                                                                    // mass index out of bounds
-                    THROW_ERROR(ERROR::OUT_OF_BOUNDS, "Mass index");                        // throw error
-            }
-            break;
-
-        // Pop. II metallicity
-        case STELLAR_POPULATION::POPULATION_II:
-            switch (p_MassIndex) {
-                case 0:
-                    maxBG = { 2.0, 1.5 };
-                    Rmax  = 160.0;
-                    a     = { 0.24012, -0.01907, 6.09529E-04, -8.17819E-06, 4.83789E-08, -1.04568e-10 };
-                    b     = { 0.15504, -0.01238, 3.96633E-04, -5.3329E-06 , 3.16052E-08, -6.84288e-11 };
-                    break;
-                case 1:
-                    maxBG = { 4.0, 2.0 };
-                    Rmax  = 350.0;
-                    a     = { 0.5452 ,  0.00212    , 6.42941E-05, -1.46783E-07, 0.0       ,  0.0 };
-                    b     = { 0.30594, -9.58858E-04, 1.12174E-04, -1.04079E-06, 3.4564E-09, -3.91536e-12 };
-                    break;
-                case 2: {
-                    maxBG = { 600.0, 2.0 };
-                    Rmax  = 400.0;
-                    double R_in = std::min(Rmax, m_Radius);
-                    if (utils::Compare(R_in, 36.0) > 0 && utils::Compare(R_in, 53.0) < 0) lambdaBG = { 1.0, 1.0 };
-                    else {
-                        a = { -0.475  , -0.00328, 1.31101E-04, -6.03669E-07, 8.49549E-10, 0.0 };
-                        b = {  0.05434,  0.0039 , 9.44609E-06, -3.87278E-08, 0.0        , 0.0 };
-                    }
-                    break;
-                }
-                case 3:
-                    maxBG = { 600.0, 2.0 };
-                    Rmax  = 410.0;
-                    a     = { -0.2106 , -0.01574, 2.01107E-04, -6.90334E-07, 7.92713E-10, 0.0 };
-                    b     = {  0.36779, -0.00991, 1.19411E-04, -3.59574E-07, 3.33957E-10, 0.0 };
-                    break;
-                case 4:
-                    maxBG = { 10.0, 3.0 };
-                    Rmax  = 320.0;
-                    a     = { -0.12027,  0.01981, -2.27908E-04,  7.55556E-07, 0.0, 0.0 };
-                    b     = {  0.31252, -0.00527,  3.60348E-05, -3.22445E-08, 0.0, 0.0 };
-                    break;
-                case 5:
-                    maxBG = { 4.0, 1.5 };
-                    Rmax  = 330.0;
-                    a     = { 0.26578,  0.00494, -7.02203E-05, 2.25289E-07, 0.0, 0.0 };
-                    b     = { 0.26802, -0.00248,  6.45229E-06, 1.69609E-08, 0.0, 0.0 };
-                    break;
-                case 6:
-                    maxBG = { 2.5, 1.0 };
-                    Rmax  = 360.0;
-                    a     = { 0.8158 , -0.01633, 1.46552E-04, -5.75308E-07, 8.77711E-10, 0.0 };
-                    b     = { 0.26883, -0.00219, 4.12941E-06,  1.33138E-08, 0.0        , 0.0 };
-                    break;
-                case 7:
-                    maxBG = { 2.0, 1.0 };
-                    Rmax  = 400.0;
-                    a     = { 0.74924, -0.01233, 9.55715E-05, -3.37117E-07, 4.67367E-10, 0.0 };
-                    b     = { 0.25249, -0.00161, 8.35478E-07,  1.25999E-08, 0.0        , 0.0 };
-                    break;
-                case 8:
-                    maxBG = { 1.6, 1.0 };
-                    Rmax  = 440.0;
-                    a     = { 0.73147, -0.01076, 7.54308E-05, -2.4114E-07 , 2.95543E-10, 0.0 };
-                    b     = { 0.31951, -0.00392, 2.31815E-05, -6.59418E-08, 7.99575E-11, 0.0 };
-                    break;
-                case 9:
-                    maxBG = { 1.6, 1.0 };
-                    Rmax  = 500.0;
-                    a     = { -9.26519,  0.08064, -2.30952E-04, 2.21986E-07, 0.0, 0.0 };
-                    b     = {  0.81491, -0.00161, -8.13352E-06, 1.95775E-08, 0.0, 0.0 };
-                    break;
-                case 10:
-                    maxBG = { 1.6, 1.0 };
-                    Rmax  = 600.0;
-                    a     = { -51.15252, 0.30238, -5.95397E-04, 3.91798E-07, 0.0, 0.0 };
-                    b     = { -13.44   , 0.08141, -1.641E-04  , 1.106E-07  , 0.0, 0.0 };
-                    break;
-                case 11:
-                    maxBG = { 1.6, 1.0 };
-                    Rmax  = 650.0;
-                    a     = { -140.0   , 0.7126 , -0.00121    , 6.846E-07  , 0.0, 0.0 };
-                    b     = {  -44.1964, 0.22592, -3.85124E-04, 2.19324E-07, 0.0, 0.0 };
-                    break;
-                case 12:
-                    maxBG = { 1.5, 1.0 };
-                    Rmax  = 750.0;
-                    a     = { -358.4    , 1.599  , -0.00238   , 1.178E-06  , 0.0, 0.0 };
-                    b     = { -118.13757, 0.52737, -7.8479E-04, 3.89585E-07, 0.0, 0.0 };
-                    break;
-                case 13:
-                    maxBG = { 1.5, 1.0 };
-                    Rmax  = 900.0;
-                    a     = { -436.00777, 1.41375, -0.00153    , 5.47573E-07, 0.0, 0.0 };
-                    b     = { -144.53456, 0.46579, -4.99197E-04, 1.78027E-07, 0.0, 0.0 };
-                    break;
-                case 14:
-                    maxBG = { 20.0, 3.0 };
-                    a     = { 0.821  , -0.00669, 1.57665E-05, -1.3427E-08 , 3.74204E-12, 0.0 };
-                    b     = { 0.49287, -0.00439, 1.06766E-05, -9.22015E-09, 2.58926E-12, 0.0 };
-                    break;
-                case 15:
-                    maxBG = { 4.0, 2.0 };
-                    a     = { 1.25332, -0.02065, 1.3107E-04 , -3.67006E-07, 4.58792E-10, -2.09069E-13 };
-                    b     = { 0.81716, -0.01436, 9.31143E-05, -2.6539E-07 , 3.30773E-10, -1.51207E-13 };
-                    break;
-
-                default:                                                                    // mass index out of bounds
-                    THROW_ERROR(ERROR::OUT_OF_BOUNDS, "Mass index");                        // throw error
-            }
-            break;
-
-        default:                                                                            // unknown stellar population
-            // the only ways this can happen are if someone added a STELLAR_POPULATION
-            // and it isn't accounted for in this code, or if there is a defect in the code that causes
-            // this function to be called with a bad parameter.  We should not default here, with or without
-            // a warning.
-            // We are here because the function was called with a stellar population this code doesn't account
-            // for, or as a result of a code defect, and either of those should be flagged as an error and
-            // result in termination of the evolution of the star or binary.
-            // The correct fix for this is to add code for the missing population or, if the missing
-            // population is superfluous, remove it, or find and fix the code defect.
-
-            THROW_ERROR(ERROR::UNKNOWN_STELLAR_POPULATION);                                 // throw error
+    if (p_StellarPop == STELLAR_POPULATION::POPULATION_I) {                                 // pop I
+        if (p_MassIndex == 10) {
+                 if (p_Radius >   0.0 && p_Radius <= 350.0) coeffsBGidx = 0;
+            else if (p_Radius > 350.0 && p_Radius <= 600.0) coeffsBGidx = 1;
+            else                                            coeffsBGidx = 2;
+        }
+    }
+    else {                                                                                  // pop II
+        if (p_MassIndex == 2 && p_Radius > 36.0 && p_Radius < 53.0) useLambdas = true;
     }
 
-    if (lambdaBG.empty()) {
-        if (p_StellarPop == STELLAR_POPULATION::POPULATION_I && p_MassIndex == 0) {         // Pop. I metallicity and M = 1 Msun
-            double x  = (m_Mass - m_CoreMass) / m_Mass;
-            double x2 = x * x;
-            double x3 = x2 * x;
-            double x4 = x2 * x2;
-            double x5 = x3 * x2;
+    const size_t popIdx = static_cast<size_t>(p_StellarPop);                                // set pop index - pop I or pop II
 
-            double y1 = an[0] + (an[1] * x) + (an[2] * x2) + (an[3] * x3) + (an[4] * x4) + (an[5] * x5);
-            double y2 = b[0] + (b[1] * x) + (b[2] * x2) + (b[3] * x3) + (b[4] * x4) + (b[5] * x5);
+    // get limits and (defined) lambdas
+    std::tuple<NANJING_POP_LIMITS_LAMBDAS, NANJING_POP_LIMITS_LAMBDAS> evolStageLimitsLambdas = NANJING_LIMITS_LAMBDAS_ENHANCED[evolStage - 1];
+    NANJING_POP_LIMITS_LAMBDAS                                         popLimitsLambdas       = p_StellarPop == STELLAR_POPULATION::POPULATION_I ? std::get<0>(evolStageValues) : std::get<1>(evolStageValues);
+    std::tuple<NANJING_LIMITS_ENHANCED, NANJING_LAMBDAS>               limitsLambdas          = popValues[p_MassIndex];
 
-            lambdaBG = { 1.0 / y1, 1.0 / y2 };
+    std::tuple<double, double, double> maxBGR = std::get<0>(limitsLambdas)[0];              // {maxB, maxG, maxR}
+
+    double lambdaB;
+    double lambdaG;
+    if (useLambdas) {                                                                       // use lambdas defined in the paper?
+                                                                                            // yes
+        NANJING_LAMBDAS lambdaBG = std::get<1>(limitsLambdas)[0];                           // defined {lambdaB, lambdaG}
+
+        lambdaB = std::get<0>(lambdaBG);
+        lambdaG = std::get<1>(lambdaBG);
+    }
+    else {                                                                                  // no - calculate lambdas (per paper)
+
+        // get B & G coefficients vector
+        std::tuple<NANJING_POP_COEFFICIENTS, NANJING_POP_COEFFICIENTS> evolStageCoeffs = NANJING_COEFFICIENTS[evolStage - 1];
+        NANJING_POP_COEFFICIENTS                                       popCoeffs       = p_StellarPop == STELLAR_POPULATION::POPULATION_I ? std::get<0>(evolStageCoeffs) : std::get<1>(evolStageCoeffs);
+        std::tuple<DBL_VECTOR, DBL_VECTOR>                             BGcoeffs        = popCoeffs[p_MassIndex][coeffsBGidx];
+
+        DBL_VECTOR Bcoeffs = std::get<0>(BGcoeffs);
+        DBL_VECTOR Gcoeffs = std::get<1>(BGcoeffs);
+       
+        const double Rin = std::min(p_Radius, std::get<2>(maxBGR));                         // clamp to maximum allowed radius (maxR) to prevent exceeding domain of the polynomial fits
+
+        if (p_StellarPop == STELLAR_POPULATION::POPULATION_I && p_MassIndex == 0) {
+            const double tmp = 0.1 - (Rin * 3.57E-04);
+            lambdaB = tmp;
+            lambdaG = tmp;
         }
         else {
-            double x  = std::min(m_Radius, Rmax);
-            double x2 = x * x;
-            double x3 = x2 * x;
-            double x4 = x2 * x2;
-            double x5 = x3 * x2;
+            const double Rin2 = Rin  * Rin;
+            const double Rin3 = Rin  * Rin2;
+            const double Rin4 = Rin2 * Rin2;
+            const double Rin5 = Rin2 * Rin3;
 
-            double y1 = an[0] + (an[1] * x) + (an[2] * x2) + (an[3] * x3) + (an[4] * x4) + (an[5] * x5);
-            double y2 = b[0] + (b[1] * x) + (b[2] * x2) + (b[3] * x3) + (b[4] * x4) + (b[5] * x5);
+            lambdaB = Bcoeffs[0] + (Bcoeffs[1] * Rin) + (Bcoeffs[2] * Rin2) + (Bcoeffs[3] * Rin3) + (Bcoeffs[4] * Rin4) + (Bcoeffs[5] * Rin5);
+            lambdaG = Gcoeffs[0] + (Gcoeffs[1] * Rin) + (Gcoeffs[2] * Rin2) + (Gcoeffs[3] * Rin3) + (Gcoeffs[4] * Rin4) + (Gcoeffs[5] * Rin5);
 
-            lambdaBG = { y1, y2 };
-        }
+            if (p_StellarPop == STELLAR_POPULATION::POPULATION_I && p_MassIndex == 0) {
+                lambdaB = 1.0 / lambdaB;
+                lambdaG = 1.0 / lambdaG;                
+            }
+        }       
     }
 
     // Limit lambda to some 'reasonable' range
-    lambdaBG[1] = std::min( std::max(0.05, lambdaBG[1]), std::min(1.0, maxBG[1]) );         // clamp lambda G to [0.05, min(1,maxG)]
-    lambdaBG[0] = std::max( std::min(lambdaBG[0],maxBG[0]), std::max(0.05, lambdaBG[1]) );  // clamp lambda B to [ max(0.05,lambdaG), maxB]
+    lambdaG = std::min(std::max(0.05, lambdaG), std::min(1.0, std::get<1>(maxBGR)));        // clamp lambda G to [0.05, min(1, maxG)]
+    lambdaB = std::max(std::min(lambdaB, std::get<0>(maxBGR)), std::max(0.05, lambdaG));    // clamp lambda B to [max(0.05, lambdaG), maxB]
 
-    // Calculate lambda as some combination of lambda_b and lambda_g by
-    // lambda = alpha_th • lambda_b + (1-alpha_th) • lambda_g
+    // Calculate lambda as some combination of lambdaB and lambdaG by
+    // lambda = alpha_th • lambdaB + (1-alpha_th) • lambdaG
     // STARTRACK uses alpha_th = 1/2
-    return (OPTIONS->CommonEnvelopeAlphaThermal() * lambdaBG[0]) + ((1.0 - OPTIONS->CommonEnvelopeAlphaThermal()) * lambdaBG[1]);
+    return (OPTIONS->CommonEnvelopeAlphaThermal() * lambdaB) + ((1.0 - OPTIONS->CommonEnvelopeAlphaThermal()) * lambdaG);
 }
 
 
@@ -420,7 +263,7 @@ double TPAGB::CalculateLambdaNanjingStarTrack(const double p_Mass, const double 
 	DBL_VECTOR a        = {};                                                       // 0..5 a_coefficients
 	DBL_VECTOR b        = {};                                                       // 0..5 b_coefficients
 
-    if (utils::Compare(p_Metallicity, LAMBDA_NANJING_ZLIMIT) > 0) {                 // Z>0.5 Zsun: popI
+    if (utils::Compare(p_Metallicity, LAMBDA_NANJING_ZLIMIT_STARTRACK) > 0) {                 // Z>0.5 Zsun: popI
         if (utils::Compare(p_Mass, 1.5) < 0) {
             maxBG = { 2.5, 1.5 };
             if (utils::Compare(m_Radius, 200.0) > 0) lambdaBG = { 0.05, 0.05 };
@@ -679,7 +522,7 @@ double TPAGB::CalculateLambdaNanjingStarTrack(const double p_Mass, const double 
     }
 
     if (lambdaBG.empty()) {                                                         // calculate lambda B & G - not approximated by hand
-         if (utils::Compare(p_Metallicity, LAMBDA_NANJING_ZLIMIT) > 0 &&
+         if (utils::Compare(p_Metallicity, LAMBDA_NANJING_ZLIMIT_STARTRACK) > 0 &&
             (utils::Compare(p_Mass, 1.5) < 0 || (utils::Compare(p_Mass, 25.0) < 0 && utils::Compare(p_Mass, 18.0) >= 0)) ) {
             double x  = (m_Mass - m_CoreMass) / m_Mass;
             double x2 = x * x;
@@ -692,8 +535,8 @@ double TPAGB::CalculateLambdaNanjingStarTrack(const double p_Mass, const double 
 
             lambdaBG = { 1.0 / y1, 1.0 / y2 };
         }
-        else if ( (utils::Compare(p_Metallicity, LAMBDA_NANJING_ZLIMIT) > 0  && utils::Compare(p_Mass, 2.5) >= 0 && utils::Compare(p_Mass, 5.5) < 0) ||
-                  (utils::Compare(p_Metallicity, LAMBDA_NANJING_ZLIMIT) <= 0 && utils::Compare(p_Mass, 2.5) >= 0 && utils::Compare(p_Mass, 4.5) < 0)) {
+        else if ( (utils::Compare(p_Metallicity, LAMBDA_NANJING_ZLIMIT_STARTRACK) > 0  && utils::Compare(p_Mass, 2.5) >= 0 && utils::Compare(p_Mass, 5.5) < 0) ||
+                  (utils::Compare(p_Metallicity, LAMBDA_NANJING_ZLIMIT_STARTRACK) <= 0 && utils::Compare(p_Mass, 2.5) >= 0 && utils::Compare(p_Mass, 4.5) < 0)) {
             double x  = m_Radius;
             double x2 = x * x;
             double x3 = x2 * x;
@@ -732,63 +575,11 @@ double TPAGB::CalculateLambdaNanjingStarTrack(const double p_Mass, const double 
 
 ///////////////////////////////////////////////////////////////////////////////////////
 //                                                                                   //
-//                              LUMINOSITY CALCULATIONS                              //
+//                               LUMINOSITY FUNCTIONS                                //
 //                                                                                   //
 ///////////////////////////////////////////////////////////////////////////////////////
 
 
-/*
- * Calculate M'c (core mass used for calculating luminosity and core mass on TPAGB)
- * Described in Hurley et al. 2000, just after eq 73.
- * Calculated using Hurley et al. 2000, eq 39, modified as described in Section 5.4
- *
- *
- * double CalculateMcPrime(const double p_Time)
- *
- * @param   [IN]    p_Time                      Time in Myr
- * @return                                      M'c
- *
- * JR: todo: this is used in two places - work on calculating it only once.
- * I have done it this way to allow me to have a generic EvolveOneTimestep() function,
- * but there must be an elegant way of calculating once and using twice...
- */
-double TPAGB::CalculateMcPrime(const double p_Time) const {
-    return utils::Compare(p_Time, timescales(tMx_SAGB)) <= 0
-            ? PPOW((gbParams(p) - 1.0) * gbParams(AHHe) * gbParams(D) * (timescales(tinf1_SAGB) - p_Time), 1.0 / (1.0 - gbParams(p)))
-            : PPOW((gbParams(q) - 1.0) * gbParams(AHHe) * gbParams(B) * (timescales(tinf2_SAGB) - p_Time), 1.0 / (1.0 - gbParams(q)));
-}
-
-
-/*
- * Calculate luminosity on the Thermally Pulsing Asymptotic Giant Branch
- *
- * Calculated using the core mass - luminosity relation (Hurley et al. 2000, eq 37)
- *
- *
- * double CalculateLuminosityOnPhase(const double p_Time)
- *
- * @param   [IN]    p_Time                      Time in Myr
- * @return                                      Luminosity on the Thermally Pulsing Asymptotic Giant Branch in Lsol
- */
-double TPAGB::CalculateLuminosityOnPhase(const double p_Time) const {
-    return CalculateLuminosityGivenCoreMass(CalculateMcPrime(p_Time));
-}
-
-
-/*
- * Calculate luminosity of the remnant the star would become if it lost all of its
- * envelope immediately (i.e. M = Mc, coreMass)
- *
- * Hurley et al. 2000, just after eq 105
- *
- *
- * double CalculateRemnantLuminosity()
- *
- * @return                                      Luminosity of remnant core in Lsol
- */
-double TPAGB::CalculateRemnantLuminosity() const {
-    return COWD::CalculateLuminosityOnPhase_Static(m_CoreMass, 0.0, m_Metallicity);
-}
 
 
 ///////////////////////////////////////////////////////////////////////////////////////
@@ -825,20 +616,6 @@ double TPAGB::CalculateRadiusOnPhase_Static(const double      p_Mass,
 }
 
 
-/*
- * Calculate radius of the remnant the star would become if it lost all of its
- * envelope immediately (i.e. M = Mc, coreMass)
- *
- * Hurley et al. 2000, just after eq 105
- *
- *
- * double CalculateRemnantRadius()
- *
- * @return                                      Radius of remnant core in Rsol
- */
-double TPAGB::CalculateRemnantRadius() const {
-    return HeWD::CalculateRadiusOnPhase_Static(m_CoreMass);
-}
 
 
 ///////////////////////////////////////////////////////////////////////////////////////
@@ -848,28 +625,6 @@ double TPAGB::CalculateRemnantRadius() const {
 ///////////////////////////////////////////////////////////////////////////////////////
 
 
-/*
- * Calculate core mass on the Thermally Pulsing Asymptotic Giant Branch
- *
- * Hurley et al. 2000, just after eq 73
- *
- *
- * double CalculateCoreMassOnPhase(const double p_Mass, const double p_Time)
- *
- * @param   [IN]    p_Mass                      Mass in Msol
- * @param   [IN]    p_Time                      Time in Myr
- * @return                                      Core mass on the Thermally Pulsing Asymptotic Giant Branch in Msol
- */
-double TPAGB::CalculateCoreMassOnPhase(const double p_Mass, const double p_Time) const {
-#define gbParams(x) m_GBParams[static_cast<int>(GBP::x)]    // for convenience and readability - undefined at end of function
-
-    double m_5    = p_Mass * p_Mass * p_Mass * p_Mass * p_Mass;                                                     // pow() is slow - use ultiplication
-    double lambda = std::min(0.9, 0.3 + (0.001 * m_5));                                                             // Hurley et al. 2000, eq 73
-
-    return std::min((gbParams(McDU) +  ((1.0 - lambda) * (CalculateMcPrime(p_Time) - gbParams(McDU)))), m_Mass);    // Core should never exceed total mass
-
-#undef gbParams
-}
 
 
 ///////////////////////////////////////////////////////////////////////////////////////
@@ -888,7 +643,7 @@ double TPAGB::CalculateCoreMassOnPhase(const double p_Mass, const double p_Time)
  *
  *     - m_StellarType
  *     - m_Timescales
- *     - m_GBParams
+ *     - m_GBparams
  *     - m_Luminosity
  *     - m_Radius
  *     - m_Mass
@@ -908,7 +663,7 @@ double TPAGB::CalculateCoreMassOnPhase(const double p_Mass, const double p_Time)
  * @return                                      Stellar Type to which star should evolve after losing envelope
  */
 STELLAR_TYPE TPAGB::ResolveEnvelopeLoss(bool p_Force) {
-#define gbParams(x) m_GBParams[static_cast<int>(GBP::x)]    // for convenience and readability - undefined at end of function
+#define gbParams(x) m_GBparams[static_cast<int>(GBP::x)]    // for convenience and readability - undefined at end of function
 
     STELLAR_TYPE stellarType = m_StellarType;
 
@@ -965,10 +720,10 @@ double TPAGB::ChooseTimestep(const double p_Time) const {
  */
 bool TPAGB::IsSupernova() const {
     double snMass = CalculateInitialSupernovaMass();
-    bool isCCSN = utils::Compare(m_COCoreMass, CalculateCoreMassAtSupernova_Static(MCH, m_GBParams[static_cast<int>(GBP::McBAGB)])) >= 0 &&
+    bool isCCSN = utils::Compare(m_COCoreMass, CalculateCoreMassAtSN_Static(MCH, m_GBparams[static_cast<int>(GBP::McBAGB)])) >= 0 &&
         utils::Compare(snMass, OPTIONS->MCBUR1()) >= 0 && utils::Compare(m_COCoreMass, m_Mass) < 0;
     bool isECSN = utils::Compare(snMass, MCBUR2) < 0 && (!m_MassTransferDonorHistory.empty() || OPTIONS->AllowNonStrippedECSN()) &&
-        utils::Compare(m_COCoreMass, CalculateCoreMassAtSupernova_Static(MECS, m_GBParams[static_cast<int>(GBP::McBAGB)])) >= 0 &&
+        utils::Compare(m_COCoreMass, CalculateCoreMassAtSN_Static(MECS, m_GBparams[static_cast<int>(GBP::McBAGB)])) >= 0 &&
         utils::Compare(snMass, OPTIONS->MCBUR1()) >= 0 && utils::Compare(m_COCoreMass, m_Mass) < 0;
     return isCCSN || isECSN;
 }

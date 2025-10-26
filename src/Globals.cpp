@@ -37,13 +37,13 @@ void Initialise() {
 
     m_RefZ                           = OPTIONS->Metallicity();                                              // reference metallicity
 
-    m_ZAMSheliumAbundance            = CalculateZAMSHeliumAbundance_Pols(m_RefZ);                           // ZAMS helium abundance
-    m_ZAMShydrogenAbundance          = CalculateZAMSHydrogenAbundance_Pols(m_RefZ);                         // ZAMS hydrogen abundance
+    m_ZAMSHeAbundance                = CalculateZAMSHeAbundance_Pols1998(m_RefZ);                           // ZAMS helium abundance
+    m_ZAMSHAbundance                 = CalculateZAMSHAbundance_Pols1998(m_RefZ);                            // ZAMS hydrogen abundance
 
     m_HurleyZdependentValues         = CalculateHurleyZdependentValues(m_RefZ, m_HurleyZdependentValues);   // Hurley Z-dependent values
 
-    m_ToutZAMSLuminosityCoefficients = CalculateZAMSLuminosityCoefficients_Tout(m_ZetaHurley);              // Tout luminosity coefficients
-    m_ToutZAMSRadiusCoefficients     = CalculateZAMSRadiusCoefficients_Tout(m_ZetaHurley);                  // Tout radius coefficients
+    m_ToutZAMSLuminosityCoefficients = CalculateZAMSLuminosityCoefficients_Tout1996(m_ZetaHurley);          // Tout luminosity coefficients
+    m_ToutZAMSRadiusCoefficients     = CalculateZAMSRadiusCoefficients_Tout1996(m_ZetaHurley);              // Tout radius coefficients
 
 
 
@@ -59,12 +59,13 @@ void Initialise() {
         // star 2 z-dependent values are the same as star 1
         m_Star2->refZ = m_Star1->refZ;
 
-        m_Star2->ZAMSheliumAbundance   = m_Star1->ZAMSheliumAbundance;
-        m_Star2->ZAMShydrogenAbundance = m_Star1->ZAMShydrogenAbundance;
+        m_Star2->ZAMSHeAbundance = m_Star1->ZAMSHeAbundance;
+        m_Star2->ZAMSHAbundance  = m_Star1->ZAMSHAbundance;
             
+
+
+
     }
-
-
 }
 
 
@@ -189,7 +190,7 @@ DBL_VECTOR Globals::CalculateHurleyACoefficients(const double p_Z, const double 
  * @param       p_Sigma                         Sigma from Hurley et al. 2000 sigma, p24
  * @param       p_Zeta                          Zeta from Hurley et al. 2000, p5, just before eq 1
  * @param       p_Rho                           Rho from Hurley et al. 2000 sigma, p24
- * @param       p_MassCutoffs                   Hurley mass cutoffs
+ * @param       p_MassCutoffs                   Hurley mass cutoffs (Msol)
  * @return                                      b(n) coefficients vector
  */
 DBL_VECTOR Globals::CalculateHurleyBCoefficients(const double p_Z, const double p_Sigma, const double p_Zeta, const double p_Rho, const DBL_VECTOR& p_MassCutoffs) const {
@@ -421,7 +422,7 @@ DBL_VECTOR Globals::CalculateHurleyMassCutoffs(const double p_Z, const double p_
  * CalculateHurleyAlphas
  *
  * @brief
- * Calculate Hurley constants alpha1, alpha2, and alpha3
+ * Calculate Hurley constants alpha1, alpha3, and alpha4
  *
  *   - alpha1 per Hurley et al, 2000, p12, just after eq 49
  *   - alpha3 per Hurley et al, 2000, p12, just after eq 56
@@ -431,14 +432,13 @@ DBL_VECTOR Globals::CalculateHurleyMassCutoffs(const double p_Z, const double p_
  * per star (upon creation)
  * 
  * alpha2, per Hurley et al, 2000, p12, just after eq 53, depends on the star's core mass, so is not constant
- * and is not calculated here - but we leave an empty slot in the returned vector so that alpha1, alpha3, and
- * alpha4 can be indexed directly (index is alpha ordinal-1 (e.g. alpha1 is at vec[0]; alpha3 at vec[2], etc.)).
+ * and is not calculated here.
  *
  *
  * DBL_VECTOR CalculateHurleyAlphas(const DBL_VECTOR& p_bCoefficients, const DBL_VECTOR& p_MassCutoffs) const)
  * 
  * @param       p_bCoefficients                 Hurley b(n) coefficients
- * @param       p_MassCutoffs                   Hurley mass cutoffs
+ * @param       p_MassCutoffs                   Hurley mass cutoffs (Msol)
  * @return                                      Alpha values vector
  */
 DBL_VECTOR Globals::CalculateHurleyAlphas(const DBL_VECTOR& p_bCoefficients, const DBL_VECTOR& p_MassCutoffs) const {
@@ -453,17 +453,15 @@ DBL_VECTOR Globals::CalculateHurleyAlphas(const DBL_VECTOR& p_bCoefficients, con
     const double LHeI_MHeF = (b[11] + (b[12] * PPOW(massCutoffs(MHeF), 3.8))) / (b[13] + (massCutoffs(MHeF) * massCutoffs(MHeF)));
     alphas[0]              = ((p_bCoeffs[9] * PPOW(massCutoffs(MHeF), b[10])) - LHeI_MHeF) / LHeI_MHeF;
 
-    // alpha2 - empty slot at alphas[1] (value will be DEFAULT_INITIAL_DOUBLE_VALUE)
-
     // alpha3
     const double LBAGB = (b[31] + (b[32] * PPOW(massCutoffs(MHeF), (b[33] + 1.8)))) / (b[34] + PPOW(massCutoffs(MHeF), b[33]));
-    alphas[2]          = ((b[29] * PPOW(massCutoffs(MHeF), b[30])) - LBAGB) / LBAGB;
+    alphas[1]          = ((b[29] * PPOW(massCutoffs(MHeF), b[30])) - LBAGB) / LBAGB;
 
     // alpha4
     const double MHeF5     = massCutoffs(MHeF) * massCutoffs(MHeF) * massCutoffs(MHeF) * massCutoffs(MHeF) * massCutoffs(MHeF); // pow() is slow - use multiplication
     const double tBGB_MHeF = BaseStar::CalculateLifetimeToBGB_Static(massCutoffs(MHeF));                                        // tBGB for mass M = MHeF
     const double tHe_MHeF  = tBGB_MHeF * (b[41] * PPOW(massCutoffs(MHeF), b[42]) + b[43] * massCutoffs(MHeF)) / (b[44] + massCutoffs(MHeF)); 
-    alphas[3]              = ((tHe_MHeF - b[39]) / b[39]);
+    alphas[2]              = ((tHe_MHeF - b[39]) / b[39]);
 
     // return the alphas vector by value - NRVO takes care of performance/efficiency
     return alphas;
@@ -545,7 +543,7 @@ HurleyZdependentT CalculateHurleyZdependentValues(const double p_Z, const double
     values.luminosityConstants = CalculateHurleyLuminosityConstants(values.aCoefficients);
     values.radiusConstants     = CalculateHurleyRadiusConstants(values.aCoefficients);
 
-    values.xExponent           = CalculateHurleyGBRadiusXexponent();
+    values.radiusXexponent     = CalculateHurleyGBRadiusXexponent();
 
     values.alphas              = CalculateHurleyAlphas(values.bCoefficients, values.massCutoffs);
 
@@ -561,28 +559,28 @@ HurleyZdependentT CalculateHurleyZdependentValues(const double p_Z, const double
 //                                 !!! Be Aware !!!                                  //
 //                                                                                   //
 // None of the "CalculateAndSet...()" functions below are const or pure - all modify //
-// modify members of the Globals class.                                              //
+// members of the Globals class.                                              //
 //                                                                                   //
 ///////////////////////////////////////////////////////////////////////////////////////
     
     
 /*
- * CalculateLuminosityCoefficients_Tout
+ * CalculateZAMSLuminosityCoefficients_Tout1996
  *
  * @brief
- * Calculate luminosity coefficients per Tout et al. 1996, table 1
+ * Calculate ZAMS luminosity coefficients per Tout et al. 1996, table 1
  *
  * Luminosity coefficients depend on the star's metallicity only - so this only needs to be done at most
  * once per star (upon creation), but can also be reused if metallicity doesn't change from one star to
  * the next (e.g. in a population run).
  * 
  *
- * DBL_VECTOR CalculateLuminosityCoefficients_Tout(const double p_Zeta) const
+ * DBL_VECTOR CalculateZAMSLuminosityCoefficients_Tout1996(const double p_Zeta) const
  * 
  * @param       p_Zeta                          Zeta from Hurley et al. 2000, p5, just before eq 1
  * @return                                      Luminosity coefficients vector
  */
-DBL_VECTOR Globals::CalculateLuminosityCoefficients_Tout(const double p_Zeta) const {
+DBL_VECTOR Globals::CalculateZAMSLuminosityCoefficients_Tout1996(const double p_Zeta) const {
 // macros for convenience and readability - undefined at end of function
 #define index    static_cast<int>(coeff.first)
 #define coeff(x) coeff.second[LR_TCoeff::x]
@@ -607,26 +605,26 @@ DBL_VECTOR Globals::CalculateLuminosityCoefficients_Tout(const double p_Zeta) co
     
 #undef coeff
 #undef index
-}
-        
-        
+}  
+ 
+
 /*
- * CalculateRadiusCoefficients_Tout
+ * CalculateZAMSRadiusCoefficients_Tout1996
  *
  * @brief
- * Calculate radius coefficients per Tout et al. 1996, table 2
+ * Calculate ZAMS radius coefficients per Tout et al. 1996, table 2
  *
  * Radius coefficients depend on the star's metallicity only - so this only needs to be done at most
  * once per star (upon creation), but can also be reused if metallicity doesn't change from one star
  * to the next (e.g. in a population run).
  * 
  *
- * DBL_VECTOR CalculateRadiusCoefficients_Tout(const double p_Zeta) const
+ * DBL_VECTOR CalculateZAMSRadiusCoefficients_Tout1996(const double p_Zeta) const
  * 
  * @param       p_Zeta                          Zeta from Hurley et al. 2000, p5, just before eq 1
  * @return                                      Radius coefficients vector
  */
-DBL_VECTOR Globals::CalculateRadiusCoefficients_Tout(const double p_Zeta) const {
+DBL_VECTOR Globals::CalculateZAMSRadiusCoefficients_Tout1996(const double p_Zeta, m_ToutZAMSRadiusCoefficients) const {
 // macros for convenience and readability - undefined at end of function
 #define index    static_cast<int>(coeff.first)
 #define coeff(x) coeff.second[TOUT_LR_TCoeff::x]
@@ -655,35 +653,35 @@ DBL_VECTOR Globals::CalculateRadiusCoefficients_Tout(const double p_Zeta) const 
 
 
 /*
- * CalculateZAMSHeliumAbundance_Pols
+ * CalculateZAMSHeAbundance_Pols1998
  *
  * @brief
  * Calculate ZAMS helium abundance as a fraction of the star's mass, per Pols et al. 1998
  *
  *
- * double CalculateZAMSHeliumAbundance_Pols(const double p_Z) const
+ * double CalculateZAMSHeAbundance_Pols1998(const double p_Z) const
  * 
  * @param       p_Z                             Metallicity of the star
  * @return                                      ZAMS helium abundance for the star
  */
-double Globals::CalculateZAMSHeliumAbundance_Pols(const double p_Z) const {
+double Globals::CalculateZAMSHeAbundance_Pols1998(const double p_Z) const {
     return 0.24 + 2.0 * p_Z;
 }
 
 
 /*
- * CalculateZAMSHydrogenAbundance_Pols
+ * CalculateZAMSHAbundance_Pols1998
  *
  * @brief
  * Calculate ZAMS hydrogen abundance as a fraction of the star's mass, per Pols et al. 1998
  *
  *
- * double CalculateZAMSHydrogenAbundance_Pols(const double p_Z) const
+ * double CalculateZAMSHAbundance_Pols1998(const double p_Z) const
  *
  * @param       p_Z                             Metallicity of the star
  * @return                                      ZAMS hydrogen abundance for the star
  */
-double Globals::CalculateZAMSHydrogenAbundance_Pols(const double p_Z) const {
+double Globals::CalculateZAMSHAbundance_Pols1998(const double p_Z) const {
     return 0.76 - 3.0 * p_Z;
 }
 
@@ -705,12 +703,13 @@ double Globals::CalculateZAMSHydrogenAbundance_Pols(const double p_Z) const {
  * the bounds defined by Shikauchi et al. 2024.
  * 
  *
- * std::tuple<DBL_VECTOR, DBL_VECTOR, DBL_VECTOR> CalculateShikauchiCoefficients(const double p_Z)
+ * std::tuple<DBL_VECTOR, DBL_VECTOR, DBL_VECTOR> CalculateShikauchiCoefficients(const double p_Z, const double p_logZ)
  *
  * @param       p_Z                             Metallicity of the star
+ * @param       p_logZ                          log10(p_Z)
  * @return                                      Tuple containing vectors of coefficients (alpha, fMix, luminosity)
  */
-std::tuple<DBL_VECTOR, DBL_VECTOR, DBL_VECTOR> Globals::CalculateShikauchiCoefficients(const double p_Z) const {
+std::tuple<DBL_VECTOR, DBL_VECTOR, DBL_VECTOR> Globals::CalculateShikauchiCoefficients(const double p_Z, const double p_logZ) const {
 // macros for convenience and readability - undefined at end of function
 #define lower SHIKAUCHI_Coeff::ONE_TENTH_Z_SOL
 #define mid   SHIKAUCHI_Coeff::ONE_THIRD_Z_SOL
@@ -722,26 +721,25 @@ std::tuple<DBL_VECTOR, DBL_VECTOR, DBL_VECTOR> Globals::CalculateShikauchiCoeffi
     DBL_VECTOR luminosityCoeff(SHIKAUCHI_LUMINOSITY_COEFF[lower].size(), 0.0);  // luminosity coefficients
        
     // common factors for each of the metallicities defined by Shikauchi et al. 2024
-    const double logLowerZ         = std::log10(0.1 * ZSOL_HURLEY);             // Z lower bound: SHIKAUCHI_Coeff::ONE_TENTH_Z_SOL
-    const double logMidZ           = std::log10(1.0 / 3.0 * ZSOL_HURLEY);       // Z mid-range:   SHIKAUCHI_Coeff::ONE_THIRD_Z_SOL
-    const double logUpperZ         = std::log10(ZSOL_HURLEY);                   // Z upper bound: SHIKAUCHI_Coeff::Z_SOL
+    const double logLowerZ         = log10(0.1 * ZSOL_HURLEY);                  // Z lower bound: SHIKAUCHI_Coeff::ONE_TENTH_Z_SOL
+    const double logMidZ           = log10(1.0 / 3.0 * ZSOL_HURLEY);            // Z mid-range:   SHIKAUCHI_Coeff::ONE_THIRD_Z_SOL
+    const double logUpperZ         = LOG10_ZSOL_HURLEY;                         // Z upper bound: SHIKAUCHI_Coeff::Z_SOL
 
-    const double logZ              = std::log10(p_Z);
-    const double logZ_logLowerZ    = logZ - logLowerZ;
-    const double logZ_logMidZ      = logZ - logMidZ;
-    const double logMidZ_logZ      = logMidZ  - logZ;
+    const double logZ_logLowerZ    = p_logZ - logLowerZ;
+    const double logZ_logMidZ      = p_logZ - logMidZ;
+    const double logMidZ_logZ      = logMidZ  - p_logZ;
     const double logMidZ_logLowerZ = logMidZ  - logLowerZ;
-    const double logUpperZ_logZ    = logUpperZ - logZ;
+    const double logUpperZ_logZ    = logUpperZ - p_logZ;
     const double logUpperZ_logMidZ = logUpperZ - logMidZ;
     
     // calculate coefficients for specified metallicity
-    if (logZ <= logLowestZ) {                                                   // p_Z at or below lower metallicity bound?
+    if (p_logZ <= logLowestZ) {                                                 // p_Z at or below lower metallicity bound?
                                                                                 // yes, clamp coefficients to lower bound values
         alphaCoeff      = SHIKAUCHI_ALPHA_COEFF[lower];
         fMixCoeff       = SHIKAUCHI_FMIX_COEFF[lower];
         luminosityCoeff = SHIKAUCHI_LUMINOSITY_COEFF[lower];
     }
-    else if (logZ <= middle) {                                                  // p_Z in lower to middle metallicity band?
+    else if (p_logZ <= middle) {                                                // p_Z in lower to middle metallicity band?
                                                                                 // yes, interpolate
         for (size_t i = 0; i < alphaCoeff.size(); i++)
             alphaCoeff[i] = (SHIKAUCHI_ALPHA_COEFF[lower][i] * logMidZ_logZ + SHIKAUCHI_ALPHA_COEFF[mid][i] * logZ_logLowerZ) / logMidZ_logLowerZ;
@@ -750,7 +748,7 @@ std::tuple<DBL_VECTOR, DBL_VECTOR, DBL_VECTOR> Globals::CalculateShikauchiCoeffi
         for (size_t i = 0; i < luminosityCoeff.size; i++)
             luminosityCoeff[i] = (SHIKAUCHI_LUMINOSITY_COEFF[lower][i] * logMidZ_logZ + SHIKAUCHI_LUMINOSITY_COEFF[mid][i] * logZ_logLowerZ) / logMidZ_logLowerZ;
     }
-    else if (logZ < high) {                                                     // p_Z in middle to upper metallicity band?
+    else if (p_logZ < high) {                                                   // p_Z in middle to upper metallicity band?
                                                                                 // yes, interpolate
         for (size_t i = 0; i < alphaCoeff.size(); i++)
             alphaCoeff[i] = (SHIKAUCHI_ALPHA_COEFF[mid][i] * logUpperZ_logZ + SHIKAUCHI_ALPHA_COEFF[upper][i] * logZ_logMidZ) / logUpperZ_logMidZ;

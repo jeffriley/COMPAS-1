@@ -47,16 +47,44 @@ protected:
 
 
     // member functions - alphabetically
-    double          CalculateCOCoreMassAtPhaseEnd() const                                           { return CalculateCOCoreMassOnPhase(); }                                                        // Same as on phase
-    double          CalculateCOCoreMassOnPhase() const                                              { return 0.0; }                                                                                 // McCO(FGB) = 0.0
+
+
+
+
+///// ON PHASE FUNCTIONS   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+GNU_CONST inline double CalculateCOCoreMass() const override { return 0.0; }            // McCO = 0.0 for FGB stars
+
+double CalculateTau_Hurley2000() const override {
+    return CalculateTau_Hurley2000(m_StateHistory.CurrentState.Age(), m_StateHistory.CurrentState.Timescales(tBGB), m_StateHistory.CurrentState.Timescales(tHeI));
+}
+GNU_CONST double CalculateTau_Hurley2000(const double p_Age, const double p_tBGB, const double p_tHeI) const;
+
+
+inline double CalculateEffectiveInitialMass_Hurley2000() const override { return GiantBranch::CalculateEffectiveInitialMass_Hurley2000(); } // per Hurley et al. 2000, section 7.1
+
+ 
+
+
+
+///// PHASE END, ETC.      <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+GNU_CONST inline double CalculateCOCoreMassAtPhaseEnd() const override { return 0.0; }  // McCO = 0.0 for FGB stars
+
+
+
+
+
+
+
+
 
     double          CalculateCoreMassAtPhaseEnd(const double p_Mass, const double p_Time) const     { return CalculateCoreMassOnPhase(p_Mass, p_Time); }                                            // Same as on phase
     double          CalculateCoreMassAtPhaseEnd() const                                             { return CalculateCoreMassAtPhaseEnd(m_Mass0, m_Age); }                                         // Use class member variables
     double          CalculateCoreMassOnPhase(const double p_Mass, const double p_Time) const;
     double          CalculateCoreMassOnPhase() const                                                { return CalculateCoreMassOnPhase(m_Mass0, m_Age); }                                            // Use class member variables
 
-    double          CalculateCriticalMassRatioClaeys14(const bool p_AccretorIsDegenerate) const     { return GiantBranch::CalculateCriticalMassRatioClaeys14(p_AccretorIsDegenerate); }             // Skip HG 
-    double          CalculateCriticalMassRatioHurleyHjellmingWebbink() const                        { return GiantBranch::CalculateCriticalMassRatioHurleyHjellmingWebbink(); }
+
 
     double          CalculateHeCoreMassAtPhaseEnd() const                                           { return CalculateHeCoreMassOnPhase(); }                                                        // Same as on phase
     double          CalculateHeCoreMassOnPhase() const                                              { return m_CoreMass; }                                                                          // McHe(FGB) = Core Mass
@@ -71,10 +99,11 @@ protected:
     double          CalculateRadiusOnPhase(const double p_Mass, const double p_Luminosity) const    { return GiantBranch::CalculateRadiusOnPhase(p_Mass, p_Luminosity); }
     double          CalculateRadiusOnPhase() const                                                  { return CalculateRadiusOnPhase(m_Mass, m_Luminosity); }                                        // Use class member variables
 
-    double          CalculateTauAtPhaseEnd() const                                                  { return m_Tau; }                                                                               // NO-OP
-    double          CalculateTauOnPhase() const;
-    
-    double          CalculateZetaEquilibrium()                                                      { return 0.0; }                                                     // At lowest order, giants with a convective envelope have radii that are insensitive to mass loss (but see Hurley+ 2002, Eq. 56 and Hurley+ 2000, Eq. 47)
+
+
+
+
+
 
     double          ChooseTimestep(const double p_Time) const;
 
@@ -93,8 +122,59 @@ protected:
     bool            ShouldSkipPhase() const                                                         { return (utils::Compare(m_Mass0, m_MassCutoffs[static_cast<int>(MASS_CUTOFF::MFGB)]) >= 0); }  // Skip phase if mass >= FGB mass cutoff
 
     void            UpdateAgeAfterMassLoss()                                                        { GiantBranch::UpdateAgeAfterMassLoss(); }                                                      // Skip HG
-    double            CalculateEffectiveInitialMass()                                                             { return GiantBranch::CalculateEffectiveInitialMass(); }                          // Skip HG
+
+
+
+
 
 };
+
+
+
+
+
+
+//// inline candidates <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+///////////////////////////////////////////////////////////////////////////////////////
+//                                                                                   //
+//                             LIFETIME / AGE FUNCTIONS                              //
+//                                                                                   //
+///////////////////////////////////////////////////////////////////////////////////////
+
+
+/*
+ * CalculateTau_Hurley2000
+ *
+ * @brief
+ * Calculate the FGB-relative age (fractional First Giant Branch age) of the star,
+ * per Hurley et al. 2000, just after eq 45.
+ *
+ * 
+ * double CalculateTau_Hurley2000(const double p_Age, const double p_tBGB, const double p_tHeI) const
+ *
+ * @param       p_Age                           Age of the star (Myr)
+ * @param       p_tBGB                          Lifetime to Base of Giant Branch, tBGB (Myr)
+ * @param       p_tHeI                          Time to helium ignition (Myr)
+ * @return                                      FGB-relative age, [0, 1]
+ */
+GNU_CONST inline double FGB::CalculateTau_Hurley2000(const double p_Age, const double p_tBGB, const double p_tHeI) const {
+    return std::max(0.0, std::min(1.0, (p_Age - p_tBGB) / (p_tHeI - p_tBGB)));
+}
+
+
+
+///////// constituent functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+    
+double          CalculateZetaEquilibrium()                                                      { return 0.0; }                                                     // At lowest order, giants with a convective envelope have radii that are insensitive to mass loss (but see Hurley+ 2002, Eq. 56 and Hurley+ 2000, Eq. 47)
+
+
+double CalculateCriticalMassRatio_Claeys2014(const bool p_AccretorIsDegenerate) const { return GiantBranch_Constituent::CalculateCriticalMassRatio_Claeys2014(p_AccretorIsDegenerate); } // Skip HG 
+
+double CalculateCriticalMassRatio_Hurley2002() const { return GiantBranch_Constituent::CalculateCriticalMassRatio_Hurley2002(); }
+
 
 #endif // __FGB_h__

@@ -18,57 +18,63 @@
 //}
 
 
-Star::Star(const STARTING_STELLAR_TYPE p_StartingStellarType,
-           const unsigned long int     p_RandomSeed,
+Star::Star(const unsigned long int     p_RandomSeed,
+           const STARTING_STELLAR_TYPE p_StartingStellarType,
            const double                p_Metallicity, 
            const double                p_Mass,
            const KickParameters        p_KickParameters,
            const double                p_RotationalFrequency) {
 
-    m_ObjectId          = globalObjectId++;                                                                             // set object id
-    m_ObjectPersistence = OBJECT_PERSISTENCE::PERMANENT;                                                                // set object persistence
+    m_ObjectId          = globalObjectId++;                                                                     // set object id
+    m_ObjectPersistence = OBJECT_PERSISTENCE::PERMANENT;                                                        // set object persistence
 
-    double angularFrequency = (p_RotationalFrequency >= 0.0) ? SECONDS_IN_YEAR * _2_PI * p_RotationalFrequency : 0.0;   // use rotational frequency if supplied
+    // We need to convert the starting stellar type passed in to an actual stellar type
+    // so we can construct a star of that type.  For most stellar types the mapping from
+    // starting stellar type to actual stellar type is 1:1, but for the MS starting stellar
+    // type we need to deterine if the actual stellar type will be MS_LTE_07 or MS_GT_07,
+    // depending upon the ZAMS mass of the star - CH (Chemically Homeogeneous) is handled
+    // later.
 
-    // We need to convert the starting stellar type passed in to an actual stellar type so we can construct
-    // a star of that type.  For most stellar types the mapping from starting stellar type to actual stellar
-    // type is 1:1, but for the MS starting stellar type we need to deterine if the actual stellar type will
-    // be MS_LTE_07, MS_GT_07, or CH (Chemically Homeogeneous).
-    //
-    // If CHE is enabled (OPTIONS->CHEMode(), program option `--chemically-homogeneous-evolution-mode`), and
-    // if the ZAMS angular frequency of the star is greater than the threshold for CHE to occur, the stellar
-    // type of the star will be CH, otherwise MS_LTE_07 or MS_GT_07 depending upon the ZAMS mass of the star.
+    STELLAR_TYPE startingStellarType = static_cast<STELLAR_TYPE>(static_cast<int>(p_StartingStellarType));      // fix up starting stellar type
 
-    STELLAR_TYPE startingStellarType = static_cast<STELLAR_TYPE>(static_cast<int>(p_StartingStellarType));              // fix up starting stellar type
+    if (utils::IsOneOf(startingStellarType, MAIN_SEQUENCE)) {                                                   // starting stellar type MS (won't be CH here)?
+                                                                                                                // yes
+        // set main sequence type based on starting mass
+        startingStellarType = p_Mass <= 0.7 ? STELLAR_TYPE::MS_LTE_07 : STELLAR_TYPE::MS_GT_07;
+    }
 
-    if (utils::IsOneOf(startingStellarType, MAIN_SEQUENCE)) {                                                           // starting stellar type MS (won't be CH here)?
-        if (OPTIONS->CHEMode() != CHE_MODE::NONE) {                                                                     // yes - CHE enabled?
-                                                                                                                        // yes
-            if (p_RotationalFrequency < 0.0) {                                                                          // rotational frequency supplied?
-                const double RZAMS = CalculateZAMSRadius_Tout_Static(p_Mass, GLOBALS->ToutRadiusCoefficients());        // no
-                angularFrequency   = BaseStar::CalculateZAMSAngularFrequency_Hurley_Static(p_Mass, RZAMS);              // calculate ZAMS omega
-            }
-            
-            if (angularFrequency >= BaseStar::CalculateCHEAngularFrequency_Static(p_Mass, p_Metallicity)) {             // rotating fast enough to be CH?
-                startingStellarType = STELLAR_TYPE::CHEMICALLY_HOMOGENEOUS;                                             // yes - set starting stellar type to CH
-            }
-        }
+    // determine ZAMS angular freuqnecy
+    double angularFrequency;
+    if (p_RotationalFrequency < 0.0) {                                                                          // rotational frequency supplied?
+        const double rZAMS = MainSequence::CalculateRadiusAtZAMS(p_Mass, GLOBALS->ToutRadiusCoefficients());    // no
+        angularFrequency   = MainSequence::CalculateAngularFrequencyAtZAMS(p_Mass, rZAMS);                      // calculate ZAMS omega
+    }
+    else {                                                                                                      // yes - rotational frequency supplied
+        angularFrequency   = SECONDS_IN_YEAR * _2_PI * p_RotationalFrequency;                                   // calculate ZAMS omega
+    }
 
-        if (startingStellarType != STELLAR_TYPE::CHEMICALLY_HOMOGENEOUS) {                                              // CH?
-            if (p_Mass <= 0.7) {                                                                                        // no - mass <= 0.7?
-                startingStellarType = STELLAR_TYPE::MS_LTE_07;                                                          // yes, set starting stellar type to MS_LTE_07
-            }
-            else {                                                                                                      // no
-                startingStellarType = STELLAR_TYPE::MS_GT_07;                                                           // set starting stellar type to MS_GT_07
+    // construct a BaseStar object
+    m_Star = new BaseStar(p_RandomSeed, p_Metallicity, p_Mass, p_KickParameters, angularFrequency);             // create underlying BaseStar object
+    (void)SwitchTo(startingStellarType, true, true);                                                            // switch to correct starting stellar type
+
+    // if starting stellar type was MS, check now for CH
+    if (utils::IsOneOf(startingStellarType, MAIN_SEQUENCE)) {                                                   // starting stellar type MS (won't be CH here)?
+        // We now have a MS object upon which we can call functions necessary to check whether
+        // we should switch to CH.
+        //
+        // If CHE is enabled and the ZAMS angular frequency of the star is greater than the
+        // threshold for CHE to occur, we will switch the stellar type to CH, otherwise we leave
+        // it at MS_LTE_07 or MS_GT_07.
+        if (OPTIONS->CHEMode() != CHE_MODE::NONE) {                                                             // yes - CHE enabled?
+                                                                                                                // yes           
+            if (angularFrequency >= MainSequence::CalculateCHEAngularFrequency(p_Mass, p_Metallicity)) {        // rotating fast enough to be CH?
+                startingStellarType = STELLAR_TYPE::CHEMICALLY_HOMOGENEOUS;                                     // yes - set starting stellar type to CH
             }
         }
     }
 
-    // construct a BaseStar object
-    m_Star = new BaseStar(startingStellarType, p_RandomSeed, p_Metallicity, p_Mass, p_KickParameters, angularFrequency);                                                                                            // create underlying BaseStar object
-    
-    // switch to specified starting stellar type
-    (void)SwitchTo(startingStellarType, true);
+    // switch stellar type to CH if necessary
+    if (startingStellarType == STELLAR_TYPE::CHEMICALLY_HOMOGENEOUS) (void)SwitchTo(startingStellarType, true, true);
 
     // thresholds flags for system snapshot output file
     if (OPTIONS->SystemSnapshotAgeThresholds().size()  > 0) m_SystemSnapshotAgeFlags.assign(OPTIONS->SystemSnapshotAgeThresholds().size(), -1.0);
@@ -79,28 +85,35 @@ Star::Star(const STARTING_STELLAR_TYPE p_StartingStellarType,
 // Copy constructor - deep copy so dynamic variables are also copied
 Star::Star(const Star& p_Star) {
 
-    m_ObjectId          = globalObjectId++;                                                                                             // set object id
-    m_ObjectPersistence = p_Star.ObjectPersistence();                                                                                   // set object persistence
+    m_ObjectId          = globalObjectId++;                 // set object id
+    m_ObjectPersistence = p_Star.ObjectPersistence();       // set object persistence
 
-    m_Star = p_Star.m_Star ? static_cast<BaseStar*>(p_Star.m_Star->Clone(OBJECT_PERSISTENCE::PERMANENT, false)) : nullptr;              // copy underlying BaseStar object
+    // copy underlying BaseStar object
+    m_Star = p_Star.m_Star ? static_cast<BaseStar*>(p_Star.m_Star->Clone(OBJECT_PERSISTENCE::PERMANENT, false)) : nullptr;
 }
 
 
 /*
+ * SitwchTo
+ *
+ * @brief
  * Switch to required star type
  *
  * Instantiates new object of required class, deletes existing pointer to star object and
- * replaces it with pointer to newly instantiated object
+ * replaces it with pointer to newly instantiated object.
+ * 
+ * Optionally sets new star's starting stellar type.
+ * Optionally records switch in SwithcLog file.
  *
  *
- * STELLAR_TYPE SwitchTo(const STELLAR_TYPE p_StellarType, bool p_SetInitialState)
+ * STELLAR_TYPE SwitchTo(const STELLAR_TYPE p_StellarType, bool p_SetStartingType, bool p_NoLog)
  *
- * @param   [IN]    p_StellarType               StellarType to switch to
- * @param   [IN]    p_SetInitialType            Indicates whether the initial stellar type of the star should be set to p_StellarType
- *                                              (optional, default = false)
+ * @param       p_StellarType                   StellarType to switch to
+ * @param       p_SetStartingType               Flag to indicate whether the starting stellar type of the star should be set to p_StellarType
+ * @param       p_NoLog                         Flag to indicate whether the swicth should be logged in the SwitchLog file
  * @return                                      Stellar type of star before switch (previous stellar type)
  */
-STELLAR_TYPE Star::SwitchTo(const STELLAR_TYPE p_StellarType, bool p_SetInitialType) {
+STELLAR_TYPE Star::SwitchTo(const STELLAR_TYPE p_StellarType, bool p_SetStartingType, bool p_NoLog) {
 
     STELLAR_TYPE stellarTypePrev = StellarType();
 
@@ -127,37 +140,37 @@ STELLAR_TYPE Star::SwitchTo(const STELLAR_TYPE p_StellarType, bool p_SetInitialT
             case STELLAR_TYPE::BLACK_HOLE                               : {ptr = new BH(*m_Star);} break;
             case STELLAR_TYPE::MASSLESS_REMNANT                         : {ptr = new MR(*m_Star);} break;
 
-            default:                                                                                                        // unknown stellar type
-                // the only ways this can happen are if someone added a STELLAR_TYPE
-                // and it isn't accounted for in this code, or if there is a defect in the code that causes
-                // this function to be called with a bad parameter.  We should not default here, with or without
-                // a warning.
-                // We are here because the user chose a prescription this code doesn't account for, and that should
-                // be flagged as an error and result in termination of the evolution of the star or binary.
-                // The correct fix for this is to add code for the missing prescription or, if the missing
-                // prescription is superfluous, remove it from the option.
+            default:                                                                // unexpected stellar type
+                // the only way this can happen is if the STELLAR_TYPE passed to this function is not accounted
+                // for in this code.  We should not default here, with or without a warning.
+                // We are here because the code passed a STELLAR_TYPE that this function doesn't account for,
+                // and that should be flagged as an error and result in termination of the evolution of the star
+                // or binary.
+                // The correct fix for this is to add code to this function for the missing STELLAR_TYPE,
+                // or fix the calling code to pass a STELLAR_TYPE that is handled by this function.
 
-                THROW_ERROR(ERROR::UNKNOWN_STELLAR_TYPE);                                                                   // throw error
+                THROW_ERROR(ERROR::UNEXPECTED_STELLAR_TYPE);                        // throw error
         }
 
         if (ptr) {
             delete m_Star;
             m_Star = ptr;
 
-            if (p_SetInitialType) m_Star->SetInitialType(p_StellarType);   // CHECK THIS - NOT INITIAL, JUST TYPE????????????????????????????????
+            if (p_SetStartingType) m_Star->SetStartingType(p_StellarType);
         }
 
         // write to switch log file if required
         // star should be evolving from one of the evolvable types (we don't want the initial switch from Star->MS).
         // check is not necessary for BSE (handled differently), but no harm
-        if (utils::IsOneOf(stellarTypePrev, EVOLVABLE_TYPES) && OPTIONS->SwitchLog()) {
+        if (OPTIONS->SwitchLog() && !p_NoLog && utils::IsOneOf(stellarTypePrev, EVOLVABLE_TYPES)) {
 
-            LOGGING->SetSwitchParameters(m_ObjectId, ObjectType(), m_ObjectPersistence, stellarTypePrev, p_StellarType);    // store switch details to LOGGING service
-            if (OPTIONS->EvolutionMode() == EVOLUTION_MODE::BSE) {                                                          // BSE?
-                raise(SIGUSR1);                                                                                             // signal to BSE that switch is occurring
+            // store switch details to LOGGING service
+            LOGGING->SetSwitchParameters(m_ObjectId, ObjectType(), m_ObjectPersistence, stellarTypePrev, p_StellarType);
+            if (OPTIONS->EvolutionMode() == EVOLUTION_MODE::BSE) {                  // BSE?
+                raise(SIGUSR1);                                                     // yes - signal to BSE that switch is occurring
             }
-            else {                                                                                                          // SSE
-                (void)m_Star->PrintSwitchLog();                                                                             // no need for the BSE signal shenanigans - just call the function
+            else {                                                                  // no - SSE
+                (void)m_Star->PrintSwitchLog();                                     // no need for the BSE signal shenanigans - just call the function
             }
         }
     }
@@ -166,6 +179,7 @@ STELLAR_TYPE Star::SwitchTo(const STELLAR_TYPE p_StellarType, bool p_SetInitialT
 }
 
 
+////////////////////////////// Check need for this <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 /*
  *
  * Resolve the loss of an envelope, including switching the stellar type.
@@ -380,6 +394,11 @@ if (OPTIONS->DebugLevel() > 0) std::cout << std::boolalpha << std::setprecision(
 }
 
 
+
+
+
+////// MAIN EVOLUTIONARY DRIVE FUNCTION - ONE THING AT AT TIME - STATE MACHINE <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
 /*
  * Evolve the star through its entire lifetime
  *
@@ -392,17 +411,26 @@ if (OPTIONS->DebugLevel() > 0) std::cout << std::boolalpha << std::setprecision(
 EVOLUTION_STATUS Star::Evolve(const long int p_Id) {
 
     EVOLUTION_STATUS evolutionStatus = EVOLUTION_STATUS::CONTINUE;                                              // default status
-    STELLAR_TYPE     nextStellarType = StellarType();                                                           // next stellar type (defult is current)
+
+    STELLAR_TYPE nextStellarType = StellarType();                                                           // next stellar type (defult is current)
 
     try {
 
-        m_Id = p_Id;                                                                                            // store the id
+        m_Id = p_Id; // store the id  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< in state??????
 
         // evolve the star
 
-        m_Star->CalculateGBParams();                                                                            // calculate giant branch parameters - in case for some reason star is initially not MS
+        m_Star->CalculateGBparams(); // calculate giant branch parameters - should be done initially, then at state change <<<<<<<<<<<<<<<<<<<<<
 
-        double dt = 0.0;
+
+        double dt;
+        double dtPrev;
+
+        double age;
+        double time;
+
+
+
 
         (void)m_Star->PrintDetailedOutput(m_Id, SSE_DETAILED_RECORD_TYPE::INITIAL_STATE);                       // log detailed output record 
 
@@ -418,52 +446,75 @@ EVOLUTION_STATUS Star::Evolve(const long int p_Id) {
             else usingProvidedTimesteps = true;                                                                 // have user-provided timesteps
         }
 
-        // the evolution of a star in COMPAS is effectively represented as a finite-state machine, though we don't know
-        // the number of states a priori (the number of states is not infinite, though it could  << REWRITE - IT IS INFINTE, BUT WE DON'T VISI THEM ALL
-        // be intractably large, but even so, not an infinite-state machine - more like a transition system).  We do have an
-        // upper limit on the number of states - set by option values for the maximum evolution
-        // time and the maximum number of timesteps.  Even without those, given that we have an
-        // absolute minimum timestep, and a star can't be older than the universe, we have a
-        // theoretical maximum number of states.  But the actual number of state is infinite!
-        // We just don't visit them all in any single run of COMPAS...  <<<<<<<<<<<<<<<<<<<<<  NEED TO DOCUMENT THIS SOMEWHERE
+
+
+
+
+
+        // The evolution of a star in COMPAS is effectively represented as a state machine.
+        // A star will be in exactly one of an infinite number of states at any timestep.
+        // The number of states is infinite because the attributes we use to represent a
+        // star are real-valued, though some may be bounded.
+        //
+        // Although there is technically an infinite number of states that our star can assume,
+        // we place an arbitrary upper limit on the number of states we will visit during the
+        // evolution of a star - set by option values for the maximum evolution time and the
+        // maximum number of timesteps.  Even without those, given that we have an absolute
+        // minimum timestep, and a star can't be older than the universe, we have a theoretical
+        // maximum number of states (that we will visit, not that a star can assume).
 
         // set the initial state of our state machine
 
+
+
+
+
         unsigned long int stepNum = 0;                                                                          // initialise step number
-        while (evolutionStatus == EVOLUTION_STATUS::CONTINUE) {
-            if (StellarType() == STELLAR_TYPE::MASSLESS_REMNANT) {                                              // massless remnant?
-                evolutionStatus = EVOLUTION_STATUS::MASSLESS_REMNANT;                                           // set status
-            }
+        while (evolutionStatus == EVOLUTION_STATUS::CONTINUE) {                                                 // timestep loop
+
+            // check if we're done
             if (m_Star->Time() > OPTIONS->MaxEvolutionTime()) {                                                 // out of time?
-                evolutionStatus = EVOLUTION_STATUS::TIMES_UP;                                                   // set status
+                evolutionStatus = EVOLUTION_STATUS::TIMES_UP;                                                   // yes - we're done
             }
             else if (stepNum >= OPTIONS->MaxNumberOfTimestepIterations()) {                                     // out of timesteps?
-                evolutionStatus = EVOLUTION_STATUS::STEPS_UP;                                                   // set status
-            }
-            else if (m_Star->IsOneOf(WHITE_DWARFS) || StellarType() == STELLAR_TYPE::BLACK_HOLE || 
-                    (StellarType() == STELLAR_TYPE::NEUTRON_STAR && !OPTIONS->EvolvePulsars())) {               // If a WD or BH, or an NS but not evolving pulsars, we're done
-                evolutionStatus = EVOLUTION_STATUS::DONE;
+                evolutionStatus = EVOLUTION_STATUS::STEPS_UP;                                                   // yes - we're done
             }
             else if (usingProvidedTimesteps && stepNum >= timesteps.size()) {                                   // using user-provided timesteps and all consumed?
-                evolutionStatus = EVOLUTION_STATUS::TIMESTEPS_EXHAUSTED;                                        // yes - set status
+                evolutionStatus = EVOLUTION_STATUS::TIMESTEPS_EXHAUSTED;                                        // yes - we're done
                 SHOW_WARN(ERROR::TIMESTEPS_EXHAUSTED);                                                          // show warning
             }
-            else {                                                                                              // evolve one timestep
+            else if (StellarType() == STELLAR_TYPE::MASSLESS_REMNANT) {                                         // massless remnant?
+                evolutionStatus = EVOLUTION_STATUS::MASSLESS_REMNANT;                                           // yes - we're done
+            }
+            else if (m_Star->IsOneOf(WHITE_DWARFS) || StellarType() == STELLAR_TYPE::BLACK_HOLE) {              // WD or BH?
+                evolutionStatus = EVOLUTION_STATUS::DONE;                                                       // yes - we're done
+            }
+            else if (StellarType() == STELLAR_TYPE::NEUTRON_STAR && !OPTIONS->EvolvePulsars()) {                // NS and not evolving pulsars?
+                evolutionStatus = EVOLUTION_STATUS::DONE;                                                       // yes - we're done
+            }
+            else {
 
-                m_Star->SetPrevDt(dt);
+                // not done - evolve one timestep
+
+                dtPrev = dt;                    // previous timestep value  DO WE NEED THIS (can get from state) <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
             
                 // check for, and process, immediate events, in the following order:
                 //
-                // 1. supernova
+                // 1. supernova (may switch stellar type)
                 // 2. stellar type switch
                 // 3. common envelope
 
                 // supernova
                 if (IsSupernova()) {                                                                            // is star about to go supernova?
+
 if (OPTIONS->DebugLevel() > 0) std::cout << "Processing supernova\n";
                                                                                                                 // yes
-                    m_Star->SetDt(ABSOLUTE_MINIMUM_TIMESTEP);                                                   // set dt
-                    m_Star->AdvanceAgeAndTime();                                                                // advance age of star and simulation time
+                    dt = ABSOLUTE_MINIMUM_TIMESTEP;        // set dt
+
+                    age += p_dt;                         // advance age of star
+                    time += p_dt;                       // advance simulation time
+                                                                                                    }
+
                     nextStellarType = m_Star->ResolveSupernova();                                               // resolve the supernova event
                     if (nextStellarType != StellarType()) {                                                     // stellar type change?
                         (void)SwitchTo(nextStellarType, false);                                                 // yes - switch stellar type
@@ -492,7 +543,8 @@ if (OPTIONS->DebugLevel() > 0) std::cout << "Processing stellar type change\n";
                 }
 
 
-                // ordinary timestep
+                // not immediate event
+                // process ordinary timestep
                 else {
 if (OPTIONS->DebugLevel() > 0) std::cout << "Processing ordinary timestep\n";
 

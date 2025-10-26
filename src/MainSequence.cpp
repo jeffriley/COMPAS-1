@@ -6,12 +6,12 @@
 
 // Here:
 //
-// Luminosity calculations
-// Mass calculations
-// Miscellaneous calculations
+// Luminosity functions
+// Mass functions
+// Miscellaneous functions
 //    -
 //    -
-// Radius Calculations
+// Radius functions
 
 
 
@@ -22,8 +22,7 @@
 
 ///////////////////////////////////////////////////////////////////////////////////////
 //                                                                                   //
-//                              LUMINOSITY CALCULATIONS                              //
-//                                  (alphabetical)                                   //
+//                                LUMINOSITY FUNCTIONS                               //
 //                                                                                   //
 ///////////////////////////////////////////////////////////////////////////////////////
 
@@ -136,63 +135,6 @@ double MainSequence::CalculateHurleyDeltaL(const double p_Mass, const DBL_VECTOR
 
 
 /*
- * CalculateLuminosity
- *
- * @brief
- * Calculate the luminosity on the main sequence.
- * Uses the method appropriate for the evolution method and as specified by program options.
- * 
- * 
- * double CalculateLuminosity(const double      p_Metallicity,
- *                            const double      p_Mass,
- *                            const double      p_Time,
- *                            const double      p_LZAMS,
- *                            const DBL_VECTOR& p_Timescales,
- *                            const DBL_VECTOR& p_aN,
- *                            const DBL_VECTOR& p_LConsts) const
- *
- * @param       p_Metallicity                   (Fractional) metallicity of the star
- * @param       p_Mass                          Mass of the star (Msol)
- * @param       p_Time                          Time elapsed since ZAMS (Myr)
- * @param       p_LZAMS                         ZAMS luminosity of the star (Lsol)
- * @param       p_Timescales                    Hurley timescales
- * @param       p_aN                            Hurley a(n) coefficients
- * @param       p_LConsts                       Hurley luminosity constants
- * @return                                      MS luminosity (Lsol))
- */
-double MainSequence::CalculateLuminosity(const double      p_Metallicity,
-                                         const double      p_Mass,
-                                         const double      p_Time,
-                                         const double      p_LZAMS,
-                                         const DBL_VECTOR& p_Timescales,                                         
-                                         const DBL_VECTOR& p_aN,
-                                         const DBL_VECTOR& p_LConsts) const {
-
-    double luminosity;
-
-    Switch (OPTIONS->Mode()) {                                                                                  // which evolution mode?
-
-        EVOLUTION_MODE::SSE_HURLEY:                                                                             // HURLEY SSE
-        EVOLUTION_MODE::BSE_HURLEY:                                                                             // HURLEY BSE
-            luminosity = CalculateLuminosityOnPhase_Hurley(p_Metallicity, p_Mass, p_Time, p_LZAMS, p_Timescales, p_aN, p_LConsts);
-            break;
-
-        default:                                                                                                // unknown mode
-            // the only way this can happen is if someone added an EVOLUTION_MODE
-            // and it isn't accounted for in this code.  We should not default here, with or without a warning.
-            // We are here because the user chose a mode this code doesn't account for, and that should
-            // be flagged as an error and result in termination of the evolution of the star or binary.
-            // The correct fix for this is to add code for the missing mode or, if the missing mode is
-            // superfluous, remove it from the option.
-
-            THROW_ERROR(ERROR::UNKNOWN_EVOLUTION_MODE);                                                         // throw error
-    }
-
-    return luminosity;
-}
-
-
-/*
  * CalculateLuminosityAtPhaseEnd_Hurley
  *
  * @brief
@@ -239,15 +181,15 @@ double MainSequence::CalculateLuminosityAtPhaseEnd_Hurley(const double p_Mass, c
  *                                  const DBL_VECTOR& p_LConsts,
  *                                  const DBL_VECTOR& p_ShikauchiLCoeffs) const
  *
- * @param       p_Metallicity                   (Fractional) metallicity of the star (Msol)
+ * @param       p_Metallicity                   Metallicity of the star (Msol)
  * @param       p_Mass                          Mass of the star (Msol)
- * @param       p_Tau                           MS fractional age of the star
+ * @param       p_Tau                           Fractional MS age of the star
  * @param       p_Time                          Time elapsed since ZAMS (Myr)
  * @param       p_MZAMS                         ZAMS mass of the star (Msol)
  * @param       p_LZAMS                         ZAMS luminosity of the star (Lsol)
  * @param       p_CoreMass                      MS core mass of the star (Msol)
  * @param       p_HeAbundanceCore               Helium abundance in the core of the star 
- * @param       p_Timescales                    Hurley timescales
+ * @param       p_Timescales                    Phase timescales
  * @param       p_aN                            Hurley a(n) coefficients
  * @param       p_LConsts                       Hurley luminosity constants
  * @param       p_ShikauchiLCoeffs              Shikauchi luminosity coefficients
@@ -329,7 +271,7 @@ double MainSequence::CalculateLuminosityOnPhase() const {
     const double time           = m_StateHistory.CurrentState().Time();                                                         // time elapsed since ZAMS
     const double mZAMS          = m_StateHistory.ZAMSState().Mass();                                                            // ZAMS mass of the star
     const double lZAMS          = m_StateHistory.ZAMSState().Luminosity();                                                      // ZAMS luminosity of the star
-    const DBL_VECTOR timescales = GLOBALS->Timescales();                                                                        // Hurley timescales
+    const DBL_VECTOR timescales = GLOBALS->Timescales();                                                                        // Phase timescales
 
     double luminosity;
     if (OPTIONS->MainSequenceCoreMassPrescription() == MS_CORE_MASS_PRESCRIPTION::BRCEK && mZAMS >= BRCEK_LOWER_MASS_LIMIT) {   // in Brcek regime?
@@ -366,7 +308,7 @@ double MainSequence::CalculateLuminosityOnPhase() const {
  *                                          const DBL_VECTOR& p_aN,
  *                                          const DBL_VECTOR& p_LConsts) const
  *
- * @param       p_Metallicity                   (Fractional) metallicity of the star
+ * @param       p_Metallicity                   Metallicity of the star
  * @param       p_Mass                          Mass of the star (Msol)
  * @param       p_Time                          Time elapsed since ZAMS (Myr)
  * @param       p_LZAMS                         ZAMS luminosity of the star (Lsol)
@@ -412,22 +354,22 @@ double MainSequence::CalculateLuminosityOnPhase_Hurley(const double      p_Metal
  * and for stars with MZAMS >= SHIKAUCHI_LOWER_MASS_LIMIT (Msol) (see constants.h).
  *
  * 
- * double CalculateLuminosity_Shikauchi(const double p_CoreMass, const double p_HeliumAbundanceCore, const DBL_VECTOR& p_ShikauchiLCoefficents) const
+ * double CalculateLuminosity_Shikauchi(const double p_CoreMass, const double p_HeAbundanceCore, const DBL_VECTOR& p_ShikauchiLCoeffs) const
  *
  * @param       p_CoreMass                      MS core mass of the star (Msol)
  * @param       p_HeAbundanceCore               Helium abundance in the core of the star
- * @param       p_ShikauchiLCoefficents         Shikauchi Luminosity Coefficents
+ * @param       p_ShikauchiLCoeffs              Shikauchi Luminosity Coefficents
  * @return                                      MS luminosity (Lsol)
  */
-double MainSequence::CalculateLuminosity_Shikauchi(const double p_CoreMass, const double p_HeAbundanceCore, const DBL_VECTOR& p_ShikauchiLCoefficents) const {
+double MainSequence::CalculateLuminosity_Shikauchi(const double p_CoreMass, const double p_HeAbundanceCore, const DBL_VECTOR& p_ShikauchiLCoeffs) const {
 
     // common factors
-    const double logMixingCoreMass      = std::log10(p_CoreMass);
+    const double logMixingCoreMass      = log10(p_CoreMass);
     const double logMixingCoreMass2     = logMixingCoreMass * logMixingCoreMass;
     const double logMixingCoreMass3     = logMixingCoreMass * logMixingCoreMass2;
     const double logMixingCoreMass4     = logMixingCoreMass * logMixingCoreMass3;
     
-    const double heliumAbundanceCore    = p_HeliumAbundanceCore;
+    const double heliumAbundanceCore    = p_HeAbundanceCore;
     const double heliumAbundanceCore2   = heliumAbundanceCore * heliumAbundanceCore;
     const double heliumAbundanceCore3   = heliumAbundanceCore * heliumAbundanceCore2;
     const double heliumAbundanceCore4   = heliumAbundanceCore * heliumAbundanceCore3;
@@ -442,42 +384,50 @@ double MainSequence::CalculateLuminosity_Shikauchi(const double p_CoreMass, cons
     const double logMixingCoreMass2_He2 = logMixingCoreMass2 * heliumAbundanceCore2;
 
     // log luminosity 
-    const double logL = p_ShikauchiLCoefficents[0]  * logMixingCoreMass      + 
-                        p_ShikauchiLCoefficents[1]  * heliumAbundanceCore    + 
-                        p_ShikauchiLCoefficents[2]  * logMixingCoreMass_He   + 
-                        p_ShikauchiLCoefficents[3]  * logMixingCoreMass2     + 
-                        p_ShikauchiLCoefficents[4]  * heliumAbundanceCore2   + 
-                        p_ShikauchiLCoefficents[5]  * logMixingCoreMass3     + 
-                        p_ShikauchiLCoefficents[6]  * heliumAbundanceCore3   + 
-                        p_ShikauchiLCoefficents[7]  * He_LogMixingCoreMass2  + 
-                        p_ShikauchiLCoefficents[8]  * logMixingCoreMass_He2  + 
-                        p_ShikauchiLCoefficents[9]  * logMixingCoreMass4     + 
-                        p_ShikauchiLCoefficents[10] * heliumAbundanceCore4   + 
-                        p_ShikauchiLCoefficents[11] * logMixingCoreMass_He3  + 
-                        p_ShikauchiLCoefficents[12] * logMixingCoreMass2_He2 + 
-                        p_ShikauchiLCoefficents[13] * He_LogMixingCoreMass3  + 
-                        p_ShikauchiLCoefficents[14];
+    const double logL = p_ShikauchiLCoeffs[0]  * logMixingCoreMass      + 
+                        p_ShikauchiLCoeffs[1]  * heliumAbundanceCore    + 
+                        p_ShikauchiLCoeffs[2]  * logMixingCoreMass_He   + 
+                        p_ShikauchiLCoeffs[3]  * logMixingCoreMass2     + 
+                        p_ShikauchiLCoeffs[4]  * heliumAbundanceCore2   + 
+                        p_ShikauchiLCoeffs[5]  * logMixingCoreMass3     + 
+                        p_ShikauchiLCoeffs[6]  * heliumAbundanceCore3   + 
+                        p_ShikauchiLCoeffs[7]  * He_LogMixingCoreMass2  + 
+                        p_ShikauchiLCoeffs[8]  * logMixingCoreMass_He2  + 
+                        p_ShikauchiLCoeffs[9]  * logMixingCoreMass4     + 
+                        p_ShikauchiLCoeffs[10] * heliumAbundanceCore4   + 
+                        p_ShikauchiLCoeffs[11] * logMixingCoreMass_He3  + 
+                        p_ShikauchiLCoeffs[12] * logMixingCoreMass2_He2 + 
+                        p_ShikauchiLCoeffs[13] * He_LogMixingCoreMass3  + 
+                        p_ShikauchiLCoeffs[14];
     
     return PPOW(10.0, logL);
 }
 
 
 /*
- * CalculateZAMSLuminosity_Tout_Static
+ * CalculateLuminosityAtZAMS_Tout1996
  *
  * @brief
- * Calculate the ZAMS luminosity of a star (in RSol), given the ZAMS mass of the star,
- * per Tout et al. 1996, eq 1
+ * Calculate the luminosity of a star at ZAMS, per Tout et al. 1996, eq 1
  *
  *
- * double CalculateZAMSLuminosity_Tout_Static(const double p_MZAMS, const DBL_VECTOR& p_LCoeffs) const
+ * !*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!
+ * !*!*!*!*! ZAMS attribute warning *!*!*!*!*!
+ * !*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!
+ * 
+ * This function relies on the values of the ZAMS mass and ZAMS radius of the star,
+ * and should not be used if the ZAMS mass or the ZAMS radius is not known.
+ * 
+ * 
+ * double CalculateLuminosityAtZAMS_Tout1996(const double p_MZAMS, const DBL_VECTOR& p_LCoeffs) const
  * 
  * @param       p_MZAMS                         ZAMS mass of the star (Msol)
  * @param       p_LCoeffs                       Tout luminosity coefficients
  * @return                                      ZAMS luminosity (Lsol)
  */
-double MainSequence::CalculateZAMSLuminosity_Tout_Static(const double p_MZAMS, const DBL_VECTOR& p_LCoeffs) const {
-#define lCoeffs(x) p_LCoeffs[static_cast<int>(TOUT_L_Coeff::x)] // for convenience and readability - undefined at end of function
+double MainSequence::CalculateLuminosityAtZAMS_Tout1996(const double p_MZAMS, const DBL_VECTOR& p_LCoeffs) const {
+// macro for convenience and readability - undefined at end of function
+#define lCoeffs(x) p_LCoeffs[static_cast<int>(TOUT_L_Coeff::x)]
         
     // calculate some powers of p_MZAMS - for performance and readability
     // this function is only called once per star, and at most twice per binary (but probably once), so not too onerous
@@ -494,13 +444,61 @@ double MainSequence::CalculateZAMSLuminosity_Tout_Static(const double p_MZAMS, c
     return top / (lCoeffs(GAMMA) + M3) + (lCoeffs(DELTA) * M5) + (lCoeffs(EPSILON) * M7) + (lCoeffs(ZETA) * M8) + (lCoeffs(ETA) * ( M8 * p_MZAMS * M0_5));
             
 #undef lCoeffs
+} 
+
+
+/*
+ * CalculateLuminosityAtZAMS
+ *
+ * @brief
+ * Calculate the luminosity of a star at ZAMS.
+ * 
+ * Calls relevant luminosity function based on the evolutionary mode given in program options.
+ *
+ *
+ * !*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!
+ * !*!*!*!*! ZAMS attribute warning *!*!*!*!*!
+ * !*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!
+ * 
+ * This function relies on the values of the ZAMS mass and ZAMS radius of the star,
+ * and should not be used if the ZAMS mass or the ZAMS radius is not known.
+ * 
+ * 
+ * double CalculateLuminosityAtZAMS(const double p_MZAMS, const DBL_VECTOR& p_LCoeffs) const
+ *
+ * @param       p_MZAMS                         ZAMS mass of the star (Msol)
+ * @param       p_LCoeffs                       Tout luminosity coefficients
+ * @return                                      ZAMS luminosity (Lsol)
+ */
+ double MainSequence::CalculateLuminosityAtZAMS(const double p_MZAMS, const DBL_VECTOR& p_LCoeffs) const {
+
+    double luminosity;
+
+    Switch (OPTIONS->Mode()) {                                              // which evolution mode?
+
+        EVOLUTION_MODE::SSE_HURLEY:                                         // HURLEY SSE
+        EVOLUTION_MODE::BSE_HURLEY:                                         // HURLEY BSE
+            luminosity = CalculateLuminosityAtZAMS_Tout1996(p_MZAMS, p_LCoeffs);
+            break;
+        
+        default:                                                            // unknown mode
+            // the only way this can happen is if someone added an EVOLUTION_MODE and it isn't
+            // accounted for in this code.  We should not default here, with or without a warning.
+            // We are here because the user chose a mode this code doesn't account for, and that should
+            // be flagged as an error and result in termination of the evolution of the star or binary.
+            // The correct fix for this is to add code for the missing mode or, if the missing mode is
+            // superfluous, remove it from the option.
+
+            THROW_ERROR(ERROR::UNKNOWN_EVOLUTION_MODE);                     // throw error
+    }       
+
+    return luminosity;
 }
 
 
 ///////////////////////////////////////////////////////////////////////////////////////
 //                                                                                   //
-//                                RADIUS CALCULATIONS                                //
-//                                  (alphabetical)                                   //
+//                                 RADIUS FUNCTIONS                                  //
 //                                                                                   //
 ///////////////////////////////////////////////////////////////////////////////////////
 
@@ -622,26 +620,6 @@ double MainSequence::CalculateHurleyDeltaR(const double p_Mass, const double p_H
 
 
 /*
- * CalculateHurleyEta
- *
- * @brief
- * Calculate the Hurley radius exponent eta, per Hurley et al. 2000, eq 18
- * 
- * Eta is used in Hurley et al. 2000, eq 12 (see CalculateLuminosityOnPhase_Hurley())
- *
- *
- * double CalculateHurleyEta(const double p_Metallicity, const double p_Mass) const
- *
- * @param       p_Metallicity                   (Fractional) metallicity of the star
- * @param       p_Mass                          Mass of the star (Msol)
- * @return                                      Radius exponent, eta
- */
-double MainSequence::CalculateHurleyEta(const double p_Metallicity, const double p_Mass) const {
-    return p_Metallicity > 0.0009 ? 10.0 : (p_Mass > 1.0 ? (p_Mass >= 1.1 ? 20.0 : (100.0 * p_Mass) - 90.0) : 10.0);
-}
-
-
-/*
  * CalculateHurleyGamma
  *
  * @brief
@@ -658,7 +636,6 @@ double MainSequence::CalculateHurleyEta(const double p_Metallicity, const double
  * @return                                      Radius coefficient, gamma
  */
 double MainSequence::CalculateHurleyGamma(const double p_Mass, const DBL_VECTOR& p_aN, const DBL_VECTOR& p_GammaConsts) const {
-
 
     double gamma;
 
@@ -685,89 +662,6 @@ double MainSequence::CalculateHurleyGamma(const double p_Mass, const DBL_VECTOR&
     // see discussion following eq 23
     // confirmed in BSE Fortran code
     return std::max(0.0, gamma);
-}
-
-
-/*
- * CalculateRadius
- *
- * @brief
- * Calculate the radius on the main sequence.
- * Uses the method appropriate for the evolution method and as specified by program options.
- * 
- * 
- * double CalculateRadius(const double p_Mass, const double p_Tau, const double p_RZAMS, const DBL_VECTOR& p_aN) const
- *
- * @param       p_Mass                          Mass of the star (Msol)
- * @param       p_Tau                           Main Sequence fractional age of the star
- * @param       p_RZAMS                         ZAMS radius of the star (Rsol)
- * @param       p_aN                            Hurley a(n) coefficients
- * @return                                      MS radius (Rsol)
- */
-double MainSequence::CalculateRadius(const double p_Mass, const double p_Tau, const double p_RZAMS, const DBL_VECTOR& p_aN) const {
-
-    double radius;
-
-    Switch (OPTIONS->Mode()) {                                                                                  // which evolution mode?
-
-        EVOLUTION_MODE::SSE_HURLEY:                                                                             // HURLEY SSE
-        EVOLUTION_MODE::BSE_HURLEY:                                                                             // HURLEY BSE
-            radius = CalculateRadiusOnPhase_Hurley(p_Mass, p_Tau, p_RZAMS, p_aN);
-            break;
-
-        default:                                                                                                // unknown mode
-            // the only way this can happen is if someone added an EVOLUTION_MODE
-            // and it isn't accounted for in this code.  We should not default here, with or without a warning.
-            // We are here because the user chose a mode this code doesn't account for, and that should
-            // be flagged as an error and result in termination of the evolution of the star or binary.
-            // The correct fix for this is to add code for the missing mode or, if the missing mode is
-            // superfluous, remove it from the option.
-
-            THROW_ERROR(ERROR::UNKNOWN_EVOLUTION_MODE);                                                         // throw error
-    }
-
-    return radius;
-}
-
-
-/*
- * CalculateRadiusAtPhaseEnd
- *
- * @brief
- * Calculate radius at the end of the Main Sequence (TAMS).
- * Uses the method appropriate for the evolution method and as specified by program options.
- * 
- * 
- * double CalculateRadiusAtPhaseEnd(const double p_Mass, const double p_RZAMS, const DBL_VECTOR& p_aN) const
- *
- * @param       p_Mass                          Mass of the star (Msol)
- * @param       p_RZAMS                         ZAMS radius of the star (Rsol)
- * @param       p_aN                            Hurley a(n) coefficients
- * @return                                      TAMS radius (Rsol)
- */
-double MainSequence::CalculateRadiusAtPhaseEnd(const double p_Mass, const double p_RZAMS, const DBL_VECTOR& p_aN) const {
-
-    double radius;
-
-    Switch (OPTIONS->Mode()) {                                                                                  // which evolution mode?
-
-        EVOLUTION_MODE::SSE_HURLEY:                                                                             // HURLEY SSE
-        EVOLUTION_MODE::BSE_HURLEY:                                                                             // HURLEY BSE
-            radius = CalculateRadiusAtPhaseEnd_Hurley(p_Mass, p_RZAMS, p_aN);
-            break;
-
-        default:                                                                                                // unknown mode
-            // the only way this can happen is if someone added an EVOLUTION_MODE
-            // and it isn't accounted for in this code.  We should not default here, with or without a warning.
-            // We are here because the user chose a mode this code doesn't account for, and that should
-            // be flagged as an error and result in termination of the evolution of the star or binary.
-            // The correct fix for this is to add code for the missing mode or, if the missing mode is
-            // superfluous, remove it from the option.
-
-            THROW_ERROR(ERROR::UNKNOWN_EVOLUTION_MODE);                                                         // throw error
-    }
-
-    return radius;
 }
 
 
@@ -826,44 +720,44 @@ double MainSequence::CalculateRadiusAtPhaseEnd_Hurley_Static(const double p_Mass
  * 
  *
  * double CalculateRadius_Brcek(const double      p_Metallicity,
- *                                  const double      p_Mass, 
- *                                  const double      p_Tau,
- *                                  const double      p_Time,
- *                                  const double      p_MZAMS,
- *                                  const double      p_LZAMS,
- *                                  const double      p_CoreMass,
- *                                  const double      p_HeAbundanceCore,
- *                                  const DBL_VECTOR& p_Timescales,
- *                                  const DBL_VECTOR& p_aN,
- *                                  const DBL_VECTOR& p_LConsts,
- *                                  const DBL_VECTOR& p_ShikauchiLCoeffs) const
+ *                              const double      p_Mass, 
+ *                              const double      p_Tau,
+ *                              const double      p_Time,
+ *                              const double      p_MZAMS,
+ *                              const double      p_LZAMS,
+ *                              const double      p_CoreMass,
+ *                              const double      p_HeAbundanceCore,
+ *                              const DBL_VECTOR& p_Timescales,
+ *                              const DBL_VECTOR& p_aN,
+ *                              const DBL_VECTOR& p_LConsts,
+ *                              const DBL_VECTOR& p_ShikauchiLCoeffs) const
  *
- * @param       p_Metallicity                   (Fractional) metallicity of the star (Msol)
+ * @param       p_Metallicity                   Metallicity of the star (Msol)
  * @param       p_Mass                          Mass of the star (Msol)
- * @param       p_Tau                           MS fractional age of the star
+ * @param       p_Tau                           Fractional MS age of the star
  * @param       p_Time                          Time elapsed since ZAMS (Myr)
  * @param       p_MZAMS                         ZAMS mass of the star (Msol)
  * @param       p_LZAMS                         ZAMS luminosity of the star (Lsol)
  * @param       p_CoreMass                      MS core mass of the star (Msol)
  * @param       p_HeAbundanceCore               Helium abundance in the core of the star 
- * @param       p_Timescales                    Hurley timescales
+ * @param       p_Timescales                    Phase timescales
  * @param       p_aN                            Hurley a(n) coefficients
  * @param       p_LConsts                       Hurley luminosity constants
  * @param       p_ShikauchiLCoeffs              Shikauchi luminosity coefficients
  * @return                                      MS radius (Rsol)
  */
 double MainSequence::CalculateRadius_Brcek(const double      p_Metallicity,
-                                               const double      p_Mass, 
-                                               const double      p_Tau,
-                                               const double      p_Time,
-                                               const double      p_MZAMS,
-                                               const double      p_LZAMS,
-                                               const double      p_CoreMass,
-                                               const double      p_HeAbundanceCore,
-                                               const DBL_VECTOR& p_Timescales,
-                                               const DBL_VECTOR& p_aN,
-                                               const DBL_VECTOR& p_LConsts,
-                                               const DBL_VECTOR& p_ShikauchiLCoeffs) const {
+                                           const double      p_Mass, 
+                                           const double      p_Tau,
+                                           const double      p_Time,
+                                           const double      p_MZAMS,
+                                           const double      p_LZAMS,
+                                           const double      p_CoreMass,
+                                           const double      p_HeAbundanceCore,
+                                           const DBL_VECTOR& p_Timescales,
+                                           const DBL_VECTOR& p_aN,
+                                           const DBL_VECTOR& p_LConsts,
+                                           const DBL_VECTOR& p_ShikauchiLCoeffs) const {
 
 
 
@@ -923,24 +817,31 @@ double MainSequence::CalculateRadiusTransitionToHG(const double p_Mass, const do
 
 
 /*
- * CalculateRadiusOnPhase_Hurley
+ * CalculateRadiusOnPhase_Hurley2000
  *
  * @brief
  * Calculate radius on the Main Sequence per Hurley et al. 2000, eq 13
  *
  *
- * double CalculateRadiusOnPhase_Hurley(const double p_Mass, const double p_Tau, const double p_RZAMS, const DBL_VECTOR& p_aN) const
+ * double CalculateRadiusOnPhase_Hurley2000(const double p_Mass, const double p_Tau, const double p_RZAMS, const DBL_VECTOR& p_aN) const
  *
  * @param       p_Mass                          Mass of the star (Msol)
- * @param       p_Tau                           Main Sequence fractional age of the star
+ * @param       p_Tau                           Fractional MS age of the star
  * @param       p_RZAMS                         ZAMS radius of the star (Rsol)
  * @param       p_aN                            Hurley a(n) coefficients
  * @return                                      MS radius (Rsol)
  */
-double MainSequence::CalculateRadiusOnPhase_Hurley(const double p_Mass, const double p_Tau, const double p_RZAMS, const DBL_VECTOR& p_aN) const {
+double MainSequence::CalculateRadiusOnPhase_Hurley2000(const double p_Mass, const double p_Tau, const double p_RZAMS, const DBL_VECTOR& p_aN
+const double      p_Mass,
+                                                       const double      p_CoreMass,
+                                                       const double      p_tBGB,
+                                                       const double      p_MHeF,
+                                                       const DBL_VECTOR& p_aN,
+                                                       const double      p_Alpha4
+) const {
     
-    const double tBGB   = CalculateLifetimeToBGB(p_Mass);
-    const double tMS    = CalculateLifetimeOnPhase(p_Mass, tBGB);
+    const double tBGB   = CalculateLifetimeToBGB_Hurley2000(p_Mass, p_aN);
+    const double tMS    = CalculatePhaseLifetime_Hurley2000(p_Mass, p_CoreMass, p_tBGB, p_MHeF, p_bN, p_Alpha4);  // <<<<<<<<<<<<<<<<<<<<<<<< CHECK PARMS ALL STELLAR TYPES
 
     const double RTMS   = CalculateRadiusAtPhaseEnd(p_Mass, p_RZAMS);
     const double alphaR = CalculateAlphaR(p_Mass);
@@ -949,64 +850,26 @@ double MainSequence::CalculateRadiusOnPhase_Hurley(const double p_Mass, const do
     const double gamma  = CalculateHurleyGamma(p_Mass);
 
     const double mu     = std::max(0.5, (1.0 - (0.01 * std::max((a[6] / PPOW(p_Mass, p_aN[7])), (p_aN[8] + (p_aN[9] / PPOW(p_Mass, p_aN[10]))))))); // Hurley et al. 2000, eq 7
-    const double tHook  = mu * tBGB;                                                                                                    // ibid., just after eq 5
+    const double tHook  = mu * tBGB;                                                                        // ibid., just after eq 5
     const double time   = tMS * p_Tau;
-    const double tau_1  = std::min(1.0, (time / tHook));                                                                                // ibid., eq 14
-    const double tau_2  = std::max(0.0, std::min(1.0, (time - ((1.0 - 0.01) * tHook)) / (0.01 * tHook)));                               // ibid., eq 15, epsilon= 0.01
+    const double tau1   = std::min(1.0, (time / tHook));                                                    // ibid., eq 14
+    const double tau2   = std::max(0.0, std::min(1.0, (time - ((1.0 - 0.01) * tHook)) / (0.01 * tHook)));   // ibid., eq 15, epsilon= 0.01
 
     // pow() is slow - use multiplication where it makes sense
-    const double tau3   = p_Tau * p_Tau * p_Tau;
-    const double tau_13 = tau_1 * tau_1 * tau_1;
-    const double tau_23 = tau_2 * tau_2 * tau_2;
-    const double tau10  = p_Tau < FLOAT_TOLERANCE_ABSOLUTE ? 0.0: tau3 * tau3 * tau3 * p_Tau;                                           // tolerance comparison to avoid underflow
-    const double tau40  = tau_10 < FLOAT_TOLERANCE_ABSOLUTE ? 0.0: tau10 * tau10 * tau10 * tau10;                                       // tolerance comparison to avoid underflow
+    const double tau_3  = p_Tau * p_Tau * p_Tau;
+    const double tau_10 = p_Tau < FLOAT_TOLERANCE_ABSOLUTE ? 0.0: p_Tau * tau_3 * tau_3 * tau_3;            // tolerance comparison to avoid underflow
+    const double tau_40 = tau_10 < FLOAT_TOLERANCE_ABSOLUTE ? 0.0: tau10 * tau10 * tau10 * tau10;           // tolerance comparison to avoid underflow
 
-    const double logRMS_RZAMS = alphaR * p_Tau + betaR * tau10 + gamma * tau40 + (log10(RTMS / p_RZAMS) - alphaR - betaR - gamma) * tau3 - deltaR * (tau_13 - tau_23); // ibid., eq 13
+    const double tau1_3 = tau1 * tau1 * tau1;
+    const double tau2_3 = tau2 * tau2 * tau2;
+
+    const double logRMS_RZAMS = alphaR * p_Tau + betaR * tau_10 + gamma * tau_40 + (log10(RTMS / p_RZAMS) - alphaR - betaR - gamma) * tau_3 - deltaR * (tau1_3 - tau2_3); // ibid., eq 13
 
     return p_RZAMS * PPOW(10.0, logRMS_RZAMS);
 }
 
-
-
-
-
-
-
     
-/*
- * CalculateZAMSRadius_Tout_Static
- *
- * @brief
- * Calculate the ZAMS radius of a star (in RSol), given the ZAMS mass of the star,
- * per Tout et al. 1996, eq 2
- *
- *
- * double CalculateZAMSRadius_Tout_Static(const double p_MZAMS, const DBL_VECTOR& p_RCoeffs)
- *
- * @param       p_MZAMS                         ZAMS mass of the star (Msol)
- * @param       p_RCoeffs                       Tout radius coefficients
- * @return                                      ZAMS radius of the star (Rsol)
- */
-double MainSequence::CalculateZAMSRadius_Tout_Static(const double p_MZAMS, const DBL_VECTOR& p_RCoeffs) const {
-#define rCoeffs(x) p_RCoeffs[static_cast<int>(TOUT_R_Coeff::x)] // for convenience and readability - undefined at end of function
 
-    // calculate some powers of p_MZAMS - for performance and readability
-    // this function is only called once per star, and at most twice per binary (but probably once), so not too onerous
-    // pow() is slow - use multiplication where it makes sense
-    const double M0_5  = std::sqrt(p_MZAMS);
-    const double M2    = p_MZAMS * p_MZAMS;
-    const double M6    = M2 * M2 * M2;
-    const double M8    = M6 * M2;
-    const double M11   = M8 * M2 * p_MZAMS;
-    const double M19   = M11 * M8;
-    const double M19_5 = M19 * M0_5;
-
-    const double top = (rCoeffs(THETA) * (M2 * M0_5)) + (rCoeffs(IOTA) * M6 * M0_5) + (rCoeffs(KAPPA) * M11) + (rCoeffs(LAMBDA) * M19) + (rCoeffs(MU) * M19_5);
-            
-    return top / (rCoeffs(NU) + (rCoeffs(XI) * M2) + (rCoeffs(OMICRON) * (M8 * M0_5)) + (M6 * M6 * M6 * M0_5) + (rCoeffs(PI) * M19_5));
-
-#undef rCoeffs
-}
 
 
 
@@ -1025,7 +888,7 @@ double MainSequence::CalculateZAMSRadius_Tout_Static(const double p_MZAMS, const
  * double CalculateRadiusOnPhase_Brcek(const double p_Mass, const double p_Tau, const double p_RZAMS, const double p_Radius, const DBL_VECTOR& p_bCoefficients) const
  *
  * @param       p_Mass                          Current mass of the star (Msol)
- * @param       p_Tau                           Main sequence fractional age of the star
+ * @param       p_Tau                           Fractional MS age of the star
  * @param       p_RZAMS                         ZAMS radius of the star (Rsol)
  * @param       p_Radius                        Current radius of the star (Rsol)
  * @param       p_bCoefficients                 Hurley b(n) coefficients
@@ -1091,7 +954,7 @@ double MainSequence::CalculateRadiusOnPhase() const {
     const double time           = m_StateHistory.CurrentState().Time();                                                         // time elapsed since ZAMS
     const double mZAMS          = m_StateHistory.ZAMSState().Mass();                                                            // ZAMS mass of the star
     const double lZAMS          = m_StateHistory.ZAMSState().Luminosity();                                                      // ZAMS luminosity of the star
-    const DBL_VECTOR timescales = GLOBALS->Timescales();                                                                        // Hurley timescales
+    const DBL_VECTOR timescales = GLOBALS->Timescales();                                                                        // Phase timescales
 
     double luminosity;
     if (OPTIONS->MainSequenceCoreMassPrescription() == MS_CORE_MASS_PRESCRIPTION::BRCEK && mZAMS >= BRCEK_LOWER_MASS_LIMIT) {   // in Brcek regime?
@@ -1262,7 +1125,89 @@ double MainSequence::CalculateConvectiveCoreRadius() const {
 
 
 
+/*
+ * CalculateRadiusAtZAMS_Tout1996
+ *
+ * @brief
+ * Calculate the radius of a star at ZAMS, per Tout et al. 1996, eq 2
+ *
+ *
+ * double CalculateRadiusAtZAMS_Tout1996(const double p_MZAMS, const DBL_VECTOR& p_RCoeffs)
+ *
+ * @param       p_MZAMS                         ZAMS mass of the star (Msol)
+ * @param       p_RCoeffs                       Tout radius coefficients
+ * @return                                      ZAMS radius of the star (Rsol)
+ */
+double MainSequence::CalculateRadiusAtZAMS_Tout1996(const double p_MZAMS, const DBL_VECTOR& p_RCoeffs) const {
+// macro for convenience and readability - undefined at end of function
+#define rCoeffs(x) p_RCoeffs[static_cast<int>(TOUT_R_Coeff::x)]
 
+    // calculate some powers of p_MZAMS - for performance and readability
+    // this function is only called once per star, and at most twice per binary (but probably once), so not too onerous
+    // pow() is slow - use multiplication where it makes sense
+    const double M0_5  = std::sqrt(p_MZAMS);
+    const double M2    = p_MZAMS * p_MZAMS;
+    const double M6    = M2 * M2 * M2;
+    const double M8    = M6 * M2;
+    const double M11   = p_MZAMS * M8 * M2;
+    const double M19   = M11 * M8;
+    const double M19_5 = M19 * M0_5;
+
+    const double top = (rCoeffs(THETA) * (M2 * M0_5)) + (rCoeffs(IOTA) * M6 * M0_5) + (rCoeffs(KAPPA) * M11) + (rCoeffs(LAMBDA) * M19) + (rCoeffs(MU) * M19_5);
+            
+    return top / (rCoeffs(NU) + (rCoeffs(XI) * M2) + (rCoeffs(OMICRON) * (M8 * M0_5)) + (M6 * M6 * M6 * M0_5) + (rCoeffs(PI) * M19_5));
+
+#undef rCoeffs
+}
+
+
+/*
+ * CalculateRadiusAtZAMS
+ *
+ * @brief
+ * Calculate the luminosity of a star at ZAMS.
+ * 
+ * Calls relevant luminosity function based on the evolutionary mode given in program options.
+ *
+ *
+ * !*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!
+ * !*!*!*!*! ZAMS attribute warning *!*!*!*!*!
+ * !*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!
+ * 
+ * This function relies on the values of the ZAMS mass and ZAMS radius of the star,
+ * and should not be used if the ZAMS mass or the ZAMS radius is not known.
+ * 
+ * 
+ * double CalculateRadiusAtZAMS(const double p_MZAMS, const DBL_VECTOR& p_RCoeffs) const
+ *
+ * @param       p_MZAMS                         ZAMS mass of the star (Msol)
+ * @param       p_RCoeffs                       Tout radius coefficients
+ * @return                                      ZAMS radius (Rsol)
+ */
+ double MainSequence::CalculateRadiusAtZAMS(const double p_MZAMS, const DBL_VECTOR& p_RCoeffs) const {
+
+    double radius;
+
+    Switch (OPTIONS->Mode()) {                                              // which evolution mode?
+
+        EVOLUTION_MODE::SSE_HURLEY:                                         // HURLEY SSE
+        EVOLUTION_MODE::BSE_HURLEY:                                         // HURLEY BSE
+            radius = CalculateRadiusAtZAMS_Tout1996(p_MZAMS, p_RCoeffs);
+            break;
+        
+        default:                                                            // unknown mode
+            // the only way this can happen is if someone added an EVOLUTION_MODE and it isn't
+            // accounted for in this code.  We should not default here, with or without a warning.
+            // We are here because the user chose a mode this code doesn't account for, and that should
+            // be flagged as an error and result in termination of the evolution of the star or binary.
+            // The correct fix for this is to add code for the missing mode or, if the missing mode is
+            // superfluous, remove it from the option.
+
+            THROW_ERROR(ERROR::UNKNOWN_EVOLUTION_MODE);                     // throw error
+    }       
+
+    return radius;
+}
 
 
 
@@ -1281,7 +1226,7 @@ double MainSequence::CalculateConvectiveCoreRadius() const {
 
 ///////////////////////////////////////////////////////////////////////////////////////
 //                                                                                   //
-//                                 MASS CALCULATIONS                                 //
+//                                  MASS FUNCTIONS                                   //
 //                                                                                   //
 ///////////////////////////////////////////////////////////////////////////////////////
 
@@ -1311,7 +1256,7 @@ double MainSequence::CalculateConvectiveCoreMass() const {
  *
  * DBL_DBL CalculateConvectiveEnvelopeMass() const
  *
- * @return                                      Tuple containing current mass of convective envelope and mass at ZAMS in Msol
+ * @return                                      Tuple containing current mass of convective envelope and mass (of convective envelope) at ZAMS in Msol
  */
 DBL_DBL MainSequence::CalculateConvectiveEnvelopeMass() const {
     if (utils::Compare(m_Mass, 1.25) > 0) return std::tuple<double, double> (0.0, 0.0);
@@ -1330,7 +1275,7 @@ DBL_DBL MainSequence::CalculateConvectiveEnvelopeMass() const {
  *
  * @brief
  * Calculate the convective core mass and central helium fraction of a main sequence star that
- * loses mass (e.g. through winds, case A mass transfer, or both), per Shikauchi et al. 2024
+ * loses mass, per Shikauchi et al. 2024
  *
  * ///////////////////////////// do this next bit in a separate function
  * This function also accounts for mass gain by modelling rejuvenation and updates the initial mixing core mass
@@ -1349,89 +1294,100 @@ DBL_DBL MainSequence::CalculateConvectiveEnvelopeMass() const {
  * @param       p_CoreMass          Current MS core mass of star (Msol)
  * @return                          MS convective core mass
  */
-double MainSequence::CalculateCoreMass_Brcek(const double p_Mass, const double p_dt, const double p_dMdt, const double p_CoreMass) const { 
+double MainSequence::CalculateCoreMass_Brcek(const double p_Metallicity,
+    
+                                            const double p_Mass,
+                                             const double p_dt,
+                                             const double p_dMdt,
+                                             const double p_CoreMass,
+                                            const double p_CoreMassCNOprocessed,   /// CNOprocessedCoreMass
 
-    // get Shikauski coefficients from GLOBALS.  These (should) have  been calculated based
-    // on the metallicity of the star.  If the coefficients haven't been calculated, throw
-    // an appropriate error (this is a coding issue).
+                                            const double p_MSCoreMass,
 
-    std::optional<DBL_VECTOR> alphaCoeffs = GLOBALS->ShikauskiAlphaCoefficients();                                          // get Shikauchi alpha coefficients from GLOBALS
-    if (!alphaCoeffs.has_value()) {                                                                                         // Shikauski alpha coefficients exist?
-        THROW_ERROR(ERROR::NO_SHIKAUSKI_ALPHA_COEFFS);                                                                      // no - throw error
+                                            const double p_InitialHeAbundance,      // initial??????  better name <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+                                            const double p_HeAbundanceCore,
+                                            const double p_HeAbundanceOutsideCore,
+                                            const double p_HeAbundanceSurface,
+
+                                            ) const { 
+
+
+// MAYBE PASS THE GLOBALS VALUES IN AS PARAMATERS <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+    DBL_VECTOR aCoeffs = GLOBALS->ShikauskiAlphaCoefficients();                                                         // get Shikauchi alpha coefficients from GLOBALS
+    DBL_VECTOR fCoeffs = GLOBALS->ShikauskifMixCoefficients();                                                          // get Shikauchi fMix coefficients from GLOBALS
+    DBL_VECTOR dCoeffs = SHIKAUCHI_DELTA_COEFFICIENTS;                                                                  // get Shikauchi delta coefficients from constants.h
+
+
+    auto fmix = [&](double mass) { return fCoeffs[0] + fCoeffs[1] * std::exp(-mass / fCoeffs[2]); }                     // Shikauchi et al. 2024, eq A3
+
+
+    const double updatedMass = p_Mass + (p_dMdt * p_Dt * MYR_TO_YEAR);                                                  // mass adjusted for loss/gain
+
+    double delta;                                                                                                       // mixing core inertia
+    if (p_dMdt <= 0.0) {                                                                                                // mass loss?
+                                                                                                                        // yes
+        const double g  = dCoeffs[1] * p_MSCoreMass + dCoeffs[2];                                                       // ibid., eq (A7)
+        const double Yc = -dCoeffs[0] * (p_HeAbundanceCore - p_InitialHeAbundance) / (1.0 - p_InitialHeAbundance - p_Metallicity);
+        delta = std::min(PPOW(10.0, Yc + g), 1.0);                                                                      // ibid., eq (A6)
+    }
+    else {                                                                                                              // no - mass gain
+        delta = PPOW(2.0, -(p_HeAbundanceCore - p_InitialHeAbundance) / (1.0 - p_InitialHeAbundance - p_Metallicity));  // updated prescription for mass gain
     }
 
-    std::optional<DBL_VECTOR> fMixCoeffs = GLOBALS->ShikauskifMixCoefficients();                                            // get Shikauchi fMix coefficients from GLOBALS
-    if (!fMixCoeffs.has_value()) {                                                                                          // Shikauski fMix coefficients exist?
-        THROW_ERROR(ERROR::NO_SHIKAUSKI_FMIX_COEFFS);                                                                       // no - throw error
-    }
-
-    deltaCoeffs = SHIKAUCHI_DELTA_COEFFICIENTS;                                                                             // from constants.h
-
-    auto fmix = [&](double mass) { return fMixCoeffs[0] + fMixCoeffs[1] * std::exp(-mass / fMixCoeffs[2]); };               // Shikauchi et al. 2024, eq A3
-
-
-    double alpha = PPOW(10.0, std::max(-2.0, alphaCoeffs[1] * m_MainSequenceCoreMass + alphaCoeffs[2])) + alphaCoeffs[0];   // ibid, eq (A2)
-    double g     = deltaCoeffs[1] * m_MainSequenceCoreMass + deltaCoeffs[2];                                                // ibid, eq (A7)
+    const double deltaCoreMassML      = p_MSCoreMass * delta * (updatedMass * fmix(updatedMass) / (p_Mass * fmix(p_Mass)) - 1.0); // core mass delta due to mass loss/gain
+    const double alpha                = PPOW(10.0, std::max(-2.0, aCoeffs[1] * p_MSCoreMass + aCoeffs[2])) + aCoeffs[0];// ibid., eq (A2)
+    const double deltaYc              = CalculateLuminosityOnPhase() / (Q_CNO * p_MSCoreMass) * p_Dt;                   // ibid., eq (12) (central helium fraction delta)
+    const double deltaCoreMassNatural = -alpha / (1 - alpha * p_HeAbundanceCore) * deltaYc * p_MSCoreMass;              // ibid., eq (4)  (core mass delta due to natural decay)
+    const double deltaCoreMass        = deltaCoreMassNatural + deltaCoreMassML;                                         // total core mass delta
     
-    double delta;
-    if (p_dMdt <= 0.0)
-        delta = std::min(PPOW(10.0, -deltaCoeffs[0] * (m_HeliumAbundanceCore - m_InitialHeliumAbundance) / (1.0 - m_InitialHeliumAbundance - m_Metallicity) + g), 1.0);          // ibid, eq (A6)
-    else
-        delta = PPOW(2.0, -(m_HeliumAbundanceCore - m_InitialHeliumAbundance) / (1.0 - m_InitialHeliumAbundance - m_Metallicity));                              // updated prescription for mass gain
-    
-    double deltaYc              = CalculateLuminosityOnPhase() / (Q_CNO * m_MainSequenceCoreMass) * p_Dt;                                                       // Change in central helium fraction; ibid, eq (12)
-    double deltaMass            = p_dMdt * p_Dt * MYR_TO_YEAR;                                                                                          // Total mass lost/gained
-    double deltaCoreMassML      = m_MainSequenceCoreMass * delta * ((p_Mass + deltaMass) * fmix(p_Mass + deltaMass) / (p_Mass * fmix(p_Mass)) - 1);             // Change in core mass due to mass loss/gain
-    double deltaCoreMassNatural = -alpha / (1 - alpha * m_HeliumAbundanceCore) * deltaYc * m_MainSequenceCoreMass;                                              // Change in core mass due to natural decay; ibid, eq (4)
-    double deltaCoreMass        = deltaCoreMassNatural + deltaCoreMassML;                                                                                       // Total difference in core mass
-    
+    const double mixingCoreMass   = std::min(p_MSCoreMass + deltaCoreMass, BRCEK_CORE_MASS_TO_MASS_RATIO_LIMIT * updatedMass); // mixing core mass, must be <= total mass
+    double centralHeFraction      = std::min(p_HeAbundanceCore + deltaYc, 1.0 - p_Metallicity);                         // central helium fraction, clamped to a maximum of (1-Z)
+    double HeAbundanceOutsideCore = p_HeAbundanceOutsideCore;                                                           // He abundance outside the core
+    double coreMassCNOprocessed   = p_CoreMassCNOprocessed;                                                             // CNO processed core mass
 
+    if (deltaCoreMass > 0.0) {                                                                                          // core mass increased?
+                                                                                                                        // yes - need to account for rejuvenation
+        if (mixingCoreMass < p_CoreMassCNOprocessed) {                                                                  // mixing core mass < CNO processed core mass?
+                                                                                                                        // yes
+            const double f1 = p_HeAbundanceOutsideCore - p_InitialHeAbundance;
+            const double f2 = p_MSCoreMass - p_CoreMassCNOprocessed;
+            const double f3 = p_MSCoreMass + deltaCoreMass;
 
-    double newMixingCoreMass        = std::min(m_MainSequenceCoreMass + deltaCoreMass, BRCEK_CORE_MASS_TO_MASS_RATIO_LIMIT * (p_Mass + deltaMass));             // New mixing core mass, always has to be smaller than the total mass
+            // calculate the change in core helium abundance, assuming a linear profile between the
+            // central helium fraction (Yc) and the initial helium fraction (Y0), and that the the
+            // accreted gas has helium fraction Y0
+            const double deltaY = (p_HeAbundanceOutsideCore - p_HeAbundanceCore) / f3 * deltaCoreMass + 0.5 / f3 * f1 / f2 * deltaCoreMass * deltaCoreMass;
 
-
-
-
-
-
-
-    double newCentralHeliumFraction = std::min(m_HeliumAbundanceCore + deltaYc, 1.0 - m_Metallicity);                                                           // New central helium fraction, capped at 1-Z
-
-    if (deltaCoreMass > 0.0) {                                                                                                                                  // If the core grows, we need to account for rejuvenation
-        if (utils::Compare(newMixingCoreMass, m_InitialMainSequenceCoreMass) < 0) {                                                                             // New core mass less than initial core mass?
-            // Common factors
-            double f1 = m_HeliumAbundanceOutsideCore - m_InitialHeliumAbundance;
-            double f2 = m_MainSequenceCoreMass - m_InitialMainSequenceCoreMass;
-            double f3 = m_MainSequenceCoreMass + deltaCoreMass;
-
-            // Calculate change in helium abundance just outside the core
-            double deltaYout = f1 / f2 * deltaCoreMass;
-
-            // Calculate the change in core helium abundance, assuming linear profile between Yc and Y0, and that the the accreted gas has helium fraction Y0
-            double deltaY             = (m_HeliumAbundanceOutsideCore - m_HeliumAbundanceCore) / f3 * deltaCoreMass + 0.5 / f3 * f1 / f2 * deltaCoreMass * deltaCoreMass;
-            newCentralHeliumFraction  = m_HeliumAbundanceCore + deltaY;
-            m_HeliumAbundanceOutsideCore += deltaYout;
+            centralHeFraction       = p_HeAbundanceCore + deltaY;
+            HeAbundanceOutsideCore += f1 / f2 * deltaCoreMass;
         }
-        else {                                                                                                                                                  // New core mass greater or equal to the initial core mass?
-            double deltaCoreMass1         = m_InitialMainSequenceCoreMass - m_MainSequenceCoreMass;                                                             // Mass accreted up to the initial core mass
-            double deltaCoreMass2         = deltaCoreMass - deltaCoreMass1;                                                                                     // Remaining accreted mass
-            newCentralHeliumFraction      = (m_MainSequenceCoreMass * m_HeliumAbundanceCore + 0.5 * (m_HeliumAbundanceOutsideCore + m_InitialHeliumAbundance) * deltaCoreMass1 + deltaCoreMass2 * m_InitialHeliumAbundance) / (m_MainSequenceCoreMass + deltaCoreMass);
-            m_HeliumAbundanceOutsideCore      = m_InitialHeliumAbundance;
-            m_InitialMainSequenceCoreMass = newMixingCoreMass;
+        else {                                                                                                          // no - mixing core mass >= CNO processed core mass
+            const double deltaCoreMass1 = p_CoreMassCNOprocessed - p_MSCoreMass;                                        // mass accreted up to the CNO processed core mass
+            const double deltaCoreMass2 = deltaCoreMass - deltaCoreMass1;                                               // remaining accreted mass
+
+            centralHeFraction      = (p_MSCoreMass * p_HeAbundanceCore + 0.5 * (p_HeAbundanceOutsideCore + p_InitialHeAbundance) * deltaCoreMass1 + deltaCoreMass2 * p_InitialHeAbundance) / (p_MSCoreMass + deltaCoreMass);
+            HeAbundanceOutsideCore = p_InitialHeAbundance;
+            coreMassCNOprocessed   = mixingCoreMass;
         }
     }
-    else {                                                                                                                                                      // Core decayed
-        // If total mass dropped below the initial core mass, partially processed material is exposed and surface abundance needs to be adjusted
-        if (utils::Compare(p_Mass + deltaMass, m_InitialMainSequenceCoreMass) < 0) {
-            // Set surface helium abundance following the helium abundance profile in the star
-            m_HeliumAbundanceSurface      = m_HeliumAbundanceOutsideCore + (p_Mass + deltaMass - m_MainSequenceCoreMass) * (m_HeliumAbundanceSurface - m_HeliumAbundanceOutsideCore) / (m_InitialMainSequenceCoreMass - m_MainSequenceCoreMass);
-            m_HydrogenAbundanceSurface    = 1.0 - m_Metallicity - m_HeliumAbundanceSurface;
-            m_InitialMainSequenceCoreMass = p_Mass + deltaMass;                                                                                                 // Update the initial core mass
+    else {                                                                                                              // no - core mass decreased (core decayed)
+        // if total mass dropped below the CNO processed core mass, partially processed material
+        // is exposed and surface abundance needs to be adjusted
+        if (updatedMass < p_CoreMassCNOprocessed) {                                                                     // updated total mass < CNO processed core mass?
+                                                                                                                        // yes
+            // calculate surface helium and hydrogen abundances
+            const double HeAbundanceSurface = p_HeAbundanceOutsideCore + (updatedMass - p_MSCoreMass) * (p_HeAbundanceSurface - p_HeAbundanceOutsideCore) / (p_CoreMassCNOprocessed - p_MSCoreMass);
+            const double HAbundanceSurface  = 1.0 - p_Metallicity - HeAbundanceSurface;
+
+            coreMassCNOprocessed = updatedMass;
         }
-        m_HeliumAbundanceOutsideCore = newCentralHeliumFraction;                                                                                                    // If core did not grow, Y_out = Y_c
+
+        HeAbundanceOutsideCore = centralHeFraction;
     }
     
-    return std::tuple<double, double> (newMixingCoreMass, std::min(newCentralHeliumFraction, 1.0 - m_Metallicity));
+    // also return HeAbundanceOutsideCore, coreMassCNOprocessed, HeAbundanceSurface, and HAbundanceSurface <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+    return std::tuple<double, double> (mixingCoreMass, std::min(centralHeFraction, 1.0 - p_Metallicity));
 }
 
 
@@ -1439,16 +1395,16 @@ double MainSequence::CalculateCoreMass_Brcek(const double p_Mass, const double p
  * Calculate the initial convective core mass of a main sequence star after full mixing (due to merger or CHE)
  * for an arbitrary central helium fraction using the approach described in Brcek et al. (2025)
  *
- * double CalculateInitialMainSequenceCoreMass(const double p_Mass, const double p_HeliumAbundanceCore)
+ * double CalculateInitialMainSequenceCoreMass(const double p_Mass, const double p_HeAbundanceCore)
  *
  * @param   [IN]    p_Mass                      Mass after merger or after spin down of CH star in Msol
- * @param   [IN]    p_HeliumAbundanceCore       Central helium fraction
+ * @param   [IN]    p_HeAbundanceCore           Central helium fraction
  * @return                                      Mass of the convective core at ZAMS or after merger in Msol
  */
-double MainSequence::CalculateInitialMainSequenceCoreMass(const double p_Mass, const double p_HeliumAbundanceCore) const {
+double MainSequence::CalculateInitialMainSequenceCoreMass(const double p_Mass, const double p_HeAbundanceCore) const {
     
     // After full mixing not at ZAMS, use the approach from Brcek+ (2025)
-    double h = PPOW(10.0, p_HeliumAbundanceCore * (p_HeliumAbundanceCore + 2.0) / 4.0);
+    double h = PPOW(10.0, p_HeAbundanceCore * (p_HeAbundanceCore + 2.0) / 4.0);
     double fmix = (BRCEK_FMIX_COEFFICIENTS[0] + BRCEK_FMIX_COEFFICIENTS[1] * std::exp(-p_Mass * h / BRCEK_FMIX_COEFFICIENTS[2])) * PPOW(1.0 - BRCEK_FMIX_COEFFICIENTS[4] / (p_Mass * h), BRCEK_FMIX_COEFFICIENTS[3]);
 
     return fmix * p_Mass;
@@ -1456,7 +1412,7 @@ double MainSequence::CalculateInitialMainSequenceCoreMass(const double p_Mass, c
 
 
 /*
- * CalculateCoreMassOnPhase
+ * CalculateCoreMass
  *
  * @brief
  * Calculate the core mass on the main sequence star
@@ -1465,55 +1421,49 @@ double MainSequence::CalculateInitialMainSequenceCoreMass(const double p_Mass, c
  *
  *
  * void UpdateMainSequenceCoreMass(const double p_Dt, const double p_MassLossRate)
+ * void CalculateCoreMass(const double p_Dt, const double p_MassLossRate)
  *
  * @param   [IN]      p_Dt                      Current timestep in Myr
  * @param   [IN]      p_MassLossRate            Mass loss rate either from stellar winds or mass transfer in Msol yr-1
  */
-void MainSequence::UpdateMainSequenceCoreMass(const double p_Dt, const double p_MassLossRate) {
+void MainSequence::CalculateCoreMass(const double p_Metallicity,
+    const double p_Dt, 
+    const double p_mZAMS,
+    const double p_CoreMass,
+    const double p_HAbundanceInit,
+    const double p_HeAbundanceInit,
+    const double p_HeAbundanceCore,
+    const double p_dMdt,
+    const double p_tMS,
+    const double p_MassLossRate) {
 
     double mainSequenceCoreMass = m_MainSequenceCoreMass;                                                                               // default is no change
-    double heliumAbundanceCore  = m_HeliumAbundanceCore;                                                                                // default is no change
+    double HeAbundanceCore  = p_HeAbundanceCore;                                                                                // default is no change
     double age                  = m_Age;                                                                                                // default is no change
 
-    switch (OPTIONS->MainSequenceCoreMassPrescription()) {
-        case MS_CORE_MASS_PRESCRIPTION::ZERO: 
-            mainSequenceCoreMass = 0.0;
-            break;
+    const double oneMinusZ = 1.0 - p_Metallicity;
+    double coreMass = p_CoreMass;  // <<<<<<<<<<<<<<<<<<<<<<<<<< need assignment?
+
+    switch (OPTIONS->MainSequenceCoreMassPrescription()) {              // which MS core mass prescription?
         
-        case MS_CORE_MASS_PRESCRIPTION::MANDEL: 
-            // Calculate the minimum core mass of a main sequence star that loses mass through 
-            // Case A mass transfer as the core mass of a TAMS star, scaled by the fractional age.
-            // Only applied to donors as part of binary evolution, not applied to SSE
-            if ((OPTIONS->RetainCoreMassDuringCaseAMassTransfer()) && (p_MassLossRate < 0.0) && (utils::Compare(p_MassLossRate, -m_Mdot) != 0))
-                mainSequenceCoreMass = std::max(m_MainSequenceCoreMass, CalculateTauOnPhase() * CalculateTAMSCoreMass());
-            break;
-        
-        case MS_CORE_MASS_PRESCRIPTION::BRCEK:
-            // Set core mass following Shikauchi et al. (2024) and account for rejuvenation if core grows
-            if (utils::Compare(m_MZAMS, BRCEK_LOWER_MASS_LIMIT) >= 0) {                                                                 // BRCEK prescription valid?
+        case MS_CORE_MASS_PRESCRIPTION::BRCEK:                          // BRCEK
+            // calculate MS core mass following Shikauchi et al. 2024
+            // account for rejuvenation if core grows
+            if (p_mZAMS >= BRCEK_LOWER_MASS_LIMIT) {                                    // in BRCEK regime?
+                                                                                        // yes
                 // Only proceed with calculations if star is not in MS hook (Yc < 1-Z) and time step is not zero
-                if ((utils::Compare(m_HeliumAbundanceCore, 1.0 - m_Metallicity) < 0) && (utils::Compare(p_Dt, 0.0) != 0)) {
-                    // Update the core mass and central helium fraction only if the mass loss rate argument is equal
-                    // to the total mass loss rate (i.e. total mass loss rate was updated, this prevents the calculation
-                    // in SSE if it was executed as part of BSE for the same time step)
-                    if (utils::Compare(p_MassLossRate, m_TotalMassLossRate) == 0) {
-                        // Calculate and update the core mass and central helium fraction
-                        std::tie(mainSequenceCoreMass, heliumAbundanceCore) = CalculateCoreMass_Brcek(p_Dt, p_MassLossRate);
-                        // Update effective age here only if core hydrogen was exhausted
-                        age = heliumAbundanceCore == 1.0 - m_Metallicity ? 0.99 * timescales(tMS) : age;
-                    }
-                    // Update effective age only when stars are aged in SSE (when p_MassLossRate = -Mdot)
-                    if (utils::Compare(p_MassLossRate, -m_Mdot) == 0)
+                if (p_HeAbundanceCore < oneMinusZ && p_Dt > 0.0) {  /////  the p_Dt check shouldn't be necessary  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<
                         // Update the effective age based on central helium fraction
-                        age = (heliumAbundanceCore - m_InitialHeliumAbundance) / m_InitialHydrogenAbundance * 0.99 * timescales(tMS);
+                        age = (p_HeAbundanceCore - p_HeAbundanceInit) / p_HAbundanceInit * 0.99 * p_tMS;  //// SSE <<<<<<<<<<<<<<<<<<<<<<
                 }
             }
-            else {                                                                                                                      // no - MANDEL prescription used
-                // Only applied to donors as part of binary evolution, not applied to SSE
-                if ((p_MassLossRate < 0.0) && (utils::Compare(p_MassLossRate, -m_Mdot) != 0))
-                    mainSequenceCoreMass = std::max(m_MainSequenceCoreMass, CalculateTauOnPhase() * CalculateTAMSCoreMass());
-            }
+
             break;
+
+            case MS_CORE_MASS_PRESCRIPTION::HURLEY:                                             // HURLEY
+            coreMass = 0.0;                                                                     // no MS core in Hurley et al. 2000
+            break;
+        
 
         default: 
             // the only way this can happen is if someone added a MS_CORE_MASS_PRESCRIPTION
@@ -1532,77 +1482,12 @@ void MainSequence::UpdateMainSequenceCoreMass(const double p_Dt, const double p_
 }
 
 
-///////////////////////////////////////////////////////////////////////////////////////
-//                                                                                   //
-//                            LIFETIME / AGE CALCULATIONS                            //
-//                                                                                   //
-///////////////////////////////////////////////////////////////////////////////////////
 
 
-/*
- * Calculate relative age on the Main Sequence
- *
- * Hurley et al. 2000, eq 11
- * Naturally bounded by [0, 1], but clamp here anyway
- *
- * double CalculateTauOnPhase()
- *
- * @return                                      MS relative age, clamped to [0, 1]
- */
-double MainSequence::CalculateTauOnPhase() const {
-    return std::max(0.0, std::min(1.0, m_Age / timescales(tMS)));
-}
 
 
-/*
- * Calculate lifetime of Main Sequence
- *
- * Hurley et al. 2000, eq 5
- *
- *
- * double CalculatePhaseLifetime(const double p_Mass, const double p_TBGB)
- *
- * @param   [IN]    p_Mass                      Mass in Msol
- * @param   [IN]    p_TBGB                      Lifetime to Base of Giant Branch
- * @return                                      Lifetime of Main Sequence in Myr
- */
-double MainSequence::CalculateLifetimeOnPhase(const double p_Mass, const double p_TBGB) const {
-#define a m_AnCoefficients    // for convenience and readability - undefined at end of function
-
-    // Calculate time to Hook
-    // Hurley et al. 2000, eqs 5, 6 & 7
-    double mu    = std::max(0.5, (1.0 - (0.01 * std::max((an[6] / PPOW(p_Mass, an[7])), (an[8] + (an[9] / PPOW(p_Mass, an[10])))))));
-    double tHook = mu * p_TBGB;
-
-    // For mass < Mhook, x > mu (i.e. for stars without a hook)
-    double x = std::max(0.95, std::min((0.95 - (0.03 * (LogMetallicityXiHurley() + 0.30103))), 0.99));
-
-    return std::max(tHook, (x * p_TBGB));
-
-#undef a
-}
 
 
-/*
- * Recalculates the star's age after mass loss
- *
- * Hurley et al. 2000, section 7.1
- *
- * Modifies attribute m_Age
- *
- *
- * UpdateAgeAfterMassLoss()
- *
- */
-void MainSequence::UpdateAgeAfterMassLoss() {
-
-    double tMS       = m_Timescales[static_cast<int>(TIMESCALE::tMS)];
-    double tBGBprime = CalculateLifetimeToBGB(m_Mass);
-    double tMSprime  = MainSequence::CalculateLifetimeOnPhase(m_Mass, tBGBprime);
-    
-    m_Age *= tMSprime / tMS;
-    CalculateTimescales(m_Mass, m_Timescales);                                      // must update timescales
-}
 
 
 /*
@@ -1629,35 +1514,34 @@ double MainSequence::CalculateZetaEquilibrium() {
 
 ///////////////////////////////////////////////////////////////////////////////////////
 //                                                                                   //
-//                            MISCELLANEOUS CALCULATIONS                             //
-//                                  (alphabetical)                                   //
+//                              MISCELLANEOUS FUNCTIONS                              //
 //                                                                                   //
 ///////////////////////////////////////////////////////////////////////////////////////
 
 
 /*
- * CalculateHeliumAbundanceCoreOnPhase
+ * CalculateHeAbundanceCoreOnPhase
  *
  * @brief
  * Calculate the helium abundance in the core of the star, given tau
  * 
  * Simple linear model from the initial helium abundance to the maximum helium
- * abundance (assuming that all hydrogen is converted to helium). 
+ * abundance (assuming that all hydrogen is converted to helium).
  * 
- * When tau = 0, heliumAbundanceCore = InitialHeliumAbundance
- * When tau = 1, heliumAbundanceCore = heliumAbundanceCoreMax = 1.0 - Metallicity
+ * 
+ 
  * 
  * Should be updated to match detailed models.
  * 
  *
- * double CalculateHeliumAbundanceCoreOnPhase(const double p_Tau)
+ * double CalculateHeAbundanceCoreOnPhase(const double p_Metallicity, const double p_Tau, const double p_InitialHeAbundance)
  * 
  * @param   [IN]    p_Tau                       Fraction of main sequence lifetime
  * @return                                      Helium abundance in the core of the star
  */
-double MainSequence::CalculateHeliumAbundanceCoreOnPhase(const double p_Tau) const {
+double MainSequence::CalculateHeAbundanceCoreOnPhase(const double p_Metallicity, const double p_Tau, const double p_InitialHeAbundance) const {
     
-    // If BRCEK core mass prescription is used, core helium abundance is calculated with the core mass
+    // If BRCEK core mass prescription is used, core helium abundance is calculated with the core mass   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< FIX THIS
     return (OPTIONS->MainSequenceCoreMassPrescription() == MS_CORE_MASS_PRESCRIPTION::BRCEK && m_MZAMS >= BRCEK_LOWER_MASS_LIMIT)
             ? m_HeliumAbundanceCore
             : ((1.0 - m_Metallicity - m_InitialHeliumAbundance) * p_Tau) + m_InitialHeliumAbundance;
@@ -1670,16 +1554,21 @@ double MainSequence::CalculateHeliumAbundanceCoreOnPhase(const double p_Tau) con
  * Currently just a simple linear model. Assumes that hydrogen in the core of 
  * the star is burned to helium at a constant rate throughout the lifetime. 
  * 
+ * 
+ * Calculate the hydrogen abundance in the core of the star, given the phase-relative age
+ * of the star.  Currently just a simple linear model that assumes that hydrogen in the
+ * core of the star is burned to helium at a constant rate throughout the star's lifetime.
+ * 
  * Should be updated to match detailed models.
  *
- * double CalculateHydrogenAbundanceCoreOnPhase(const double p_Tau)
+ * double CalculateHydrogenAbundanceCoreOnPhase(const double p_Tau, const double p_InitialHAbundance)
  * 
  * @param   [IN]    p_Tau                       Fraction of main sequence lifetime
  * @return                                      Hydrogen abundance in the core (X_c)
  */
-double MainSequence::CalculateHydrogenAbundanceCoreOnPhase(const double p_Tau) const {
+double MainSequence::CalculateHAbundanceCoreOnPhase(const double p_Tau, const double p_InitialHAbundance) const {
     
-    // If BRCEK core mass prescription is used, core helium abundance is calculated with the core mass
+    // If BRCEK core mass prescription is used, core helium abundance is calculated with the core mass   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< FIX THIS
     return OPTIONS->MainSequenceCoreMassPrescription() == MS_CORE_MASS_PRESCRIPTION::BRCEK && m_MZAMS >= BRCEK_LOWER_MASS_LIMIT
             ? 1.0 - m_HeliumAbundanceCore - m_Metallicity
             : m_InitialHydrogenAbundance * (1.0 - p_Tau);
@@ -1691,25 +1580,51 @@ double MainSequence::CalculateHydrogenAbundanceCoreOnPhase(const double p_Tau) c
 
 
 /*
- * CalculateTimescales
+ * CalculateTimescales_Hurley2000
  *
  * @brief
- * Calculate timescales.  Timescales depend on a star's mass, so timescales should be
- * calculated whenever the star's mass changes (effectively every timestep).
- *
- * Vectors are passed by reference here for performance - preference would be to pass const& and
- * pass modified value back by functional return, but this way is faster - and this function is
- * called many, many times.
+ * (Re)calculate timescales given the mass of the star, per Hurley at al. 2000.
+ * 
+ * Since timescales depend on a star's mass, they need to be calculated whenever
+ * the mass of the star changes (probably every timestep).
  *
  *
- * void CalculateTimescales(const double p_Mass, DBL_VECTOR& p_Timescales)
+ * DBL_VECTOR CalculateTimescales_Hurley2000(const double      p_Mass,
+ *                                           const double      p_ZetaHurley,
+ *                                           const DBL_VECTOR& p_GBparams,
+ *                                           const DBL_VECTOR& p_MassCutoffs,
+ *                                           const DBL_VECTOR& p_Timescales,
+ *                                           const double      p_Alpha3,
+ *                                           const DBL_VECTOR& p_aN,
+ *                                           const DBL_VECTOR& p_bN) const
  *
- * @param   [IN]        p_Mass                  Mass in Msol
- * @param   [IN/OUT]    p_Timescales            Timescales (Myr)
+ * @param       p_Mass                          Mass of the star (Msol)
+ * @param       p_ZetaHurley                    Hurley zeta value (log10(Z / ZSOL_HURLEY))
+ * @param       p_GBparams                      Hurley GB parameters
+ * @param       p_MassCutoffs                   Hurley mass cutoffs (Msol)
+ * @param       p_tScales                       Hurley timescales (Myr)
+ * @param       p_Alpha3                        Hurley alpha3 constant
+ * @param       p_aN                            Hurley a(n) coefficients
+ * @param       p_bN                            Hurley b(n) coefficients
+ * @return                                      Mutated timescales (Myr)
  */
-void MainSequence::CalculateTimescales(const double p_Mass, DBL_VECTOR& p_Timescales) {
-    timescales(tBGB) = CalculateLifetimeToBGB(p_Mass);
-    timescales(tMS)  = CalculateLifetimeOnPhase(p_Mass, timescales(tBGB));
+DBL_VECTOR MainSequence::CalculateTimescales_Hurley2000(const double      p_Mass,
+                                                        const double      p_ZetaHurley,
+                                                        const DBL_VECTOR& p_GBparams,
+                                                        const DBL_VECTOR& p_MassCutoffs,
+                                                        const DBL_VECTOR& p_tScales,
+                                                        const double      p_Alpha3,
+                                                        const DBL_VECTOR& p_aN,
+                                                        const DBL_VECTOR& p_bN) const {
+
+    DBL_VECTOR tScales = p_tScales; // copy given timescales
+
+    // (re)calculate tBGB and tMS
+    tScales[static_cast<int>(TIMESCALE::tBGB)] = CalculateLifetimeToBGB_Hurley2000(p_Mass, p_aN);
+    tScales[static_cast<int>(TIMESCALE::tMS)]  = CalculatePhaseLifetime_Hurley2000(p_Mass, p_ZetaHurley, tScales[static_cast<int>(TIMESCALE::tBGB)], p_aN);
+
+    // return timescales vector by value - NRVO takes care of performance/efficiency
+    return tScales;
 }
 
 
@@ -1753,7 +1668,7 @@ double MainSequence::ChooseTimestep(const double p_Time) const {
  *
  *     - m_StellarType
  *     - m_Timescales
- *     - m_GBParams
+ *     - m_GBparams
  *     - m_Luminosity
  *     - m_Radius
  *     - m_Mass
@@ -1832,7 +1747,7 @@ void MainSequence::UpdateAfterMerger(double p_Mass, double p_HydrogenMass) {
     double initialHydrogenFraction = m_InitialHydrogenAbundance;
     
     CalculateTimescales();
-    CalculateGBParams();
+    CalculateGBparams();
             
     m_Tau = (initialHydrogenFraction - p_HydrogenMass / m_Mass) / initialHydrogenFraction;      // assumes uniformly mixed merger product and a uniform rate of H fusion on main sequence
     
@@ -1853,8 +1768,136 @@ void MainSequence::UpdateAfterMerger(double p_Mass, double p_HydrogenMass) {
 }
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+////////////////////////////////////////////////// MainSequence_Constituent functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+
+
+
+/*
+ * CalculateCoreMass
+ *
+ * @brief
+ * Calculate the core mass on the main sequence star
+ * /////// that loses mass through winds or Case A mass transfer
+ * When BRCEK core prescription is used, also update the core helium abundance and effective age  ///////
+ *
+ *
+ * void UpdateMainSequenceCoreMass(const double p_Dt, const double p_MassLossRate)
+ * void CalculateCoreMass(const double p_Dt, const double p_MassLossRate)
+ *
+ * @param   [IN]      p_Dt                      Current timestep in Myr
+ * @param   [IN]      p_MassLossRate            Mass loss rate either from stellar winds or mass transfer in Msol yr-1
+ */
+void MainSequence::CalculateCoreMass(const double p_Metallicity,
+    const double p_Dt, 
+    const double p_mZAMS,
+    const double p_CoreMass,
+    const double p_HAbundanceInit,
+    const double p_HeAbundanceInit,
+    const double p_HeAbundanceCore,
+    const double p_dMdt,
+    const double p_tMS,
+    const double p_MassLossRate) {
+
+    double mainSequenceCoreMass = m_MainSequenceCoreMass;                                                                               // default is no change
+    double HeAbundanceCore  = p_HeAbundanceCore;                                                                                // default is no change
+    double age                  = m_Age;                                                                                                // default is no change
+
+    const double oneMinusZ = 1.0 - p_Metallicity;
+    double coreMass = p_CoreMass;  // <<<<<<<<<<<<<<<<<<<<<<<<<< need assignment?
+
+    switch (OPTIONS->MainSequenceCoreMassPrescription()) {              // which MS core mass prescription?
+        
+        case MS_CORE_MASS_PRESCRIPTION::BRCEK:                          // BRCEK
+            // calculate MS core mass following Shikauchi et al. 2024
+            // account for rejuvenation if core grows
+            if (p_mZAMS >= BRCEK_LOWER_MASS_LIMIT) {                                    // in BRCEK regime?
+                                                                                        // yes
+                // Only proceed with calculations if star is not in MS hook (Yc < 1-Z) and time step is not zero
+                if (p_HeAbundanceCore < oneMinusZ && p_Dt > 0.0) {  /////  the p_Dt check shouldn't be necessary  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+                    // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< THIS SHOULDN'T BE NECESSARY - CHECK LATER <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< JR
+                    // Update the core mass and central helium fraction only if the mass loss rate argument is equal
+                    // to the total mass loss rate (i.e. total mass loss rate was updated, this prevents the calculation
+                    // in SSE if it was executed as part of BSE for the same time step)
+
+
+                    if (utils::Compare(p_MassLossRate, m_TotalMassLossRate) == 0) {   ////// BSE <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+                        // Calculate and update the core mass and central helium fraction
+                        std::tie(coreMass, HeAbundanceCore) = CalculateCoreMass_Brcek(p_Dt, p_MassLossRate);
+                        // Update effective age here only if core hydrogen was exhausted
+                        age = HeAbundanceCore == oneMinusZ ? 0.99 * p_tMS : age;
+                    }
+                    // Update effective age only when stars are aged in SSE (when p_MassLossRate = -Mdot)
+                    if (p_MassLossRate == -p_dMdt)
+                        // Update the effective age based on central helium fraction
+                        age = (p_HeAbundanceCore - p_HeAbundanceInit) / p_HAbundanceInit * 0.99 * p_tMS;  //// SSE <<<<<<<<<<<<<<<<<<<<<<
+                }
+            }
+            else {                                                                                                                      // no - MANDEL prescription used
+                // Only applied to donors as part of binary evolution, not applied to SSE
+                if (p_MassLossRate < 0.0 && p_MassLossRate != -p_dMdt)
+                    coreMass = std::max(p_CoreMass, CalculateTauOnPhase() * CalculateTAMSCoreMass());
+            }
+            break;
+
+            case MS_CORE_MASS_PRESCRIPTION::HURLEY:                                             // HURLEY
+            coreMass = 0.0;                                                                     // no MS core in Hurley et al. 2000
+            break;
+        
+        case MS_CORE_MASS_PRESCRIPTION::MANDEL:                                                 // MANDEL
+            // Calculate the minimum core mass of a main sequence star that loses mass through 
+            // Case A mass transfer as the core mass of a TAMS star, scaled by the fractional age.
+            // Only applied to donors as part of binary evolution, not applied to SSE
+            if ((OPTIONS->RetainCoreMassDuringCaseAMassTransfer()) && (p_MassLossRate < 0.0) && (utils::Compare(p_MassLossRate, -m_Mdot) != 0))
+                coreMass = std::max(m_MainSequenceCoreMass, CalculateTauOnPhase() * CalculateTAMSCoreMass());
+            break;
+
+        default: 
+            // the only way this can happen is if someone added a MS_CORE_MASS_PRESCRIPTION
+            // and it isn't accounted for in this code.  We should not default here, with or without a warning.
+            // We are here because the user chose a prescription this code doesn't account for, and that should
+            // be flagged as an error and result in termination of the evolution of the star or binary.
+            // The correct fix for this is to add code for the missing prescription or, if the missing
+            // prescription is superfluous, remove it from the option.
+
+            THROW_ERROR(ERROR::UNKNOWN_MS_CORE_MASS_PRESCRIPTION);                                                                      // throw error
+    }
+
+    m_MainSequenceCoreMass = mainSequenceCoreMass;                                                                                      // update core mass
+    m_HeliumAbundanceCore  = heliumAbundanceCore;                                                                                       // update core helium abundance
+    m_Age                  = age;                                                                                                       // update age
+}
+
+
+
+
+
+
+
 /* 
- * Interpolate Ge+ Critical Mass Ratios, for H-rich stars
+ * CalculateCriticalMassRatio_Ge2020_Interpolate    <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< FIX DESCRIPTION <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+ *
+ * @brief
+ * Interpolate Ge+ critical mass ratio (aka qCrit), for H-rich stars, per Ge et al. 2020
  * 
  * Function takes input QCRIT_PRESCRIPTION, currently either of the prescriptions for critical mass ratios
  * from Ge et al. (2020), GE or GE_IC. The first is the full adiabatic response, the second assumes
@@ -1863,153 +1906,194 @@ void MainSequence::UpdateAfterMerger(double p_Mass, double p_HydrogenMass) {
  *
  * Interpolation is done linearly in logM, logR, and logZ
  * 
- * double BaseStar::InterpolateGeEtAlQCrit(const QCRIT_PRESCRIPTION p_qCritPrescription, const double p_massTransferEfficiencyBeta) 
+ * double CalculateCriticalMassRatio_Ge2020_Interpolate(const double p_Mass, const double p_Radius, const double p_MTefficiency) const
  * 
- * @param   [IN]    p_qCritPrescription          Adopted critical mass ratio prescription
- * @param   [IN]    p_massTransferEfficiencyBeta Mass transfer accretion efficiency
- * @return                                       Interpolated value of either the critical mass ratio or zeta for given stellar mass / radius
+ * @param       p_Mass                          Mass of the star (Msol)
+ * @param       p_Radius                        Radius of the star (Rsol)
+ * @param       p_MTefficiency                  Mass transfer accretion efficiency
+ * @return                                      Critical mass ratio (aka qCrit)
  */ 
-double MainSequence::InterpolateGeEtAlQCrit(const QCRIT_PRESCRIPTION p_qCritPrescription, const double p_massTransferEfficiencyBeta) {
+double MainSequence_Constituent::CalculateCriticalMassRatio_Ge2020_Interpolate(const double p_Mass, const double p_Radius, const double p_MTefficiency) const {
 
-    // Iterate over the two QCRIT_GE tables to get the qcrits at each metallicity
-    double qCritPerMetallicity[2];
-    std::vector<GE_QCRIT_TABLE> qCritTables = { QCRIT_GE_LOW_Z, QCRIT_GE_HIGH_Z };
+    const double logMass   = log10(p_Mass);   
+    const double logRadius = log10(p_Radius);
 
-    for (int ii=0; ii<2; ii++) { // iterate over the vector of tables to store qCrits per metallicity
+    // Iterate over the (currently 2) QCRIT_GE tables to get the qcrits at each metallicity
+    std::vector<GE_QCRIT_TABLE*> qCritTables = { &QCRIT_GE_LOW_Z, &QCRIT_GE_HIGH_Z };
+    double qCritPerZ[qCritTables.size()];
 
-        // Get vector of masses from qCritTable
-        GE_QCRIT_TABLE &qCritTable = qCritTables[ii];
-        DBL_VECTOR massesFromQCritTable = std::get<0>(qCritTable);
-        GE_QCRIT_RADII_QCRIT_VECTOR radiiQCritsFromQCritTable = std::get<1>(qCritTable);
+    for (int tblIdx = 0; tblIdx < qCritTables.size(); tblIdx++) {       // for each qCrit table
 
-        INT_VECTOR indices = utils::BinarySearch(massesFromQCritTable, m_Mass);
-        int lowerMassIndex = indices[0];
-        int upperMassIndex = indices[1];
+        const DBL_VECTOR massVec = std::get<0>(*(qCritTables[tblIdx])); // vector of masses from qCrit table
+
+        INT_VECTOR indices = utils::BinarySearch(massVec, p_Mass);      // find mass bin for p_Mass
+        int lowMIdx = indices[0];                                       // bin lower bound index
+        int uppMIdx = indices[1];                                       // bin upper bound index
     
-        if (lowerMassIndex == -1) {                                                   // if masses are out of range, set to endpoints
-            lowerMassIndex = 0; 
-            upperMassIndex = 1;
+        // if masses are out of range, set to endpoints
+        if (lowMIdx == -1) {                                            // below minimum?
+            lowMIdx = 0;                                                // yes - lower edge of lowest bin 
+            uppMIdx = 1;                                                // upper edge of lowest bin
         } 
-        else if (upperMassIndex == -1) { 
-            lowerMassIndex = massesFromQCritTable.size() - 2; 
-            upperMassIndex = massesFromQCritTable.size() - 1;
+        else if (uppMIdx == -1) {                                       // no - above maximum? 
+            lowMIdx = massVec.size() - 2;                               // yes - lower edge of highest bin 
+            uppMIdx = massVec.size() - 1;                               // upper edge of highest bin
         } 
-    
-        // Get vector of radii from qCritTable for the lower and upper mass indices
-        std::vector<double> logRadiusVectorLowerMass = std::get<0>(radiiQCritsFromQCritTable[lowerMassIndex]);
-        std::vector<double> logRadiusVectorUpperMass = std::get<0>(radiiQCritsFromQCritTable[upperMassIndex]);
-    
-        // Get the qCrit vector for the lower and upper mass bounds 
-        std::vector<double> qCritVectorUpperEffLowerMass;
-        std::vector<double> qCritVectorUpperEffUpperMass;
-        std::vector<double> qCritVectorLowerEffLowerMass;
-        std::vector<double> qCritVectorLowerEffUpperMass;
+
+        // vector of radii and qCrits from qCrit table
+        const std::vector<std::tuple<DBL_VECTOR, std::vector<DBL_VECTOR>>> radiiQCritsVec = std::get<1>(*(qCritTables[tblIdx]));
+
+        // (log) radii vectors for mass bin bounds
+        const DBL_VECTOR radiiVecLow = std::get<0>(radiiQCritsVec[lowMIdx]);
+        const DBL_VECTOR radiiVecUpp = std::get<0>(radiiQCritsVec[uppMIdx]);
+
+        // qCrits vectors for mass bin bounds
+        const DBL_VECTOR qCritsVecLow = std::get<1>(radiiQCritsVec[lowMIdx]);
+        const DBL_VECTOR qCritsVecUpp = std::get<1>(radiiQCritsVec[uppMIdx]);
+ 
+        std::vector<double> qCritVecUppELowM;
+        std::vector<double> qCritVecUppEUppM;
+        std::vector<double> qCritVecLowELowM;
+        std::vector<double> qCritVecLowEUppM;
         
-        // Set the appropriate qCrit vector, depends on MT eff and whether you use GE STD or IC
-        if (p_qCritPrescription == QCRIT_PRESCRIPTION::GE) {
-            if (p_massTransferEfficiencyBeta > 0.5) {
-                qCritVectorUpperEffLowerMass = std::get<1>(radiiQCritsFromQCritTable[lowerMassIndex]);
-                qCritVectorUpperEffUpperMass = std::get<1>(radiiQCritsFromQCritTable[upperMassIndex]);
-                qCritVectorLowerEffLowerMass = std::get<2>(radiiQCritsFromQCritTable[lowerMassIndex]);
-                qCritVectorLowerEffUpperMass = std::get<2>(radiiQCritsFromQCritTable[upperMassIndex]);
-            }
-            else {
-                qCritVectorUpperEffLowerMass = std::get<2>(radiiQCritsFromQCritTable[lowerMassIndex]);
-                qCritVectorUpperEffUpperMass = std::get<2>(radiiQCritsFromQCritTable[upperMassIndex]);
-                qCritVectorLowerEffLowerMass = std::get<3>(radiiQCritsFromQCritTable[lowerMassIndex]);
-                qCritVectorLowerEffUpperMass = std::get<3>(radiiQCritsFromQCritTable[upperMassIndex]);
+        // set the appropriate qCrit vector based on QCRIT_PRESCRIPTION and MT efficiency
+        switch (OPTIONS->QCritPrescription()) {                         // which QCRIT_PRESCRIPTION?
 
-            }
-        }
-        else if (p_qCritPrescription == QCRIT_PRESCRIPTION::GE_IC) {
-            if (p_massTransferEfficiencyBeta > 0.5) {
-                qCritVectorUpperEffLowerMass = std::get<4>(radiiQCritsFromQCritTable[lowerMassIndex]);
-                qCritVectorUpperEffUpperMass = std::get<4>(radiiQCritsFromQCritTable[upperMassIndex]);
-                qCritVectorLowerEffLowerMass = std::get<5>(radiiQCritsFromQCritTable[lowerMassIndex]);
-                qCritVectorLowerEffUpperMass = std::get<5>(radiiQCritsFromQCritTable[upperMassIndex]);
-            }
-            else {
-                qCritVectorUpperEffLowerMass = std::get<5>(radiiQCritsFromQCritTable[lowerMassIndex]);
-                qCritVectorUpperEffUpperMass = std::get<5>(radiiQCritsFromQCritTable[upperMassIndex]);
-                qCritVectorLowerEffLowerMass = std::get<6>(radiiQCritsFromQCritTable[lowerMassIndex]);
-                qCritVectorLowerEffUpperMass = std::get<6>(radiiQCritsFromQCritTable[upperMassIndex]);
+            QCRIT_PRESCRIPTION::GE:                                     // GE
+                if (p_MTefficiency > 0.5) {
+                    qCritVecUppELowM = qCritsVecLow[static_cast<int>(GE_QCRIT_MODEL::ST_FULL)];
+                    qCritVecUppEUppM = qCritsVecUpp[static_cast<int>(GE_QCRIT_MODEL::ST_FULL)];
+                    qCritVecLowELowM = qCritsVecLow[static_cast<int>(GE_QCRIT_MODEL::ST_HALF)];
+                    qCritVecLowEUppM = qCritsVecUpp[static_cast<int>(GE_QCRIT_MODEL::ST_HALF)];
+                }
+                else {
+                    qCritVecUppELowM = qCritsVecLow[static_cast<int>(GE_QCRIT_MODEL::ST_HALF)];
+                    qCritVecUppEUppM = qCritsVecUpp[static_cast<int>(GE_QCRIT_MODEL::ST_HALF)];
+                    qCritVecLowELowM = qCritsVecLow[static_cast<int>(GE_QCRIT_MODEL::ST_NON_C)];
+                    qCritVecLowEUppM = qCritsVecUpp[static_cast<int>(GE_QCRIT_MODEL::ST_NON_C)];
+                }
+                break;
 
-            }
-        }
-    
-        // Get vector of radii from qCritTable for both lower and upper masses
-        INT_VECTOR indicesR0          = utils::BinarySearch(logRadiusVectorLowerMass, log10(m_Radius));
-        int lowerRadiusLowerMassIndex = indicesR0[0];
-        int upperRadiusLowerMassIndex = indicesR0[1];
-    
-        if (lowerRadiusLowerMassIndex == -1) {                                        // if radii are out of range, set to endpoints
-            lowerRadiusLowerMassIndex = 0; 
-            upperRadiusLowerMassIndex = 1; 
-        }
-        else if (upperRadiusLowerMassIndex == -1) {                                                   
-            lowerRadiusLowerMassIndex = logRadiusVectorLowerMass.size() - 2; 
-            upperRadiusLowerMassIndex = logRadiusVectorLowerMass.size() - 1; 
-        }
-    
-        INT_VECTOR indicesR1          = utils::BinarySearch(logRadiusVectorUpperMass, log10(m_Radius));
-        int lowerRadiusUpperMassIndex = indicesR1[0];
-        int upperRadiusUpperMassIndex = indicesR1[1];
-    
-        if (lowerRadiusUpperMassIndex == -1) {                                        // if radii are out of range, set to endpoints
-            lowerRadiusUpperMassIndex = 0; 
-            upperRadiusUpperMassIndex = 1; 
-        }
-        else if (upperRadiusUpperMassIndex == -1) {                                                   
-            lowerRadiusUpperMassIndex = logRadiusVectorUpperMass.size() - 2; 
-            upperRadiusUpperMassIndex = logRadiusVectorUpperMass.size() - 1; 
-        }
-    
-        // Set the 4 boundary points for the 2D interpolation
-        double qUppLowLow = qCritVectorUpperEffLowerMass[lowerRadiusLowerMassIndex];
-        double qUppLowUpp = qCritVectorUpperEffLowerMass[upperRadiusLowerMassIndex];
-        double qUppUppLow = qCritVectorUpperEffUpperMass[lowerRadiusUpperMassIndex];
-        double qUppUppUpp = qCritVectorUpperEffUpperMass[upperRadiusUpperMassIndex];
-        double qLowLowLow = qCritVectorLowerEffLowerMass[lowerRadiusLowerMassIndex];
-        double qLowLowUpp = qCritVectorLowerEffLowerMass[upperRadiusLowerMassIndex];
-        double qLowUppLow = qCritVectorLowerEffUpperMass[lowerRadiusUpperMassIndex];
-        double qLowUppUpp = qCritVectorLowerEffUpperMass[upperRadiusUpperMassIndex];
-    
-        double lowerLogRadiusLowerMass = logRadiusVectorLowerMass[lowerRadiusLowerMassIndex];
-        double upperLogRadiusLowerMass = logRadiusVectorLowerMass[upperRadiusLowerMassIndex];
-        double lowerLogRadiusUpperMass = logRadiusVectorUpperMass[lowerRadiusUpperMassIndex];
-        double upperLogRadiusUpperMass = logRadiusVectorUpperMass[upperRadiusUpperMassIndex];
+            QCRIT_PRESCRIPTION::GE_IC:                                  // GE_IC
+                if (p_MTefficiency > 0.5) {
+                    qCritVecUppELowM = qCritsVecLow[static_cast<int>(GE_QCRIT_MODEL::IC_FULL)];
+                    qCritVecUppEUppM = qCritsVecUpp[static_cast<int>(GE_QCRIT_MODEL::IC_FULL)];
+                    qCritVecLowELowM = qCritsVecLow[static_cast<int>(GE_QCRIT_MODEL::IC_HALF)];
+                    qCritVecLowEUppM = qCritsVecUpp[static_cast<int>(GE_QCRIT_MODEL::IC_HALF)];
+                }
+                else {
+                    qCritVecUppELowM = qCritsVecLow[static_cast<int>(GE_QCRIT_MODEL::IC_HALF)];
+                    qCritVecUppEUppM = qCritsVecUpp[static_cast<int>(GE_QCRIT_MODEL::IC_HALF)];
+                    qCritVecLowELowM = qCritsVecLow[static_cast<int>(GE_QCRIT_MODEL::IC_NON_C)];
+                    qCritVecLowEUppM = qCritsVecUpp[static_cast<int>(GE_QCRIT_MODEL::IC_NON_C)];
+                }
+                break;
 
-        double logLowerMass   = log10(massesFromQCritTable[lowerMassIndex]);
-        double logUpperMass   = log10(massesFromQCritTable[upperMassIndex]);
+            default:                                                    // unexpected prescription
+                // the only way this can happen is if the QCRIT_PRESCRIPTION specified by the user is not
+                // accounted for in this code.  We should not default here, with or without a warning.
+                // We are here because the user specified a prescription that this function doesn't account
+                // for, and that should be flagged as an error and result in termination of the evolution
+                // of the star or binary.  We know this function does't account for all QCRIT_PRESCRIPTIONs,
+                // but it *should* account for all Ge-related QCRIT_PRESCRIPTIONs.
+                // The correct fix for this is to add code to this function for the missing prescription,
+                // or fix the calling code to ensure this function is not called when the user specifies
+                // a QCRIT_PRESCRIPTION that is not handled by this function.
+
+                THROW_ERROR(ERROR::UNEXPECTED_QCRIT_PRESCRIPTION);      // throw error
+        }
+
+        indices = utils::BinarySearch(radiiVecLow, logRadius);          // find lower mass bound radii bin for p_Radius
+        int lowRLowMIdx = indices[0];                                   // bin lower bound index
+        int uppRLowMIdx = indices[1];                                   // bin upper bound index
     
-        // Interpolate on logR first, then logM, then on the efficiency, using nearest neighbor for extrapolation
-        double logRadius = log10(m_Radius);
-        double qCritUpperEffLowerMass = (logRadius < lowerLogRadiusLowerMass) ? qUppLowLow
-                                      : (logRadius > upperLogRadiusLowerMass) ? qUppLowUpp
-                                      : qUppLowLow + (upperLogRadiusLowerMass - logRadius) / (upperLogRadiusLowerMass - lowerLogRadiusLowerMass) * (qUppLowUpp - qUppLowLow);
-        double qCritUpperEffUpperMass = (logRadius < lowerLogRadiusUpperMass) ? qUppUppLow
-                                      : (logRadius > upperLogRadiusUpperMass) ? qUppUppUpp
-                                      : qUppUppLow + (upperLogRadiusUpperMass - logRadius) / (upperLogRadiusUpperMass - lowerLogRadiusUpperMass) * (qUppUppUpp - qUppUppLow);
-        double qCritLowerEffLowerMass = (logRadius < lowerLogRadiusLowerMass) ? qLowLowLow
-                                      : (logRadius > upperLogRadiusLowerMass) ? qLowLowUpp
-                                      : qLowLowLow + (upperLogRadiusLowerMass - logRadius) / (upperLogRadiusLowerMass - lowerLogRadiusLowerMass) * (qLowLowUpp - qLowLowLow);
-        double qCritLowerEffUpperMass = (logRadius < lowerLogRadiusUpperMass) ? qLowUppLow
-                                      : (logRadius > upperLogRadiusUpperMass) ? qLowUppUpp
-                                      : qLowUppLow + (upperLogRadiusUpperMass - logRadius) / (upperLogRadiusUpperMass - lowerLogRadiusUpperMass) * (qLowUppUpp - qLowUppLow);
+        // if radii are out of range, set to endpoints
+        if (lowRLowMIdx == -1) {                                        // below minimum?                                      
+            lowRLowMIdx = 0;                                            // yes - lower edge of lowest bin  
+            uppRLowMIdx = 1;                                            // upper edge of lowest bin 
+        }
+        else if (uppRLowMIdx == -1) {                                   // no - above maximum?                                             
+            lowRLowMIdx = radiiVecLow.size() - 2;                       // yes - lower edge of highest bin 
+            uppRLowMIdx = radiiVecLow.size() - 1;                       // upper edge of highest bin 
+        }
     
-        double logMass = log10(m_Mass);
-        double interpolatedQCritUpperEff = (logMass < logLowerMass) ? qCritUpperEffLowerMass
-                                         : (logMass > logUpperMass) ? qCritUpperEffUpperMass
-                                         : qCritUpperEffLowerMass + (logUpperMass - logMass) / (logUpperMass - logLowerMass) * (qCritUpperEffUpperMass - qCritUpperEffLowerMass);
-        double interpolatedQCritLowerEff = (logMass < logLowerMass) ? qCritLowerEffLowerMass
-                                         : (logMass > logUpperMass) ? qCritLowerEffUpperMass
-                                         : qCritLowerEffLowerMass + (logUpperMass - logMass) / (logUpperMass - logLowerMass) * (qCritLowerEffUpperMass - qCritLowerEffLowerMass);
+        indices = utils::BinarySearch(radiiVecUpp, logRadius);          // find upper mass bound radii bin for p_Radius
+        int lowRUppMIdx = indices[0];
+        int uppRUppMIdx = indices[1];
     
-        double interpolatedQCritForZ = p_massTransferEfficiencyBeta * interpolatedQCritUpperEff + (1.0 - p_massTransferEfficiencyBeta) * interpolatedQCritLowerEff;                 // Don't need to use nearest neighbor for this, beta is always between 0 and 1
-        qCritPerMetallicity[ii] = interpolatedQCritForZ;
+        // if radii are out of range, set to endpoints
+        if (lowRUppMIdx == -1) {                                        // below minimum? 
+            lowRUppMIdx = 0;                                            // yes - lower edge of lowest bin  
+            uppRUppMIdx = 1;                                            // upper edge of lowest bin 
+        }
+        else if (uppRUppMIdx == -1) {                                   // no - above maximum? 
+            lowRUppMIdx = radiiVecUpp.size() - 2;                       // yes - lower edge of highest bin
+            uppRUppMIdx = radiiVecUpp.size() - 1;                       // upper edge of highest bin
+        }
+    
+        // Set the boundary points for the 2D interpolation
+        const double rLowMLowR = radiiVecLower[lowRLowMIdx];
+        const double rLowMUppR = radiiVecLower[uppRLowMIdx];
+        const double rUppMlowR = radiiVecUpper[lowRUppMIdx];
+        const double rUppMUppR = radiiVecUpper[uppRUppMIdx];
+
+        const double rSlope1 = (rLowMUppR - logRadius) / (rLowMUppR - rLowMLowR);
+        const double rSlope2 = (rUppMUppR - logRadius) / (rUppMUppR - rUppMlowR);
+    
+        const double qUppLowLow = qCritVecUppELowM[lowRLowMIdx];
+        const double qUppLowUpp = qCritVecUppELowM[uppRLowMIdx];
+        const double qUppUppLow = qCritVecUppEUppM[lowRUppMIdx];
+        const double qUppUppUpp = qCritVecUppEUppM[uppRUppMIdx];
+        const double qLowLowLow = qCritVecLowELowM[lowRLowMIdx];
+        const double qLowLowUpp = qCritVecLowELowM[uppRLowMIdx];
+        const double qLowUppLow = qCritVecLowEUppM[lowRUppMIdx];
+        const double qLowUppUpp = qCritVecLowEUppM[uppRUppMIdx];
+    
+        // Interpolate on logR first, then logM, then on efficiency, using nearest neighbour for extrapolation
+
+        // qCrit upper efficiency, lower mass
+        double qCritUppELowM;
+             if (logRadius < rLowMLowR) ? qCritUppELowM = qUppLowLow;
+        else if (logRadius > rLowMUppR) ? qCritUppELowM = qUppLowUpp;
+        else                              qCritUppELowM = qUppLowLow + rSlope1 * (qUppLowUpp - qUppLowLow);
+
+        // qCrit upper efficiency, upper mass
+        double qCritUppEUppM;
+             if (logRadius < rUppMLowR) qCritUppEUppM = qUppUppLow;
+        else if (logRadius > rUppMUppR) qCritUppEUppM = qUppUppUpp;
+        else                            qCritUppEUppM = qUppUppLow + rSlope2 * (qUppUppUpp - qUppUppLow);
+
+        // qCrit lower efficiency, lower mass
+        double qCritLowELowM;
+             if (logRadius < rLowMLowR) qCritLowELowM = qLowLowLow;
+        else if (logRadius > rLowMUppR) qCritLowELowM = qLowLowUpp;
+        else                            qCritLowELowM = qLowLowLow + rSlope1 * (qLowLowUpp - qLowLowLow);
+
+        // qCrit lower efficiency, upper mass
+        double qCritLowEUppM;
+             if (logRadius < rUppMlowR) qCritLowEUppM = qLowUppLow;
+        else if (logRadius > rUppMUppR) qCritLowEUppM = qLowUppUpp;
+        else                            qCritLowEUppM = qLowUppLow + rSlope2 * (qLowUppUpp - qLowUppLow);
+    
+        const double logLowerMass = log10(massVec[lowMIdx]);
+        const double logUpperMass = log10(massVec[uppMIdx]);
+        const double mSlope       = (logUpperMass - logMass) / (logUpperMass - logLowerMass);
+
+        double qCritUppE;
+             if (logMass < logLowerMass) qCritUppE = qCritUppELowM;
+        else if (logMass > logUpperMass) qCritUppE = qCritUppEUppM;
+        else                             qCritUppE = qCritUppELowM + mSlope * (qCritUppEUppM - qCritUppELowM);
+
+        double qCritLowE;
+             if (logMass < logLowerMass) qCritLowE = qCritLowELowM;
+        else if (logMass > logUpperMass) qCritLowE = qCritLowEUppM;
+        else                             qCritLowE = qCritLowELowM + mSlope * (qCritLowEUppM - qCritLowELowM);
+    
+        qCritPerZ[tblIdx] = p_MTefficiency * qCritUppE + (1.0 - p_MTefficiency) * qCritLowE;
     }
-    double logZlo = -3;                // log10(0.001)
-    double logZhi = LOG10_ZSOL_HURLEY; // log10(0.02)
+
+    constexpr double logZlo = -3;                                       // log10(0.001)
+    constexpr double logZhi = LOG10_ZSOL_HURLEY;                        // log10(0.02)  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< FIX
     
-    return qCritPerMetallicity[1] + (m_Log10Metallicity - logZhi)*(qCritPerMetallicity[1] - qCritPerMetallicity[0])/(logZhi - logZlo);
+    return qCritPerZ[1] + (m_Log10Metallicity - logZhi) * (qCritPerZ[1] - qCritPerZ[0]) / (logZhi - logZlo);  // <<<<<<<<<<<<<<<<<<<<<<<<< FIX m_Log10Metallicity
 }
