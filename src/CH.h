@@ -101,43 +101,50 @@ inline double CalculateRadiusAtPhaseEnd() const override { return m_StateHistory
 
 
 double CalculateLuminosityOnPhase() const; // Uses globals and state variables
-double CalculateLuminosityOnPhase(m_StateHistory.CurrentState().Mass(),
-                                  m_StateHistory.ZAMSState().Luminosity(),
-                                  m_StateHistory.Timescales(),
-                                  m_StateHistory.CurrentState().Time(),
-                                  GLOBALS->ReferenceMetallicity(),
-                                  GLOBALS->HurleyACoefficients(),
-                                  GLOBALS->HurleyLuminosityConstants());
+double CalculateLuminosityOnPhase(
+    m_StateHistory.CurrentState().Mass(),
+    m_StateHistory.ZAMSState().Luminosity(),
+    m_StateHistory.Timescales(),
+    m_StateHistory.CurrentState().Time(),
+    GLOBALS->ReferenceMetallicity(),
+    GLOBALS->HurleyACoefficients(),
+    GLOBALS->HurleyLuminosityConstants()
+);
 
     
     // Mass loss rate
-MASS_LOSS_T CalculateMLRate_Belczynski2010(const double                     p_Metallicity,
-                                           const double                     p_Mass,
-                                           const double                     p_Radius,
-                                           const double                     p_Luminosity,
-                                           const double                     p_Temperature,
-                                           const double                     p_PerturbationMu,
-                                           const double                     p_ZscaledHurley,
-                                           const double                     p_HeAbundanceSurface,
-                                           const double                     p_CoolWindsMultiplier,
-                                           const double                     p_WRfactor,
-                                           const bool                       p_ScaleWithSurfaceHe,
-                                           const LBV_MASS_LOSS_PRESCRIPTION p_LBVprescription) const
+    GNU_CONST MASS_LOSS_T CalculateMLRate_Belczynski2010(
+        const double                     p_Metallicity,
+        const double                     p_Mass,
+        const double                     p_Radius,
+        const double                     p_Luminosity,
+        const double                     p_Temperature,
+        const double                     p_PerturbationMu,
+        const double                     p_ZscaledHurley,
+        const double                     p_HeAbundanceSurface,
+        const double                     p_CoolWindsMultiplier,
+        const double                     p_WRfactor,
+        const bool                       p_ScaleWithSurfaceHe,
+        const bool                       p_EnhanceForRotation,
+        const LBV_MASS_LOSS_PRESCRIPTION p_LBVprescription
+    ) const override;
 
-COMPAS_PURE MASS_LOSS_T CH::CalculateMLRate_Merritt2025(const double p_Metallicity,
-                                                        const double p_Mass,
-                                                        const double p_Radius,
-                                                        const double p_Luminosity,
-                                                        const double p_Temperature,
-                                                        const double p_PerturbationMu,
-                                                        const double p_mStart,
-                                                        const double p_SigmaHurley,
-                                                        const double p_ZetaAnders,
-                                                        const double p_ZetaAsplund,
-                                                        const double p_ZscaledHurley,
-                                                        const double p_HeAbundanceSurface,
-                                                        const double p_WRfactor,
-                                                        const double p_TerminalWindScalePower) const override;
+    COMPAS_PURE MASS_LOSS_T CH::CalculateMLRate_Merritt2025(
+        const double p_Metallicity,
+        const double p_Mass,
+        const double p_Radius,
+        const double p_Luminosity,
+        const double p_Temperature,
+        const double p_PerturbationMu,
+        const double p_mStart,
+        const double p_SigmaHurley,
+        const double p_ZetaAnders,
+        const double p_ZetaAsplund,
+        const double p_ZscaledHurley,
+        const double p_HeAbundanceSurface,
+        const double p_WRfactor,
+        const double p_TerminalWindScalePower
+    ) const override;
 
 
     double          CalculateMassLossRateWeightOB(const double p_HeliumAbundanceSurface);

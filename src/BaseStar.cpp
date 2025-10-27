@@ -625,7 +625,15 @@ MASS_LOSS_T BaseStar::CalculateMassLossRate() const {
     switch (OPTIONS->MassLossPrescription()) {                                      // which mass loss prescription?
 
         case MASS_LOSS_PRESCRIPTION::BELCZYNSKI2010:                                // BELCZYNSKI2010
-            std::tie(dMdt, dominantMLType) = CalculateMLRate_Belczynski2010(radius, luminosity, temperature, OPTIONS->CoolWindMassLossMultiplier(), OPTIONS->ScaleCHEMassLossWithSurfaceHeliumAbundance(), OPTIONS->LBVMassLossPrescription());
+            std::tie(dMdt, dominantMLType) = CalculateMLRate_Belczynski2010(
+                                                radius,
+                                                luminosity,
+                                                temperature,
+                                                OPTIONS->CoolWindMassLossMultiplier(),
+                                                OPTIONS->ScaleCHEMassLossWithSurfaceHeliumAbundance(),
+                                                OPTIONS->EnableRotationallyEnhancedMassLoss(),
+                                                OPTIONS->LBVMassLossPrescription()
+                                             );
             break;
 
         case MASS_LOSS_PRESCRIPTION::HURLEY:                                        // HURLEY
@@ -640,20 +648,22 @@ MASS_LOSS_T BaseStar::CalculateMassLossRate() const {
             break;
 
         case MASS_LOSS_PRESCRIPTION::MERRITT2025:                                   // MERRITT2025
-            std::tie(dMdt, dominantMLType) = CalculateMLRate_Merritt2025(metallicity,
-                                                                         mass,
-                                                                         radius,
-                                                                         luminosity,
-                                                                         temperature,
-                                                                         perturbationMu,
-                                                                         mStart,
-                                                                         sigmaHurley,
-                                                                         zetaAnders,
-                                                                         zetaAsplund,
-                                                                         ZscaledHurley,
-                                                                         HeAbundanceSurface,
-                                                                         OPTIONS->WolfRayetFactor(),
-                                                                         OPTIONS->ScaleTerminalWindVelocityWithMetallicityPower());
+            std::tie(dMdt, dominantMLType) = CalculateMLRate_Merritt2025(
+                                                metallicity,
+                                                mass,
+                                                radius,
+                                                luminosity,
+                                                temperature,
+                                                perturbationMu,
+                                                mStart,
+                                                sigmaHurley,
+                                                zetaAnders,
+                                                zetaAsplund,
+                                                ZscaledHurley,
+                                                HeAbundanceSurface,
+                                                OPTIONS->WolfRayetFactor(),
+                                                OPTIONS->ScaleTerminalWindVelocityWithMetallicityPower()
+                                             );
             break;
 
         case MASS_LOSS_PRESCRIPTION::ZERO:                                          // ZERO
@@ -1354,6 +1364,7 @@ MASS_LOSS_T BaseStar::CalculateMLRateVMS_Vink2011(const double p_Mass,
  *                                            const double                     p_CoolWindsMultiplier,
  *                                            const double                     p_WRfactor,
  *                                            const bool                       p_ScaleWithSurfaceHe,
+ *                                            const bool                       p_EnhanceForRotation,
  *                                            const LBV_MASS_LOSS_PRESCRIPTION p_LBVprescription) const
  *
  * @param       p_Metallicity                   Metallicity of the star
@@ -1367,23 +1378,28 @@ MASS_LOSS_T BaseStar::CalculateMLRateVMS_Vink2011(const double p_Mass,
  * @param       p_CoolWindsMultiplier           Cool winds mass loss multiplier
  * @param       p_WRfactor                      WR mass loss factor
  * @param       p_ScaleWithSurfaceHelium        Indicates whether mass loss should be scaled with surface He abundance
+ * @param       p_EnhanceForRotation            Indicates whether mass loss should be enhance for rotation
  * @param       p_LBVprescription               LBV mass loss prescription to use
  * @return                                      Tuple containing:
  *                                                  DOUBLE         mass loss rate (Msol yr^-1)
  *                                                  MASS_LOSS_TYPE dominant mass loss type (could be MASS_LOSS_TYPE::NONE)
  */
-MASS_LOSS_T BaseStar::CalculateMLRate_Belczynski2010(const double                     p_Metallicity,
-                                                     const double                     p_Mass,
-                                                     const double                     p_Radius,
-                                                     const double                     p_Luminosity,
-                                                     const double                     p_Temperature,
-                                                     const double                     p_PerturbationMu,
-                                                     const double                     p_ZscaledHurley,
-                                                     const double                     p_HeAbundanceSurface,
-                                                     const double                     p_CoolWindsMultiplier,
-                                                     const double                     p_WRfactor,
-                                                     const bool                       p_ScaleWithSurfaceHe,
-                                                     const LBV_MASS_LOSS_PRESCRIPTION p_LBVprescription) const {
+GNU_CONST MASS_LOSS_T BaseStar::CalculateMLRate_Belczynski2010(
+    const double                     p_Metallicity,             // not used here
+    const double                     p_Mass,
+    const double                     p_Radius,
+    const double                     p_Luminosity,
+    const double                     p_Temperature,
+    const double                     p_PerturbationMu,
+    const double                     p_ZscaledHurley,
+    const double                     p_HeAbundanceSurface,      // not used here
+    const double                     p_CoolWindsMultiplier,
+    const double                     p_WRfactor,
+    const bool                       p_ScaleWithSurfaceHe,      // not used here
+    const bool                       p_EnhanceForRotation,      // not used here
+    const LBV_MASS_LOSS_PRESCRIPTION p_LBVprescription
+) const {
+
     double dMdt;  
     MASS_LOSS_TYPE dominantMLType;
 

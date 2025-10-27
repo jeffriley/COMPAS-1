@@ -10,8 +10,8 @@
  * CalculateLuminosityOnPhase
  *
  * @brief
- * Calculate the luminosity of a CH star on the (CH) MS.  The luminosity will be enhanced
- * if option `--enhance-CHE-lifetimes-luminosities` was specified.
+ * Calculate the luminosity of a CH star on the (CH) MS.  The luminosity will be
+ * enhanced if option `--enhance-CHE-lifetimes-luminosities` was specified.
  * 
  * 
  * double CalculateLuminosityOnPhase(const double      p_Metallicity,
@@ -65,7 +65,9 @@ double CH::CalculateLuminosityOnPhase(const double      p_Metallicity,
  * CalculateTimescales_Hurley2000
  *
  * @brief
- * (Re)calculate timescales given the mass of the star, per Hurley at al. 2000.
+ * (Re)calculate CH timescales.
+ * CH timescales are MS timescales, per Hurley at al. 2000, optionally enhanced
+ * if the user specified the `--enhance-CHE-lifetimes-luminosities` option.
  * 
  * Since timescales depend on a star's mass, they need to be calculated whenever
  * the mass of the star changes (probably every timestep).
@@ -132,18 +134,21 @@ DBL_VECTOR CH::CalculateTimescales_Hurley2000(const double      p_Mass,
  * loss rate will be enhanced for rotation.
  * 
  * 
- * MASS_LOSS_T CalculateMLRate_Belczynski2010(const double                     p_Metallicity,
- *                                            const double                     p_Mass,
- *                                            const double                     p_Radius,
- *                                            const double                     p_Luminosity,
- *                                            const double                     p_Temperature,
- *                                            const double                     p_PerturbationMu,
- *                                            const double                     p_ZscaledHurley,
- *                                            const double                     p_HeAbundanceSurface,
- *                                            const double                     p_CoolWindsMultiplier,
- *                                            const double                     p_WRfactor,
- *                                            const bool                       p_ScaleWithSurfaceHe,
- *                                            const LBV_MASS_LOSS_PRESCRIPTION p_LBVprescription) const
+ * MASS_LOSS_T CalculateMLRate_Belczynski2010(
+ *     const double                     p_Metallicity,
+ *     const double                     p_Mass,
+ *     const double                     p_Radius,
+ *     const double                     p_Luminosity,
+ *     const double                     p_Temperature,
+ *     const double                     p_PerturbationMu,
+ *     const double                     p_ZscaledHurley,
+ *     const double                     p_HeAbundanceSurface,
+ *     const double                     p_CoolWindsMultiplier,
+ *     const double                     p_WRfactor,
+ *     const bool                       p_ScaleWithSurfaceHe,
+ *     const bool                       p_EnhanceForRotation,
+ *     const LBV_MASS_LOSS_PRESCRIPTION p_LBVprescription
+ * ) const
  *
  * @param       p_Metallicity                   Metallicity of the star
  * @param       p_Mass                          Mass of the star (Msol)
@@ -156,38 +161,47 @@ DBL_VECTOR CH::CalculateTimescales_Hurley2000(const double      p_Mass,
  * @param       p_CoolWindsMultiplier           Cool winds mass loss multiplier
  * @param       p_WRfactor                      WR mass loss factor
  * @param       p_ScaleWithSurfaceHelium        Indicates whether mass loss should be scaled with surface He abundance
+ * @param       p_EnhanceForRotation            Indicates whether mass loss should be enhance for rotation
  * @param       p_LBVprescription               LBV mass loss prescription to use
  * @return                                      Tuple containing:
  *                                                   DOUBLE         Mass loss rate (Msol yr^-1)
  *                                                   MASS_LOSS_TYPE dominant mass loss type
  *                                                                  (will be MASS_LOSS_TYPE::WR or MASS_LOSS_TYPE::OB)
  */
-COMPAS_PURE MASS_LOSS_T CH::CalculateMLRate_Belczynski2010(const double                     p_Metallicity,
-                                                           const double                     p_Mass,
-                                                           const double                     p_Radius,
-                                                           const double                     p_Luminosity,
-                                                           const double                     p_Temperature,
-                                                           const double                     p_PerturbationMu,
-                                                           const double                     p_ZscaledHurley,
-                                                           const double                     p_HeAbundanceSurface,
-                                                           const double                     p_CoolWindsMultiplier,
-                                                           const double                     p_WRfactor,
-                                                           const bool                       p_ScaleWithSurfaceHe,
-                                                           const LBV_MASS_LOSS_PRESCRIPTION p_LBVprescription) const {
+GNU_CONST MASS_LOSS_T CH::CalculateMLRate_Belczynski2010(
+    const double                     p_Metallicity,
+    const double                     p_Mass,
+    const double                     p_Radius,
+    const double                     p_Luminosity,
+    const double                     p_Temperature,
+    const double                     p_PerturbationMu,
+    const double                     p_ZscaledHurley,
+    const double                     p_HeAbundanceSurface,
+    const double                     p_CoolWindsMultiplier,
+    const double                     p_WRfactor,
+    const bool                       p_ScaleWithSurfaceHe,
+    const bool                       p_EnhanceForRotation,
+    const LBV_MASS_LOSS_PRESCRIPTION p_LBVprescription
+) const {
+
     // set defaults
+    double dMdt = BaseStar::CalculateMLRate_Belczynski2010(
+        p_Metallicity,
+        p_Mass,
+        p_Radius,
+        p_Luminosity,
+        p_Temperature,
+        p_PerturbationMu,
+        p_ZscaledHurley,
+        p_HeAbundanceSurface,
+        p_CoolWindsMultiplier,
+        p_WRfactor,
+        p_ScaleWithSurfaceHe,
+        p_EnhanceForRotation,
+        p_LBVprescription
+    );
+
     MASS_LOSS_TYPE dominantMLType = MASS_LOSS_TYPE::OB;
-    double dMdt = BaseStar::CalculateMLRate_Belczynski2010(p_Metallicity,
-                                                           p_Mass,
-                                                           p_Radius,
-                                                           p_Luminosity,
-                                                           p_Temperature,
-                                                           p_PerturbationMu,
-                                                           p_ZscaledHurley,
-                                                           p_HeAbundanceSurface,
-                                                           p_CoolWindsMultiplier,
-                                                           p_WRfactor,
-                                                           p_ScaleWithSurfaceHe,
-                                                           p_LBVprescription);
 
     // scale mass loss with the surface helium abundance if necessary
     if (p_ScaleWithSurfaceHe) {                                                                         // transition between OB and WR mass loss rates?
@@ -200,10 +214,8 @@ COMPAS_PURE MASS_LOSS_T CH::CalculateMLRate_Belczynski2010(const double         
         dMdt = (fractionOB * dMdt) + ((1.0 - fractionOB) * dMdtWR);                                     // combined mass loss rate
     }
 
-    // calculate mass loss enhancement due to rotation, and dominant mass loss type
-    const double rotEnhancement = OPTIONS->EnableRotationallyEnhancedMassLoss() ? CalculateMLRateRotationEnhancement_Langer1998() : 1.0;
-
-    return std::make_tuple(dMdt * rotEnhancement, dominantMLType);
+    // return mass loss rate, enhanced for rotation if required, and dominant mass loss type
+    return std::make_tuple(dMdt * (p_EnhanceForRotation ? CalculateMLRateRotationEnhancement_Langer1998() : 1.0), dominantMLType);
 }
 
 
