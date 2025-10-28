@@ -630,7 +630,8 @@ protected:
 
 
 
-
+    
+GNU_CONST double inline BaseStar::CalculateMLfractionWR(const double p_HeAbundanceSurface) const;
 
 
 
@@ -716,7 +717,7 @@ GNU_CONST double CalculateLifetimeToBGB_Hurley2000(const double p_Mass, const DB
 
 
 
-GNU_CONST double CalculateEddingtonLuminosity(const double p_Mass, const double p_HeAbundanceSurface) const;
+    GNU_CONST double CalculateEddingtonLuminosity(const double p_Mass, const double p_HeAbundanceSurface) const;
 
 
 
@@ -729,111 +730,81 @@ GNU_CONST double CalculateTemperatureOnPhase() const;
 GNU_CONST double CalculateTemperatureOnPhase(const double p_Luminosity, const double p_Radius) const;
 
 
+    // MASS LOSS
+    virtual MASS_LOSS_T CalculateMassLossRate() const;
 
-GNU_PURE virtual MASS_LOSS_T CalculateMLRate_Belczynski2010(const double                     p_Metallicity,
-                                                            const double                     p_Mass,
-                                                            const double                     p_Radius,
-                                                            const double                     p_Luminosity,
-                                                            const double                     p_Temperature,
-                                                            const double                     p_PerturbationMu,
-                                                            const double                     p_ZscaledHurley,
-                                                            const double                     p_HeAbundanceSurface,
-                                                            const double                     p_CoolWindsMultiplier,
-                                                            const double                     p_WRfactor,
-                                                            const bool                       p_ScaleWithSurfaceHe,
-                                                            const LBV_MASS_LOSS_PRESCRIPTION p_LBVprescription) const;
+    COMPAS_PURE MASS_LOSS_T CalculateMLrateLBV(const double p_Radius, const double p_Luminosity, const LBV_MASS_LOSS_PRESCRIPTION p_LBV_MLprescription) const;
+    GNU_CONST   MASS_LOSS_T CalculateMLrateLBV_Belczynski2010(const double p_LBVfactor) const;
+    GNU_CONST   MASS_LOSS_T CalculateMLrateLBV_Hurley2000(const double p_Luminosity, const double p_HDlimitfactor) const;
 
-GNU_CONST virtual MASS_LOSS_T CalculateMLRate_Hurley2000(const double p_Mass,
-                                                         const double p_Radius,
-                                                         const double p_Luminosity,
-                                                         const double p_PerturbationMu,
-                                                         const double p_ZscaledHurley,
-                                                         const double p_WRfactor) const;
+    COMPAS_PURE MASS_LOSS_T CalculateMLrateOB(
+        const double                    p_Metallicity,
+        const double                    p_Mass,
+        const double                    p_Luminosity,
+        const double                    p_Temperature,
+        const OB_MASS_LOSS_PRESCRIPTION p_OB_MLprescription
+    ) const;
+    GNU_CONST   MASS_LOSS_T CalculateMLrateOB_Bjorklund2022(const double p_Metallicity, const double p_Mass, const double p_Luminosity, const double p_Temperature) const;
+    GNU_CONST   MASS_LOSS_T CalculateMLrateOB_Krticka2018(const double p_Luminosity, const double p_ZetaAsplund) const;
+    COMPAS_PURE MASS_LOSS_T CalculateMLrateOB_Vink2001(const double p_Mass, const double p_Luminosity, const double p_Temperature) const;
+    COMPAS_PURE MASS_LOSS_T CalculateMLrateOB_VinkSander2021(const double p_Mass, const double p_Luminosity, const double p_Temperature) const;
 
-COMPAS_PURE virtual MASS_LOSS_T CalculateMLRate_Merritt2025(const double p_Metallicity,
-                                                            const double p_Mass,
-                                                            const double p_Radius,
-                                                            const double p_Luminosity,
-                                                            const double p_Temperature,
-                                                            const double p_PerturbationMu,
-                                                            const double p_mStart,
-                                                            const double p_SigmaHurley,
-                                                            const double p_ZetaAnders,
-                                                            const double p_ZetaAsplund,
-                                                            const double p_ZscaledHurley,
-                                                            const double p_HeAbundanceSurface,
-                                                            const double p_WRfactor,
-                                                            const double p_TerminalWindScalePower) const;
+    COMPAS_PURE MASS_LOSS_T CalculateMLrateRSG(
+        const double                     p_Mass,
+        const double                     p_Radius,
+        const double                     p_Luminosity,
+        const double                     p_Temperature,
+        const double                     p_mStart,
+        const RSG_MASS_LOSS_PRESCRIPTION p_RSG_MLprescription
+    ) const;
+    GNU_CONST   MASS_LOSS_T CalculateMLrateRSG_Beasor2020(const double p_mStart, const double p_Luminosity) const;
+    GNU_CONST   MASS_LOSS_T CalculateMLrateRSG_Decin2023(const double p_mStart, const double p_Luminosity) const;
+    GNU_CONST   MASS_LOSS_T CalculateMLrateRSG_Kee2021(const double p_Mass, const double p_Luminosity, const double p_Temperature) const;
+    GNU_CONST   MASS_LOSS_T CalculateMLrateRSG_VinkSabhahit2023(const double p_Mass, const double p_Luminosity) const;
+    GNU_CONST   MASS_LOSS_T CalculateMLrateRSG_Yang2023(const double p_Luminosity) const;
 
-GNU_CONST MASS_LOSS_T CalculateMLRate_NieuwenhuijzenDeJager1990(const double p_Mass, const double p_Radius, const double p_Luminosity, const double p_ZscaledHurley) const;
+    COMPAS_PURE MASS_LOSS_T CalculateMLrateVMS(
+        const double                     p_Metallicity,
+        const double                     p_Mass,
+        const double                     p_Luminosity,
+        const double                     p_Temperature,
+        const VMS_MASS_LOSS_PRESCRIPTION p_VMS_MLprescription
+    ) const;
+    GNU_CONST   MASS_LOSS_T CalculateMLrateVMS_Bestenlehner2020(const double p_Mass, const double p_Luminosity) const;
+    COMPAS_PURE MASS_LOSS_T CalculateMLrateVMS_Sabhahit2023(const double p_Metallicity, const double p_Mass, const double p_Luminosity, const double p_Temperature) const;
+    COMPAS_PURE MASS_LOSS_T CalculateMLrateVMS_Vink2011(const double p_Mass, const double p_Luminosity, const double p_Temperature) const;
 
-GNU_CONST MASS_LOSS_T CalculateMLRate_VassiliadisWood1993(const double p_Mass, const double p_Radius, const double p_Luminosity) const
+    GNU_CONST   MASS_LOSS_T CalculateMLrateWR_Hurley2000(const double p_Luminosity, const double p_PerturbationMu) const;
+    COMPAS_PURE static MASS_LOSS_T CalculateMLrateWR_SanderVink2020_Static(const double p_Luminosity, const double p_PerturbationMu) const;
+    COMPAS_PURE static MASS_LOSS_T CalculateMLrateWR_Shenar2019_Static(const double p_Luminosity, const double p_Temperature) const;
+    GNU_CONST   static MASS_LOSS_T CalculateMLrateWR_ZDependent_Static(const double p_Metallicity, const double p_Luminosity, const double p_PerturbationMu) const;
+
+    COMPAS_PURE virtual MASS_LOSS_T CalculateMLrate_Belczynski2010(
+        const double p_Metallicity,
+        const double p_Mass,
+        const double p_Radius,
+        const double p_Luminosity,
+        const double p_Temperature,
+        const double p_PerturbationMu,
+        const double p_HeAbundanceSurface
+    ) const;
+    virtual COMPAS_PURE MASS_LOSS_T CalculateMLrate_Hurley2000(const double p_Mass, const double p_Radius, const double p_Luminosity, const double p_PerturbationMu) const;
+    virtual COMPAS_PURE MASS_LOSS_T CalculateMLrate_Merritt2025(
+        const double p_Metallicity,
+        const double p_Mass,
+        const double p_Radius,
+        const double p_Luminosity,
+        const double p_Temperature,
+        const double p_PerturbationMu,
+        const double p_mStart,
+        const double p_HeAbundanceSurface
+    ) const;
+    COMPAS_PURE MASS_LOSS_T CalculateMLrate_NieuwenhuijzenDeJager1990(const double p_Mass, const double p_Radius, const double p_Luminosity) const;
+    GNU_CONST   MASS_LOSS_T CalculateMLrate_VassiliadisWood1993(const double p_Mass, const double p_Radius, const double p_Luminosity) const;
 
 
-GNU_CONST MASS_LOSS_T CalculateMLRateLBV(const double p_Radius, const double p_Luminosity, const LBV_MASS_LOSS_PRESCRIPTION p_LBVprescription, const double p_LBVfactor) const;
-GNU_CONST MASS_LOSS_T CalculateMLRateLBV_Belczynski2010(const double p_LBVfactor) const;
-GNU_CONST MASS_LOSS_T CalculateMLRateLBV_Hurley2000(const double p_Luminosity, const double p_HDlimitfactor) const;
 
 
-GNU_CONST MASS_LOSS_T CalculateMLRateOB(const double                    p_Metallicity,
-                                        const double                    p_Mass,
-                                        const double                    p_Luminosity,
-                                        const double                    p_Temperature,
-                                        const double                    p_ZetaAnders,
-                                        const double                    p_ZetaAsplund,
-                                        const double                    p_TerminalWindScalePower,
-                                        const OB_MASS_LOSS_PRESCRIPTION p_MassLossPrescription) const;
-GNU_CONST MASS_LOSS_T CalculateMLRateOB_Bjorklund2022(const double p_Metallicity, const double p_Mass, const double p_Luminosity, const double p_Temperature) const;
-GNU_CONST MASS_LOSS_T CalculateMLRateOB_Krticka2018(const double p_Luminosity, const double p_ZetaAsplund) const;
-GNU_CONST MASS_LOSS_T CalculateMLRateOB_Vink2001(const double p_Mass,
-                                                 const double p_Luminosity,
-                                                 const double p_Temperature,
-                                                 const double p_ZetaAnders,
-                                                 const double p_TerminalWindScalePower) const;
-GNU_CONST MASS_LOSS_T CalculateMLRateOB_VinkSander2021(const double p_Mass, const double p_Luminosity, const double p_Temperature, const double p_ZetaAnders) const;
-
-GNU_CONST MASS_LOSS_T CalculateMLRateRSG(const double                     p_Mass,
-                                         const double                     p_Radius,
-                                         const double                     p_Luminosity,
-                                         const double                     p_mStart,
-                                         const double                     p_Temperature,
-                                         const double                     p_ZscaledHurley,
-                                         const RSG_MASS_LOSS_PRESCRIPTION p_MassLossPrescription) const;
-GNU_CONST MASS_LOSS_T CalculateMLRateRSG_Beasor2020(const double p_mStart, const double p_Luminosity) const;
-GNU_CONST MASS_LOSS_T CalculateMLRateRSG_Decin2023(const double p_mStart, const double p_Luminosity) const;
-GNU_CONST MASS_LOSS_T CalculateMLRateRSG_Kee2021(const double p_Mass, const double p_Luminosity, const double p_Temperature) const;
-GNU_CONST MASS_LOSS_T CalculateMLRateRSG_VinkSabhahit2023(const double p_Mass, const double p_Luminosity) const;
-GNU_CONST MASS_LOSS_T CalculateMLRateRSG_Yang2023(const double p_Luminosity) const;
-
-GNU_CONST MASS_LOSS_T CalculateMLRateVMS(const double                     p_Metallicity,
-                                         const double                     p_Mass,
-                                         const double                     p_Luminosity,
-                                         const double                     p_Temperature,
-                                         const double                     p_SigmaHurley,
-                                         const double                     p_ZetaAnders,
-                                         const double                     p_ZetaAsplund,
-                                         const double                     p_TerminalWindScalePower,
-                                         const OB_MASS_LOSS_PRESCRIPTION  p_OBprescription,
-                                         const VMS_MASS_LOSS_PRESCRIPTION p_VMSprescription) const;
-GNU_CONST MASS_LOSS_T CalculateMLRateVMS_Bestenlehner2020(const double p_Mass, const double p_Luminosity) const;
-GNU_CONST MASS_LOSS_T CalculateMLRateVMS_Sabhahit2023(const double                    p_Metallicity,
-                                                      const double                    p_Mass,
-                                                      const double                    p_Luminosity,
-                                                      const double                    p_Temperature,
-                                                      const double                    p_SigmaHurley,
-                                                      const double                    p_ZetaAnders,
-                                                      const double                    p_ZetaAsplund,
-                                                      const OB_MASS_LOSS_PRESCRIPTION p_OBprescription) const;
-GNU_CONST MASS_LOSS_T CalculateMLRateVMS_Vink2011(const double p_Mass,
-                                                  const double p_Luminosity,
-                                                  const double p_Temperature,
-                                                  const double p_ZetaAnders,
-                                                  const double p_TerminalWindScalePower) const;
-
-GNU_CONST MASS_LOSS_T CalculateMLRateWR_Hurley2000(const double p_Luminosity, const double p_PerturbationMu) const;
-static GNU_CONST MASS_LOSS_T CalculateMLRateWR_SanderVink2020_Static(const double p_Luminosity, const double p_PerturbationMu, const double p_ZetaAnders) const;
-static GNU_CONST MASS_LOSS_T CalculateMLRateWR_Shenar2019_Static(const double p_Luminosity, const double p_Temperature, const double p_SigmaHurley) const;
-static GNU_CONST MASS_LOSS_T CalculateMLRateWR_ZDependent_Static(const double p_Metallicity, const double p_Luminosity, const double p_PerturbationMu) const;
 
 
 
@@ -915,8 +886,10 @@ virtual double      CalculateRadiusAtPhaseEnd() const                           
 
 
     static  double      CalculateOStarRotationalVelocityAnalyticCDF_Static(const double p_Ve);
-    static  double      CalculateOStarRotationalVelocityAnalyticCDFInverse_Static(double p_Ve, void *p_Params);
-    static  double      CalculateOStarRotationalVelocity_Static(const double p_Xmin, const double p_Xmax);
+        double CalculateOStarRotationalVelocity();
+
+
+
 
     double       CalculatePerturbationB(const double p_Mass) const                                               { return 0.002 * std::max(1.0, (2.5 / p_Mass)); }                           // Hurley et al. 2000, eq 103
     double       CalculatePerturbationC(double p_Mass) const                                                     { return 0.006 * std::max(1.0, (2.5 / p_Mass)); }                           // Hurley et al. 2000, eq 104
@@ -967,7 +940,7 @@ virtual inline double CalculateCOCoreMass_Hurley2000() const { return m_StateHis
 virtual double CalculateEffectiveInitialMass() const;
 virtual inline double CalculateEffectiveInitialMass_Hurley2000() const { return m_StateHistory.CurrentState.MassEffectiveInitial(); }
 
-virtual MASS_LOSS_T CalculateMassLossRate() const;
+
 
 virtual double CalculateRadius() const;
 virtual inline double CalculateRadius_Hurley2000() const { return m_StateHistory.ZAMSState().Radius(); }  
@@ -988,7 +961,14 @@ GNU_CONST double CalculateLuminosityGivenCoreMass_Hurley2000(const double p_Core
 
 
 
-
+COMPAS_PURE double BaseStar::CalculateMLrate_WRenhanced(
+    const double                p_Metallicity,
+    const double                p_Luminosity, 
+    const double                p_Temperature, 
+    const double                p_HeAbundanceSurface, 
+    const double                p_dMdtOther,
+    const std::optional<double> p_dMdtWR
+) const;
 
 
 
@@ -1080,6 +1060,37 @@ virtual inline double CalculateCOCoreMassAtPhaseEnd_Hurley2000() const { m_State
     bool         ShouldBeMasslessRemnant() const                                                                 { return (m_Mass <= 0.0 || m_StellarType == STELLAR_TYPE::MASSLESS_REMNANT); }
     virtual bool        ShouldEvolveOnPhase() const                                                                     { return true; }
     virtual bool        ShouldSkipPhase() const                                                                         { return false; }                                                           // Default is false
+
+
+
+    /*
+     * Functor for CalculateOStarRotationalVelocity()
+     *
+     *
+     * Constructor: initialise the class
+     * template <class T> OStarRotationVelocityFunctor(double p_CDF, ERROR *p_Error)
+     *
+     * @param   [IN]    p_CDF                       Desired CDF value
+     *
+     * Function: calculate the CDF of the O star rotational velocity and compare to desired value
+     * T OStarRotationVelocityFunctor(double const& p_Ve)
+     *
+     * @param   [IN]    p_Ve                        Rotational velocity, km s^-1
+     * @return                                      Difference between star's Roche Lobe radius and radius after mass loss
+     */
+    template <class T>
+    struct OStarRotationVelocityFunctor {
+        OStarRotationVelocityFunctor(double p_CDF) {
+            m_CDF              = p_CDF;
+        }
+        T operator()(double const& p_Ve) {
+
+            return (CalculateOStarRotationalVelocityAnalyticCDF_Static(p_Ve) - m_CDF);
+        }
+    private:
+        double                 m_CDF;
+    };
+
 
 };
 
@@ -1908,44 +1919,63 @@ GNU_CONST inline double BaseStar::CalculateEffectiveInitialMass() const {
 //                             MASS LOSS RATE FUNCTIONS                              //
 //                                                                                   //
 ///////////////////////////////////////////////////////////////////////////////////////
-    
+
 
 /*
- * CalculateMLRate_Hurley2000
+ * CalculateMLfractionWR
+ *
+ * @brief
+ * Calculate the fraction of mass loss attributable to WR mass loss, per Yoon et al. 2006
+ *
+ * The model described in Yoon et al. 2006 (also Szecsi et al. 2015) uses OB mass loss while the
+ * He surface abundance is below 0.55, WR mass loss when the surface He abundance is above 0.7,
+ * and linearly interpolate when the He surface abundance is between those limits.
+ *
+ * This function calculates the fraction of mass loss attributable to WR mass loss, based on
+ * the He surface abundance and the abundance limits described in Yoon et al. 2006.  The value
+ * returned will be 1.0 if 100% of the mass loss is attributable to WR mass lass, 0.0 if 100% of
+ * the mass loss is attributable to OB mass loss, and in the range (0.0, 1.0) if the mass loss is
+ * a mix of WR and OB.
+ *
+ *
+ * double CalculateMLfractionWR(const double p_HeAbundanceSurface) const
+ *
+ * @param       p_HeAbundanceSurface            Helium abundance at the surface of the star
+ * @return                                      Fraction of mass loss attributable to WR mass loss
+ */
+GNU_CONST double inline BaseStar::CalculateMLfractionWR(const double p_HeAbundanceSurface) const {
+
+    constexpr double limOB = 0.55;                                          // per Yoon et al. 2006
+    constexpr double limWR = 0.70;                                          // per Yoon et al. 2006
+
+    return std::min(1.0, std::max (0.0, (p_HeAbundanceSurface - limOB) / (limWR - limOB)));
+}
+
+
+/*
+ * CalculateMLrate_Hurley2000
  *
  * @brief
  * Calculate the mass loss rate, and the dominant mass loss type, per Hurley et al. 2000.
  * 
  * 
- * MASS_LOSS_T CalculateMLRate_Hurley2000(const double p_Mass,
- *                                        const double p_Radius,
- *                                        const double p_Luminosity,
- *                                        const double p_PerturbationMu,
- *                                        const double p_ZscaledHurley,
- *                                        const double p_WRfactor) const
+ * MASS_LOSS_T CalculateMLrate_Hurley2000(const double p_Mass, const double p_Radius, const double p_Luminosity, const double p_PerturbationMu) const
  *
  * @param       p_Mass                          Mass of the star (Msol)
  * @param       p_Radius                        Radius of the star (Rsol)
  * @param       p_Luminosity                    Luminosity of the star (Lsol)
- * @param       p_PerturbationMu                Small envelope perturbation parameter, mu
- * @param       p_ZscaledHurley                 Z inversely scaled by Hurley ZSOL (Z / ZSOL_HURLEY)
- * @param       p_WRfactor                      WR mass loss factor
+ * @param       p_PerturbationMu                Small envelope perturbation parameter, mu (optional parameter)
  * @return                                      Tuple containing:
  *                                                   DOUBLE         Mass loss rate (Msol yr^-1)
  *                                                   MASS_LOSS_TYPE dominant mass loss type (may be MASS_LOSS_TYPE::NONE)
  */
-GNU_CONST inline MASS_LOSS_T CalculateMLRate_Hurley2000(const double p_Mass,
-                                                        const double p_Radius,
-                                                        const double p_Luminosity,
-                                                        const double p_PerturbationMu,
-                                                        const double p_ZscaledHurley,
-                                                        const double p_WRfactor) const {
-    return CalculateMLRate_NieuwenhuijzenDeJager1990(p_Mass, p_Radius, p_Luminosity, p_ZscaledHurley);
+COMPAS_PURE inline MASS_LOSS_T BaseStar::CalculateMLrate_Hurley2000(const double p_Mass, const double p_Radius, const double p_Luminosity, const double p_PerturbationMu) const {
+    return CalculateMLrate_NieuwenhuijzenDeJager1990(p_Mass, p_Radius, p_Luminosity);
 }
 
 
 /*
- * CalculateMLRate_KudritzkiReimers1978
+ * CalculateMLrate_KudritzkiReimers1978
  *
  * @brief
  * Calculate the mass loss rate, and the dominant mass loss type, on the GB and beyond,
@@ -1954,7 +1984,7 @@ GNU_CONST inline MASS_LOSS_T CalculateMLRate_Hurley2000(const double p_Mass,
  * Based on a prescription taken from Kudritzki and Reimers 1978
  *
  *
- * MASS_LOSS_T CalculateMLRate_KudritzkiReimers1978(const double p_Mass, const double p_Radius, const double p_Luminosity) const
+ * MASS_LOSS_T CalculateMLrate_KudritzkiReimers1978(const double p_Mass, const double p_Radius, const double p_Luminosity) const
  *
  * @param       p_Mass                          Mass of the star (Msol)
  * @param       p_Radius                        Radius of the star (Rsol)
@@ -1964,24 +1994,24 @@ GNU_CONST inline MASS_LOSS_T CalculateMLRate_Hurley2000(const double p_Mass,
  *                                                   MASS_LOSS_TYPE dominant mass loss type (will be MASS_LOSS_TYPE::GB)
  * @return                                      Kudritzki and Reimers mass loss rate (in Msol yr^{-1})
  */
-GNU_CONST MASS_LOSS_T BaseStar::CalculateMLRate_KudritzkiReimers1978(const double p_Mass, const double p_Radius, const double p_Luminosity) const {
+GNU_CONST inline MASS_LOSS_T BaseStar::CalculateMLrate_KudritzkiReimers1978(const double p_Mass, const double p_Radius, const double p_Luminosity) const {
     // Hurley et al. 2000 has eta^2 - that's wrong per Hurley SSE code
     return std::make_tuple(4.0E-13 * (MASS_LOSS_ETA * p_Luminosity * p_Radius / p_Mass), MASS_LOSS_TYPE::GB);
 }
 
 
 /* 
- * CalculateMLRate_VassiliadisWood1993
+ * CalculateMLrate_VassiliadisWood1993
  *
  * @brief
  * Calculate the mass loss rate, and the dominant mass loss type, for stars on the AGB,
- *  based on the Mira pulsation period (P0), per Vassiliadis and Wood 1993.
+ * based on the Mira pulsation period (P0), per Vassiliadis and Wood 1993.
  *
  * See Hurley et al. 2000, just after eq 106
  * Note: in the Hurley fortran code, P0 is taken to be min(p0, 2000.0) - implemented here as a minimum power
  *
  *
- * MASS_LOSS_T CalculateMLRate_VassiliadisWood1993(const double p_Mass, const double p_Radius, const double p_Luminosity) const
+ * MASS_LOSS_T CalculateMLrate_VassiliadisWood1993(const double p_Mass, const double p_Radius, const double p_Luminosity) const
  *
  * @param       p_Mass                          Mass of the star (Msol)
  * @param       p_Radius                        Radius of the star (Rsol)
@@ -1990,7 +2020,7 @@ GNU_CONST MASS_LOSS_T BaseStar::CalculateMLRate_KudritzkiReimers1978(const doubl
  *                                                   DOUBLE         Mass loss rate on the AGB (Msol yr^-1)
  *                                                   MASS_LOSS_TYPE dominant mass loss type (will be MASS_LOSS_TYPE::GB)
  */
-GNU_CONST inline MASS_LOSS_T BaseStar::CalculateMLRate_VassiliadisWood1993(const double p_Mass, const double p_Radius, const double p_Luminosity) const {
+GNU_CONST inline MASS_LOSS_T BaseStar::CalculateMLrate_VassiliadisWood1993(const double p_Mass, const double p_Radius, const double p_Luminosity) const {
     const double P0   = PPOW(10.0, std::min(3.3, (-2.07 - (0.9 * log10(p_Mass)) + (1.94 * log10(p_Radius)))));
     const double dMdt = PPOW(10.0, (-11.4 + (0.0125 * (P0 - 100.0 * std::max((p_Mass - 2.5), 0.0)))));
 
@@ -1999,27 +2029,27 @@ GNU_CONST inline MASS_LOSS_T BaseStar::CalculateMLRate_VassiliadisWood1993(const
 
 
 /*
- * CalculateMLRateLBV_Belczynski2010
+ * CalculateMLrateLBV_Belczynski2010
  *
  * @brief
  * Calculate LBV-like mass loss rate for stars beyond the Humphreys-Davidson limit
  * (Humphreys & Davidson 1994), per Belczynski et al. 2010, eq 8 
  * 
  *
- * MASS_LOSS_T CalculateMLRateLBV_Belczynski2010(const double p_LBVfactor) const
+ * MASS_LOSS_T CalculateMLrateLBV_Belczynski2010(const double p_LBVfactor) const
  *
  * @param       p_LBVfactor                     Luminous Blue Variable factor
  * @return                                      Tuple containing:
  *                                                   DOUBLE         Mass loss rate for LBV stars (Msol yr^-1)
  *                                                   MASS_LOSS_TYPE dominant mass loss type (will be MASS_LOSS_TYPE::LBV)
  */    
-GNU_CONST inline MASS_LOSS_T BaseStar::CalculateMLRateLBV_Belczynski2010(const double p_LBVfactor) const {
+GNU_CONST inline MASS_LOSS_T BaseStar::CalculateMLrateLBV_Belczynski2010(const double p_LBVfactor) const {
     return std::make_tuple(p_LBVfactor * 1.0E-4, MASS_LOSS_TYPE::LBV);
 } 
 
 
 /*
- * CalculateMLRateLBV_Hurley2000
+ * CalculateMLrateLBV_Hurley2000
  *
  * @brief
  * Calculate LBV-like mass loss rate for stars beyond the Humphreys-Davidson limit
@@ -2027,7 +2057,7 @@ GNU_CONST inline MASS_LOSS_T BaseStar::CalculateMLRateLBV_Belczynski2010(const d
  * a few equations after eq 106
  *  
  *
- * MASS_LOSS_T CalculateMLRateLBV_Hurley2000(const double p_Luminosity, const double p_HDlimitfactor) const
+ * MASS_LOSS_T CalculateMLrateLBV_Hurley2000(const double p_Luminosity, const double p_HDlimitfactor) const
  *
  * @param       p_Luminosity                    Luminosity of the star (Lsol)
  * @param       p_HDlimitfactor                 Factor by which star is above Humphreys-Davidson limit
@@ -2035,23 +2065,20 @@ GNU_CONST inline MASS_LOSS_T BaseStar::CalculateMLRateLBV_Belczynski2010(const d
  *                                                   DOUBLE         Mass loss rate for LBV stars (Msol yr^-1)
  *                                                   MASS_LOSS_TYPE dominant mass loss type (will be MASS_LOSS_TYPE::LBV)
  */
-GNU_CONST inline MASS_LOSS_T BaseStar::CalculateMLRateLBV_Hurley2000(const double p_Luminosity, const double p_HDlimitfactor) const {
+GNU_CONST inline MASS_LOSS_T BaseStar::CalculateMLrateLBV_Hurley2000(const double p_Luminosity, const double p_HDlimitfactor) const {
     return std::make_tuple(0.1 * utils::IntPow(p_HDlimitfactor - 1.0, 3) * ((p_Luminosity / 6.0E5) - 1.0), MASS_LOSS_TYPE::LBV);
 }
 
 
 /*
- * CalculateMLRateOB_Krticka2018
+ * CalculateMLrateOB_Krticka2018
  *
- * Calculate mass loss rate for massive OB stars, per Krticka et al 2018
- * https://arxiv.org/pdf/1712.03321.pdf
- *
- * Uses current values of:
- * 
- *    - m_Luminosity
+ * @brief
+ * Calculate mass loss rate for massive OB stars, per Krticka et al. 2018
+ * (See https://arxiv.org/pdf/1712.03321.pdf)
  *
  * 
- * MASS_LOSS_T CalculateMLRateOB_Krticka2018(const double p_Luminosity, const double p_ZetaAsplund) const
+ * MASS_LOSS_T CalculateMLrateOB_Krticka2018(const double p_Luminosity, const double p_ZetaAsplund) const
  * 
  * @param       p_Luminosity                    Luminosity of the star (Lsol)
  * @param       p_ZetaAsplund                   Asplund zeta value (log10(Z / ZSOL_ASPLUND))
@@ -2059,13 +2086,13 @@ GNU_CONST inline MASS_LOSS_T BaseStar::CalculateMLRateLBV_Hurley2000(const doubl
  *                                                   DOUBLE         Mass loss rate for hot OB stars (Msol yr^-1)
  *                                                   MASS_LOSS_TYPE dominant mass loss type (will be MASS_LOSS_TYPE::OB)
  */
-GNU_CONST inline MASS_LOSS_T BaseStar::CalculateMLRateOB_Krticka2018(const double p_Luminosity, const double p_ZetaAsplund) const {
+GNU_CONST inline MASS_LOSS_T BaseStar::CalculateMLrateOB_Krticka2018(const double p_Luminosity, const double p_ZetaAsplund) const {
     return std::make_tuple(PPOW(10.0, -5.70 + 0.50 * p_ZetaAsplund() + (1.61 - 0.12 * p_ZetaAsplund()) * log10(p_Luminosity / 1.0E6)), MASS_LOSS_TYPE::OB);
 }
 
 
 /*
- * CalculateMLRateRSG_Beasor2020
+ * CalculateMLrateRSG_Beasor2020
  *
  * @brief
  * Calculate mass loss rate, and the dominant mass loss type, for RSG stars (Red Supergiants),
@@ -2080,7 +2107,7 @@ GNU_CONST inline MASS_LOSS_T BaseStar::CalculateMLRateOB_Krticka2018(const doubl
  * (see https://ui.adsabs.harvard.edu/abs/2023MNRAS.524.2460B/abstract)
  * 
  * 
- * MASS_LOSS_T CalculateMLRateRSG_Beasor2020(const double p_mStart, const double p_Luminosity) const
+ * MASS_LOSS_T CalculateMLrateRSG_Beasor2020(const double p_mStart, const double p_Luminosity) const
  *
  * @param       p_mStart                        Mass of the star at the start of the simulation (first state) (Msol)
  * @param       p_Luminosity                    Luminosity of the star (Lsol)
@@ -2088,13 +2115,13 @@ GNU_CONST inline MASS_LOSS_T BaseStar::CalculateMLRateOB_Krticka2018(const doubl
  *                                                   DOUBLE         Mass loss rate for RSG stars (Msol yr^-1)
  *                                                   MASS_LOSS_TYPE dominant mass loss type (will be MASS_LOSS_TYPE::RSG)
  */
-GNU_CONST inline MASS_LOSS_T BaseStar::CalculateMLRateRSG_Beasor2020(const double p_mStart, const double p_Luminosity) const {
+GNU_CONST inline MASS_LOSS_T BaseStar::CalculateMLrateRSG_Beasor2020(const double p_mStart, const double p_Luminosity) const {
     return std::make_tuple(PPOW(10.0, -21.5 - 0.15 * p_mStart + 3.6 * log10(p_Luminosity)), MASS_LOSS_TYPE::RSG);
 }
 
 
 /*
- * CalculateMLRateRSG_Decin2023
+ * CalculateMLrateRSG_Decin2023
  *
  * @brief
  * Calculate mass loss rate, and the dominant mass loss type, for RSG stars (Red Supergiants),
@@ -2103,7 +2130,7 @@ GNU_CONST inline MASS_LOSS_T BaseStar::CalculateMLRateRSG_Beasor2020(const doubl
  * See https://arxiv.org/pdf/2303.09385.pdf
  * 
  *  
- * MASS_LOSS_T CalculateMLRateRSG_Decin2023(const double p_mStart, const double p_Luminosity) const
+ * MASS_LOSS_T CalculateMLrateRSG_Decin2023(const double p_mStart, const double p_Luminosity) const
  *
  * @param       p_mStart                        Mass of the star at the start of the simulation (first state) (Msol)
  * @param       p_Luminosity                    Luminosity of the star (Lsol)
@@ -2111,13 +2138,13 @@ GNU_CONST inline MASS_LOSS_T BaseStar::CalculateMLRateRSG_Beasor2020(const doubl
  *                                                   DOUBLE         Mass loss rate for RSG stars (Msol yr^-1)
  *                                                   MASS_LOSS_TYPE dominant mass loss type (will be MASS_LOSS_TYPE::RSG)
  */
-GNU_CONST inline MASS_LOSS_T BaseStar::CalculateMLRateRSG_Decin2023(const double p_mStart, const double p_Luminosity) const {
+GNU_CONST inline MASS_LOSS_T BaseStar::CalculateMLrateRSG_Decin2023(const double p_mStart, const double p_Luminosity) const {
     return std::make_tuple(PPOW(10.0, -20.63 - 0.16 * p_mStart + 3.47 * log10(p_Luminosity)), MASS_LOSS_TYPE::RSG);
 }
 
 
 /*
- * CalculateMLRateRSG_VinkSabhahit2023
+ * CalculateMLrateRSG_VinkSabhahit2023
  *
  * @brief
  * Calculate mass loss rate, and the dominant mass loss type, for Red Supergiant (RSG) stars,
@@ -2128,7 +2155,7 @@ GNU_CONST inline MASS_LOSS_T BaseStar::CalculateMLRateRSG_Decin2023(const double
  * See https://arxiv.org/pdf/2309.08657.pdf
  *
  * 
- * MASS_LOSS_T CalculateMLRateRSG_VinkSabhahit2023(const double p_Mass, const double p_Luminosity) const
+ * MASS_LOSS_T CalculateMLrateRSG_VinkSabhahit2023(const double p_Mass, const double p_Luminosity) const
  *
  * @param       p_Mass                          Mass of the star (Msol)
  * @param       p_Luminosity                    Luminosity of the star (Lsol)
@@ -2136,14 +2163,14 @@ GNU_CONST inline MASS_LOSS_T BaseStar::CalculateMLRateRSG_Decin2023(const double
  *                                                   DOUBLE         Mass loss rate for RSG stars (Msol yr^-1)
  *                                                   MASS_LOSS_TYPE dominant mass loss type (will be MASS_LOSS_TYPE::RSG)
  */
-GNU_CONST inline MASS_LOSS_T BaseStar::CalculateMLRateRSG_VinkSabhahit2023(const double p_Mass, const double p_Luminosity) const {
+GNU_CONST inline MASS_LOSS_T BaseStar::CalculateMLrateRSG_VinkSabhahit2023(const double p_Mass, const double p_Luminosity) const {
     const double exp = logL < 4.6 ? -8.0 + 0.7 * log10(p_Luminosity) - 0.7 * log10(p_Mass) : -24.0 + 4.77 * log10(p_Luminosity) - 3.99 * log10(p_Mass);
     return std::make_tuple(PPOW(10.0, exp), MASS_LOSS_TYPE::RSG);
 }
 
 
 /*
- * CalculateMLRateRSG_Yang2023
+ * CalculateMLrateRSG_Yang2023
  *
  * @brief
  * Calculate mass loss rate, and the dominant mass loss type, for RSG stars (Red Supergiants),
@@ -2152,14 +2179,14 @@ GNU_CONST inline MASS_LOSS_T BaseStar::CalculateMLRateRSG_VinkSabhahit2023(const
  * See https://arxiv.org/pdf/2303.09385.pdf
  *
  *  
- * GNU_CONST MASS_LOSS_T CalculateMLRateRSG_Yang2023(const double p_Luminosity) const
+ * GNU_CONST MASS_LOSS_T CalculateMLrateRSG_Yang2023(const double p_Luminosity) const
  *
  * @param       p_Luminosity                    Luminosity of the star (Lsol)
  * @return                                      Tuple containing:
  *                                                   DOUBLE         Mass loss rate for RSG stars (Msol yr^-1)
  *                                                   MASS_LOSS_TYPE dominant mass loss type (will be MASS_LOSS_TYPE::RSG)
  */
-GNU_CONST inline MASS_LOSS_T BaseStar::CalculateMLRateRSG_Yang2023(const double p_Luminosity) const {
+GNU_CONST inline MASS_LOSS_T BaseStar::CalculateMLrateRSG_Yang2023(const double p_Luminosity) const {
 
     const double logL  = log10(p_Luminosity);
     const double logL2 = logL * logL;
@@ -2169,7 +2196,7 @@ GNU_CONST inline MASS_LOSS_T BaseStar::CalculateMLRateRSG_Yang2023(const double 
 
 
 /*
- * CalculateMLRateVMS_Bestenlehner2020
+ * CalculateMLrateVMS_Bestenlehner2020
  *
  * @brief
  * Calculate the mass loss rate, and the dominant mass loss type, for very massive (> 100 Msol) OB stars,
@@ -2178,7 +2205,7 @@ GNU_CONST inline MASS_LOSS_T BaseStar::CalculateMLRateRSG_Yang2023(const double 
  * See https://arxiv.org/pdf/2002.05168.pdf
  * 
  * 
- * MASS_LOSS_T CalculateMLRateVMS_Bestenlehner2020(const double p_Mass, const double p_Luminosity) const
+ * MASS_LOSS_T CalculateMLrateVMS_Bestenlehner2020(const double p_Mass, const double p_Luminosity) const
  *
  * @param       p_Mass                          Mass of the star (Msol)
  * @param       p_Luminosity                    Luminosity of the star (Lsol)
@@ -2186,7 +2213,7 @@ GNU_CONST inline MASS_LOSS_T BaseStar::CalculateMLRateRSG_Yang2023(const double 
  *                                                   DOUBLE         Mass loss rate for very massive stars (Msol yr^-1)
  *                                                   MASS_LOSS_TYPE dominant mass loss type (will be MASS_LOSS_TYPE::VMS)
  */
-GNU_CONST inline MASS_LOSS_T BaseStar::CalculateMLRateVMS_Bestenlehner2020(const double p_Mass, const double p_Luminosity) const {
+GNU_CONST inline MASS_LOSS_T BaseStar::CalculateMLrateVMS_Bestenlehner2020(const double p_Mass, const double p_Luminosity) const {
 
     constexpr double alpha       = 0.39;                                        // CAK force multiplier
     constexpr double logMdotZero = -4.78;                                       // from substituting LogMdotTrans and Gamma_e trans into eq 12. 
@@ -2198,8 +2225,9 @@ GNU_CONST inline MASS_LOSS_T BaseStar::CalculateMLRateVMS_Bestenlehner2020(const
 
 
 /*
- * CalculateMLRateWR_Hurley2000
+ * CalculateMLrateWR_Hurley2000
  *
+ * @brief
  * Calculate the Wolf-Rayet like mass loss rate for small hydrogen-envelope mass (when mu < 1.0),
  * per Hurley et al. 2000, just after eq 106
  * 
@@ -2212,7 +2240,7 @@ GNU_CONST inline MASS_LOSS_T BaseStar::CalculateMLRateVMS_Bestenlehner2020(const
  * binaries (Hurley et al. 2000)
  * 
  *
- * MASS_LOSS_T CalculateMLRateWR_Hurley2000(const double p_Luminosity, const double p_PerturbationMu) const
+ * MASS_LOSS_T CalculateMLrateWR_Hurley2000(const double p_Luminosity, const double p_PerturbationMu) const
  *
  * @param       p_Luminosity                    Luminosity of the star (Lsol)
  * @param       p_PerturbationMu                Small envelope perturbation parameter, mu
@@ -2220,13 +2248,13 @@ GNU_CONST inline MASS_LOSS_T BaseStar::CalculateMLRateVMS_Bestenlehner2020(const
  *                                                   DOUBLE         WR mass loss rate (Msol yr^-1)
  *                                                   MASS_LOSS_TYPE dominant mass loss type (will be MASS_LOSS_TYPE::WR)
  */
-GNU_CONST inline MASS_LOSS_T BaseStar::CalculateMLRateWR_Hurley2000(const double p_Luminosity, const double p_PerturbationMu) const {
+GNU_CONST inline MASS_LOSS_T BaseStar::CalculateMLrateWR_Hurley2000(const double p_Luminosity, const double p_PerturbationMu) const {
     return std::make_tuple((p_PerturbationMu >= 1.0 ? 0.0 : PPOW(p_Luminosity, 1.5) * (1.0 - p_PerturbationMu) * 1.0E-13), MASS_LOSS_TYPE::WR);
 } 
 
 
 /*
- * CalculateMLRateWR_Shenar2019_Static
+ * CalculateMLrateWR_Shenar2019_Static
  *
  * Calculate mass loss rate, and the dominant mass loss type, forWolf-Rayet stars,
  * per Shenar et al. 2019, eq 6, tbl 5.
@@ -2237,16 +2265,15 @@ GNU_CONST inline MASS_LOSS_T BaseStar::CalculateMLRateWR_Hurley2000(const double
  * The C4 (X_He) term is = 0 and is omitted.
  *  
  * 
- * MASS_LOSS_T CalculateMLRateWR_Shenar2019_Static(const double p_Luminosity, const double p_Temperature, const double p_SigmaHurley) const
+ * static MASS_LOSS_T CalculateMLrateWR_Shenar2019_Static(const double p_Luminosity, const double p_Temperature) const
  *
  * @param       p_Luminosity                    Luminosity of the star (Lsol)
  * @param       p_Temperature                   Temperature of the star (Tsol)
- * @param       p_SigmaHurley                   Sigma from Hurley et al. 2000 p24, sigma = log10(Z)
  * @return                                      Tuple containing:
  *                                                   DOUBLE         WR mass loss rate (Msol yr^-1)
  *                                                   MASS_LOSS_TYPE dominant mass loss type (will be MASS_LOSS_TYPE::WR)
  */
-GNU_CONST inline MASS_LOSS_T BaseStar::CalculateMLRateWR_Shenar2019_Static(const double p_Luminosity, const double p_Temperature, const double p_SigmaHurley) const {
+COMPAS_PURE inline MASS_LOSS_T BaseStar::CalculateMLrateWR_Shenar2019_Static(const double p_Luminosity, const double p_Temperature) const {
 
     // For H-rich WR stars (X_H > 0.4)
     constexpr double C1 = -6.78;
@@ -2254,12 +2281,12 @@ GNU_CONST inline MASS_LOSS_T BaseStar::CalculateMLRateWR_Shenar2019_Static(const
     constexpr double C3 = -0.12;
     constexpr double C5 =  0.74;
 
-    return std::make_tuple(PPOW(10.0, C1 + (C2 * log10(p_Luminosity)) + (C3 * log10(p_Temperature * TSOL)) + (C5 * p_SigmaHurley)), MASS_LOSS_TYPE::WR);
+    return std::make_tuple(PPOW(10.0, C1 + (C2 * log10(p_Luminosity)) + (C3 * log10(p_Temperature * TSOL)) + (C5 * GLOBALS->SigmaHurley())), MASS_LOSS_TYPE::WR);
 }
 
 
 /*
- * CalculateMLRateWR_ZDependent_Static
+ * CalculateMLrateWR_ZDependent_Static
  *
  * @brief
  * Calculate the Wolf-Rayet like mass loss rate for small hydrogen-envelope mass (mu < 1.0),
@@ -2270,7 +2297,7 @@ GNU_CONST inline MASS_LOSS_T BaseStar::CalculateMLRateWR_Shenar2019_Static(const
  * in binaries (Hurley et al. 2000)
  *
  *
- * MASS_LOSS_T CalculateMLRateWR_ZDependent_Static(const double p_Metallicity, const double p_Luminosity, const double p_PerturbationMu) const
+ * static MASS_LOSS_T CalculateMLrateWR_ZDependent_Static(const double p_Metallicity, const double p_Luminosity, const double p_PerturbationMu) const
  *
  * @param       p_Metallicity                   (Fractional) wetallicity of the star
  * @param       p_Luminosity                    Luminosity of the star (Lsol)
@@ -2279,7 +2306,7 @@ GNU_CONST inline MASS_LOSS_T BaseStar::CalculateMLRateWR_Shenar2019_Static(const
  *                                                   DOUBLE         WR mass loss rate (Msol yr^-1)
  *                                                   MASS_LOSS_TYPE dominant mass loss type (will be MASS_LOSS_TYPE::WR)
  */
-GNU_CONST inline MASS_LOSS_T BaseStar::CalculateMLRateWR_ZDependent_Static(const double p_Metallicity, const double p_Luminosity, const double p_PerturbationMu) const {
+GNU_CONST inline MASS_LOSS_T BaseStar::CalculateMLrateWR_ZDependent_Static(const double p_Metallicity, const double p_Luminosity, const double p_PerturbationMu) const {
     // StarTrack may still do something different here.
     // There are references to Hamann & Koesterke 1998 and Vink and de Koter 2005.
     // TW - Haven't seen StarTrack but I think H&K gives the original equation and V&dK gives the Z dependence

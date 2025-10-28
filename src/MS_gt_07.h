@@ -144,12 +144,7 @@ m_AngularMomentum                          = CalculateMomentOfInertiaAU() * m_Om
     // member functions - alphabetically
 
 
-GNU_CONST MASS_LOSS_T CalculateMLRate_Hurley2000(const double p_Mass,
-                                                 const double p_Radius,
-                                                 const double p_Luminosity,
-                                                 const double p_PerturbationMu,
-                                                 const double p_ZscaledHurley,
-                                                 const double p_WRfactor) const override;
+
 
     ENVELOPE    DetermineEnvelopeType() const;
 };

@@ -602,9 +602,9 @@ double GiantBranch::CalculateCoreMassAtHeI_Hurley2000(const double      p_Mass,
  */
 double GiantBranch::CalculateMassLossRateHurley() {
 
-    double rateNJ = CalculateMLRate_NieuwenhuijzenDeJager1990(p_Mass, p_Radius, p_Luminosity, p_ZscaledHurley);
-    double rateKR = CalculateMLRate_KudritzkiReimers1978(p_Mass, p_Radius, p_Luminosity);
-    double rateWR = CalculateMLRateWR_Hurley2000(p_Luminosity, p_Mu);
+    double rateNJ = CalculateMLrate_NieuwenhuijzenDeJager1990(p_Mass, p_Radius, p_Luminosity);
+    double rateKR = CalculateMLrate_KudritzkiReimers1978(p_Mass, p_Radius, p_Luminosity);
+    double rateWR = CalculateMLrateWR_Hurley2000(p_Luminosity, p_Mu);
 
     m_DominantMassLossRate = MASS_LOSS_TYPE::GB;
     double dominantRate    = std::max(rateNJ, rateKR);

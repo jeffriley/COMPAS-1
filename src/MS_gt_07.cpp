@@ -2,41 +2,6 @@
 
 
 /*
- * CalculateMLRate_Hurley2000
- *
- * @brief
- * Calculate the mass loss rate, and the dominant mass loss type, per Hurley et al. 2000.
- *
- *
- * MASS_LOSS_T CalculateMLRate_Hurley2000(const double p_Mass,
- *                                        const double p_Radius,
- *                                        const double p_Luminosity,
- *                                        const double p_PerturbationMu,
- *                                        const double p_ZscaledHurley,
- *                                        const double p_WRfactor) const
- *
- * @param       p_Mass                          Mass of the star (Msol)
- * @param       p_Radius                        Radius of the star (Rsol)
- * @param       p_Luminosity                    Luminosity of the star (Lsol)
- * @param       p_PerturbationMu                Small envelope perturbation parameter, mu
- * @param       p_ZscaledHurley                 Z inversely scaled by Hurley ZSOL (Z / ZSOL_HURLEY)
- * @param       p_WRfactor                      WR mass loss factor
- * @return                                      Tuple containing:
- *                                                   DOUBLE         Mass loss rate (Msol yr^-1)
- *                                                   MASS_LOSS_TYPE dominant mass loss type (coule be MASS_LOSS_TYPE::NONE)
- */
-GNU_CONST MASS_LOSS_T MS_gt_07::CalculateMLRate_Hurley2000(const double p_Mass,
-                                                           const double p_Radius,
-                                                           const double p_Luminosity,
-                                                           const double p_PerturbationMu,
-                                                           const double p_ZscaledHurley,
-                                                           const double p_WRfactor) const {
-    const double dMdt = CalculateMLRate_NieuwenhuijzenDeJager(p_Mass, p_Radius, p_Luminosity, p_ZscaledHurley);
-    return std::make_tuple(dMdt, (dMdt > 0.0 ? MASS_LOSS_TYPE::GB : MASS_LOSS_TYPE::NONE));
-}
-
-
-/*
  * DetermineEnvelopeType
  *
  * @brief

@@ -846,53 +846,42 @@ double EAGB::CalculateRadiusOnPhase_Static(const double      p_Mass,
 
 
 /*
- * CalculateMLRate_Hurley2000
+ * CalculateMLrate_Hurley2000
  *
  * @brief
- * Calculate the mass loss rate, and the dominant mass loss type, per Hurley et al. 2000.
+ * Calculate the mass loss rate, and the dominant mass loss type, for EAGB stars,
+ * per Hurley et al. 2000.
  * 
  * 
- * MASS_LOSS_T CalculateMLRate_Hurley2000(const double p_Mass,
- *                                        const double p_Radius,
- *                                        const double p_Luminosity,
- *                                        const double p_PerturbationMu,
- *                                        const double p_ZscaledHurley,
- *                                        const double p_WRfactor) const
- * 
+ * MASS_LOSS_T CalculateMLrate_Hurley2000(const double p_Mass, const double p_Radius, const double p_Luminosity, const double p_PerturbationMu) const
+ *     
  * @param       p_Mass                          Mass of the star (Msol)
  * @param       p_Radius                        Radius of the star (Rsol)
  * @param       p_Luminosity                    Luminosity of the star (Lsol)
  * @param       p_PerturbationMu                Small envelope perturbation parameter, mu
- * @param       p_ZscaledHurley                 Z inversely scaled by Hurley ZSOL (Z / ZSOL_HURLEY)
- * @param       p_WRfactor                      WR mass loss factor
  * @return                                      Tuple containing:
  *                                                   DOUBLE         Mass loss rate (Msol yr^-1)
  *                                                   MASS_LOSS_TYPE dominant mass loss type (may be MASS_LOSS_TYPE::NONE)
  */
-GNU_CONST MASS_LOSS_T CalculateMLRate_Hurley2000(const double p_Mass,
-                                                 const double p_Radius,
-                                                 const double p_Luminosity,
-                                                 const double p_PerturbationMu,
-                                                 const double p_ZscaledHurley,
-                                                 const double p_WRfactor) const {
+COMPAS_PURE MASS_LOSS_T CalculateMLrate_Hurley2000(const double p_Mass, const double p_Radius, const double p_Luminosity, const double p_PerturbationMu) const {
    
     // calculate max GB mass loss rate - default rate
 
-    const double mDotWR = CalculateMLRateWR_Hurley2000(p_Luminosity, p_PerturbationMu);
-    const double mDotKR = CalculateMLRate_KudritzkiReimers1978(p_Mass, p_Radius, p_Luminosity);
-    const double mDotNJ = CalculateMLRate_NieuwenhuijzenDeJager1990(p_Mass, p_Radius, p_Luminosity, p_ZscaledHurley);
-    const double mDotVW = CalculateMLRate_VassiliadisWood1993(p_Mass, p_Radius, p_Luminosity);
+    const double dMdtWR = CalculateMLrateWR_Hurley2000(p_Luminosity, p_PerturbationMu);
+    const double dMdtKR = CalculateMLrate_KudritzkiReimers1978(p_Mass, p_Radius, p_Luminosity);
+    const double dMdtNJ = CalculateMLrate_NieuwenhuijzenDeJager1990(p_Mass, p_Radius, p_Luminosity);
+    const double dMdtVW = CalculateMLrate_VassiliadisWood1993(p_Mass, p_Radius, p_Luminosity);
 
-    double mDot = std::max(mDotVW, std::max(mDotNJ, mDotKR));
+    double dMdt = std::max(dMdtVW, std::max(dMdtNJ, dMdtKR));   // max GB mass loss rate
 
     MASS_LOSS_TYPE dominantMassLossType = MASS_LOSS_TYPE::GB;   // default dominant mass loss type is GB
 
-    if (mDotWR > mDot) {                                        // WR rate > max GB rate?
+    if (dMdtWR > dMdt) {                                        // WR rate > max GB rate?
         dominantMassLossType = MASS_LOSS_TYPE::WR;              // yes - set dominant type to WR
-        mDot = mDotWR;                                          // and rate to WR rate
+        dMdt = mDotWR;                                          // and rate to WR rate
     }
 
-    return std::make_tuple(mDot, dominantMassLossType);
+    return std::make_tuple(dMdt, dominantMassLossType);
 }
 
 

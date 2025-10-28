@@ -231,17 +231,13 @@ private:
         { "use-mass-loss",                                         "mass-loss-prescription",                        false, "20250809" },
         { "mass-transfer-jloss-macleod-linear-fraction-degen",     "mass-transfer-jloss-linear-fraction-degen",     false, "20250819" }, 
         { "mass-transfer-jloss-macleod-linear-fraction-non-degen", "mass-transfer-jloss-linear-fraction-non-degen", false, "20250819" },   
-        { "initial-mass",                                          "mass",                                          false, "20250825" },
-        { "initial-mass-1",                                        "mass-1",                                        false, "20250825" },
-        { "initial-mass-2",                                        "mass-2",                                        false, "20250825" }
+        { "scale-CHE-mass-loss-with-surface-helium-abundance",     "scale-mass-loss-with-surface-helium-abundance", false, "20251027" }
     };
 
     std::vector<std::tuple<std::string, std::string, std::string, bool, std::string>> deprecatedOptionValues = {
-        { "pulsational-pair-instability-prescription", "COMPAS",      "WOOSLEY",     false, "20250208" },
 	    { "pulsar-birth-spin-period-distribution",     "ZERO",        "NOSPIN",      false, "20250303" },
         { "tides-prescription",                        "KAPIL2024",   "KAPIL2025",   false, "20250525" },
         { "mass-loss-prescription",                    "MERRITT2024", "MERRITT2025", false, "20250717" },
-        { "main-sequence-core-mass-prescription",      "ZERO",        "HURLEY",      false, "20251024" },
         { "use-mass-loss",                             "TRUE",        "MERRITT2025", true,  "20250809" },
         { "use-mass-loss",                             "ON",          "MERRITT2025", true,  "20250809" },
         { "use-mass-loss",                             "YES",         "MERRITT2025", true,  "20250809" },
@@ -249,7 +245,8 @@ private:
         { "use-mass-loss",                             "FALSE",       "ZERO",        true,  "20250809" },
         { "use-mass-loss",                             "OFF",         "ZERO",        true,  "20250809" },
         { "use-mass-loss",                             "NO",          "ZERO",        true,  "20250809" },
-        { "use-mass-loss",                             "0",           "ZERO",        true,  "20250809" }
+        { "use-mass-loss",                             "0",           "ZERO",        true,  "20250809" },
+        { "main-sequence-core-mass-prescription",      "ZERO",        "HURLEY",      false, "20251024" }
     };
 
     // the following vector is used to replace deprecated options in the logfile-definitions file
@@ -556,7 +553,6 @@ private:
         "rocket-kick-theta-1",
         "rocket-kick-theta-2",
 
-        "scale-CHE-mass-loss-with-surface-helium-abundance",
         "semi-major-axis", "a",
         "semi-major-axis-distribution",
         "semi-major-axis-max",
@@ -698,7 +694,7 @@ private:
         "rlof-printing",
         "rotational-velocity-distribution",
 
-        "scale-CHE-mass-loss-with-surface-helium-abundance",
+        "scale-mass-loss-with-surface-helium-abundance",
         "semi-major-axis-distribution",
         "stellar-zeta-prescription",
         "store-input-files",
@@ -713,6 +709,7 @@ private:
 
         "use-mass-loss",
         "use-mass-transfer",
+        "USSN-kicks-override-mandel-muller",
 
         "VMW-mass-loss-prescription",
         "version", "v",
@@ -977,6 +974,7 @@ public:
             double                                              m_MullerMandelKickNS;                                           // Multiplier for NS kicks per Mandel and Mueller, 2020
             double                                              m_MullerMandelSigmaKickBH;                                      // Scatter for BH kicks per Mandel and Mueller, 2020
             double                                              m_MullerMandelSigmaKickNS;                                      // Scatter for NS kicks per Mandel and Mueller, 2020
+            bool                                                m_USSNKicksOverrideMandelMuller;                                // Use user-defined USSN kicks (as a fixed value) in lieu of the Mandel & Muller kick prescription for USSNe
 
             // Black hole kicks
             ENUM_OPT<BLACK_HOLE_KICKS_MODE>                     m_BlackHoleKicksMode;                                           // Which black hole kicks mode
@@ -992,7 +990,7 @@ public:
             // CHE - Chemically Homogeneous Evolution
             ENUM_OPT<CHE_MODE>                                  m_CheMode;                                                      // Which Chemically Homogeneous Evolution mode
             bool                                                m_EnhanceCHELifetimesLuminosities;                              // Whether to enhance the lifetimes and luminosities of CHE stars relative to SSE MS stars
-            bool                                                m_ScaleCHEMassLossWithSurfaceHeliumAbundance;                   // Whether to transition between OB and WR mass loss rates for CHE stars on the MS
+            bool                                                m_ScaleMassLossWithSurfaceHeliumAbundance;                      // Whether to transition between OB/VMS and WR mass loss rates for stars on the MS/CHE
 
             // Supernova remnant mass
             ENUM_OPT<REMNANT_MASS_PRESCRIPTION>                 m_RemnantMassPrescription;                                      // Which remnant mass prescription
@@ -1745,7 +1743,7 @@ public:
     double                                      RotationalFrequency2() const                                            { return OPT_VALUE("rotational-frequency-2", m_RotationalFrequency2, true); }
     RSG_MASS_LOSS_PRESCRIPTION                  RSGMassLossPrescription() const                                         { return OPT_VALUE("RSG-mass-loss-prescription", m_RSGMassLossPrescription.type, true); }
 
-    bool                                        ScaleCHEMassLossWithSurfaceHeliumAbundance() const                      { return OPT_VALUE("scale-CHE-mass-loss-with-surface-helium-abundance", m_ScaleCHEMassLossWithSurfaceHeliumAbundance, false); }
+    bool                                        ScaleMassLossWithSurfaceHeliumAbundance() const                         { return OPT_VALUE("scale-mass-loss-with-surface-helium-abundance", m_ScaleMassLossWithSurfaceHeliumAbundance, true); }
     double                                      ScaleTerminalWindVelocityWithMetallicityPower() const                   { return OPT_VALUE("scale-terminal-wind-velocity-with-metallicity-power", m_ScaleTerminalWindVelocityWithMetallicityPower, true);}
     double                                      SemiMajorAxis() const                                                   { return OPT_VALUE("semi-major-axis", m_SemiMajorAxis, true); }
     SEMI_MAJOR_AXIS_DISTRIBUTION                SemiMajorAxisDistribution() const                                       { return OPT_VALUE("semi-major-axis-distribution", m_SemiMajorAxisDistribution.type, true); }
@@ -1785,6 +1783,7 @@ public:
     bool                                        UseMassTransfer() const                                                 { return OPT_VALUE("use-mass-transfer", m_UseMassTransfer, true); }
     bool                                        UsePairInstabilitySupernovae() const                                    { return OPT_VALUE("pair-instability-supernovae", m_UsePairInstabilitySupernovae, true); }
     bool                                        UsePulsationalPairInstability() const                                   { return OPT_VALUE("pulsational-pair-instability", m_UsePulsationalPairInstability, true); }
+    bool                                        USSNKicksOverrideMandelMuller() const                                   { return OPT_VALUE("USSN-kicks-override-mandel-muller", m_USSNKicksOverrideMandelMuller, true); }
 
     VMS_MASS_LOSS_PRESCRIPTION                  VMSMassLossPrescription() const                                         { return OPT_VALUE("VMS-mass-loss-prescription", m_VMSMassLossPrescription.type, true); }
     double                                      WolfRayetFactor() const                                                 { return OPT_VALUE("wolf-rayet-multiplier", m_WolfRayetFactor, true); }

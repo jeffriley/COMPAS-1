@@ -173,51 +173,39 @@ double HeMS::CalculateMTRejuvenationFactor() {
 
 
 /*
- * CalculateMLRate_Hurley2000
+ * CalculateMLrate_Hurley2000
  *
  * @brief
- * Calculate the mass loss rate, and the dominant mass loss type, for the star
- * at the current evolutionary phase, per Hurley et al. 2000.
+ * Calculate the mass loss rate, and the dominant mass loss type, for HeMS stars,
+ * per Hurley et al. 2000.
  *
  * 
- * MASS_LOSS_T CalculateMLRate_Hurley2000(const double p_Mass,
- *                                        const double p_Radius,
- *                                        const double p_Luminosity,
- *                                        const double p_PerturbationMu,
- *                                        const double p_ZscaledHurley,
- *                                        const double p_WRfactor) const
+ * MASS_LOSS_T CalculateMLrate_Hurley2000(const double p_Mass, const double p_Radius, const double p_Luminosity, const double p_PerturbationMu) const
  *
  * @param       p_Mass                          Mass of the star (Msol)
  * @param       p_Radius                        Radius of the star (Rsol)
  * @param       p_Luminosity                    Luminosity of the star (Lsol)
  * @param       p_PerturbationMu                Small envelope perturbation parameter, mu
- * @param       p_ZscaledHurley                 Z inversely scaled by Hurley ZSOL (Z / ZSOL_HURLEY)
- * @param       p_WRfactor                      WR mass loss factor
  * @return                                      Tuple containing:
  *                                                   DOUBLE         Mass loss rate for massive stars (Msol yr^-1)
  *                                                   MASS_LOSS_TYPE dominant mass loss type (could be MASS_LOSS_TYPE::NONE)
  */
-GNU_CONST MASS_LOSS_T HeMS::CalculateMLRate_Hurley2000(const double p_Mass,
-                                                       const double p_Radius,
-                                                       const double p_Luminosity,
-                                                       const double p_PerturbationMu,
-                                                       const double p_ZscaledHurley,
-                                                       const double p_WRfactor) const {
+COMPAS_PURE MASS_LOSS_T HeMS::CalculateMLrate_Hurley2000(const double p_Mass, const double p_Radius, const double p_Luminosity, const double p_PerturbationMu) const {
 
-    const double rateWR = CalculateMLRateWR_Hurley2000(p_Luminosity, 0.0) * p_WRfactor;
-    const double rateKR = CalculateMLRate_KudritzkiReimers1978(p_Mass, p_Radius, p_Luminosity);
-    const double rateNJ = CalculateMLRate_NieuwenhuijzenDeJager1990(p_Mass, p_Radius, p_Luminosity, p_ZscaledHurley);
+    const double dMdtWR = CalculateMLrateWR_Hurley2000(p_Luminosity, 0.0) * OPTIONS->WolfRayetFactor();
+    const double dMdtKR = CalculateMLrate_KudritzkiReimers1978(p_Mass, p_Radius, p_Luminosity);
+    const double dMdtNJ = CalculateMLrate_NieuwenhuijzenDeJager1990(p_Mass, p_Radius, p_Luminosity);
 
-    double dMdt = std::max(rateNJ, rateKR);                 // default mass loss rate
-    MASS_LOSS_TYPE dominantMLType = MASS_LOSS_TYPE::GB;     // default dominant mass loss type
+    double dMdt = std::max(dMdtNJ, dMdtKR);                 // default mass loss rate
+    MASS_LOSS_TYPE dominantMLtype = MASS_LOSS_TYPE::GB;     // default dominant mass loss type
 
-    if (rateWR > dMdt) {                                    // WR ML rate bigger?
-        dMdt = rateWR;                                      // yes - use WR rate
-        dominantMLType = MASS_LOSS_TYPE::WR;
+    if (dMdtWR > dMdt) {                                    // WR ML rate bigger?
+        dMdt = dMdtWR;                                      // yes - use WR rate
+        dominantMLtype = MASS_LOSS_TYPE::WR;
     }
 
     // return mass loss rate with user supplied WR factor applied
-    return std::make_tuple(dMdt, dominantMLType);
+    return std::make_tuple(dMdt, dominantMLtype);
 }
 
 
@@ -228,55 +216,39 @@ GNU_CONST MASS_LOSS_T HeMS::CalculateMLRate_Hurley2000(const double p_Mass,
 
 
 /*
- * CalculateMLRate_Merritt2025_Static
+ * CalculateMLrate_Merritt2025_Static
  *
  * @brief
- * Calculate mass loss rate, and dominant mass loss type, at the current evolutionary phase,
+ * Calculate mass loss rate, and dominant mass loss type, for HeMS stars,
  * per Merritt et al., 2025.
  *
  * 
- * static MASS_LOSS_T CalculateMLRate_Merritt2025_Static(const double                    p_Metallicity,
- *                                                       const double                    p_Luminosity,
- *                                                       const double                    p_Temperature,
- *                                                       const double                    p_SigmaHurley,
- *                                                       const double                    p_ZetaAnders,
- *                                                       const double                    p_WRfactor,
- *                                                       const WR_MASS_LOSS_PRESCRIPTION p_WRprescription) {
-
+ * static MASS_LOSS_T CalculateMLrate_Merritt2025_Static(const double p_Metallicity, const double p_Luminosity, const double p_Temperature)
+ * 
  * 
  * @param       p_Metallicity                   Metallicity of the star
  * @param       p_Luminosity                    Luminosity of the star (Lsol)
  * @param       p_Temperature                   Temperature of the star (Tsol)
- * @param       p_SigmaHurley                   Hurley sigma value (log10(Z))
- * @param       p_ZetaAnders                    Anders zeta value (log10(Z / ZSOL_ANDERS))
- * @param       p_WRfactor                      WR mass loss factor
- * @param       p_WRprescription                WR mass loss prescription to use
  * @return                                      Tuple containing:
  *                                                   DOUBLE         WR mass loss rate (Msol yr^-1)
  *                                                   MASS_LOSS_TYPE dominant mass loss type (could be MASS_LOSS_TYPE::NONE)
  */
-MASS_LOSS_T HeMS::CalculateMLRate_Merritt2025_Static(const double                    p_Metallicity,
-                                                     const double                    p_Luminosity,
-                                                     const double                    p_Temperature,
-                                                     const double                    p_SigmaHurley,
-                                                     const double                    p_ZetaAnders,
-                                                     const double                    p_WRfactor,
-                                                     const WR_MASS_LOSS_PRESCRIPTION p_WRprescription) {
+COMPAS_PURE static MASS_LOSS_T HeMS::CalculateMLrate_Merritt2025_Static(const double p_Metallicity, const double p_Luminosity, const double p_Temperature) {
 
 
-    MASS_LOSS_TYPE dominantMLType;
+    MASS_LOSS_TYPE dominantMLtype;
     double dMdt;
 
-    switch (p_WRprescription) {                                                     // which WR mass loss prescription?
+    switch (OPTIONS->WRMassLossPrescription()) {                                                     // which WR mass loss prescription?
 
         case WR_MASS_LOSS_PRESCRIPTION::BELCZYNSKI2010:                             // BELCZYNSKI2010
-            std::tie(dMdt, dominantMLType) = HeMS::CalculateMLRate_Belczynski2010_Static(p_Metallicity, p_Luminosity);
+            std::tie(dMdt, dominantMLtype) = HeMS::CalculateMLrate_Belczynski2010_Static(p_Metallicity, p_Luminosity);
             break;
 
         case WR_MASS_LOSS_PRESCRIPTION::SANDERVINK2023:                             // SANDERVINK2023
 
             // start with Sander & Vink 2020
-            std::tie(dMdt, dominantMLType) = BaseStar::CalculateMLRateWR_SanderVink2020_Static(p_Luminosity, 0.0, p_ZetaAnders);
+            std::tie(dMdt, dominantMLtype) = BaseStar::CalculateMLrateWR_SanderVink2020_Static(p_Luminosity, 0.0, GLOBALS->ZetaAnders());
 
             // apply the Sander et al. 2023 temperature correction to the Sander & Vink 2020
             // rate if necessary - gives the Sander & Vink 2023 rate
@@ -299,34 +271,34 @@ MASS_LOSS_T HeMS::CalculateMLRate_Merritt2025_Static(const double               
             // and Sander & Vink 2020/2023 for high mass or luminosity
 
             const double dMdtVink2017;
-            const double dominantMLTypeVink2017;
-            std::tie(dMdtVink2017, dominantMLTypeVink2017) = HeMS::CalculateMLRate_Vink2017_Static(p_Luminosity, p_ZetaAnders);
+            const double dominantMLtypeVink2017;
+            std::tie(dMdtVink2017, dominantMLtypeVink2017) = HeMS::CalculateMLrate_Vink2017_Static(p_Luminosity, GLOBALS->ZetaAnders());
             if (dMdtVink2017 > dMdt) {
                 dMdt           = dMdtVink2017;
-                dominantMLType = dominantMLTypeVink2017;
+                dominantMLtype = dominantMLtypeVink2017;
             }
             break;
 
         case WR_MASS_LOSS_PRESCRIPTION::SHENAR2019:                                 // SHENAR2019
 
             // start with Shenar+ 2019
-            std::tie(dMdt, dominantMLType) = HeMS::CalculateMLRateWR_Shenar2019_Static(p_Luminosity, p_Temperature, p_SigmaHurley);
+            std::tie(dMdt, dominantMLtype) = HeMS::CalculateMLrateWR_Shenar2019_Static(p_Luminosity, p_Temperature, GLOBALS->SigmaHurley());
 
             // compare Shenar+ 2019 mass loss rate to Vink 2017, and clamp to a minimum
             // of Vink 2017 to avoid extrapolating to low luminosity
 
             const double dMdtVink2017;
-            const double dominantMLTypeVink2017;
-            std::tie(dMdtVink2017, dominantMLTypeVink2017) = HeMS::CalculateMLRate_Vink2017_Static(p_Luminosity, p_ZetaAnders);
+            const double dominantMLtypeVink2017;
+            std::tie(dMdtVink2017, dominantMLtypeVink2017) = HeMS::CalculateMLrate_Vink2017_Static(p_Luminosity, GLOBALS->ZetaAnders());
             if (dMdtVink2017 > dMdt) {
                 dMdt           = dMdtVink2017;
-                dominantMLType = dominantMLTypeVink2017;
+                dominantMLtype = dominantMLtypeVink2017;
             }
             break;
 
         case WR_MASS_LOSS_PRESCRIPTION::ZERO:                                       // ZERO
             dMdt           = 0.0;                                                   // no mass loss
-            dominantMLType = MASS_LOSS_TYPE::NONE;
+            dominantMLtype = MASS_LOSS_TYPE::NONE;
             break;
 
         default:                                                                    // unexpected prescription
@@ -341,7 +313,7 @@ MASS_LOSS_T HeMS::CalculateMLRate_Merritt2025_Static(const double               
     }
 
     // return mass loss rate with user supplied WR factor applied
-    return std::make_tuple(dMdt * p_WRfactor, dominantMLType);
+    return std::make_tuple(dMdt * OPTIONS->WolfRayetFactor(), dominantMLtype);
 }
 
 

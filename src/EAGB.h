@@ -110,12 +110,7 @@ GNU_CONST inline double CalculateCOCoreMassAtPhaseEnd_Hurley2000() const overrid
 
 
 
-GNU_CONST MASS_LOSS_T CalculateMLRate_Hurley2000(const double p_Mass,
-                                                 const double p_Radius,
-                                                 const double p_Luminosity,
-                                                 const double p_PerturbationMu,
-                                                 const double p_ZscaledHurley,
-                                                 const double p_WRfactor) const override;
+    COMPAS_PURE MASS_LOSS_T CalculateMLrate_Hurley2000(const double p_Mass, const double p_Radius, const double p_Luminosity, const double p_PerturbationMu) const override;
 
 
 

@@ -127,27 +127,16 @@ GNU_CONST static double CalculateLuminosityAtZAHeMS_Hurley2000_Static(const doub
 
 
 
-GNU_CONST static MASS_LOSS_T CalculateMLRate_Belczynski2010_Static(const double p_Metallicity, const double p_Luminosity);
+    GNU_CONST static MASS_LOSS_T CalculateMLrate_Belczynski2010_Static(const double p_Metallicity, const double p_Luminosity);
 
-GNU_CONST MASS_LOSS_T CalculateMLRate_Hurley2000(const double p_Mass,
-                                                 const double p_Radius,
-                                                 const double p_Luminosity,
-                                                 const double p_PerturbationMu,
-                                                 const double p_ZscaledHurley,
-                                                 const double p_WRfactor) const override;
+    COMPAS_PURE MASS_LOSS_T CalculateMLrate_Hurley2000(const double p_Mass, const double p_Radius, const double p_Luminosity, const double p_PerturbationMu) const override;
 
-GNU_CONST static MASS_LOSS_T CalculateMLRate_Merritt2025_Static(const double                    p_Metallicity,
-                                                                const double                    p_Luminosity,
-                                                                const double                    p_Temperature,
-                                                                const double                    p_SigmaHurley,
-                                                                const double                    p_ZetaAnders,
-                                                                const double                    p_WRfactor,
-                                                                const WR_MASS_LOSS_PRESCRIPTION p_WRprescription);
+COMPAS_PURE static MASS_LOSS_T CalculateMLrate_Merritt2025_Static(const double p_Metallicity, const double p_Luminosity, const double p_Temperature);
 
 
-GNU_CONST static MASS_LOSS_T CalculateMLRate_Vink2017_Static(const double, p_Luminosity, const double p_ZetaAnders);
+GNU_CONST static MASS_LOSS_T CalculateMLrate_Vink2017_Static(const double, p_Luminosity, const double p_ZetaAnders);
 
-GNU_CONST static MASS_LOSS_T CalculateMLRateWR_Shenar2019_Static(const double p_Luminosity, const double p_Temperature, const double p_SigmaHurley);
+GNU_CONST static MASS_LOSS_T CalculateMLrateWR_Shenar2019_Static(const double p_Luminosity, const double p_Temperature, const double p_SigmaHurley);
 
 
 GNU_CONST static double CalculateRadiusAtZAHeMS_Hurley2000_Static(const double p_Mass);
@@ -689,17 +678,17 @@ GNU_CONST static inline double HeMS::CalculateRadius_Hurley2000_Static(const dou
 
 
 /*
- * CalculateMLRate_Belczynski2010_Static
+ * CalculateMLrate_Belczynski2010_Static
  *
  * @brief
  * Calculate the mass loss rate, and the dominant mass loss type, per Belczynski 2010
  * (as implemented in StarTrack - courtesy Chris Belczynski).
  *
- * Since this is a static function and is not derived from BaseStar::CalculateMLRate_Belczynski2010(),
- * there is no requirement that the parameter list match that of BaseStar::CalculateMLRate_Belczynski2010()
+ * Since this is a static function and is not derived from BaseStar::CalculateMLrate_Belczynski2010(),
+ * there is no requirement that the parameter list match that of BaseStar::CalculateMLrate_Belczynski2010()
  * 
  *
- * static MASS_LOSS_T CalculateMLRate_Belczynski2010_Static(const double p_Metallicity, const double p_Luminosity)
+ * static MASS_LOSS_T CalculateMLrate_Belczynski2010_Static(const double p_Metallicity, const double p_Luminosity)
  *
  * @param       p_Metallicity                   Metallicity of the star
  * @param       p_Luminosity                    Luminosity of the star (Lsol)
@@ -707,13 +696,13 @@ GNU_CONST static inline double HeMS::CalculateRadius_Hurley2000_Static(const dou
  *                                                   DOUBLE         mass loss rate (Msol yr^-1)
  *                                                   MASS_LOSS_TYPE dominant mass loss type (will be MASS_LOSS_TYPE::WR)
  */
-static GNU_CONST inline MASS_LOSS_T HeMS::CalculateMLRate_Belczynski2010_Static(const double p_Metallicity, const double p_Luminosity) {
-    return BaseStar::CalculateMLRateWR_ZDependent_Static(p_Metallicity, p_Luminosity, 0.0);
+static GNU_CONST inline MASS_LOSS_T HeMS::CalculateMLrate_Belczynski2010_Static(const double p_Metallicity, const double p_Luminosity) {
+    return BaseStar::CalculateMLrateWR_ZDependent_Static(p_Metallicity, p_Luminosity, 0.0);
 }
 
 
 /*
- * CalculateMLRate_Vink2017_Static
+ * CalculateMLrate_Vink2017_Static
  *
  * @brief
  * Calculate the mass loss rate, and the dominant mass loss type, for low-mass helium stars,
@@ -722,7 +711,7 @@ static GNU_CONST inline MASS_LOSS_T HeMS::CalculateMLRate_Belczynski2010_Static(
  * (See https://ui.adsabs.harvard.edu/abs/2017A%26A...607L...8V/abstract)
  * 
  * 
- * static MASS_LOSS_T CalculateMLRate_Vink2017_Static(const double, p_Luminosity, const double p_ZetaAnders)
+ * static MASS_LOSS_T CalculateMLrate_Vink2017_Static(const double, p_Luminosity, const double p_ZetaAnders)
  *
  * @param       p_Luminosity                    Luminosity of the star (Lsol)
  * @param       p_ZetaAnders                    Anders zeta value (log10(Z / ZSOL_ANDERS))
@@ -730,13 +719,13 @@ static GNU_CONST inline MASS_LOSS_T HeMS::CalculateMLRate_Belczynski2010_Static(
  *                                                   DOUBLE         Mass loss rate (Msol yr^-1)
  *                                                   MASS_LOSS_TYPE dominant mass loss type (will be MASS_LOSS_TYPE::WR)
  */
-static GNU_CONST inline MASS_LOSS_T HeMS::CalculateMLRate_Vink2017_Static(const double, p_Luminosity, const double p_ZetaAnders) {
+static GNU_CONST inline MASS_LOSS_T HeMS::CalculateMLrate_Vink2017_Static(const double, p_Luminosity, const double p_ZetaAnders) {
     return std::make_tuple(PPOW(10.0, -13.3 + 1.36 * log10(p_Luminosity) + 0.61 * p_ZetaAnders), MASS_LOSS_TYPE:WR);
 }
 
 
 /*
- * CalculateMLRateWR_Shenar2019_Static
+ * CalculateMLrateWR_Shenar2019_Static
  *
  * @brief
  * Calculate the mass loss rate, and the dominant mass loss type, for Wolf-Rayet stars,
@@ -748,7 +737,7 @@ static GNU_CONST inline MASS_LOSS_T HeMS::CalculateMLRate_Vink2017_Static(const 
  * The C4 (X_He) term is = 0 and is omitted.
  *  
  * 
- * static MASS_LOSS_T CalculateMLRateWR_Shenar2019_Static(const double p_Luminosity, const double p_Temperature, const double p_SigmaHurley)
+ * static MASS_LOSS_T CalculateMLrateWR_Shenar2019_Static(const double p_Luminosity, const double p_Temperature, const double p_SigmaHurley)
  *
  * @param       p_Luminosity                    Luminosity of the star (Lsol)
  * @param       p_Temperature                   Temperature of the star (Tsol)
@@ -757,7 +746,7 @@ static GNU_CONST inline MASS_LOSS_T HeMS::CalculateMLRate_Vink2017_Static(const 
  *                                                   DOUBLE         WR mass loss rate (Msol yr^-1)
  *                                                   MASS_LOSS_TYPE dominant mass loss type (will be MASS_LOSS_TYPE::WR)
  */
-static GNU_CONST inline MASS_LOSS_T HeMS::CalculateMLRateWR_Shenar2019_Static(const double p_Luminosity, const double p_Temperature, const double p_SigmaHurley) {
+static GNU_CONST inline MASS_LOSS_T HeMS::CalculateMLrateWR_Shenar2019_Static(const double p_Luminosity, const double p_Temperature, const double p_SigmaHurley) {
 
     constexpr double C1 = -7.99;
     constexpr double C2 =  0.97;

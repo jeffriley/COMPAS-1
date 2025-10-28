@@ -70,7 +70,6 @@ GNU_CONST double CalculateLifetimesRatio(const double p_Mass) const;
 
 GNU_CONST double CalculateLogLuminositiesRatio(const double p_Mass) const;
 
-GNU_CONST double CalculateMLFractionOB(const double p_HeAbundanceSurface) const;
 
 GNU_CONST DBL_VECTOR CalculateTimescales_Hurley(const double p_Mass, const DBL_VECTOR& p_tScales, const DBL_VECTOR& p_aN) const;
 
@@ -113,23 +112,17 @@ double CalculateLuminosityOnPhase(
 
     
     // Mass loss rate
-    GNU_CONST MASS_LOSS_T CalculateMLRate_Belczynski2010(
-        const double                     p_Metallicity,
-        const double                     p_Mass,
-        const double                     p_Radius,
-        const double                     p_Luminosity,
-        const double                     p_Temperature,
-        const double                     p_PerturbationMu,
-        const double                     p_ZscaledHurley,
-        const double                     p_HeAbundanceSurface,
-        const double                     p_CoolWindsMultiplier,
-        const double                     p_WRfactor,
-        const bool                       p_ScaleWithSurfaceHe,
-        const bool                       p_EnhanceForRotation,
-        const LBV_MASS_LOSS_PRESCRIPTION p_LBVprescription
+    COMPAS_PURE MASS_LOSS_T CalculateMLrate_Belczynski2010(
+        const double p_Metallicity,
+        const double p_Mass,
+        const double p_Radius,
+        const double p_Luminosity,
+        const double p_Temperature,
+        const double p_PerturbationMu,
+        const double p_HeAbundanceSurface
     ) const override;
 
-    COMPAS_PURE MASS_LOSS_T CH::CalculateMLRate_Merritt2025(
+    COMPAS_PURE MASS_LOSS_T CH::CalculateMLrate_Merritt2025(
         const double p_Metallicity,
         const double p_Mass,
         const double p_Radius,
@@ -137,14 +130,12 @@ double CalculateLuminosityOnPhase(
         const double p_Temperature,
         const double p_PerturbationMu,
         const double p_mStart,
-        const double p_SigmaHurley,
-        const double p_ZetaAnders,
-        const double p_ZetaAsplund,
-        const double p_ZscaledHurley,
         const double p_HeAbundanceSurface,
-        const double p_WRfactor,
-        const double p_TerminalWindScalePower
     ) const override;
+
+
+    double          CalculateMassLossRateBelczynski2010()               { return BaseStar::CalculateMassLossRateBelczynski2010() * CalculateMassLossRateEnhancementRotation(); }
+    double          CalculateMassLossRateMerritt2025()                  { return BaseStar::CalculateMassLossRateBelczynski2010() * CalculateMassLossRateEnhancementRotation(); }
 
 
     double          CalculateMassLossRateWeightOB(const double p_HeliumAbundanceSurface);
@@ -356,7 +347,7 @@ inline double CH::CalculateLifetimesRatio_Szecsi2020(const double p_Mass) const 
 
 
 /*
- * CalculateMLRateRotationEnhancement_Langer1998
+ * CalculateMLrateRotationEnhancement_Langer1998
  *
  * @brief
  * Calculate mass loss rate enhancement for rapidly rotating stars, per Langer 1998, eq 3
@@ -367,44 +358,135 @@ inline double CH::CalculateLifetimesRatio_Szecsi2020(const double p_Mass) const 
  * from Friend & Abbott 1986 (see https://ui.adsabs.harvard.edu/abs/1986ApJ...311..701F/abstract) 
  *
  * 
- * double CalculateMLRateRotationEnhancement_Langer1998() const
+ * double CalculateMLrateRotationEnhancement_Langer1998() const
  *
  * @return                                      Mass loss enhancement factor for rapidly rotating stars
  */
-GNU_CONST inline double CalculateMLRateRotationEnhancement_Langer1998() const {
+GNU_CONST inline double CalculateMLrateRotationEnhancement_Langer1998() const {
     return PPOW((1.0 - Omega() / OmegaBreak()), -0.43);
 }
 
 
 /*
- * CalculateMLFractionOB
+ * CalculateMLrate_Belczynski2010
  *
  * @brief
- * Calculate the fraction of mass loss attributable to OB mass loss, for a CH star,
- * per Yoon et al. 2006
+ * Calculate the mass loss rate, per Belczynski et al. 2010, based on the StarTrack
+ * implementation, and modified for CH stars.
  * 
- * The model described in Yoon et al. 2006 (also Szecsi et al. 2015) uses OB mass loss while the
- * He surface abundance is below 0.55, WR mass loss when the surface He abundance is above 0.7,
- * and linearly interpolates when the He surface abundance is between those limits.
+ * If option `--enable-rotationally-enhanced-mass-loss` was specified, the  mass
+ * loss rate will be enhanced for rotation.
  * 
- * This function calculates the fraction of mass loss attributable to OB mass loss, based on
- * the He surface abundance and the abundance limits described in Yoon et al. 2006.  The value
- * returned will be 1.0 if 100% of the mass loss is attributable to OB mass lass, 0.0 if 100% of
- * the mass loss is attributable to WR mass loss, and in the range (0.0, 1.0) if the mass loss is
- * a mix of OB and WR.
  * 
+ * MASS_LOSS_T CalculateMLrate_Belczynski2010(
+ *     const double p_Metallicity,
+ *     const double p_Mass,
+ *     const double p_Radius,
+ *     const double p_Luminosity,
+ *     const double p_Temperature,
+ *     const double p_PerturbationMu,
+ *     const double p_HeAbundanceSurface,
+ * ) const
  *
- * double CalculateMLFractionOB(const double p_HeAbundanceSurface) const
- *
+ * @param       p_Metallicity                   Metallicity of the star
+ * @param       p_Mass                          Mass of the star (Msol)
+ * @param       p_Radius                        Radius of the star (Rsol)
+ * @param       p_Luminosity                    Luminosity of the star (Lsol)
+ * @param       p_Temperature                   Temperature of the star (Tsol)
+ * @param       p_PerturbationMu                Small envelope perturbation parameter, mu
  * @param       p_HeAbundanceSurface            Helium abundance at the surface of the star
- * @return                                      Fraction of mass loss attributable to OB mass loss
+ * @return                                      Tuple containing:
+ *                                                   DOUBLE         Mass loss rate (Msol yr^-1)
+ *                                                   MASS_LOSS_TYPE dominant mass loss type
+ *                                                                  (will be MASS_LOSS_TYPE::WR or MASS_LOSS_TYPE::OB)
  */
-GNU_CONST inline double CH::CalculateMLFractionOB(const double p_HeAbundanceSurface) const {
+COMPAS_PURE inline MASS_LOSS_T CH::CalculateMLrate_Belczynski2010(
+    const double p_Metallicity,
+    const double p_Mass,
+    const double p_Radius,
+    const double p_Luminosity,
+    const double p_Temperature,
+    const double p_PerturbationMu,
+    const double p_HeAbundanceSurface
+) const {
 
-    constexpr double limOB = 0.55;      // per Yoon et al. 2006
-    constexpr double limWR = 0.70;      // per Yoon et al. 2006
+    MASS_LOSS_TYPE dominantMLtype;
+    double dMdt;
+    std::tie(dMdt, dominantMLtype) = BaseStar::CalculateMLrate_Belczynski2010(
+        p_Metallicity, 
+        p_Mass, 
+        p_Radius, 
+        p_Luminosity, 
+        p_Temperature, 
+        p_PerturbationMu, 
+        p_HeAbundanceSurface
+    );
 
-    return std::min(1.0, std::max (0.0, (limWR - p_HeAbundanceSurface) / (limWR - limOB)));
+    // return mass loss rate, enhanced for rotation if required, and dominant mass loss type
+    return std::make_tuple(dMdt * (OPTIONS->EnableRotationallyEnhancedMassLoss() ? CalculateMLrateRotationEnhancement_Langer1998() : 1.0), dominantMLtype);
+}
+
+
+/*
+ * CalculateMLrate_Merritt2025
+ *
+ * Calculate mass loss rate, and dominant mass loss type, at the current evolutionary phase,
+ * per Merritt et al., 2025.
+ * Calculate the mass loss rate, per Merritt et al. 2024, modified for CH stars.
+ * 
+ * If option `--enable-rotationally-enhanced-mass-loss` was specified, the mass loss rate will
+ * be enhanced for rotation.
+ * 
+ * 
+ * MASS_LOSS_T CalculateMLrate_Merritt2025(
+ *     const double p_Metallicity,
+ *     const double p_Mass,
+ *     const double p_Radius,
+ *     const double p_Luminosity,
+ *     const double p_Temperature,
+ *     const double p_PerturbationMu,
+ *     const double p_mStart,
+ *     const double p_HeAbundanceSurface
+ * ) const
+ * 
+ * @param       p_Metallicity                   Metallicity of the star
+ * @param       p_Mass                          Mass of the star (Msol)
+ * @param       p_Radius                        Radius of the star (Rsol)
+ * @param       p_Luminosity                    Luminosity of the star (Lsol)
+ * @param       p_Temperature                   Temperature of the star (Tsol)
+ * @param       p_PerturbationMu                Small envelope perturbation parameter, mu
+ * @param       p_mStart                        Mass of the star at the start of the simulation (first state) (Msol)
+ * @param       p_HeAbundanceSurface            Helium abundance at the surface of the star
+ * @return                                      Tuple containing:
+ *                                                   DOUBLE         WR mass loss rate (Msol yr^-1)
+ *                                                   MASS_LOSS_TYPE dominant mass loss type (could be MASS_LOSS_TYPE::NONE)
+ */
+COMPAS_PURE MASS_LOSS_T inline CH::CalculateMLrate_Merritt2025(
+    const double p_Metallicity,
+    const double p_Mass,
+    const double p_Radius,
+    const double p_Luminosity,
+    const double p_Temperature,
+    const double p_PerturbationMu,
+    const double p_mStart,
+    const double p_HeAbundanceSurface
+) const {
+
+    MASS_LOSS_TYPE dominantMLtype;
+    double dMdt;
+    std::tie(dMdt, dominantMLtype) = BaseStar::CalculateMLrate_Merritt2025(
+        p_Metallicity, 
+        p_Mass, 
+        p_Radius, 
+        p_Luminosity, 
+        p_Temperature, 
+        p_PerturbationMu, 
+        p_mStart, 
+        p_HeAbundanceSurface
+    );
+
+    // return mass loss rate, enhanced for rotation if required, and dominant mass loss type
+    return std::make_tuple(dMdt * (OPTIONS->EnableRotationallyEnhancedMassLoss() ? CalculateMLrateRotationEnhancement_Langer1998() : 1.0), dominantMLtype);
 }
 
 
