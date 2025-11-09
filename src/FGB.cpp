@@ -5,78 +5,73 @@
 
 ///////////////////////////////////////////////////////////////////////////////////////
 //                                                                                   //
-//                              LUMINOSITY CALCULATIONS                              //
+//                                    LUMINOSITY                                     //
+//                                                                                   //
+///////////////////////////////////////////////////////////////////////////////////////
+
+
+
+///////////////////////////////////////////////////////////////////////////////////////
+//                                                                                   //
+//                                       MASS                                        //
 //                                                                                   //
 ///////////////////////////////////////////////////////////////////////////////////////
 
 
 /*
- * Calculate luminosity on the First Giant Branch
+ * CalculateCoreMass_Hurley2000
  *
- * Uses Core Mass : Luminosity relation
+ * @brief
+ * Calculate core mass on the First Giant Branch, per Hurley et al. 2000, eqs 39 & 45
  *
- * Hurley et al. 2000, eq 37
  *
+ * double CalculateCoreMass_Hurley2000(
+ *     const double      p_Mass,
+ *     const double      p_Age, 
+ *     const double      p_Tau,
+ *     const DBL_VECTOR& p_GBparams,
+ *     const DBL_VECTOR& p_tScales
+ * ) const
  *
- * double CalculateLuminosityOnPhase(const double p_Time)
- *
- * @param   [IN]    p_Time                      Time in Myr
- * @return                                      Luminosity on the First Giant Branch in Lsol
+ * @param       p_Mass                          Mass of the star (Msol)
+ * @param       p_Age                           Effective age of the star (Myr)
+ * @param       p_Tau                           Phase-relative age of the star (Myr)
+ * @param       p_GBparams                      Hurley GB parameters
+ * @param       p_tScales                       Hurley timescales (Myr)
+ * @return                                      FGB core mass (Msol)
  */
-double FGB::CalculateLuminosityOnPhase(const double p_Time) const {
+COMPAS_PURE double FGB::CalculateCoreMass_Hurley2000(
+    const double      p_Mass,
+    const double      p_Age,
+    const double      p_Tau,
+    const DBL_VECTOR& p_GBparams,
+    const DBL_VECTOR& p_tScales
+) const {
 
-    // The following declarations are for convenience and readability
-    // (could be changed to #defines if performance is an issue - but the optimiser should optimise this away)
-    double AH = gbParams(AH);
-    double B  = gbParams(B);
-    double D  = gbParams(D);
-    double p  = gbParams(p);
-    double q  = gbParams(q);
+// macros for convenience and readability - undefined at end of function
+#define GBparams(x) p_GBparams[static_cast<int>(HURLEY_GBP:::x)]
+#define tScales(x) p_tScales[static_cast<int>(TIMESCALE::x)]
 
-    // Calculate the core mass according to Hurley et al. 2000, eq 39, regardless
-    // of whether it is the correct expression to use given the star's mass
-    double coreMass = utils::Compare(p_Time, timescales(tMx_FGB)) <= 0
-                        ? PPOW(((p - 1.0) * AH * D * (timescales(tinf1_FGB) - p_Time)), (1.0 / (1.0 - p)))
-                        : PPOW(((q - 1.0) * AH * B * (timescales(tinf2_FGB) - p_Time)), (1.0 / (1.0 - q)));
+    double McGB;
+    if (p_Mass < GLOBALS->HurleyMassCutoffs(static_cast<int>(HURLEY_MASS_CUTOFF::MHeF))) {
+        McGB = p_Age <= tScales(tMx_FGB)
+                ? PPOW(((GBparams(p) - 1.0) * GBparams(AH) * GBparams(D) * (tScales(tinf1_FGB) - p_Age)), (1.0 / (1.0 - GBparams(p))))
+                : PPOW(((GBparams(q) - 1.0) * GBparams(AH) * GBparams(B) * (tScales(tinf2_FGB) - p_Age)), (1.0 / (1.0 - GBparams(q))));
+    }
+    else {
+        McGB = GBparams(McBGB) + ((CalculateCoreMassAtHeI_Hurley2000(p_Mass) - GBparams(McBGB)) * p_Tau);
+    }
 
-    return std::min((B * PPOW(coreMass, q)), (D * PPOW(coreMass, p)));
+    return McGB;
+
+#undef tScales
+#undef GBparams
 }
 
 
 ///////////////////////////////////////////////////////////////////////////////////////
 //                                                                                   //
-//                                 MASS CALCULATIONS                                 //
-//                                                                                   //
-///////////////////////////////////////////////////////////////////////////////////////
-
-
-/*
- * Calculate core mass on the First Giant Branch
- *
- * Hurley et al. 2000, eqs 39 & 45
- *
- *
- * double CalculateCoreMassOnPhase(const double p_Mass, const double p_Time)
- *
- * @param   [IN]    p_Mass                      Mass in Msol
- * @param   [IN]    p_Time                      Time after ZAMS in Myr (tBGB <= time <= tHeI)
- * @return                                      Core mass on the First Giant Branch in Msol
- */
-double FGB::CalculateCoreMassOnPhase(const double p_Mass, const double p_Time) const {
-
-    double McGB  = utils::Compare(p_Time, timescales(tMx_FGB)) <= 0
-                    ? PPOW(((gbParams(p) - 1.0) * gbParams(AH) * gbParams(D) * (timescales(tinf1_FGB) - p_Time)), (1.0 / (1.0 - gbParams(p))))
-                    : PPOW(((gbParams(q) - 1.0) * gbParams(AH) * gbParams(B) * (timescales(tinf2_FGB) - p_Time)), (1.0 / (1.0 - gbParams(q))));
-
-    double tau   = std::max(0.0, std::min(1.0, (p_Time - timescales(tBGB)) / (timescales(tHeI) - timescales(tBGB))));
-
-    return utils::Compare(p_Mass, massCutoffs(MHeF)) < 0 ? McGB : gbParams(McBGB) + ((CalculateCoreMassAtHeI_Hurley2000(p_Mass) - gbParams(McBGB)) * tau);
-}
-
-
-///////////////////////////////////////////////////////////////////////////////////////
-//                                                                                   //
-//                             LIFETIME / AGE FUNCTIONS                              //
+//                         AGE / LIFETIME / TAU / TIMESCALES                         //
 //                                                                                   //
 ///////////////////////////////////////////////////////////////////////////////////////
 

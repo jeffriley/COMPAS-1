@@ -53,7 +53,34 @@ protected:
 
 ///// ON PHASE FUNCTIONS   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
+inline double CalculateCoreMass_Hurley2000() const override { 
+    return CalculateCoreMass_Hurley2000(
+        m_StateHistory.CurrentState.MassEffective(),
+        m_StateHistory.CurrentState.Age(),
+        m_StateHistory.CurrentState.Tau(),
+        m_StateHistory.CurrentState.GBparams(),
+        m_StateHistory.CurrentState.TimeScales()
+    );
+}
+COMPAS_PURE double CalculateCoreMass_Hurley2000(
+    const double      p_Mass,
+    const double      p_Age,
+    const double      p_Tau,
+    const DBL_VECTOR& p_GBparams,
+    const DBL_VECTOR& p_tScales
+) const;
+
+
+inline double CalculateLuminosity_Hurley2000() const override { 
+    return CalculateLuminosity_Hurley2000(m_StateHistory.CurrentState.Age(), m_StateHistory.CurrentState.GBparams(), m_StateHistory.CurrentState.TimeScales());
+}
+GNU_CONST inline double CalculateLuminosity_Hurley2000(const double p_Age, const DBL_VECTOR& p_GBparams, const DBL_VECTOR& p_tScales) const;
+
+
 GNU_CONST inline double CalculateCOCoreMass() const override { return 0.0; }            // McCO = 0.0 for FGB stars
+
+inline double CalculateHeCoreMass() const override { return CalculateCoreMass(); } // McHe = Mc for FGB stars  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< check for already computed
+
 
 double CalculateTau_Hurley2000() const override {
     return CalculateTau_Hurley2000(m_StateHistory.CurrentState.Age(), m_StateHistory.CurrentState.Timescales(tBGB), m_StateHistory.CurrentState.Timescales(tHeI));
@@ -71,6 +98,7 @@ inline double CalculateEffectiveInitialMass_Hurley2000() const override { return
 
 GNU_CONST inline double CalculateCOCoreMassAtPhaseEnd() const override { return 0.0; }  // McCO = 0.0 for FGB stars
 
+inline double CalculateHeCoreMassAtPhaseEnd() const override { return CalculateCoreMass(); } // McHe = Mc for FGB stars  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< check for already computed
 
 
 
@@ -84,10 +112,6 @@ GNU_CONST inline double CalculateCOCoreMassAtPhaseEnd() const override { return 
     double          CalculateCoreMassOnPhase(const double p_Mass, const double p_Time) const;
     double          CalculateCoreMassOnPhase() const                                                { return CalculateCoreMassOnPhase(m_Mass0, m_Age); }                                            // Use class member variables
 
-
-
-    double          CalculateHeCoreMassAtPhaseEnd() const                                           { return CalculateHeCoreMassOnPhase(); }                                                        // Same as on phase
-    double          CalculateHeCoreMassOnPhase() const                                              { return m_CoreMass; }                                                                          // McHe(FGB) = Core Mass
 
     double          CalculateLuminosityAtPhaseEnd(const double p_Time) const                        { return CalculateLuminosityOnPhase(p_Time); }                                                  // Same as on phase
     double          CalculateLuminosityAtPhaseEnd() const                                           { return CalculateLuminosityAtPhaseEnd(m_Age); }                                                // Use class member variables
@@ -155,14 +179,56 @@ GNU_CONST inline double CalculateCOCoreMassAtPhaseEnd() const override { return 
  * 
  * double CalculateTau_Hurley2000(const double p_Age, const double p_tBGB, const double p_tHeI) const
  *
- * @param       p_Age                           Age of the star (Myr)
- * @param       p_tBGB                          Lifetime to Base of Giant Branch, tBGB (Myr)
- * @param       p_tHeI                          Time to helium ignition (Myr)
+ * @param       p_Age                           Effective age of the star (Myr)
+ * @param       p_tBGB                          Time to Base of Giant Branch, tBGB (per Hurley timescales) (Myr)
+ * @param       p_tHeI                          Time to helium ignition, tHeI (per Hurley timescales) (Myr)
  * @return                                      FGB-relative age, [0, 1]
  */
 GNU_CONST inline double FGB::CalculateTau_Hurley2000(const double p_Age, const double p_tBGB, const double p_tHeI) const {
     return std::max(0.0, std::min(1.0, (p_Age - p_tBGB) / (p_tHeI - p_tBGB)));
 }
+
+
+
+///////////////////////////////////////////////////////////////////////////////////////
+//                                                                                   //
+//                                    LUMINOSITY                                     //
+//                                                                                   //
+///////////////////////////////////////////////////////////////////////////////////////
+
+/*
+ * CalculateLuminosity_Hurley2000
+ *
+ * @brief
+ * Calculate luminosity on the First Giant Branch,
+ * per Hurley et al. 2000, eqs 37 & 39
+ *
+ *
+ * double CalculateLuminosity_Hurley2000(const double p_Age, const DBL_VECTOR& p_GBparams, const DBL_VECTOR& p_tScales)
+ *
+ * @param       p_Age                           Effective age of the star (Myr)
+ * @param       p_GBparams                      Hurley GB parameters
+ * @param       p_tScales                       Hurley timescales (Myr)
+ * @return                                      FGB luminosity (Lsol)
+ */
+GNU_CONST inline double FGB::CalculateLuminosity_Hurley2000(const double p_Age, const DBL_VECTOR& p_GBparams, const DBL_VECTOR& p_tScales) const {
+// macros for convenience and readability - undefined at end of function
+#define GBparams(x) p_GBparams[static_cast<int>(HURLEY_GBP:::x)]
+#define tScales(x) p_tScales[static_cast<int>(TIMESCALE::x)]
+
+    // Calculate the core mass according to Hurley et al. 2000, eq 39, regardless
+    // of whether it is the correct expression to use given the star's mass
+    double McGB = p_Age < tScales(tMx_FGB) <= 0
+                    ? PPOW(((GBparams(p) - 1.0) * GBparams(AH) * GBparams(D) * (tScales(tinf1_FGB) - p_Age)), (1.0 / (1.0 - GBparams(p))))
+                    : PPOW(((GBparams(q) - 1.0) * GBparams(AH) * GBparams(B) * (tScales(tinf2_FGB) - p_Age)), (1.0 / (1.0 - GBparams(q))));
+
+    return std::min((B * PPOW(McGB, q)), (D * PPOW(McGB, p))); // Hurley at al. 2000, eq 37
+
+#undef tScales
+#undef GBparams
+}
+
+
 
 
 

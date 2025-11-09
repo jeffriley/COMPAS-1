@@ -24,24 +24,23 @@
  * whenever the mass of the star changes (probably every timestep).
  *
  *
- * void CalculateGBparams_Hurley2000(const double p_Mass, const DBL_VECTOR& p_GBparams) const
+ * DBL_VECTOR CalculateGBparams_Hurley2000(const double p_Mass, const DBL_VECTOR& p_GBparams) const
  *
  * @param       p_Mass                          Mass of the star (Msol)
  * @param       p_GBparams                      Hurley GB parameters
- * @param       p_MassCutoffs                   Hurley mass cutoffs (Msol)
  * @return                                      Mutated GB parameters (Myr)
  */
-void GiantBranch::CalculateGBparams_Hurley2000(const double p_Mass, const DBL_VECTOR& p_GBparams, const DBL_VECTOR& p_MassCutoffs) const {
+COMPAS_PURE DBL_VECTOR HeMS::CalculateGBparams_Hurley2000(const double p_Mass, const DBL_VECTOR& p_GBparams) const {
 
     DBL_VECTOR GBparams = p_GBparams;   // copy given GBparams
 
-	GBparams[static_cast<int>(GBP::B)] = CalculateCoreMass_Luminosity_B_Hurley2000(p_Mass);
-	GBparams[static_cast<int>(GBP::D)] = CalculateCoreMass_Luminosity_D_Hurley2000(p_Mass);
+	GBparams[static_cast<int>(HURLEY_GBP:::B)] = CalculateCoreMass_Luminosity_B_Hurley2000(p_Mass);
+	GBparams[static_cast<int>(HURLEY_GBP:::D)] = CalculateCoreMass_Luminosity_D_Hurley2000(p_Mass);
 
-    GBparams[static_cast<int>(GBP::p)] = CalculateCoreMass_Luminosity_p_Hurley2000(p_Mass, p_MassCutoffs[static_cast<int>(MASS_CUTOFF::MHeF)]);
-    GBparams[static_cast<int>(GBP::q)] = CalculateCoreMass_Luminosity_q_Hurley2000(p_Mass, p_MassCutoffs[static_cast<int>(MASS_CUTOFF::MHeF)]);
+    GBparams[static_cast<int>(HURLEY_GBP:::p)] = CalculateCoreMass_Luminosity_p_Hurley2000(p_Mass);
+    GBparams[static_cast<int>(HURLEY_GBP:::q)] = CalculateCoreMass_Luminosity_q_Hurley2000(p_Mass);
     
-    GBparams[static_cast<int>(GBP::Mx)] = GiantBranch::CalculateCoreMass_Luminosity_Mx_Hurley2000(GBparams);
+    GBparams[static_cast<int>(HURLEY_GBP:::Mx)] = GiantBranch::CalculateCoreMass_Luminosity_Mx_Hurley2000(GBparams);
 
     // return GB parameters vector by value - NRVO takes care of performance/efficiency
     return GBparams;
@@ -223,17 +222,15 @@ COMPAS_PURE MASS_LOSS_T HeMS::CalculateMLrate_Hurley2000(const double p_Mass, co
  * per Merritt et al., 2025.
  *
  * 
- * static MASS_LOSS_T CalculateMLrate_Merritt2025_Static(const double p_Metallicity, const double p_Luminosity, const double p_Temperature)
+ * static MASS_LOSS_T CalculateMLrate_Merritt2025_Static(const double p_Luminosity, const double p_Temperature)
  * 
- * 
- * @param       p_Metallicity                   Metallicity of the star
  * @param       p_Luminosity                    Luminosity of the star (Lsol)
  * @param       p_Temperature                   Temperature of the star (Tsol)
  * @return                                      Tuple containing:
  *                                                   DOUBLE         WR mass loss rate (Msol yr^-1)
  *                                                   MASS_LOSS_TYPE dominant mass loss type (could be MASS_LOSS_TYPE::NONE)
  */
-COMPAS_PURE static MASS_LOSS_T HeMS::CalculateMLrate_Merritt2025_Static(const double p_Metallicity, const double p_Luminosity, const double p_Temperature) {
+COMPAS_PURE static MASS_LOSS_T HeMS::CalculateMLrate_Merritt2025_Static(const double p_Luminosity, const double p_Temperature) {
 
 
     MASS_LOSS_TYPE dominantMLtype;
@@ -242,7 +239,7 @@ COMPAS_PURE static MASS_LOSS_T HeMS::CalculateMLrate_Merritt2025_Static(const do
     switch (OPTIONS->WRMassLossPrescription()) {                                                     // which WR mass loss prescription?
 
         case WR_MASS_LOSS_PRESCRIPTION::BELCZYNSKI2010:                             // BELCZYNSKI2010
-            std::tie(dMdt, dominantMLtype) = HeMS::CalculateMLrate_Belczynski2010_Static(p_Metallicity, p_Luminosity);
+            std::tie(dMdt, dominantMLtype) = HeMS::CalculateMLrate_Belczynski2010_Static(GLOBALS->ReferenceMetallicity(), p_Luminosity);
             break;
 
         case WR_MASS_LOSS_PRESCRIPTION::SANDERVINK2023:                             // SANDERVINK2023

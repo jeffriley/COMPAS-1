@@ -7,54 +7,49 @@
 
 
 /*
- * CalculateLuminosityOnPhase
+ * CalculateLuminosity_Hurley2000
  *
  * @brief
  * Calculate the luminosity of a CH star on the (CH) MS.  The luminosity will be
  * enhanced if option `--enhance-CHE-lifetimes-luminosities` was specified.
  * 
  * 
- * double CalculateLuminosityOnPhase(const double      p_Metallicity,
- *                                   const double      p_Mass,
- *                                   const double      p_Time,
- *                                   const double      p_LZAMS,
- *                                   const DBL_VECTOR& p_tScales,
- *                                   const DBL_VECTOR& p_aN,
- *                                   const DBL_VECTOR& p_LConstants) const
+ * double CalculateLuminosity_Hurley2000(
+ *     const double p_Mass,
+ *     const double p_Tau,
+ *     const double p_Time,
+ *     const double p_LZAMS,
+ *     const double p_tMS,
+ *     const double p_tBGB
+ * ) const
  *
- * @param       p_Metallicity                   Metallicity of the star
  * @param       p_Mass                          Mass of the star (Msol)
+ * @param       p_Tau                           Phase-relative age of the star [0, 1]
  * @param       p_Time                          Time elapsed since ZAMS (Myr)
  * @param       p_LZAMS                         ZAMS luminosity of the star (Lsol)
- * @param       p_tScales                       Phase timescales
- * @param       p_aN                            Hurley a(n) coefficients
- * @param       p_LConstants                    Hurley luminosity constants
+ * @param       p_tMS                           MS lifetime, tMS (per Hurley timescales) (Myr)
+ * @param       p_tBGB                          Time to Base of Giant Branch, tBGB (per Hurley timescales) (Myr)
  * @return                                      CH luminosity (Lsol)
  */
-double CH::CalculateLuminosityOnPhase(const double      p_Metallicity,
-                                      const double      p_Mass,
-                                      const double      p_Time,
-                                      const double      p_LZAMS,
-                                      const DBL_VECTOR& p_tScales,
-                                      const DBL_VECTOR& p_aN,
-                                      const DBL_VECTOR& p_LConstants) const {
+COMPAS_PURE double CH::CalculateLuminosity_Hurley2000(
+    const double p_Mass,
+    const double p_Tau,
+    const double p_Time,
+    const double p_LZAMS,
+    const double p_tMS,
+    const double p_tBGB
+) const {
 
     // unenhanced CH luminosity is just MS luminosity
-    const double LZAMS = m_StateHistory.ZAMSState().Luminosity();
-    const double mass  = m_StateHistory.CurrentState().Mass();
-    const double time  = m_StateHistory.CurrentState().Time();
+    double luminosity = MainSequence::CalculateLuminosity_Hurley2000(GLOBALS->ReferenceMetallicity(), p_Mass, p_Time, p_LZAMS, p_tMS, p_tBGB);
 
-    double luminosity = MainSequence::CalculateLuminosity(p_Metallicity, p_Mass, p_Time, p_LZAMS, p_tScales, p_aN, p_LConstants);
-
-    if (OPTIONS->EnhanceCHELifetimesLuminosities()) {                           // enhance luminosity of CH stars?
-                                                                                // yes
-        const double tau = m_StateHistory.CurrentState().Tau();
-
+    if (OPTIONS->EnhanceCHELifetimesLuminosities()) {               // enhance luminosity of CH stars?
+                                                                    // yes
         // enhancement should not reduce luminosity, so ratio is clamped to a minimum of +1.0
         // enhancement amount grows from 1 to logLuminosityRatio over main-sequence
-        const double enhancement = 1.0 + (std::max(CalculateLogLuminositiesRatio(mass), 1.0) - 1.0) * tau * tau;
+        const double enhancement = 1.0 + (std::max(CalculateLogLuminositiesRatio(mass), 1.0) - 1.0) * p_Tau * p_Tau;
 
-        luminosity = PPOW(10.0, log10(luminosity) * enhancement);               // apply enhancement
+        luminosity = PPOW(10.0, log10(luminosity) * enhancement);   // apply enhancement
     }
 
     return luminosity;
@@ -73,38 +68,19 @@ double CH::CalculateLuminosityOnPhase(const double      p_Metallicity,
  * the mass of the star changes (probably every timestep).
  *
  *
- * DBL_VECTOR CalculateTimescales_Hurley2000(const double      p_Mass,
- *                                           const double      p_ZetaHurley,
- *                                           const DBL_VECTOR& p_GBparams,
- *                                           const DBL_VECTOR& p_MassCutoffs,
- *                                           const DBL_VECTOR& p_Timescales,
- *                                           const double      p_Alpha3,
- *                                           const DBL_VECTOR& p_aN,
- *                                           const DBL_VECTOR& p_bN) const
+ * DBL_VECTOR CalculateTimescales_Hurley2000(const double p_Mass, const DBL_VECTOR& p_GBparams, const DBL_VECTOR& p_Timescales) const
  *
  * @param       p_Mass                          Mass of the star (Msol)
- * @param       p_ZetaHurley                    Hurley zeta value (log10(Z / ZSOL_HURLEY))
  * @param       p_GBparams                      Hurley GB parameters
- * @param       p_MassCutoffs                   Hurley mass cutoffs (Msol)
  * @param       p_tScales                       Hurley timescales (Myr)
- * @param       p_Alpha3                        Hurley alpha3 constant
- * @param       p_aN                            Hurley a(n) coefficients
- * @param       p_bN                            Hurley b(n) coefficients
  * @return                                      Mutated timescales (Myr)
  */
-DBL_VECTOR CH::CalculateTimescales_Hurley2000(const double      p_Mass,
-                                              const double      p_ZetaHurley,
-                                              const DBL_VECTOR& p_GBparams,
-                                              const DBL_VECTOR& p_MassCutoffs,
-                                              const DBL_VECTOR& p_tScales,
-                                              const double      p_Alpha3,
-                                              const DBL_VECTOR& p_aN,
-                                              const DBL_VECTOR& p_bN) const {
+COMPAS_PURE DBL_VECTOR CH::CalculateTimescales_Hurley2000(const double p_Mass, const DBL_VECTOR& p_GBparams, const DBL_VECTOR& p_tScales) const {
 
     DBL_VECTOR tScales = p_tScales;                     // copy given timescales
 
     // (re)calculate MS timescales
-    tScales = MainSequence::CalculateTimescales_Hurley2000(p_Mass, p_ZetaHurley, p_GBparams, p_MassCutoffs, tScales, p_Alpha3, p_aN, p_bN);
+    tScales = MainSequence::CalculateTimescales_Hurley2000(p_Mass, p_GBparams, tScales);
 
     // enhamce lifetimes as appropriate
     if (OPTIONS->EnhanceCHELifetimesLuminosities()) {   // enhance lifetime of CH stars?

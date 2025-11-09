@@ -129,17 +129,16 @@ double WhiteDwarfs::CalculateEtaPTY(const double p_MassTransferRate) {
  * Calculate the luminosity of a White Dwarf as it cools, per Hurley et al. 2000, eq 90
  *
  *
- * double CalculateLuminosityOnPhase_Hurley2000_Static(const double p_Metallicity, const double p_Mass, const double p_Time, const double p_BaryonNumbe)
+ * double CalculateLuminosityOnPhase_Hurley2000_Static(const double p_Mass, const double p_Time, const double p_BaryonNumbe)
  *
- * @param       P_Metallicity                   Metallicity of the star
  * @param       p_Mass                          Mass of the star (Msol)
  * @param       p_Time                          Time since White Dwarf formation (Myr) <<<<<<<<<<<<<<<<<<< is that right?  or time since birth?????
  * @param       p_BaryonNumber                  Baryon number - differs per White Dwarf type (HeWD, COWD, ONeWD).
  *                                              See `WD_Baryon_Number` in constants.h
  * @return                                      Luminosity of the White Dwarf (Lsol)
  */
-double WhiteDwarfs::CalculateLuminosityOnPhase_Hurley2000_Static(const double p_Metallicity, const double p_Mass, const double p_Time, const double p_BaryonNumber) {
-    return (635.0 * p_Mass * PPOW(p_Metallicity, 0.4)) / PPOW(p_BaryonNumber * (p_Time + 0.1), 1.4);
+double WhiteDwarfs::CalculateLuminosityOnPhase_Hurley2000_Static(const double p_Mass, const double p_Time, const double p_BaryonNumber) {
+    return (635.0 * p_Mass * PPOW(GLOBALS->ReferenceMetallicity(), 0.4)) / PPOW(p_BaryonNumber * (p_Time + 0.1), 1.4);
 }
 
 

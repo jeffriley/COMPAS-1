@@ -15,6 +15,324 @@
 
 ///////////////////////////////////////////////////////////////////////////////////////
 //                                                                                   //
+//                                    LUMINOSITY                                     //
+//                                                                                   //
+///////////////////////////////////////////////////////////////////////////////////////
+
+
+
+
+
+
+
+
+
+///////////////////////////////////////////////////////////////////////////////////////
+//                                                                                   //
+//                                      RADIUS                                       //
+//                                                                                   //
+///////////////////////////////////////////////////////////////////////////////////////
+
+
+
+/*
+ * CalculateRadius_Hurley2000
+ *
+ * @brief
+ * Calculate the radius on the Hertzsprung Gap, using a modified version of
+ * Hurley et al. 2000, eq 27
+ * 
+ * See Hurley SSE code `hrdiag.f` lines 92, 188-203.  Here we replace the numerator, REHG, with the
+ * GB radius if mass is below the threshold for He ignition, and a calculated value if mass is above
+ * the threshold for He ignition (see code below)
+ *
+ *
+ * !*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!
+ * !*!*!*!*! ZAMS attribute warning *!*!*!*!*!
+ * !*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!
+ * 
+ * This function relies on the value of the ZAMS radius of the star, and should not be used
+ * if the ZAMS radius is not known.
+ * 
+ *
+ * double CalculateRadiusOnPhase_Hurley2000(const double      p_Mass,
+ *                                          const double      p_Luminosity,
+ *                                          const double      p_Tau,
+ *                                          const double      p_RZAMS,
+ *                                          const double      p_MHeF,
+ *                                          const double      p_MFGB,
+ *                                          const double      p_Alpha1,
+ *                                          const DBL_VECTOR& p_bN) const
+ *
+ * @param       p_Mass                          Mass of the star (Msol)
+ * @param       p_Luminosity                    Luminosity of the star (Lsol)
+ * @param       p_Tau                           Phase-relative age of the star [0, 1]
+ * @param       p_RZAMS                         ZAMS radius of the star (Rsol)
+ * @param       p_MHeF                          Maximum initial mass at Helium Flash (Hurley masscutoffs[MHeF]) (Msol)
+ * @param       p_MFGB                          Maximum initial mass at helium ignition on the FGB (Hurley masscutoffs[MFGB]) (Msol)
+ * @param       p_Alpha1                        Hurley alpha1 constant
+ * @param       p_bN                            Hurley b(n) coefficients
+ * @return                                      HG radius (Rsol)
+ */
+double HG::CalculateRadiusOnPhase_Hurley2000(const double      p_Mass,
+                                             const double      p_Luminosity, 
+                                             const double      p_Tau,
+                                             const double      p_RZAMS,
+                                             const double      p_MHeF,
+                                             const double      p_MFGB,
+                                             const double      p_Alpha1,
+                                             const DBL_VECTOR& p_bN) const {
+
+                                                    // p_Alpha1
+
+    // FIX THIS - REMOVE BRCEK CODE <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+    double RTMS;  
+    if ((OPTIONS->MainSequenceCoreMassPrescription() == MS_CORE_MASS_PRESCRIPTION::BRCEK) && (utils::Compare(m_MZAMS, BRCEK_LOWER_MASS_LIMIT) >= 0))
+        // p_Mass generally has the value of m_Mass0, but since m_Mass is used for radius calculations on the MS and m_Mass0
+        // is updated to a new value when BRCEK prescription is used, we need to use m_Mass here to keep radius continuous
+        RTMS = MainSequence::CalculateRadiusAtPhaseEnd(m_Mass, p_RZAMS);
+    else
+        RTMS = MainSequence::CalculateRadiusAtPhaseEnd(p_Mass, p_RZAMS);
+    // FIX THIS - REMOVE BRCEK CODE <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+    const double rTAMS = MainSequence::CalculateRadiusAtPhaseEnd(p_Mass, p_RZAMS);
+    const double rGB   = GiantBranch::CalculateRadiusOnPhase_Static(p_Mass, p_Luminosity, p_bN);
+
+    double rx = rGB;                                                                                                   // rx in Hurley SSE Fortran code
+
+    if (p_Mass > p_MFGB) {                                                                      // mass above threshold for He ignition?
+                                                                                                                        // yes
+        // rMinHe is Hurley et al. 2000, eq 55 - first part (M >= MHeF)
+        const double Mb28   = PPOW(p_Mass, p_bN[28]);                                                                   // pow() is slow - do it once only
+        const double rMinHe = ((p_bN[24] * p_Mass) + (PPOW((p_bN[25] * p_Mass), p_bN[26]) * Mb28)) / (p_bN[27] + Mb28); // rmin in Hurley SSE Fortran code
+        const double lum    = GiantBranch::CalculateLuminosityAtHeI_Hurley2000_Static(p_Mass);
+
+        // mass is used here in the Hurley SSE Fortran code, mass0 everywhere else
+        // ry in Hurley SSE Fortran code
+        const double ry = EAGB::CalculateRadiusOnPhase_Static(p_Mass, lum, p_MHeF, p_bN);
+
+        // calculate radius at He ignition for MFGB < p_Mass < HM
+        // Hurley et al. 2000, eq 50
+        
+        rx = std::min(rMinHe, ry);
+        
+        if (p_Mass < HIGH_MASS_THRESHOLD) {
+            rx = rMinHe * PPOW(rGB / rMinHe, log10(p_Mass / HIGH_MASS_THRESHOLD) / log10(p_MFGB / HIGH_MASS_THRESHOLD));
+        }
+
+        // this piece of code resets rx if the blue loop is relatively short
+        // see Hurley SSE Fortran code, function tblf() in `zfuncs1.f`
+        // JR: I suspect this is where the check came from in the dicussion re blue loop in CHeB::CalculateTimescales() - I don't like this much... **Ilya**
+        const double r1 = std::max(1.0 - rMinHe / ry, 1.0E-12); 
+
+        double tblf = (1.0 - b[47]) * PPOW(p_Mass, b[48]) * PPOW(r1, b[49]);                                        // calculate blue-loop fraction of He-burning
+        tblf = std::min(1.0, std::max(0.0, tblf));                                                                  // clamp to [0.0, 1.0]
+
+        if (tblf < MINIMUM_BLUE_LOOP_FRACTION) rx = ry;                                                             // reset rx if short blue loop
+    }
+
+    return rTAMS * PPOW(rx / rTAMS, p_Tau);
+}
+
+
+
+///////////////////////////////////////////////////////////////////////////////////////
+//                                                                                   //
+//                                       MASS                                        //
+//                                                                                   //
+///////////////////////////////////////////////////////////////////////////////////////
+
+
+
+
+
+
+
+
+
+
+///////////////////////////////////////////////////////////////////////////////////////
+//                                                                                   //
+//                            LIFETIME / AGE CALCULATIONS                            //
+//                                                                                   //
+///////////////////////////////////////////////////////////////////////////////////////
+
+
+
+
+///////////////////////////////////////////////////////////////////////////////////////
+//                                                                                   //
+//                    MISCELLANEOUS FUNCTIONS / CONTROL FUNCTIONS                    //
+//                                                                                   //
+///////////////////////////////////////////////////////////////////////////////////////
+
+
+
+/*
+ * Determine the star's envelope type.
+ *
+ * Some calculations on this can be found in sec. 2.3.4 of Belczynski et al. 2008.  For now, we will only do the calculation using stellarType.
+ *
+ *
+ * ENVELOPE DetermineEnvelopeType()
+ *
+ * @return                                      ENVELOPE::{ RADIATIVE, CONVECTIVE, REMNANT }
+ */
+ENVELOPE HG::DetermineEnvelopeType() const {
+ 
+    ENVELOPE envelope = ENVELOPE::RADIATIVE;                                                         // default envelope type
+    
+    switch (OPTIONS->EnvelopeStatePrescription()) {                                                  // which envelope prescription?
+            
+        case ENVELOPE_STATE_PRESCRIPTION::LEGACY:
+            envelope = ENVELOPE::RADIATIVE;
+            break;
+            
+        case ENVELOPE_STATE_PRESCRIPTION::HURLEY:
+            // eq. (39,40) of Hurley+ (2002) and end of section 7.2 of Hurley+ (2000) describe gradual
+            // growth of convective envelope over HG, but we approximate it as already convective here
+            envelope = ENVELOPE::CONVECTIVE;
+            break;
+            
+        case ENVELOPE_STATE_PRESCRIPTION::FIXED_TEMPERATURE:
+            // envelope is radiative if temperature exceeds fixed threshold, otherwise convective
+            envelope =  utils::Compare(Temperature() * TSOL, OPTIONS->ConvectiveEnvelopeTemperatureThreshold()) > 0 ? ENVELOPE::RADIATIVE : ENVELOPE::CONVECTIVE;
+            break;
+            
+        case ENVELOPE_STATE_PRESCRIPTION::CONVECTIVE_MASS_FRACTION:
+            // envelope is labeled convective when the convective mass exceeds a fixed fraction of the envelope mass
+            double convectiveEnvelopeMass, convectiveEnvelopeMassMax;
+            std::tie(convectiveEnvelopeMass, convectiveEnvelopeMassMax) = CalculateConvectiveEnvelopeMass();
+            envelope = utils::Compare(convectiveEnvelopeMass / (m_Mass - m_CoreMass), OPTIONS->ConvectiveEnvelopeMassThreshold()) > 0 ? ENVELOPE::CONVECTIVE : ENVELOPE::RADIATIVE;
+            break;
+
+        default:                                                                                    // unknown prescription
+            // the only way this can happen is if someone added an ENVELOPE_STATE_PRESCRIPTION
+            // and it isn't accounted for in this code.  We should not default here, with or without a warning.
+            // We are here because the user chose a prescription this code doesn't account for, and that should
+            // be flagged as an error and result in termination of the evolution of the star or binary.
+            // The correct fix for this is to add code for the missing prescription or, if the missing
+            // prescription is superfluous, remove it from the option.
+
+            THROW_ERROR(ERROR::UNKNOWN_ENVELOPE_STATE_PRESCRIPTION);                                // throw error               
+    }
+    
+    return envelope;
+}
+
+
+/*
+ * Choose timestep for evolution
+ *
+ * Given in the discussion in Hurley et al. 2000
+ *
+ *
+ * ChooseTimestep(const double p_Time)
+ *
+ * @param   [IN]    p_Time                      Current age of star in Myr
+ * @return                                      Suggested timestep (dt)
+ */
+double HG::ChooseTimestep(const double p_Time) const {
+
+    double dtk = 0.05 * (timescales(tBGB) - timescales(tMS));
+    double dte = timescales(tBGB) - p_Time;    
+
+    return std::max(std::min(dtk, dte), NUCLEAR_MINIMUM_TIMESTEP);
+}
+
+
+/*
+ * Modify the star after it loses its envelope
+ *
+ * Hurley et al. 2000, section 6 just before eq 76 and after Eq. 105
+ *
+ * Where necessary updates attributes of star (depending upon stellar type):
+ *
+ *     - m_StellarType
+ *     - m_Timescales
+ *     - m_GBparams
+ *     - m_Luminosity
+ *     - m_Radius
+ *     - m_Mass
+ *     - m_Mass0
+ *     - m_CoreMass
+ *     - m_HeCoreMass
+ *     - m_COCoreMass
+ *     - m_Age
+ *
+ * STELLAR_TYPE ResolveEnvelopeLoss(bool p_Force)
+ *
+ * @param   [IN]    p_Force                     Boolean to indicate whether the resolution of the loss of the envelope should be performed
+ *                                              without checking the precondition(s).
+ *                                              Default is false.
+ *
+ * @return                                      Stellar Type to which star should evolve after losing envelope
+ */
+STELLAR_TYPE HG::ResolveEnvelopeLoss(bool p_Force) {
+
+    STELLAR_TYPE stellarType = m_StellarType;
+
+    if (p_Force || utils::Compare(m_CoreMass, m_Mass) >= 0) {                   // envelope loss
+
+        m_Mass = std::min(m_CoreMass, m_Mass);
+
+        if (utils::Compare(m_Mass0, massCutoffs(MHeF)) < 0) {                   // star evolves to Helium White Dwarf
+
+            stellarType  = STELLAR_TYPE::HELIUM_WHITE_DWARF;
+
+            m_Radius     = WhiteDwarfs::CalculateRadius_Hurley2000_Static(m_Mass);
+            m_Age        = 0.0;                                                 // see Hurley et al. 2000, discussion after eq 76
+        }
+        else {                                                                  // star evolves to Zero age Naked Helium Main Star
+
+            stellarType  = STELLAR_TYPE::NAKED_HELIUM_STAR_MS;
+
+            m_Mass0      = m_Mass;
+            m_Radius     = HeMS::CalculateRadiusAtZAHeMS_Hurley2000_Static(m_Mass);          
+            m_Luminosity = HeMS::CalculateLuminosityAtZAHeMS_Hurley2000_Static(m_Mass);
+            m_Age        = 0.0;                                                 // can't use Hurley et al. 2000, eq 76 here - timescales(tHe) not calculated yet
+        }
+    }
+
+    return stellarType;
+}
+
+
+/*
+ * Set parameters for evolution to next phase and return Stellar Type for next phase
+ *
+ *
+ * STELLAR_TYPE EvolveToNextPhase()
+ *
+ * @return                                      Stellar Type for next phase
+ */
+STELLAR_TYPE HG::EvolveToNextPhase() {
+
+    STELLAR_TYPE stellarType;
+
+    if (utils::Compare(m_Mass0, massCutoffs(MFGB)) < 0) {
+        stellarType = STELLAR_TYPE::FIRST_GIANT_BRANCH;
+    }
+    else {
+        stellarType = STELLAR_TYPE::CORE_HELIUM_BURNING;
+    }    
+
+    return stellarType;
+}
+
+
+
+
+
+//// constituent functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+///////////////////////////////////////////////////////////////////////////////////////
+//                                                                                   //
 //                                LAMBDA CALCULATIONS                                //
 //                                                                                   //
 ///////////////////////////////////////////////////////////////////////////////////////
@@ -258,21 +576,14 @@ double HG::CalculateCELambda_Nanjing_Enhanced(const double             p_Mass,
  * This function good for HG and FGB stars.
  *
  *
- * double CalculateLambdaNanjingStarTrack(const double p_Metallicity,
- *                                        const double p_Mass,
- *                                        const double p_Radius,
- *                                        const double p_CoreMass) const
+ * double CalculateLambdaNanjingStarTrack(const double p_Mass, const double p_Radius, const double p_CoreMass) const
  *
- * @param       p_Metallicity                   Metallicity of the star
  * @param       p_Mass                          Mass of the star (Msol)
  * @param       p_Radius                        Radius of the star (Rsol)
  * @param       p_CoreMass                      Core mass of the star (Msol)
  * @return                                      Common envelope lambda parameter
  */
-double HG::CalculateLambdaNanjingStarTrack(const double p_Metallicity,
-                                           const double p_Mass,
-                                           const double p_Radius,
-                                           const double p_CoreMass) const {
+double HG::CalculateLambdaNanjingStarTrack(const double p_Mass, const double p_Radius, const double p_CoreMass) const {
 
     constexpr size_t evolStage = 1;                                                         // HG evolutionary stage from Xu & Li, 2010
                                            
@@ -284,7 +595,7 @@ double HG::CalculateLambdaNanjingStarTrack(const double p_Metallicity,
     auto it = std::upper_bound(NANJING_MASSES_MIDPOINTS.begin(), NANJING_MASSES_MIDPOINTS.end(), p_Mass);
     const size_t massIndex = it != arr.end() ? std::distance(NANJING_MASSES_MIDPOINTS.begin(), it) : NANJING_MASSES_MIDPOINTS.size();
 
-    if (p_Metallicity > LAMBDA_NANJING_ZLIMIT_STARTRACK) {                                  // Z > LAMBDA_NANJING_ZLIMIT_STARTRACK?
+    if (GLOBALS->ReferenceMetallicity() > LAMBDA_NANJING_ZLIMIT_STARTRACK) {                // Z > LAMBDA_NANJING_ZLIMIT_STARTRACK?
                                                                                             // yes
              if (massIndex == 0 && p_Radius > 200.0) lambdaBGidx = 0;
         else if (massIndex == 1 && p_Radius > 340.0) lambdaBGidx = 0;
@@ -342,7 +653,7 @@ double HG::CalculateLambdaNanjingStarTrack(const double p_Metallicity,
     }
 
     // get limits and (defined) lambdas
-    NANJING_Z_LIMITS_LAMBDAS                              ZlimitsLambdas = p_Metallicity < LAMBDA_NANJING_ZLIMIT ? std::get<0>(NANJING_LIMITS_LAMBDAS_STARTRACK) : std::get<1>(NANJING_LIMITS_LAMBDAS_STARTRACK);
+    NANJING_Z_LIMITS_LAMBDAS                              ZlimitsLambdas = GLOBALS->ReferenceMetallicity() < LAMBDA_NANJING_ZLIMIT ? std::get<0>(NANJING_LIMITS_LAMBDAS_STARTRACK) : std::get<1>(NANJING_LIMITS_LAMBDAS_STARTRACK);
     std::tuple<NANJING_LIMITS_STARTRACK, NANJING_LAMBDAS> limitsLambdas  = ZlimitsLambdas[p_MassIndex];
 
     std::tuple<double, double> maxBG = std::get<0>(limitsLambdas)[limitBGidx];              // {maxB, maxG}
@@ -360,7 +671,7 @@ double HG::CalculateLambdaNanjingStarTrack(const double p_Metallicity,
 
         // get B & G coefficients vector
         std::tuple<NANJING_POP_COEFFICIENTS, NANJING_POP_COEFFICIENTS> evolStageCoeffs = NANJING_COEFFICIENTS[evolStage - 1];
-        NANJING_POP_COEFFICIENTS                                       ZCoeffs         = p_Metallicity < LAMBDA_NANJING_ZLIMIT ? std::get<0>(evolStageCoeffs) : std::get<1>(evolStageCoeffs);
+        NANJING_POP_COEFFICIENTS                                       ZCoeffs         = GLOBALS->ReferenceMetallicity() < LAMBDA_NANJING_ZLIMIT ? std::get<0>(evolStageCoeffs) : std::get<1>(evolStageCoeffs);
         std::tuple<DBL_VECTOR, DBL_VECTOR>                             BGcoeffs        = ZCoeffs[p_MassIndex][coeffsBGidx];
 
         DBL_VECTOR Bcoeffs = std::get<0>(BGcoeffs);
@@ -368,25 +679,25 @@ double HG::CalculateLambdaNanjingStarTrack(const double p_Metallicity,
         
         double Rin = p_Radius;
 
-        if (p_Metallicity < LAMBDA_NANJING_ZLIMIT && p_MassIndex == 0 && p_Radius > 2.7) {
+        if (GLOBALS->ReferenceMetallicity() < LAMBDA_NANJING_ZLIMIT && p_MassIndex == 0 && p_Radius > 2.7) {
             lambdaB = 2.33 - (Rin * 9.18E-03);
             lambdaG = 1.12 - (Rin * 4.59E-03);
         }
-        else if (p_Metallicity < LAMBDA_NANJING_ZLIMIT && p_MassIndex == 13) {
+        else if (GLOBALS->ReferenceMetallicity() < LAMBDA_NANJING_ZLIMIT && p_MassIndex == 13) {
             lambdaB = 1.2 * exp(-Rin / 90.0);
             lambdaG = 0.55 * exp(-Rin / 160.0);
         }
-        else if (p_Metallicity >= LAMBDA_NANJING_ZLIMIT && p_MassIndex == 0 && p_Radius > 12.0) {
+        else if (GLOBALS->ReferenceMetallicity() >= LAMBDA_NANJING_ZLIMIT && p_MassIndex == 0 && p_Radius > 12.0) {
             lambdaB = 1.8 * exp(-Rin / 80.0);
             lambdaG = exp(-Rin / 45.0);
         }
-        else if (p_Metallicity >= LAMBDA_NANJING_ZLIMITI && p_MassIndex == 9) {
+        else if (GLOBALS->ReferenceMetallicity() >= LAMBDA_NANJING_ZLIMITI && p_MassIndex == 9) {
             const double tmp = exp(-Rin / 35.0);
             lambdaB = 1.75 * tmp;
             lambdaG = 0.9 * tmp;
         }
         else {
-            if (p_Metallicity < LAMBDA_NANJING_ZLIMIT && p_MassIndex == 0) Rin = (p_Mass - p_CoreMass) / p_Mass;
+            if (GLOBALS->ReferenceMetallicity() < LAMBDA_NANJING_ZLIMIT && p_MassIndex == 0) Rin = (p_Mass - p_CoreMass) / p_Mass;
             
             const double Rin2 = Rin  * Rin;
             const double Rin3 = Rin  * Rin2;
@@ -396,7 +707,7 @@ double HG::CalculateLambdaNanjingStarTrack(const double p_Metallicity,
             lambdaB = Bcoeffs[0] + (Bcoeffs[1] * Rin) + (Bcoeffs[2] * Rin2) + (Bcoeffs[3] * Rin3) + (Bcoeffs[4] * Rin4) + (Bcoeffs[5] * Rin5);
             lambdaG = Gcoeffs[0] + (Gcoeffs[1] * Rin) + (Gcoeffs[2] * Rin2) + (Gcoeffs[3] * Rin3) + (Gcoeffs[4] * Rin4) + (Gcoeffs[5] * Rin5);
 
-            if (p_Metallicity < LAMBDA_NANJING_ZLIMIT && p_MassIndex == 0) {
+            if (GLOBALS->ReferenceMetallicity() < LAMBDA_NANJING_ZLIMIT && p_MassIndex == 0) {
                 lambdaB = 1.0 / lambdaB;
                 lambdaG = 1.0 / lambdaG;                
             }
@@ -412,415 +723,3 @@ double HG::CalculateLambdaNanjingStarTrack(const double p_Metallicity,
     // STARTRACK uses alpha_th = 1/2
     return (OPTIONS->CommonEnvelopeAlphaThermal() * lambdaB) + ((1.0 - OPTIONS->CommonEnvelopeAlphaThermal()) * lambdaG);
 }
-
-
-///////////////////////////////////////////////////////////////////////////////////////
-//                                                                                   //
-//                              LUMINOSITY CALCULATIONS                              //
-//                                                                                   //
-///////////////////////////////////////////////////////////////////////////////////////
-
-
-/*
- * Calculate luminosity at the end of the Hertzsprung Gap
- *
- * Hurley et al. 2000, just before eq 8
- *
- *
- * double CalculateLuminosityAtPhaseEnd(const double p_Mass)
- *
- * @param   [IN]    p_Mass                      Mass in Msol
- * @return                                      Luminosity at the end of the Hertzsprung Gap in Lsol
- */
-double HG::CalculateLuminosityAtPhaseEnd(const double p_Mass) const {
-    return (utils::Compare(p_Mass, massCutoffs(MFGB)) < 0)
-            ? GiantBranch::CalculateLuminosityAtPhaseBase_Static(p_Mass, m_AnCoefficients)
-            : GiantBranch::CalculateLuminosityAtHeIgnition_Static(p_Mass, massCutoffs(MHeF), m_Alpha1, m_BnCoefficients);
-}
-
-
-
-
-
-
-/*
- * CalculateLuminosityOnPhase_Hurley_Static
- *
- * @brief
- * Calculate luminosity on the Hertzsprung Gap, per Hurley et al. 2000, eq 26
- *
- *
- * double CalculateLuminosityOnPhase_Hurley_Static(const double p_Mass, const double p_Age, const DBL_VECTOR& p_Timescales)
- *
- * @param       p_Mass                          Mass of the star (Msol)
- * @param       p_Age                           Effective age of the star (Myr)
- * @param       p_Timescales                    Hurley timescales
- * @return                                      HG luminosity (Lsol)
- */
-double HG::CalculateLuminosityOnPhase_Hurley_Static(const double p_Mass, const double p_Age, const DBL_VECTOR& p_Timescales) const {
-
-    const double tMS  = p_Timescales[static_cast<int>(TIMESCALE::tMS)];
-    const double tau  = (p_Age - tMS) / (p_Timescales[static_cast<int>(TIMESCALE::tBGB)] - tMS);
-    const double LTMS = MainSequence::CalculateLuminosityAtPhaseEnd(p_Mass);
-
-    return LTMS * PPOW((CalculateLuminosityAtPhaseEnd(p_Mass) / LTMS), tau);
-}
-
-
-
-
-
-
-
-///////////////////////////////////////////////////////////////////////////////////////
-//                                                                                   //
-//                                 RADIUS FUNCTIONS                                  //
-//                                                                                   //
-///////////////////////////////////////////////////////////////////////////////////////
-
-
-/*
- * CalculateRadiusOnPhase
- *
- * @brief
- * Calculate the radius of the star at the current evolutionary phase.
- *
- * Calls relevant radius function based on the evolutionary mode given in program options.
- * 
- *
- * double CalculateRadiusOnPhase()
- *
- * @return                                      Radius of the star (Rsol)
- */
-virtual double BaseStar::CalculateRadiusOnPhase() const { 
-
-    double radius;
-
-    Switch (OPTIONS->Mode()) {                                                          // which evolution mode?
-
-        EVOLUTION_MODE::SSE_HURLEY:                                                     // HURLEY SSE
-        EVOLUTION_MODE::BSE_HURLEY:                                                     // HURLEY BSE
-            radius = CalculateRadiusOnPhase_Hurley2000();
-            break;
-        
-        default:                                                                        // unknown mode
-            // the only way this can happen is if someone added an EVOLUTION_MODE and it isn't
-            // accounted for in this code.  We should not default here, with or without a warning.
-            // We are here because the user chose a mode this code doesn't account for, and that should
-            // be flagged as an error and result in termination of the evolution of the star or binary.
-            // The correct fix for this is to add code for the missing mode or, if the missing mode is
-            // superfluous, remove it from the option.
-
-            THROW_ERROR(ERROR::UNKNOWN_EVOLUTION_MODE);                                 // throw error
-    }       
-
-    return radius;
-}
-
-/*
- * CalculateRadiusAtPhaseEnd_Hurley2000
- *
- * @brief
- * Calculate radius at the end of the Hertzsprung Gap, per Hurley et al. 2000, eqs 7 & 8
- *
- *
- * double CalculateRadiusAtPhaseEnd_Hurley2000(const double p_Mass)
- *
- * @param       p_Mass                          Mass of the star (Msol)
- * @param       p_MFGB                          Maximum initial mass at helium ignition on the FGB (Hurley masscutoffs[MFGB]) (Msol)
- * @param       p_aN                            Hurley a(n) coefficients
- * @return                                      Radius at the end of the Hertzsprung Gap (Rsol)
- */
-double HG::CalculateRadiusAtPhaseEnd_Hurley2000(const double p_Mass, const double p_MFGB, const DBL_VECTOR& p_aN) const {
-    return p_Mass < p_MFGB
-            ? GiantBranch::CalculateRadiusOnPhase(p_Mass, CalculateLuminosityAtBGB_Hurley2000(p_Mass, p_aN))
-            : CalculateRadiusAtHeIgnition_Hurley2000(p_Mass);
-}
-
-
-/*
- * CalculateRadiusOnPhase_Hurley2000
- *
- * @brief
- * Calculate the radius on the Hertzsprung Gap, using a modified version of Hurley et al. 2000, eq 27.
- * 
- * See Hurley SSE code `hrdiag.f` lines 92, 188-203.  Here we replace the numerator, REHG, with the
- * GB radius if mass is below the threshold for He ignition, and a calculated value if mass is above
- * the threshold for He ignition (see code below)
- *
- *
- * !*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!
- * !*!*!*!*! ZAMS attribute warning *!*!*!*!*!
- * !*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!
- * 
- * This function relies on the value of the ZAMS radius of the star, and should not be used
- * if the ZAMS radius is not known.
- * 
- *
- * double CalculateRadiusOnPhase_Hurley2000(const double      p_Mass,
- *                                          const double      p_Luminosity,
- *                                          const double      p_Tau,
- *                                          const double      p_RZAMS,
- *                                          const double      p_MHeF,
- *                                          const double      p_MFGB,
- *                                          const double      p_Alpha1,
- *                                          const DBL_VECTOR& p_bN) const
- *
- * @param       p_Mass                          Mass of the star (Msol)
- * @param       p_Luminosity                    Luminosity of the star (Lsol)
- * @param       p_Tau                           Fractional HG age of the star
- * @param       p_RZAMS                         ZAMS radius of the star (Rsol)
- * @param       p_MHeF                          Maximum initial mass at Helium Flash (Hurley masscutoffs[MHeF]) (Msol)
- * @param       p_MFGB                          Maximum initial mass at helium ignition on the FGB (Hurley masscutoffs[MFGB]) (Msol)
- * @param       p_Alpha1                        Hurley alpha1 constant
- * @param       p_bN                            Hurley b(n) coefficients
- * @return                                      HG radius (Rsol)
- */
-double HG::CalculateRadiusOnPhase_Hurley2000(const double      p_Mass,
-                                             const double      p_Luminosity, 
-                                             const double      p_Tau,
-                                             const double      p_RZAMS,
-                                             const double      p_MHeF,
-                                             const double      p_MFGB,
-                                             const double      p_Alpha1,
-                                             const DBL_VECTOR& p_bN) const {
-
-                                                    // p_Alpha1
-
-    // FIX THIS - REMOVE BRCEK CODE <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-    double RTMS;  
-    if ((OPTIONS->MainSequenceCoreMassPrescription() == MS_CORE_MASS_PRESCRIPTION::BRCEK) && (utils::Compare(m_MZAMS, BRCEK_LOWER_MASS_LIMIT) >= 0))
-        // p_Mass generally has the value of m_Mass0, but since m_Mass is used for radius calculations on the MS and m_Mass0
-        // is updated to a new value when BRCEK prescription is used, we need to use m_Mass here to keep radius continuous
-        RTMS = MainSequence::CalculateRadiusAtPhaseEnd(m_Mass, p_RZAMS);
-    else
-        RTMS = MainSequence::CalculateRadiusAtPhaseEnd(p_Mass, p_RZAMS);
-    // FIX THIS - REMOVE BRCEK CODE <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-
-
-
-    const double rTAMS = MainSequence::CalculateRadiusAtPhaseEnd(p_Mass, p_RZAMS);
-    const double rGB   = GiantBranch::CalculateRadiusOnPhase_Static(p_Mass, p_Luminosity, p_bN);
-
-    double rx = rGB;                                                                                                   // rx in Hurley SSE Fortran code
-
-    if (p_Mass > p_MFGB) {                                                                      // mass above threshold for He ignition?
-                                                                                                                        // yes
-        // rMinHe is Hurley et al. 2000, eq 55 - first part (M >= MHeF)
-        const double Mb28   = PPOW(p_Mass, p_bN[28]);                                                                   // pow() is slow - do it once only
-        const double rMinHe = ((p_bN[24] * p_Mass) + (PPOW((p_bN[25] * p_Mass), p_bN[26]) * Mb28)) / (p_bN[27] + Mb28); // rmin in Hurley SSE Fortran code
-        const double lum    = GiantBranch::CalculateLuminosityAtHeIgnition_Static(p_Mass, p_MHeF, p_Alpha1, p_bN);
-
-        // mass is used here in the Hurley SSE Fortran code, mass0 everywhere else
-        // ry in Hurley SSE Fortran code
-        const double ry = EAGB::CalculateRadiusOnPhase_Static(p_Mass, lum, p_MHeF, p_bN);
-
-        // calculate radius at He ignition for MFGB < p_Mass < HM
-        // Hurley et al. 2000, eq 50
-        
-        rx = std::min(rMinHe, ry);
-        
-        if (p_Mass < HIGH_MASS_THRESHOLD) {
-            rx = rMinHe * PPOW(rGB / rMinHe, log10(p_Mass / HIGH_MASS_THRESHOLD) / log10(p_MFGB / HIGH_MASS_THRESHOLD));
-        }
-
-        // this piece of code resets rx if the blue loop is relatively short
-        // see Hurley SSE Fortran code, function tblf() in `zfuncs1.f`
-        // JR: I suspect this is where the check came from in the dicussion re blue loop in CHeB::CalculateTimescales() - I don't like this much... **Ilya**
-        const double r1 = std::max(1.0 - rMinHe / ry, 1.0E-12); 
-
-        double tblf = (1.0 - b[47]) * PPOW(p_Mass, b[48]) * PPOW(r1, b[49]);                                        // calculate blue-loop fraction of He-burning
-        tblf = std::min(1.0, std::max(0.0, tblf));                                                                  // clamp to [0.0, 1.0]
-
-        if (tblf < MINIMUM_BLUE_LOOP_FRACTION) rx = ry;                                                             // reset rx if short blue loop
-    }
-
-    return rTAMS * PPOW(rx / rTAMS, p_Tau);
-}
-
-
-
-///////////////////////////////////////////////////////////////////////////////////////
-//                                                                                   //
-//                                 MASS CALCULATIONS                                 //
-//                                                                                   //
-///////////////////////////////////////////////////////////////////////////////////////
-
-
-
-
-
-
-
-
-
-
-///////////////////////////////////////////////////////////////////////////////////////
-//                                                                                   //
-//                            LIFETIME / AGE CALCULATIONS                            //
-//                                                                                   //
-///////////////////////////////////////////////////////////////////////////////////////
-
-
-
-
-///////////////////////////////////////////////////////////////////////////////////////
-//                                                                                   //
-//                    MISCELLANEOUS FUNCTIONS / CONTROL FUNCTIONS                    //
-//                                                                                   //
-///////////////////////////////////////////////////////////////////////////////////////
-
-
-
-/*
- * Determine the star's envelope type.
- *
- * Some calculations on this can be found in sec. 2.3.4 of Belczynski et al. 2008.  For now, we will only do the calculation using stellarType.
- *
- *
- * ENVELOPE DetermineEnvelopeType()
- *
- * @return                                      ENVELOPE::{ RADIATIVE, CONVECTIVE, REMNANT }
- */
-ENVELOPE HG::DetermineEnvelopeType() const {
- 
-    ENVELOPE envelope = ENVELOPE::RADIATIVE;                                                         // default envelope type
-    
-    switch (OPTIONS->EnvelopeStatePrescription()) {                                                  // which envelope prescription?
-            
-        case ENVELOPE_STATE_PRESCRIPTION::LEGACY:
-            envelope = ENVELOPE::RADIATIVE;
-            break;
-            
-        case ENVELOPE_STATE_PRESCRIPTION::HURLEY:
-            // eq. (39,40) of Hurley+ (2002) and end of section 7.2 of Hurley+ (2000) describe gradual
-            // growth of convective envelope over HG, but we approximate it as already convective here
-            envelope = ENVELOPE::CONVECTIVE;
-            break;
-            
-        case ENVELOPE_STATE_PRESCRIPTION::FIXED_TEMPERATURE:
-            // envelope is radiative if temperature exceeds fixed threshold, otherwise convective
-            envelope =  utils::Compare(Temperature() * TSOL, OPTIONS->ConvectiveEnvelopeTemperatureThreshold()) > 0 ? ENVELOPE::RADIATIVE : ENVELOPE::CONVECTIVE;
-            break;
-            
-        case ENVELOPE_STATE_PRESCRIPTION::CONVECTIVE_MASS_FRACTION:
-            // envelope is labeled convective when the convective mass exceeds a fixed fraction of the envelope mass
-            double convectiveEnvelopeMass, convectiveEnvelopeMassMax;
-            std::tie(convectiveEnvelopeMass, convectiveEnvelopeMassMax) = CalculateConvectiveEnvelopeMass();
-            envelope = utils::Compare(convectiveEnvelopeMass / (m_Mass - m_CoreMass), OPTIONS->ConvectiveEnvelopeMassThreshold()) > 0 ? ENVELOPE::CONVECTIVE : ENVELOPE::RADIATIVE;
-            break;
-
-        default:                                                                                    // unknown prescription
-            // the only way this can happen is if someone added an ENVELOPE_STATE_PRESCRIPTION
-            // and it isn't accounted for in this code.  We should not default here, with or without a warning.
-            // We are here because the user chose a prescription this code doesn't account for, and that should
-            // be flagged as an error and result in termination of the evolution of the star or binary.
-            // The correct fix for this is to add code for the missing prescription or, if the missing
-            // prescription is superfluous, remove it from the option.
-
-            THROW_ERROR(ERROR::UNKNOWN_ENVELOPE_STATE_PRESCRIPTION);                                // throw error               
-    }
-    
-    return envelope;
-}
-
-
-/*
- * Choose timestep for evolution
- *
- * Given in the discussion in Hurley et al. 2000
- *
- *
- * ChooseTimestep(const double p_Time)
- *
- * @param   [IN]    p_Time                      Current age of star in Myr
- * @return                                      Suggested timestep (dt)
- */
-double HG::ChooseTimestep(const double p_Time) const {
-
-    double dtk = 0.05 * (timescales(tBGB) - timescales(tMS));
-    double dte = timescales(tBGB) - p_Time;    
-
-    return std::max(std::min(dtk, dte), NUCLEAR_MINIMUM_TIMESTEP);
-}
-
-
-/*
- * Modify the star after it loses its envelope
- *
- * Hurley et al. 2000, section 6 just before eq 76 and after Eq. 105
- *
- * Where necessary updates attributes of star (depending upon stellar type):
- *
- *     - m_StellarType
- *     - m_Timescales
- *     - m_GBparams
- *     - m_Luminosity
- *     - m_Radius
- *     - m_Mass
- *     - m_Mass0
- *     - m_CoreMass
- *     - m_HeCoreMass
- *     - m_COCoreMass
- *     - m_Age
- *
- * STELLAR_TYPE ResolveEnvelopeLoss(bool p_Force)
- *
- * @param   [IN]    p_Force                     Boolean to indicate whether the resolution of the loss of the envelope should be performed
- *                                              without checking the precondition(s).
- *                                              Default is false.
- *
- * @return                                      Stellar Type to which star should evolve after losing envelope
- */
-STELLAR_TYPE HG::ResolveEnvelopeLoss(bool p_Force) {
-
-    STELLAR_TYPE stellarType = m_StellarType;
-
-    if (p_Force || utils::Compare(m_CoreMass, m_Mass) >= 0) {                   // envelope loss
-
-        m_Mass = std::min(m_CoreMass, m_Mass);
-
-        if (utils::Compare(m_Mass0, massCutoffs(MHeF)) < 0) {                   // star evolves to Helium White Dwarf
-
-            stellarType  = STELLAR_TYPE::HELIUM_WHITE_DWARF;
-
-            m_Radius     = WhiteDwarfs::CalculateRadius_Hurley2000_Static(m_Mass);
-            m_Age        = 0.0;                                                 // see Hurley et al. 2000, discussion after eq 76
-        }
-        else {                                                                  // star evolves to Zero age Naked Helium Main Star
-
-            stellarType  = STELLAR_TYPE::NAKED_HELIUM_STAR_MS;
-
-            m_Mass0      = m_Mass;
-            m_Radius     = HeMS::CalculateRadiusAtZAHeMS_Hurley2000_Static(m_Mass);          
-            m_Luminosity = HeMS::CalculateLuminosityAtZAHeMS_Hurley2000_Static(m_Mass);
-            m_Age        = 0.0;                                                 // can't use Hurley et al. 2000, eq 76 here - timescales(tHe) not calculated yet
-        }
-    }
-
-    return stellarType;
-}
-
-
-/*
- * Set parameters for evolution to next phase and return Stellar Type for next phase
- *
- *
- * STELLAR_TYPE EvolveToNextPhase()
- *
- * @return                                      Stellar Type for next phase
- */
-STELLAR_TYPE HG::EvolveToNextPhase() {
-
-    STELLAR_TYPE stellarType;
-
-    if (utils::Compare(m_Mass0, massCutoffs(MFGB)) < 0) {
-        stellarType = STELLAR_TYPE::FIRST_GIANT_BRANCH;
-    }
-    else {
-        stellarType = STELLAR_TYPE::CORE_HELIUM_BURNING;
-    }    
-
-    return stellarType;
-}
-

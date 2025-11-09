@@ -37,8 +37,8 @@ public:
 
 
     // member functions
-    static  double  CalculateLuminosityOnPhase_Static(const double p_Mass, const double p_Time, const double p_Metallicity) {
-                        return WhiteDwarfs::CalculateLuminosityOnPhase_Static(p_Mass, p_Time, p_Metallicity, WD_Baryon_Number.at(STELLAR_TYPE::HELIUM_WHITE_DWARF));
+    static  double  CalculateLuminosityOnPhase_Static(const double p_Mass, const double p_Time) {
+                        return WhiteDwarfs::CalculateLuminosityOnPhase_Static(p_Mass, p_Time, WD_Baryon_Number.at(STELLAR_TYPE::HELIUM_WHITE_DWARF));
                     }
 
     ACCRETION_REGIME DetermineAccretionRegime(const double p_DonorThermalMassLossRate, const bool p_HeRich);
@@ -64,18 +64,14 @@ protected:
     // member functions - alphabetically
 
 
-GNU_CONST inline double CalculateHAbundanceCoreOnPhase(const double p_Tau, const double p_InitialHAbundance) const override { return 0.0; }
-GNU_CONST inline double CalculateHAbundanceSurfaceOnPhase(const double p_Tau, const double p_InitialHAbundance) const override { return 0.0; }
-GNU_CONST inline double CalculateHeAbundanceCoreOnPhase(const double p_Metallicity, const double p_Tau, const double p_InitialHeAbundance = 0.0) const override { return 1.0 - p_Metallicity; }
-GNU_CONST inline double CalculateHeAbundanceSurfaceOnPhase(const double p_Metallicity, const double p_Tau, const double p_InitialHeAbundance) const override { return 1.0 - p_Metallicity; }
+COMPAS_PURE inline double CalculateHeAbundanceCore(const double p_Tau, const double p_InitialHeAbundance = 0.0) const override { return 1.0 - GLOBALS->ReferenceMetallicity(); }
+COMPAS_PURE inline double CalculateHeAbundanceSurface(const double p_Tau, const double p_InitialHeAbundance) const override { return 1.0 - GLOBALS->ReferenceMetallicity(); }
     
     
     double          CalculateCELambda_Dewi() const                                                             { return BaseStar::CalculateCELambda_Dewi(); }
-    double          CalculateLambdaNanjingStarTrack(const double p_Mass, const double p_Metallicity) const  { return BaseStar::CalculateLambdaNanjingStarTrack(0.0, 0.0); }
+    double          CalculateLambdaNanjingStarTrack(const double p_Mass) const  { return BaseStar::CalculateLambdaNanjingStarTrack(0.0, 0.0); }
     double          CalculateLambdaNanjingEnhanced(const int p_MassIndex, const STELLAR_POPULATION p_StellarPop) const { return CalculateLambdaNanjingStarTrack(0.0, 0.0); }
-    double          CalculateLuminosityOnPhase(const double p_Mass,
-                                               const double p_Time,
-                                               const double p_Metallicity) const                            { return CalculateLuminosityOnPhase_Static(p_Mass, p_Time, p_Metallicity); }
+    double          CalculateLuminosityOnPhase(const double p_Mass, const double p_Time) const { return CalculateLuminosityOnPhase_Static(p_Mass, p_Time); }
     double          CalculateLuminosityOnPhase() const                                                      { return CalculateLuminosityOnPhase_Static(m_Mass, m_Age, m_Metallicity); }     // Use class member variables
 
     DBL_DBL         CalculateMassAcceptanceRate(const double p_DonorMassRate,

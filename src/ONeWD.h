@@ -35,12 +35,9 @@ public:
 
 
     // member functions
-    static double CalculateLuminosityOnPhase_Static(const double p_Mass, 
-                                                    const double p_Time, 
-                                                    const double p_Metallicity)     { return WhiteDwarfs::CalculateLuminosityOnPhase_Static(p_Mass, 
-                                                                                                                                            p_Time, 
-                                                                                                                                            p_Metallicity, 
-                                                                                                                                            WD_Baryon_Number.at(STELLAR_TYPE::OXYGEN_NEON_WHITE_DWARF)); }
+    static double CalculateLuminosityOnPhase_Static(const double p_Mass, const double p_Time) { 
+        return WhiteDwarfs::CalculateLuminosityOnPhase_Static(p_Mass, p_Time, WD_Baryon_Number.at(STELLAR_TYPE::OXYGEN_NEON_WHITE_DWARF));
+    }
 
 protected:
 
@@ -59,18 +56,12 @@ protected:
     // member functions
 
 
-GNU_CONST inline double CalculateHAbundanceCoreOnPhase(const double p_Tau, const double p_InitialHAbundance) const override{ return 0.0; };
-GNU_CONST inline double CalculateHAbundanceSurfaceOnPhase(const double p_Tau, const double p_InitialHAbundance) const override { return 0.0; };
 
-GNU_CONST inline double CalculateHeAbundanceCoreOnPhase(const double p_Metallicity, const double p_Tau, const double p_InitialHeAbundance = 0.0) const override { return 0.0; };
-GNU_CONST inline double CalculateHeAbundanceSurfaceOnPhase(const double p_Metallicity, const double p_Tau, const double p_InitialHeAbundance) const override{ return 0.0; };
     
 
 
 
-    double          CalculateLuminosityOnPhase(const double p_Mass,
-                                                const double p_Time,
-                                                const double p_Metallicity) const   { return CalculateLuminosityOnPhase_Static(p_Mass, p_Time, p_Metallicity); }
+    double          CalculateLuminosityOnPhase(const double p_Mass, const double p_Time) const { return CalculateLuminosityOnPhase_Static(p_Mass, p_Time); }
 
     double          CalculateLuminosityOnPhase() const                              { return CalculateLuminosityOnPhase(m_Mass, m_Age, m_Metallicity); }    // Use class member variables
 

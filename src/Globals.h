@@ -152,7 +152,9 @@ private:
     std::optional<DBL_VECTOR> m_ShikauchiLCoeffs;                       // luminosity
 
 
-    
+    std::optional<double> m_MinimumLuminosity_CHeB;                     // minimum luminosity on the Core Helium Burning phase
+
+
     struct StarDetails {
 
         double      refZ = -1.0;            // reference metallicty, initially undefined
@@ -163,7 +165,7 @@ private:
 
 
 
-    // these are per binary - should be in BaseStar   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+    // these are per binary - should be in BaseStar  ???? Huh?  That's the point of the globals - per binary or per run <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
     double m_ZAMSluminosity;
 
 
@@ -222,14 +224,14 @@ public:
 
     double     ReferenceMetallicity() const { return RET_VALUE(m_RefZ); } 
 
-    double     ShikauschACoefficients(const size_t p_Index) const { if (p_Index < m_ShikauchiACoeffs.size()) RET_VALUE(m_ShikauchiACoeffs[p_Index]); else FAIL; }
-    DBL_VECTOR ShikauschACoefficients() const { return UnPackOptDblVector(m_ShikauchiACoeffs); }
+    double     ShikauchiACoefficients(const size_t p_Index) const { if (p_Index < m_ShikauchiACoeffs.size()) RET_VALUE(m_ShikauchiACoeffs[p_Index]); else FAIL; }
+    DBL_VECTOR ShikauchiACoefficients() const { return UnPackOptDblVector(m_ShikauchiACoeffs); }
 
-    double     ShikauschFCoefficients(const size_t p_Index) const { if (p_Index < m_ShikauchiFCoeffs.size()) RET_VALUE(m_ShikauchiFCoeffs[p_Index]); else FAIL; }
-    DBL_VECTOR ShikauschFCoefficients() const { return UnPackOptDblVector(m_ShikauchiFCoeffs); }
+    double     ShikauchiFCoefficients(const size_t p_Index) const { if (p_Index < m_ShikauchiFCoeffs.size()) RET_VALUE(m_ShikauchiFCoeffs[p_Index]); else FAIL; }
+    DBL_VECTOR ShikauchiFCoefficients() const { return UnPackOptDblVector(m_ShikauchiFCoeffs); }
 
-    double     ShikauschLCoefficients(const size_t p_Index) const { if (p_Index < m_ShikauchiLCoeffs.size()) RET_VALUE(m_ShikauchiLCoeffs[p_Index]); else FAIL; }
-    DBL_VECTOR ShikauschLCoefficients() const { return UnPackOptDblVector(m_ShikauchiLCoeffs); }
+    double     ShikauchiLCoefficients(const size_t p_Index) const { if (p_Index < m_ShikauchiLCoeffs.size()) RET_VALUE(m_ShikauchiLCoeffs[p_Index]); else FAIL; }
+    DBL_VECTOR ShikauchiLCoefficients() const { return UnPackOptDblVector(m_ShikauchiLCoeffs); }
 
     double     SigmaHurley() const { return RET_VALUE(m_SigmaHurley); }
 
@@ -340,13 +342,21 @@ public:
     GNU_PURE  HurleyZdependentT CalculateHurleyZdependentValues(const double p_Z, const double p_Sigma, const double p_Zeta, const HurleyZdependentValues& p_HurleyZdependentValues) const;
 
     GNU_PURE  DBL_VECTOR CalculateHurleyACoefficients(const double p_RefZ, const double p_Sigma, const double p_Zeta) const;
-    GNU_CONST DBL_VECTOR CalculateHurleyAlphas(const DBL_VECTOR& p_bCoefficients, const DBL_VECTOR& p_MassCutoffs) const;
-    GNU_PURE  DBL_VECTOR CalculateHurleyBCoefficients(const double p_RefZ, const double p_Sigma, const double p_Zeta, const double p_Rho, const DBL_VECTOR& p_MassCutoffs) const;
-    GNU_CONST DBL_VECTOR CalculateHurleyGammaConstants(const DBL_VECTOR& p_aCoefficients) const;
-    GNU_CONST double     CalculateHurleyGBRadiusXexponent(const double p_Zeta) const;
-    GNU_CONST DBL_VECTOR CalculateHurleyLuminosityConstants(const DBL_VECTOR& p_aCoefficients) const;
+    GNU_CONST DBL_VECTOR CalculateHurleyAlphas(const DBL_VECTOR& p_MassCutoffs, const DBL_VECTOR& p_aCoeffs, const DBL_VECTOR& p_bCoeffs) const;
+    GNU_PURE  DBL_VECTOR CalculateHurleyBCoefficients(
+        const double      p_Z,
+        const double      p_Sigma,
+        const double      p_Zeta,
+        const double      p_Rho,
+        const DBL_VECTOR& p_MassCutoffs
+    ) const;
+    GNU_CONST DBL_VECTOR CalculateHurleyGammaConstants(const DBL_VECTOR& p_aCoeffs) const;
+    GNU_CONST double     CalculateGBRadiusXexponent(const double p_Zeta) const;
+    GNU_CONST DBL_VECTOR CalculateHurleyLuminosityConstants(const DBL_VECTOR& p_aCoeffs) const;
     GNU_CONST DBL_VECTOR CalculateHurleyMassCutoffs(const double p_RefZ, const double p_Zeta) const;
-    GNU_CONST DBL_VECTOR CalculateHurleyRadiusConstants(const DBL_VECTOR& p_aCoefficients) const;
+    GNU_CONST DBL_VECTOR CalculateHurleyRadiusConstants(const DBL_VECTOR& p_aCoeffs) const;
+
+
 
     GNU_PURE std::tuple<DBL_VECTOR, DBL_VECTOR, DBL_VECTOR> CalculateShikauchiCoefficients(const double p_Z, const double p_logZ) const;
 

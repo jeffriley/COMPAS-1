@@ -562,7 +562,7 @@ enum class HURLEY_GAMMA_CONSTANTS: int { B_GAMMA, C_GAMMA, COUNT };
 // symbolic names for Giant Branch Parameters
 // these must be left as default values - their order can be changed with the caveat that the sentinel "COUNT" must stay at the end
 // it's a bit of a hack, but it lets me calculate the number of GB parameters
-enum class GBP: int {
+enum class HURLEY_GBP: int {
     AH,                     // Hydrogen rate constant.  Hurley et al. 2000, p553
     AHHe,                   // Effective combined rate constant for both hydrogen and helium shell burning.  Hurley et al. 2000, eq 71
     AHe,                    // Helium rate constant.  Hurley et al. 2000, eq 68
@@ -1021,24 +1021,24 @@ enum class TIMESCALE: int {
     tHe,                    // Helium burning
 
                             // First Giant Branch (FGB)
-    tinf1_FGB,              // First Giant Branch tinf1
-    tinf2_FGB,              // First Giant Branch tinf2
+    tinf1_FGB,              // First Giant Branch tinf1 (integration constant)
+    tinf2_FGB,              // First Giant Branch tinf2 (integration constant)
     tMx_FGB,                // First Giant Branch t(Mx)
 
                             // Early Asymptotic Giant Branch (EAGB) (FAGB in Hurley's sse)
-    tinf1_FAGB,             // Early Asymptotic Giant Branch tinf1
-    tinf2_FAGB,             // Early Asymptotic Giant Branch tinf2
+    tinf1_FAGB,             // Early Asymptotic Giant Branch tinf1 (integration constant)
+    tinf2_FAGB,             // Early Asymptotic Giant Branch tinf2 (integration constant)
     tMx_FAGB,               // Early Asymptotic Giant Branch t(Mx)
 
                             // Thermally Pulsating Asymptotic Giant Branch (TPAGB) (SAGB in Hurley's sse)
-    tinf1_SAGB,             // Thermally Pulsating Asymptotic Giant Branch tinf1
-    tinf2_SAGB,             // Thermally Pulsating Asymptotic Giant Branch tinf2
+    tinf1_SAGB,             // Thermally Pulsating Asymptotic Giant Branch tinf1 (integration constant)
+    tinf2_SAGB,             // Thermally Pulsating Asymptotic Giant Branch tinf2 (integration constant)
     tMx_SAGB,               // Thermally Pulsating Asymptotic Giant Branch t(Mx)
     tP,                     // (tDU?)
                             // Helium Giant Branch
     tHeMS,                  // Naked Helium Star central helium burning lifetime (HeMs)
-    tinf1_HeGB,             // Helium Giant Branch tinf1
-    tinf2_HeGB,             // Helium Giant Branch tinf2
+    tinf1_HeGB,             // Helium Giant Branch tinf1 (integration constant)
+    tinf2_HeGB,             // Helium Giant Branch tinf2 (integration constant)
     tx_HeGB,                // Helium Giant Branch tx (is this t(Mx)?)
     tau_BL,                 // Relative duration of blue loop taubl
     tauX_BL,                // Relative start of blue loop taux
@@ -1220,6 +1220,7 @@ typedef struct SNEvents {
 typedef struct StellarKickParams {
 
     std::optional<double> magnitude;        // Kick magnitude the system received during the supernova (km s^-1)
+    std::optional<double> magnitudeDrawn;        // Kick magnitude drawn from user-specified distribution (km s^-1) (may be reweighted - see `magnitude`)
     std::optional<double> magnitudeRandom; // Random number U(0,1) for choosing the supernova kick magnitude
 
 } StellarKickParamsT;

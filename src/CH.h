@@ -2,13 +2,12 @@
 #define __CH_h__
 
 #include "constants.h"
-#include "typedefs.h"
-#include "profiling.h"
-#include "utils.h"
+//// #include "typedefs.h"   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//// #include "profiling.h"   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//// #include "utils.h"   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 #include "BaseStar.h"
 #include "MS_gt_07.h"
-#include "HeMS.h"
 
 class BaseStar;
 class MS_gt_07;
@@ -17,70 +16,86 @@ class CH: virtual public BaseStar, public MS_gt_07 {
 
 public:
 
+    // constructors
+
     CH() { m_StellarType = STELLAR_TYPE::CHEMICALLY_HOMOGENEOUS; };
     
     CH(const BaseStar &p_BaseStar, const bool p_Initialise = true) : BaseStar(p_BaseStar), MS_gt_07(p_BaseStar) {
-        m_StellarType = STELLAR_TYPE::CHEMICALLY_HOMOGENEOUS;                                                                                                                       // Set stellar type
-        if (p_Initialise) Initialise();                                                                                                                                             // Initialise if required
+        m_StellarType = STELLAR_TYPE::CHEMICALLY_HOMOGENEOUS; // Set stellar type // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+        if (p_Initialise) Initialise();  // Initialise if required
     }
 
-    CH* Clone(const OBJECT_PERSISTENCE p_Persistence, const bool p_Initialise = true) {
-        CH* clone = new CH(*this, p_Initialise); 
-        clone->SetPersistence(p_Persistence); 
-        return clone; 
-    }
 
-    static CH* Clone(CH& p_Star, const OBJECT_PERSISTENCE p_Persistence, const bool p_Initialise = true) {
-        CH* clone = new CH(p_Star, p_Initialise); 
-        clone->SetPersistence(p_Persistence); 
-        return clone; 
+private: 
+
+    void Initialise() {
+        CalculateTimescales(); // Initialise timescales
+        m_Age = 0.0; // Set age appropriately   // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+        m_CHE = true; // initially for CH stars  // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<                                                                                                                                                          // Set age appropriately
     }
 
 
 protected:
-
-    void Initialise() {
-        CalculateTimescales();                                                                                                                                                      // Initialise timescales
-        m_Age = 0.0;                                                                                                                                                                // Set age appropriately
-        m_CHE = true;                                                                                                                                                               // initially for CH stars                                                                                                                                                            // Set age appropriately
-    }
 
     // member functions
 
 
 ///// ON PHASE FUNCTIONS   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
-GNU_PURE double CalculateAgeAfterMassLoss_Hurley2000(const double      p_Age,
-                                                     const double      p_ZetaHurley,
-                                                     const double      p_tMS,
-                                                     const DBL_VECTOR& p_aN,
-                                                     const bool        p_EnhanceLifetime) const override;
+    // abundances
+    GNU_CONST   double CalculateHAbundanceCore(const double p_Tau, const double p_InitialHAbundance) const override;
+    GNU_CONST   double CalculateHAbundanceSurface(const double p_Tau, const double p_InitialHAbundance) const override;
+    COMPAS_PURE double CalculateHeAbundanceCore(const double p_Tau, const double p_InitialHeAbundance = 0.0) const override;
+    COMPAS_PURE double CalculateHeAbundanceSurface(const double p_Tau, const double p_InitialHeAbundance) const override;
 
 
-inline double CalculateRadius() const override { return m_StateHistory.ZAMSState().Radius(); }              // CH radius is fixed throughout lifetime
+    // age, lifetime, tau, timescales
 
-GNU_CONST double CalculateHAbundanceCore(const double p_Tau, const double p_InitialHAbundance) const override;
-GNU_CONST double CalculateHAbundanceSurface(const double p_Tau, const double p_InitialHAbundance) const override;
-GNU_CONST double CalculateHeAbundanceCore(const double p_Metallicity, const double p_Tau, const double p_InitialHeAbundance = 0.0) const override;
-GNU_CONST double CalculateHeAbundanceSurface(const double p_Metallicity, const double p_Tau, const double p_InitialHeAbundance) const override;
+    COMPAS_PURE double CalculateAgeAfterMassLoss_Hurley2000(const double p_Mass, const double p_Age, const double p_tMS, const bool p_EnhanceLifetime) const override;
 
+    GNU_CONST double CalculateLifetimesRatio_Szecsi2020(const double p_Mass) const;
 
+    inline DBL_VECTOR CalculateTimescales_Hurley2000() const override {
+        return CalculateTimescales_Hurley2000(m_StateHistory.CurrentState.MassEffectiveInitial(), m_StateHistory.CurrentState.GBparams(), m_StateHistory.CurrentState.TimeScales());
+    }
 
-GNU_CONST double CalculateLifetimesRatio(const double p_Mass) const;
-
-GNU_CONST double CalculateLogLuminositiesRatio(const double p_Mass) const;
-
-
-GNU_CONST DBL_VECTOR CalculateTimescales_Hurley(const double p_Mass, const DBL_VECTOR& p_tScales, const DBL_VECTOR& p_aN) const;
+    COMPAS_PURE DBL_VECTOR CalculateTimescales_Hurley2000(const double p_Mass, const DBL_VECTOR& p_GBparams, const DBL_VECTOR& p_tScales) const;
 
 
- 
+    // luminosity
+
+    GNU_CONST double CalculateLogLuminositiesRatio(const double p_Mass) const;
+
+    COMPAS_PURE double CH::CalculateLuminosity_Hurley2000(
+        const double p_Mass,
+        const double p_Tau,
+        const double p_Time,
+        const double p_LZAMS,
+        const double p_tMS,
+        const double p_tBGB
+    ) const;
+
+
+    // radius
+    inline double CalculateRadius() const override { return m_StateHistory.ZAMSState().Radius(); }              // CH radius is fixed throughout lifetime
+    inline double CalculateRadiusAtPhaseEnd() const override { return m_StateHistory.ZAMSState().Radius(); }    // CH radius is fixed throughout lifetime 
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
 ///// PHASE END, ETC.      <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
-inline double CalculateRadiusAtPhaseEnd() const override { return m_StateHistory.ZAMSState().Radius(); }    // CH radius is fixed throughout lifetime 
 
 
 
@@ -113,7 +128,6 @@ double CalculateLuminosityOnPhase(
     
     // Mass loss rate
     COMPAS_PURE MASS_LOSS_T CalculateMLrate_Belczynski2010(
-        const double p_Metallicity,
         const double p_Mass,
         const double p_Radius,
         const double p_Luminosity,
@@ -123,7 +137,6 @@ double CalculateLuminosityOnPhase(
     ) const override;
 
     COMPAS_PURE MASS_LOSS_T CH::CalculateMLrate_Merritt2025(
-        const double p_Metallicity,
         const double p_Mass,
         const double p_Radius,
         const double p_Luminosity,
@@ -181,7 +194,7 @@ double CalculateLuminosityOnPhase(
 
 ///////////////////////////////////////////////////////////////////////////////////////
 //                                                                                   //
-//                                ABUNDANCE FUNCTIONS                                //
+//                                     ABUNDANCE                                     //
 //                                                                                   //
 ///////////////////////////////////////////////////////////////////////////////////////
 
@@ -199,7 +212,7 @@ double CalculateLuminosityOnPhase(
  *
  * double CalculateHAbundanceCore(const double p_Tau, const double p_InitialHAbundance) const
  * 
- * @param       p_Tau                           CH (MS) relative age of the star [0, 1]
+ * @param       p_Tau                           Phase-relative age of the star [0, 1]
  * @param       p_InitialHAbundance             Initial hydrogen abundance of the star
  * @return                                      Hydrogen abundance in the core of the star
  */
@@ -223,7 +236,7 @@ GNU_CONST inline double CH::CalculateHAbundanceCore(const double p_Tau, const do
  * @param       p_InitialHAbundance             Initial hydrogen abundance of the star
  * @return                                      Hydrogen abundance at the surface of the star
  */
-GNU_CONST inline double CH::CalculateHAbundanceSurfaceOnPhase(const double p_Tau, const double p_InitialHAbundance) const {
+GNU_CONST inline double CH::CalculateHAbundanceSurface(const double p_Tau, const double p_InitialHAbundance) const {
     return CalculateHAbundanceCore(p_Tau, p_InitialHAbundance);
 }
 
@@ -239,15 +252,14 @@ GNU_CONST inline double CH::CalculateHAbundanceSurfaceOnPhase(const double p_Tau
  * Should one day be updated to match detailed models.
  * 
  *
- * double CalculateHeAbundanceCore(const double p_Metallicity, const double p_Tau, const double p_InitialHeAbundance) const
+ * double CalculateHeAbundanceCore(const double p_Tau, const double p_InitialHeAbundance) const
  * 
- * @param       p_Metallicity                   Metallicity of the star
  * @param       p_Tau                           Phase-relative age of the star [0, 1]
  * @param       p_InitialHeAbundance            Initial helium abundance of the star
  * @return                                      Helium abundance in the core of the star
  */
-GNU_CONST inline double CH::CalculateHeAbundanceCore(const double p_Metallicity, const double p_Tau, const double p_InitialHeAbundance) const {
-    return ((1.0 - p_Metallicity - p_InitialHeAbundance) * p_Tau) + p_InitialHeAbundance;
+COMPAS_PURE inline double CH::CalculateHeAbundanceCore(const double p_Tau, const double p_InitialHeAbundance) const {
+    return ((1.0 - GLOBALS->ReferenceMetallicity() - p_InitialHeAbundance) * p_Tau) + p_InitialHeAbundance;
 }
 
 
@@ -260,21 +272,20 @@ GNU_CONST inline double CH::CalculateHeAbundanceCore(const double p_Metallicity,
  * same abundances.
  * 
  * 
- * double CalculateHeAbundanceSurface(const double p_Metallicity, const double p_Tau, const double p_InitialHeAbundance) const
+ * double CalculateHeAbundanceSurface(const double p_Tau, const double p_InitialHeAbundance) const
  * 
- * @param       p_Metallicity                   Metallicity of the star (not used here)
  * @param       p_Tau                           Phase-relative age of the star [0, 1]
  * @param       p_InitialHeAbundance            Initial helium abundance of the star
  * @return                                      Helium abundance at the surface of the star
  */
-GNU_CONST inline double CH::CalculateHeAbundanceSurface(const double p_Metallicity, const double p_Tau, const double p_InitialHeAbundance) const {
+COMPAS_PURE inline double CH::CalculateHeAbundanceSurface(const double p_Tau, const double p_InitialHeAbundance) const {
     return CalculateHeAbundanceCore(p_Tau, p_InitialHeAbundance);
 }
 
 
 ///////////////////////////////////////////////////////////////////////////////////////
 //                                                                                   //
-//                             LIFETIME / AGE FUNCTIONS                              //
+//                         AGE / LIFETIME / TAU / TIMESCALES                         //
 //                                                                                   //
 ///////////////////////////////////////////////////////////////////////////////////////
 
@@ -289,30 +300,22 @@ GNU_CONST inline double CH::CalculateHeAbundanceSurface(const double p_Metallici
  * was specified.
  *
  *
- * double CalculateAgeAfterMassLoss_Hurley2000(const double      p_Mass,
- *                                             const double      p_Age,
- *                                             const double      p_ZetaHurley,
- *                                             const double      p_tMS,
- *                                             const DBL_VECTOR& p_aN,
- *                                             const bool        p_EnhanceLifetime) const
+ * double CalculateAgeAfterMassLoss_Hurley2000(const double p_Mass, const double p_Age, const double p_tMS, const bool p_EnhanceLifetime) const
  *
  * @param       p_Mass                          Mass of the star (Msol)
- * @param       p_Age                           Current age of the star (Myr)
- * @param       p_ZetaHurley                    Hurley zeta value (log10(Z / ZSOL_HURLEY))
- * @param       p_tMS                           MS lifetime (Myr)
- * @param       p_aN                            Hurley a(n) coefficients
+ * @param       p_Age                           Effective age of the star (Myr)
+ * @param       p_tMS                           MS lifetime, tMS (per Hurley timescales) (Myr)
  * @param       p_EnhanceLifetime               User-specified flag indicating whether to enhance CH lifetime
  *                                              (value of option `--enhance-CHE-lifetimes-luminosities`)
  * @return                                      Age of the star after mass loss (Myr)
  */
-inline double CH::CalculateAgeAfterMassLoss_Hurley2000(const double      p_Mass,
-                                                       const double      p_Age,
-                                                       const double      p_ZetaHurley,
-                                                       const double      p_tMS,
-                                                       const DBL_VECTOR& p_aN,
-                                                       const bool        p_EnhanceLifetime) const {
-    const double age = p_Age * CalculateMSLifetime_Hurley2000(p_Mass, p_ZetaHurley, CalculateLifetimeToBGB_Hurley(p_Mass, p_aN), p_aN) / p_tMS;   
-    return p_EnhanceLifetime ? age *= CalculateLifetimesRatio(p_Mass) : age;    // enhance lifetime of star if required
+COMPAS_PURE inline double CH::CalculateAgeAfterMassLoss_Hurley2000(const double p_Mass, const double p_Age, const double p_tMS, const bool p_EnhanceLifetime) const {
+
+    // JR FIX THIS AFTER TALKING TO ILYA <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+                                                        // why not timescales tBGB ???????????????????? <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+    const double age = p_Age * MainSequence::CalculatePhaseLifetime_Hurley2000(p_Mass, BaseStar::CalculateLifetimeToBGB_Hurley2000_Static(p_Mass)) / p_tMS;   
+
+    return p_EnhanceLifetime ? age *= CalculateLifetimesRatio_Szecsi2020(p_Mass) : age; // enhance lifetime of star if required
 }
 
 
@@ -330,7 +333,7 @@ inline double CH::CalculateAgeAfterMassLoss_Hurley2000(const double      p_Mass,
  * @param       p_Mass                          Mass of the star (Msol)
  * @return                                      Lifetimes ratio
  */
-inline double CH::CalculateLifetimesRatio_Szecsi2020(const double p_Mass) const {
+GNU_CONST inline double CH::CalculateLifetimesRatio_Szecsi2020(const double p_Mass) const {
 
     const double x  = log10(p_Mass);
     const double x2 = x * x;
@@ -341,7 +344,7 @@ inline double CH::CalculateLifetimesRatio_Szecsi2020(const double p_Mass) const 
 
 ///////////////////////////////////////////////////////////////////////////////////////
 //                                                                                   //
-//                            MASS / MASS LOSS FUNCTIONS                             //
+//                                     MASS LOSS                                     //
 //                                                                                   //
 ///////////////////////////////////////////////////////////////////////////////////////
 
@@ -379,7 +382,6 @@ GNU_CONST inline double CalculateMLrateRotationEnhancement_Langer1998() const {
  * 
  * 
  * MASS_LOSS_T CalculateMLrate_Belczynski2010(
- *     const double p_Metallicity,
  *     const double p_Mass,
  *     const double p_Radius,
  *     const double p_Luminosity,
@@ -388,7 +390,6 @@ GNU_CONST inline double CalculateMLrateRotationEnhancement_Langer1998() const {
  *     const double p_HeAbundanceSurface,
  * ) const
  *
- * @param       p_Metallicity                   Metallicity of the star
  * @param       p_Mass                          Mass of the star (Msol)
  * @param       p_Radius                        Radius of the star (Rsol)
  * @param       p_Luminosity                    Luminosity of the star (Lsol)
@@ -401,7 +402,6 @@ GNU_CONST inline double CalculateMLrateRotationEnhancement_Langer1998() const {
  *                                                                  (will be MASS_LOSS_TYPE::WR or MASS_LOSS_TYPE::OB)
  */
 COMPAS_PURE inline MASS_LOSS_T CH::CalculateMLrate_Belczynski2010(
-    const double p_Metallicity,
     const double p_Mass,
     const double p_Radius,
     const double p_Luminosity,
@@ -413,7 +413,6 @@ COMPAS_PURE inline MASS_LOSS_T CH::CalculateMLrate_Belczynski2010(
     MASS_LOSS_TYPE dominantMLtype;
     double dMdt;
     std::tie(dMdt, dominantMLtype) = BaseStar::CalculateMLrate_Belczynski2010(
-        p_Metallicity, 
         p_Mass, 
         p_Radius, 
         p_Luminosity, 
@@ -439,7 +438,6 @@ COMPAS_PURE inline MASS_LOSS_T CH::CalculateMLrate_Belczynski2010(
  * 
  * 
  * MASS_LOSS_T CalculateMLrate_Merritt2025(
- *     const double p_Metallicity,
  *     const double p_Mass,
  *     const double p_Radius,
  *     const double p_Luminosity,
@@ -449,7 +447,6 @@ COMPAS_PURE inline MASS_LOSS_T CH::CalculateMLrate_Belczynski2010(
  *     const double p_HeAbundanceSurface
  * ) const
  * 
- * @param       p_Metallicity                   Metallicity of the star
  * @param       p_Mass                          Mass of the star (Msol)
  * @param       p_Radius                        Radius of the star (Rsol)
  * @param       p_Luminosity                    Luminosity of the star (Lsol)
@@ -462,7 +459,6 @@ COMPAS_PURE inline MASS_LOSS_T CH::CalculateMLrate_Belczynski2010(
  *                                                   MASS_LOSS_TYPE dominant mass loss type (could be MASS_LOSS_TYPE::NONE)
  */
 COMPAS_PURE MASS_LOSS_T inline CH::CalculateMLrate_Merritt2025(
-    const double p_Metallicity,
     const double p_Mass,
     const double p_Radius,
     const double p_Luminosity,
@@ -475,7 +471,6 @@ COMPAS_PURE MASS_LOSS_T inline CH::CalculateMLrate_Merritt2025(
     MASS_LOSS_TYPE dominantMLtype;
     double dMdt;
     std::tie(dMdt, dominantMLtype) = BaseStar::CalculateMLrate_Merritt2025(
-        p_Metallicity, 
         p_Mass, 
         p_Radius, 
         p_Luminosity, 
@@ -511,7 +506,7 @@ COMPAS_PURE MASS_LOSS_T inline CH::CalculateMLrate_Merritt2025(
  * @param       p_Mass                          Mass of the star (Msol)
  * @return                                      Log luminosities ratio
  */
-inline double CH::CalculateLogLuminositiesRatio(const double p_Mass) const {
+GNU_CONST inline double CH::CalculateLogLuminositiesRatio(const double p_Mass) const {
          
     const double x  = log10(p_Mass);
     const double x2 = x * x;

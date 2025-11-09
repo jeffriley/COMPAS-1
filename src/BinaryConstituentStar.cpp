@@ -115,14 +115,14 @@ COMPAS_VARIABLE BinaryConstituentStar::StellarPropertyValue(const T_ANY_PROPERTY
 void BinaryConstituentStar::SetPreCEEValues() {
 
     m_CEDetails.preCEE.bindingEnergy            = m_CEDetails.bindingEnergy;
-    m_CEDetails.preCEE.dynamicalTimescale       = CalculateDynamicalTimescale();
+    m_CEDetails.preCEE.dynamicalTimescale       = CalculateTimescale_Dynamical();
     m_CEDetails.preCEE.luminosity               = Luminosity();
     m_CEDetails.preCEE.mass                     = Mass();
     m_CEDetails.preCEE.radialExpansionTimescale = CalculateRadialExpansionTimescale();
     m_CEDetails.preCEE.radius                   = Radius();
     m_CEDetails.preCEE.stellarType              = StellarType();
     m_CEDetails.preCEE.temperature              = Temperature();
-    m_CEDetails.preCEE.thermalTimescale         = CalculateThermalTimescale();
+    m_CEDetails.preCEE.thermalTimescale         = CalculateTimescale_Thermal();
 }
 
 
@@ -145,14 +145,14 @@ void BinaryConstituentStar::SetPreCEEValues() {
  */
 void BinaryConstituentStar::SetPostCEEValues() {
 
-    m_CEDetails.postCEE.dynamicalTimescale       = CalculateDynamicalTimescale();
+    m_CEDetails.postCEE.dynamicalTimescale       = CalculateTimescale_Dynamical();
     m_CEDetails.postCEE.luminosity               = Luminosity();
     m_CEDetails.postCEE.mass                     = Mass();
     m_CEDetails.postCEE.radialExpansionTimescale = CalculateRadialExpansionTimescale();
     m_CEDetails.postCEE.radius                   = Radius();
     m_CEDetails.postCEE.stellarType              = StellarType();
     m_CEDetails.postCEE.temperature              = Temperature();
-    m_CEDetails.postCEE.thermalTimescale         = CalculateThermalTimescale();
+    m_CEDetails.postCEE.thermalTimescale         = CalculateTimescale_Thermal();
 }
 
 
@@ -215,7 +215,7 @@ void BinaryConstituentStar::CalculateCommonEnvelopeValues() {
 
     m_CEDetails.lambda *= OPTIONS->CommonEnvelopeLambdaMultiplier();                                            // multiply by constant (program option, default = 1.0)
                                                                         
-    m_CEDetails.bindingEnergy = CalculateBindingEnergy(CoreMass(), Mass() - CoreMass(), Radius(), m_CEDetails.lambda);
+    m_CEDetails.bindingEnergy = CalculateBindingEnergy(Radius(), CoreMass(), Mass() - CoreMass(), m_CEDetails.lambda);
     
     // properties relevant for the Hirai & Mandel (2022) formalism
     double maxConvectiveEnvelopeMass;
@@ -224,7 +224,7 @@ void BinaryConstituentStar::CalculateCommonEnvelopeValues() {
 
     if (OPTIONS->CommonEnvelopeFormalism() == CE_FORMALISM::TWO_STAGE) {
         m_CEDetails.lambda = CalculateConvectiveEnvelopeLambdaPicker(std::tie(m_CEDetails.convectiveEnvelopeMass, maxConvectiveEnvelopeMass));
-        m_CEDetails.bindingEnergy = CalculateConvectiveEnvelopeBindingEnergy(Mass(), m_CEDetails.convectiveEnvelopeMass, Radius(), m_CEDetails.lambda);
+        m_CEDetails.bindingEnergy = CalculateConvectiveEnvelopeBindingEnergy(Mass(), Radius(), m_CEDetails.convectiveEnvelopeMass, m_CEDetails.lambda);
     }
 }
 

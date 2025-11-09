@@ -5,7 +5,7 @@
 
 ///////////////////////////////////////////////////////////////////////////////////////
 //                                                                                   //
-//             PARAMETERS, MISCELLANEOUS CALCULATIONS AND FUNCTIONS ETC.             //
+//                         AGE / LIFETIME / TAU / TIMESCALES                         //
 //                                                                                   //
 ///////////////////////////////////////////////////////////////////////////////////////
 
@@ -20,36 +20,17 @@
  * the mass of the star changes (probably every timestep).
  *
  *
- * DBL_VECTOR CalculateTimescales_Hurley2000(const double      p_Mass,
- *                                           const double      p_ZetaHurley,
- *                                           const DBL_VECTOR& p_GBparams,
- *                                           const DBL_VECTOR& p_MassCutoffs,
- *                                           const DBL_VECTOR& p_Timescales,
- *                                           const double      p_Alpha3,
- *                                           const DBL_VECTOR& p_aN,
- *                                           const DBL_VECTOR& p_bN) const
+ * DBL_VECTOR CalculateTimescales_Hurley2000(const double p_Mass, const DBL_VECTOR& p_GBparams, const DBL_VECTOR& p_Timescales) const
  *
  * @param       p_Mass                          Mass of the star (Msol)
- * @param       p_ZetaHurley                    Hurley zeta value (log10(Z / ZSOL_HURLEY))
  * @param       p_GBparams                      Hurley GB parameters
- * @param       p_MassCutoffs                   Hurley mass cutoffs (Msol)
  * @param       p_tScales                       Hurley timescales (Myr)
- * @param       p_Alpha3                        Hurley alpha3 constant
- * @param       p_aN                            Hurley a(n) coefficients
- * @param       p_bN                            Hurley b(n) coefficients
  * @return                                      Mutated timescales (Myr)
  */
-DBL_VECTOR EAGB::CalculateTimescales_Hurley2000(const double      p_Mass,
-                                                const double      p_ZetaHurley,
-                                                const DBL_VECTOR& p_GBparams,
-                                                const DBL_VECTOR& p_MassCutoffs,
-                                                const DBL_VECTOR& p_tScales,
-                                                const double      p_Alpha3,
-                                                const DBL_VECTOR& p_aN,
-                                                const DBL_VECTOR& p_bN) const {
+COMPAS_PURE DBL_VECTOR EAGB::CalculateTimescales_Hurley2000(const double p_Mass, const DBL_VECTOR& p_GBparams, const DBL_VECTOR& p_tScales) const {
 
 // #defines for convenience and readability - undefined at end of function
-#define GBparams(x) p_GBparams[static_cast<int>(GBP::x)]
+#define GBparams(x) p_GBparams[static_cast<int>(HURLEY_GBP:::x)]
 #define tScales(x) tScales[static_cast<int>(TIMESCALE::x)]
 
 // JR: CHECK SSE - why don't we recalculate GB timescales here?????????? <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -58,8 +39,8 @@ DBL_VECTOR EAGB::CalculateTimescales_Hurley2000(const double      p_Mass,
     const double p1_p = p1 / GBparams(p);
     const double q1_q = q1 / GBparams(q);
 
-    const double tBAGB = CalculateLifetimeToBAGB_Hurley2000(pTimescales(tHeI), pTimescales(tHe));
-    const double lBAGB = CalculateLuminosityAtBAGB_Hurley2000(p_Mass, p_MassCutoffs[static_cast<int>(MASS_CUTOFF::MHeF)], p_Alpha3, p_bN);
+    const double tBAGB = CalculateLifetimeToBAGB_Hurley2000(tScales(tHeI), tScales(tHe));
+    const double lBAGB = CalculateLuminosityAtBAGB_Hurley2000(p_Mass);
 
     DBL_VECTOR tScales = p_tScales; // copy given timescales
 
@@ -73,6 +54,304 @@ DBL_VECTOR EAGB::CalculateTimescales_Hurley2000(const double      p_Mass,
 #undef timescales
 #undef GBparams    
 }
+
+
+///////////////////////////////////////////////////////////////////////////////////////
+//                                                                                   //
+//                                    LUMINOSITY                                     //
+//                                                                                   //
+///////////////////////////////////////////////////////////////////////////////////////
+
+
+///////////////////////////////////////////////////////////////////////////////////////
+//                                                                                   //
+//                                      RADIUS                                       //
+//                                                                                   //
+///////////////////////////////////////////////////////////////////////////////////////
+
+
+/*
+ * CalculateRadiusOnPhase_Hurley2000_Static
+ *
+ * @brief
+ * Calculate radius on the Early Asymptotic Giant Branch, per Hurley et al. 2000, eq 74
+ *
+ *
+ * double CalculateRadiusOnPhase_Hurley2000_Static(const double p_Mass, const double p_Luminosity) const
+ *
+ * @param       p_Mass                          Mass of the star (Msol)
+ * @param       p_Luminosity                    Luminosity of the star (Lsol)
+ * @return                                      EAGB radius (Rsol)
+ */
+COMPAS_PURE double EAGB::CalculateRadiusOnPhase_Hurley2000_Static(const double p_Mass, const double p_Luminosity) const {
+
+    // sanity check for mass and luminosity - just return 0.0 if mass or luminosity <= 0
+    if (p_Mass <= 0.0 || p_Luminosity <= 0.0) return 0.0;
+
+    const DBL_VECTOR b = GLOBAL->HurleyBcoefficients(); // get Hurley b coefficients
+
+    // calculate radius constant A (Hurley et al. 2000, eq 74), and coefficient b(50)
+    double A;
+    double b50;
+
+    const double mHeF = GLOBALS->HurleyMassCutoffs(static_cast<int>(MHef));
+
+    if (p_Mass >= mHeF) {                   // mass above He flash threshold?
+                                            // yes
+        A   = std::min((b(51) * PPOW(p_Mass, -b(52))), (b(53) * PPOW(p_Mass, -b(54))));
+        b50 = b(55) * b(3);
+    }
+    else if (p_Mass <= (mHeF - 0.2)) {      // no - mass below He flash threshold?
+                                            // yes
+        A   = b(56) + (b(57) * p_Mass);   
+        b50 = b(3);
+    }
+    else {                                  // no - linear interpolation between end points
+        const double x1    = mHeF - 0.2;
+        const double x2    = mHeF;
+        const double x2_x1 = x2 - x1;
+
+        double y1        = b[56] + (b[57] * x1);
+        double y2        = std::min((b[51] * PPOW(x2, -b[52])), (b[53] * PPOW(x2, -b[54])));
+        double gradient  = (y2 - y1) / x2_x1;
+        double intercept = y2 - (gradient * x2);
+
+               A         = (gradient * p_Mass) + intercept;
+
+               y1        = b[3];
+               y2        = b[55] * b[3];
+               gradient  = (y2 - y1) / x2_x1;
+               intercept = y2 - (gradient * x2);
+
+               b50       = (gradient * p_Mass) + intercept;
+    }
+
+    return A * (PPOW(p_Luminosity, b[1]) + (b[2] * PPOW(p_Luminosity, b50))); // radius
+}
+
+
+///////////////////////////////////////////////////////////////////////////////////////
+//                                                                                   //
+//                                     MASS LOSS                                     //
+//                                                                                   //
+///////////////////////////////////////////////////////////////////////////////////////
+
+
+/*
+ * CalculateMLrate_Hurley2000
+ *
+ * @brief
+ * Calculate the mass loss rate, and the dominant mass loss type, for EAGB stars,
+ * per Hurley et al. 2000.
+ * 
+ * 
+ * MASS_LOSS_T CalculateMLrate_Hurley2000(const double p_Mass, const double p_Radius, const double p_Luminosity, const double p_PerturbationMu) const
+ *     
+ * @param       p_Mass                          Mass of the star (Msol)
+ * @param       p_Radius                        Radius of the star (Rsol)
+ * @param       p_Luminosity                    Luminosity of the star (Lsol)
+ * @param       p_PerturbationMu                Small envelope perturbation parameter, mu
+ * @return                                      Tuple containing:
+ *                                                   DOUBLE         Mass loss rate (Msol yr^-1)
+ *                                                   MASS_LOSS_TYPE dominant mass loss type (may be MASS_LOSS_TYPE::NONE)
+ */
+COMPAS_PURE MASS_LOSS_T CalculateMLrate_Hurley2000(const double p_Mass, const double p_Radius, const double p_Luminosity, const double p_PerturbationMu) const {
+   
+    // calculate max GB mass loss rate - default rate
+
+    const double dMdtWR = CalculateMLrateWR_Hurley2000(p_Luminosity, p_PerturbationMu);
+    const double dMdtKR = CalculateMLrate_KudritzkiReimers1978(p_Mass, p_Radius, p_Luminosity);
+    const double dMdtNJ = CalculateMLrate_NieuwenhuijzenDeJager1990(p_Mass, p_Radius, p_Luminosity);
+    const double dMdtVW = CalculateMLrate_VassiliadisWood1993(p_Mass, p_Radius, p_Luminosity);
+
+    double dMdt = std::max(dMdtVW, std::max(dMdtNJ, dMdtKR));   // max GB mass loss rate
+
+    MASS_LOSS_TYPE dominantMassLossType = MASS_LOSS_TYPE::GB;   // default dominant mass loss type is GB
+
+    if (dMdtWR > dMdt) {                                        // WR rate > max GB rate?
+        dominantMassLossType = MASS_LOSS_TYPE::WR;              // yes - set dominant type to WR
+        dMdt = mDotWR;                                          // and rate to WR rate
+    }
+
+    return std::make_tuple(dMdt, dominantMassLossType);
+}
+
+
+
+
+
+
+
+///////////////////////////////////////////////////////////////////////////////////////
+//                                                                                   //
+//                    MISCELLANEOUS FUNCTIONS / CONTROL FUNCTIONS                    //
+//                                                                                   //
+///////////////////////////////////////////////////////////////////////////////////////
+
+
+/*
+ * Choose timestep for evolution
+ *
+ * Given in the discussion in Hurley et al. 2000
+ *
+ *
+ * ChooseTimestep(const double p_Time)
+ *
+ * @param   [IN]    p_Time                      Current age of star in Myr
+ * @return                                      Suggested timestep (dt)
+ */
+double EAGB::ChooseTimestep(const double p_Time) const {
+
+    double dtk = utils::Compare(p_Time, timescales(tMx_FAGB)) <= 0
+                    ? 0.02 * (timescales(tinf1_FAGB) - p_Time)
+                    : 0.02 * (timescales(tinf2_FAGB) - p_Time);
+
+    return std::max(dtk, NUCLEAR_MINIMUM_TIMESTEP);
+}
+
+
+/*
+ * Modify the star after it loses its envelope
+ *
+ * Hurley et al. 2000, section 6 just before eq 76 and after Eq. 105
+ *
+ * Where necessary updates attributes of star (depending upon stellar type):
+ *
+ *     - m_StellarType
+ *     - m_Timescales
+ *     - m_GBparams
+ *     - m_Luminosity
+ *     - m_Radius
+ *     - m_Mass
+ *     - m_Mass0
+ *     - m_CoreMass
+ *     - m_HeCoreMass
+ *     - m_COCoreMass
+ *     - m_Age
+ *
+ *
+ * STELLAR_TYPE ResolveEnvelopeLoss(bool p_Force)
+ *
+ * @param   [IN]    p_Force                     Boolean to indicate whether the resolution of the loss of the envelope should be performed
+ *                                              without checking the precondition(s).
+ *                                              Default is false.
+ *
+ * @return                                      Stellar Type to which star should evolve after losing envelope
+ */
+STELLAR_TYPE EAGB::ResolveEnvelopeLoss(bool p_Force) {
+
+    STELLAR_TYPE stellarType = m_StellarType;
+
+    if (ShouldEnvelopeBeExpelledByPulsations()) m_EnvelopeJustExpelledByPulsations = true;
+
+    if (p_Force || utils::Compare(m_CoreMass, m_Mass) >= 0 || m_EnvelopeJustExpelledByPulsations) {                                         // Envelope lost, form an evolved naked helium giant
+
+        m_Mass       = std::min(m_CoreMass, m_Mass);
+        m_HeCoreMass = m_Mass;
+        m_Mass0      = m_Mass;
+        m_CoreMass   = m_COCoreMass;
+
+        double p1    = gbParams(p) - 1.0;
+        double q1    = gbParams(q) - 1.0;
+        double p1_p  = p1 / gbParams(p);
+        double q1_q  = q1 / gbParams(q);
+
+        timescales(tHeMS) = HeMS::CalculateLifetimeOnPhase_Hurley2000_Static(m_Mass);                                                                  // calculate common values
+
+        double LTHe = HeMS::CalculateLuminosityAtPhaseEnd_Static(m_Mass);
+
+        timescales(tinf1_HeGB) = timescales(tHeMS) + (1.0 / ((p1 * gbParams(AHe) * gbParams(D))) * PPOW((gbParams(D) / LTHe), p1_p));
+        timescales(tx_HeGB)    = timescales(tinf1_HeGB) - (timescales(tinf1_HeGB) - timescales(tHeMS)) * PPOW((LTHe / gbParams(Lx)), p1_p);
+        timescales(tinf2_HeGB) = timescales(tx_HeGB) + ((1.0 / (q1 * gbParams(AHe) * gbParams(B))) * PPOW((gbParams(B) / gbParams(Lx)), q1_q));
+
+        m_Age = HeGB::CalculateAge_Static(m_Mass, m_COCoreMass, timescales(tHeMS), m_GBparams);
+
+        HeHG::CalculateGBparams_Static(m_Mass0, m_Mass, LogMetallicityXiHurley(), m_MassCutoffs, m_AnCoefficients, m_BnCoefficients, m_GBparams); 
+        m_Luminosity = HeGB::CalculateLuminosityOnPhase_Static(m_COCoreMass, gbParams(B), gbParams(D));
+
+        double R1, R2;
+        std::tie(R1, R2) = HeGB::CalculateRadiusOnPhase_Static(m_Mass, m_Luminosity);
+        if (utils::Compare(R1, R2) < 0) {
+            m_Radius    = R1;
+            stellarType = STELLAR_TYPE::NAKED_HELIUM_STAR_HERTZSPRUNG_GAP;
+        }
+        else {
+            m_Radius    = R2;
+            stellarType = STELLAR_TYPE::NAKED_HELIUM_STAR_GIANT_BRANCH;                                 // Has a deep convective envelope
+        }
+    }
+
+    return stellarType;
+}
+
+
+/*
+ * Determine if this phase should be skipped entirely
+ *
+ *
+ * bool ShouldSkipPhase()
+ *
+ * @return                                      Boolean flag: true if this phase should be skipped, false if not
+ */
+bool EAGB::ShouldSkipPhase() const {
+
+    double McCOBAGB = CalculateCOCoreMassOnPhase(timescales(tHeI) + timescales(tHe));
+    double McSN     = std::max(CalculateCoreMassAtSN_Static(MCH, m_GBparams[static_cast<int>(HURLEY_GBP:::McBAGB)]), 1.05 * McCOBAGB);                       // hack from Hurley fortran code, doesn't seem to be in the paper
+
+    return (utils::Compare(McSN, m_COCoreMass) < 0);                                            // skip phase if core is heavy enough to go supernova
+}
+
+
+/*
+ * Determine if evolution should continue on this phase, or whether evolution
+ * on this phase should end (and so evolve to next phase)
+ *
+ *
+ * bool ShouldEvolveOnPhase()
+ *
+ * @return                                      Boolean flag: true if evolution on this phase should continue, false if not
+ */
+bool EAGB::ShouldEvolveOnPhase() const {
+
+	double tDU = CalculateLifetimeTo2ndDredgeUp(timescales(tinf1_FAGB), timescales(tinf2_FAGB));
+    return ((utils::Compare(m_Age, tDU) < 0 || utils::Compare(gbParams(McBAGB), MCBUR2) >= 0) && !ShouldEnvelopeBeExpelledByPulsations());
+}
+
+
+/*
+ * Determine if star should continue evolution as a Supernova
+ *
+ *
+ * bool IsSupernova()
+ *
+ * @return                                      Boolean flag: true if star has gone Supernova, false if not
+ */
+bool EAGB::IsSupernova() const {
+
+    double McCOBAGB = CalculateCOCoreMassOnPhase(timescales(tHeI) + timescales(tHe));
+    double McSN     = std::max(CalculateCoreMassAtSN_Static(MCH, m_GBparams[static_cast<int>(HURLEY_GBP:::McBAGB)]), 1.05 * McCOBAGB);                                // hack from Hurley fortran code, doesn't seem to be in the paper   JR: do we know why? **Ilya**
+
+    return (utils::Compare(McSN, m_COCoreMass) <= 0);                                           // core is heavy enough to go Supernova
+}
+
+
+/*
+ * Set parameters for evolution to next phase and return Stellar Type for next phase
+ *
+ *
+ * STELLAR_TYPE EvolveToNextPhase()
+ *
+ * @return                                      Stellar Type for next phase
+ */
+STELLAR_TYPE EAGB::EvolveToNextPhase() {
+    return STELLAR_TYPE::THERMALLY_PULSING_ASYMPTOTIC_GIANT_BRANCH;
+}
+
+
+
+
+/// constituent functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
 
 
 ///////////////////////////////////////////////////////////////////////////////////////
@@ -214,21 +493,14 @@ double EAGB::CalculateCELambda_Nanjing_Enhanced(const double             p_Mass,
  * This function good for HG and FGB stars.
  *
  *
- * double CalculateLambdaNanjingStarTrack(const double p_Metallicity,
- *                                        const double p_Mass,
- *                                        const double p_Radius,
- *                                        const double p_CoreMass) const
+ * double CalculateLambdaNanjingStarTrack(const double p_Mass, const double p_Radius, const double p_CoreMass) const
  *
- * @param       p_Metallicity                   Metallicity of the star
  * @param       p_Mass                          Mass of the star (Msol)
  * @param       p_Radius                        Radius of the star (Rsol)
  * @param       p_CoreMass                      Core mass of the star (Msol)
  * @return                                      Common envelope lambda parameter
  */
-double EAGB::CalculateLambdaNanjingStarTrack(const double p_Metallicity,
-                                             const double p_Mass,
-                                             const double p_Radius,
-                                             const double p_CoreMass) const {
+COMPAS_PURE double EAGB::CalculateLambdaNanjingStarTrack(const double p_Mass, const double p_Radius, const double p_CoreMass) const {
 
     constexpr size_t evolStage = 3;                                                         // EAGB evolutionary stage from Xu & Li, 2010
                                            
@@ -240,7 +512,7 @@ double EAGB::CalculateLambdaNanjingStarTrack(const double p_Metallicity,
     auto it = std::upper_bound(NANJING_MASSES_MIDPOINTS.begin(), NANJING_MASSES_MIDPOINTS.end(), p_Mass);
     const size_t massIndex = it != arr.end() ? std::distance(NANJING_MASSES_MIDPOINTS.begin(), it) : NANJING_MASSES_MIDPOINTS.size();
 
-    if (p_Metallicity > LAMBDA_NANJING_ZLIMIT_STARTRACK) {                                  // Z > LAMBDA_NANJING_ZLIMIT_STARTRACK?
+    if (GLOBALS->ReferenceMetallicity() > LAMBDA_NANJING_ZLIMIT_STARTRACK) {                // Z > LAMBDA_NANJING_ZLIMIT_STARTRACK?
                                                                                             // yes
              if (massIndex == 0 && p_Radius > 200.0) lambdaBGidx = 0;
         else if (massIndex == 1) {
@@ -332,7 +604,7 @@ double EAGB::CalculateLambdaNanjingStarTrack(const double p_Metallicity,
     }
 
     // get limits and (defined) lambdas
-    NANJING_Z_LIMITS_LAMBDAS                              ZlimitsLambdas = p_Metallicity < LAMBDA_NANJING_ZLIMIT ? std::get<0>(NANJING_LIMITS_LAMBDAS_STARTRACK) : std::get<1>(NANJING_LIMITS_LAMBDAS_STARTRACK);
+    NANJING_Z_LIMITS_LAMBDAS                              ZlimitsLambdas = GLOBALS->ReferenceMetallicity() < LAMBDA_NANJING_ZLIMIT ? std::get<0>(NANJING_LIMITS_LAMBDAS_STARTRACK) : std::get<1>(NANJING_LIMITS_LAMBDAS_STARTRACK);
     std::tuple<NANJING_LIMITS_STARTRACK, NANJING_LAMBDAS> limitsLambdas  = ZlimitsLambdas[p_MassIndex];
 
     std::tuple<double, double> maxBG = std::get<0>(limitsLambdas)[limitBGidx];              // {maxB, maxG}
@@ -350,7 +622,7 @@ double EAGB::CalculateLambdaNanjingStarTrack(const double p_Metallicity,
 
         // get B & G coefficients vector
         std::tuple<NANJING_POP_COEFFICIENTS, NANJING_POP_COEFFICIENTS> evolStageCoeffs = NANJING_COEFFICIENTS[evolStage - 1];
-        NANJING_POP_COEFFICIENTS                                       ZCoeffs         = p_Metallicity < LAMBDA_NANJING_ZLIMIT ? std::get<0>(evolStageCoeffs) : std::get<1>(evolStageCoeffs);
+        NANJING_POP_COEFFICIENTS                                       ZCoeffs         = GLOBALS->ReferenceMetallicity() < LAMBDA_NANJING_ZLIMIT ? std::get<0>(evolStageCoeffs) : std::get<1>(evolStageCoeffs);
         std::tuple<DBL_VECTOR, DBL_VECTOR>                             BGcoeffs        = ZCoeffs[p_MassIndex][coeffsBGidx];
 
         DBL_VECTOR Bcoeffs = std::get<0>(BGcoeffs);
@@ -358,25 +630,25 @@ double EAGB::CalculateLambdaNanjingStarTrack(const double p_Metallicity,
         
         double Rin = p_Radius;
 
-        if (p_Metallicity < LAMBDA_NANJING_ZLIMIT && p_MassIndex == 0 && p_Radius > 2.7) {
+        if (GLOBALS->ReferenceMetallicity() < LAMBDA_NANJING_ZLIMIT && p_MassIndex == 0 && p_Radius > 2.7) {
             lambdaB = 2.33 - (Rin * 9.18E-03);
             lambdaG = 1.12 - (Rin * 4.59E-03);
         }
-        else if (p_Metallicity < LAMBDA_NANJING_ZLIMIT && p_MassIndex == 13) {
+        else if (GLOBALS->ReferenceMetallicity() < LAMBDA_NANJING_ZLIMIT && p_MassIndex == 13) {
             lambdaB = 1.2 * exp(-Rin / 90.0);
             lambdaG = 0.55 * exp(-Rin / 160.0);
         }
-        else if (p_Metallicity >= LAMBDA_NANJING_ZLIMIT && p_MassIndex == 0 && p_Radius > 12.0) {
+        else if (GLOBALS->ReferenceMetallicity() >= LAMBDA_NANJING_ZLIMIT && p_MassIndex == 0 && p_Radius > 12.0) {
             lambdaB = 1.8 * exp(-Rin / 80.0);
             lambdaG = exp(-Rin / 45.0);
         }
-        else if (p_Metallicity >= LAMBDA_NANJING_ZLIMITI && p_MassIndex == 9) {
+        else if (GLOBALS->ReferenceMetallicity() >= LAMBDA_NANJING_ZLIMITI && p_MassIndex == 9) {
             const double tmp = exp(-Rin / 35.0);
             lambdaB = 1.75 * tmp;
             lambdaG = 0.9 * tmp;
         }
         else {
-            if (p_Metallicity < LAMBDA_NANJING_ZLIMIT && p_MassIndex == 0) Rin = (p_Mass - p_CoreMass) / p_Mass;
+            if (GLOBALS->ReferenceMetallicity() < LAMBDA_NANJING_ZLIMIT && p_MassIndex == 0) Rin = (p_Mass - p_CoreMass) / p_Mass;
             
             const double Rin2 = Rin  * Rin;
             const double Rin3 = Rin  * Rin2;
@@ -386,7 +658,7 @@ double EAGB::CalculateLambdaNanjingStarTrack(const double p_Metallicity,
             lambdaB = Bcoeffs[0] + (Bcoeffs[1] * Rin) + (Bcoeffs[2] * Rin2) + (Bcoeffs[3] * Rin3) + (Bcoeffs[4] * Rin4) + (Bcoeffs[5] * Rin5);
             lambdaG = Gcoeffs[0] + (Gcoeffs[1] * Rin) + (Gcoeffs[2] * Rin2) + (Gcoeffs[3] * Rin3) + (Gcoeffs[4] * Rin4) + (Gcoeffs[5] * Rin5);
 
-            if (p_Metallicity < LAMBDA_NANJING_ZLIMIT && p_MassIndex == 0) {
+            if (GLOBALS->ReferenceMetallicity() < LAMBDA_NANJING_ZLIMIT && p_MassIndex == 0) {
                 lambdaB = 1.0 / lambdaB;
                 lambdaG = 1.0 / lambdaG;                
             }
@@ -421,21 +693,20 @@ double EAGB::CalculateLambdaNanjingStarTrack(const double p_Metallicity,
  * This function good for EAGB stars.
  *
  *
- * double CalculateLambdaNanjingStarTrack(const double p_Mass, const double p_Metallicity)
+ * double CalculateLambdaNanjingStarTrack(const double p_Mass)
  *
  * @param   [IN]    p_Mass                      Mass
- * @param   [IN]    p_Metallicity               Metallicity
  * 
  * @return                                      Nanjing lambda for use in common envelope
  */
-double EAGB::CalculateLambdaNanjingStarTrack(const double p_Mass, const double p_Metallicity) const {
+double EAGB::CalculateLambdaNanjingStarTrack(const double p_Mass) const {
 
 	DBL_VECTOR maxBG    = {};                                                       // [0] = maxB, [1] = maxG
 	DBL_VECTOR lambdaBG = {};                                                       // [0] = lambdaB, [1] = lambdaG
 	DBL_VECTOR a        = {};                                                       // 0..5 a_coefficients
 	DBL_VECTOR b        = {};                                                       // 0..5 b_coefficients
 
-    if (utils::Compare(p_Metallicity, LAMBDA_NANJING_ZLIMIT_STARTRACK) > 0) {                 // Z>0.5 Zsun: popI
+    if (utils::Compare(GLOBALS->ReferenceMetallicity(), LAMBDA_NANJING_ZLIMIT_STARTRACK) > 0) {                 // Z>0.5 Zsun: popI
         if (utils::Compare(p_Mass, 1.5) < 0) {                                      // Should probably use effective mass m_Mass0 instead for Lambda calculations
             maxBG = { 2.5, 1.5 };
             if (utils::Compare(m_Radius, 200.0) > 0) lambdaBG = { 0.05, 0.05 };
@@ -701,7 +972,7 @@ double EAGB::CalculateLambdaNanjingStarTrack(const double p_Mass, const double p
     }
 
     if (lambdaBG.empty()) {                                                 // calculate lambda B & G - not approximated by hand
-        if (utils::Compare(p_Metallicity, LAMBDA_NANJING_ZLIMIT_STARTRACK) > 0 &&
+        if (utils::Compare(GLOBALS->ReferenceMetallicity(), LAMBDA_NANJING_ZLIMIT_STARTRACK) > 0 &&
             (utils::Compare(p_Mass, 1.5) < 0 || (utils::Compare(p_Mass, 25.0) < 0 && utils::Compare(p_Mass, 18.0) >= 0)) ) {
             double x  = (m_Mass - m_CoreMass) / m_Mass;
             double x2 = x * x;
@@ -714,8 +985,8 @@ double EAGB::CalculateLambdaNanjingStarTrack(const double p_Mass, const double p
 
             lambdaBG = { 1.0 / y1, 1.0 / y2 };
         }
-        else if ( (utils::Compare(p_Metallicity, LAMBDA_NANJING_ZLIMIT_STARTRACK) > 0  && utils::Compare(p_Mass, 2.5) >= 0 && utils::Compare(p_Mass, 5.5) < 0) ||
-                  (utils::Compare(p_Metallicity, LAMBDA_NANJING_ZLIMIT_STARTRACK) <= 0 && utils::Compare(p_Mass, 2.5) >= 0 && utils::Compare(p_Mass, 4.5) < 0)) {
+        else if ( (utils::Compare(GLOBALS->ReferenceMetallicity(), LAMBDA_NANJING_ZLIMIT_STARTRACK) > 0  && utils::Compare(p_Mass, 2.5) >= 0 && utils::Compare(p_Mass, 5.5) < 0) ||
+                  (utils::Compare(GLOBALS->ReferenceMetallicity(), LAMBDA_NANJING_ZLIMIT_STARTRACK) <= 0 && utils::Compare(p_Mass, 2.5) >= 0 && utils::Compare(p_Mass, 4.5) < 0)) {
             double x  = m_Radius;
             double x2 = x * x;
             double x3 = x2 * x;
@@ -749,336 +1020,4 @@ double EAGB::CalculateLambdaNanjingStarTrack(const double p_Mass, const double p
     // lambda = alpha_th • lambda_b + (1-alpha_th) • lambda_g
     // Note that this is different from STARTRACK
     return (OPTIONS->CommonEnvelopeAlphaThermal() * lambdaBG[0]) + ((1.0 - OPTIONS->CommonEnvelopeAlphaThermal()) * lambdaBG[1]);
-}
-
-
-///////////////////////////////////////////////////////////////////////////////////////
-//                                                                                   //
-//                               LUMINOSITY FUNCTIONS                                //
-//                                                                                   //
-///////////////////////////////////////////////////////////////////////////////////////
-
-
-
-
-///////////////////////////////////////////////////////////////////////////////////////
-//                                                                                   //
-//                                 RADIUS FUNCTIONS                                  //
-//                                                                                   //
-///////////////////////////////////////////////////////////////////////////////////////
-
-
-/*
- * Calculate radius on the Early Asymptotic Giant Branch
- *
- * Hurley et al. 2000, eq 74
- *
- *
- * double CalculateRadiusOnPhase_Static(const double      p_Mass,
- *                                      const double      p_Luminosity,
- *                                      const double      p_MHeF,
- *                                      const DBL_VECTOR &p_BnCoefficients)
- *
- * @param   [IN]    p_Mass                      Mass in Msol
- * @param   [IN]    p_Luminosity                Luminosity in Lsol
- * @param   [IN]    p_MHeF                      Maximum initial mass for which helium ignites degenerately in a Helium Flash
- * @param   [IN]    p_BnCoefficients            b(n) coefficients
- * @return                                      Radius on the Early Asymptotic Giant Branch in Rsol
- *
- * p_MHeF and p_BnCoefficients passed as parameters so function can be declared static
- */
-double EAGB::CalculateRadiusOnPhase_Static(const double      p_Mass,
-                                           const double      p_Luminosity,
-                                           const double      p_MHeF,
-                                           const DBL_VECTOR &p_BnCoefficients) {
-#define bn p_BnCoefficients     // for convenience and readability - undefined at end of function
-
-    // sanity check for mass and luminosity - just return 0.0 if mass or luminosity <= 0
-    // doing this will save some compute cycles
-
-    if (utils::Compare(p_Mass, 0.0) <= 0 || utils::Compare(p_Luminosity, 0.0) <= 0) return 0.0;
-
-    // calculate radius constant A (Hurley et al. 2000, eq 74)
-    // and coefficient b(50)
-    double A;
-    double b50;
-
-    if (utils::Compare(p_Mass, p_MHeF) >= 0) {
-        A   = std::min((bn[51] * PPOW(p_Mass, -bn[52])), (bn[53] * PPOW(p_Mass, -bn[54])));
-        b50 = bn[55] * bn[3];
-    }
-    else if (utils::Compare(p_Mass, (p_MHeF - 0.2)) <= 0) {
-        A   = bn[56] + (bn[57] * p_Mass);
-        b50 = bn[3];
-    }
-    else {  // Linear interpolation between end points
-        double x1        = p_MHeF - 0.2;
-        double x2        = p_MHeF;
-        double x2_x1     = x2 - x1;
-
-        double y1        = bn[56] + (bn[57] * x1);
-        double y2        = std::min((bn[51] * PPOW(x2, -bn[52])), (bn[53] * PPOW(x2, -bn[54])));
-        double gradient  = (y2 - y1) / x2_x1;
-        double intercept = y2 - (gradient * x2);
-               A         = (gradient * p_Mass) + intercept;
-
-               y1        = bn[3];
-               y2        = bn[55] * bn[3];
-               gradient  = (y2 - y1) / x2_x1;
-               intercept = y2 - (gradient * x2);
-               b50       = (gradient * p_Mass) + intercept;
-    }
-
-    // now calculate the radius
-    return A * (PPOW(p_Luminosity, bn[1]) + (bn[2] * PPOW(p_Luminosity, b50)));
-
-#undef bn
-}
-
-
-///////////////////////////////////////////////////////////////////////////////////////
-//                                                                                   //
-//                                  MASS FUNCTIONS                                   //
-//                                                                                   //
-///////////////////////////////////////////////////////////////////////////////////////
-
-
-
-
-/*
- * CalculateMLrate_Hurley2000
- *
- * @brief
- * Calculate the mass loss rate, and the dominant mass loss type, for EAGB stars,
- * per Hurley et al. 2000.
- * 
- * 
- * MASS_LOSS_T CalculateMLrate_Hurley2000(const double p_Mass, const double p_Radius, const double p_Luminosity, const double p_PerturbationMu) const
- *     
- * @param       p_Mass                          Mass of the star (Msol)
- * @param       p_Radius                        Radius of the star (Rsol)
- * @param       p_Luminosity                    Luminosity of the star (Lsol)
- * @param       p_PerturbationMu                Small envelope perturbation parameter, mu
- * @return                                      Tuple containing:
- *                                                   DOUBLE         Mass loss rate (Msol yr^-1)
- *                                                   MASS_LOSS_TYPE dominant mass loss type (may be MASS_LOSS_TYPE::NONE)
- */
-COMPAS_PURE MASS_LOSS_T CalculateMLrate_Hurley2000(const double p_Mass, const double p_Radius, const double p_Luminosity, const double p_PerturbationMu) const {
-   
-    // calculate max GB mass loss rate - default rate
-
-    const double dMdtWR = CalculateMLrateWR_Hurley2000(p_Luminosity, p_PerturbationMu);
-    const double dMdtKR = CalculateMLrate_KudritzkiReimers1978(p_Mass, p_Radius, p_Luminosity);
-    const double dMdtNJ = CalculateMLrate_NieuwenhuijzenDeJager1990(p_Mass, p_Radius, p_Luminosity);
-    const double dMdtVW = CalculateMLrate_VassiliadisWood1993(p_Mass, p_Radius, p_Luminosity);
-
-    double dMdt = std::max(dMdtVW, std::max(dMdtNJ, dMdtKR));   // max GB mass loss rate
-
-    MASS_LOSS_TYPE dominantMassLossType = MASS_LOSS_TYPE::GB;   // default dominant mass loss type is GB
-
-    if (dMdtWR > dMdt) {                                        // WR rate > max GB rate?
-        dominantMassLossType = MASS_LOSS_TYPE::WR;              // yes - set dominant type to WR
-        dMdt = mDotWR;                                          // and rate to WR rate
-    }
-
-    return std::make_tuple(dMdt, dominantMassLossType);
-}
-
-
-///////////////////////////////////////////////////////////////////////////////////////
-//                                                                                   //
-//                            LIFETIME / AGE CALCULATIONS                            //
-//                                                                                   //
-///////////////////////////////////////////////////////////////////////////////////////
-
-
-/*
- * Calculate the lifetime to second dredge up (nb there is no explicit first)
- * This is the time of transition between the EAGB and the TPAGB
- *
- * Hurley et al. 2000, eqs 70, 71 & 72
- *
- *
- * double CalculateLifetimeTo2ndDredgeUp(const double p_Tinf1_FAGB, const double p_Tinf2_FAGB)
- *
- * @param   [IN]    p_Tinf1_FAGB                tinf1_FAGB (Timescales[TS::tinf1_FAGB]) - Early Asymptotic Giant Branch tinf1
- * @param   [IN]    p_Tinf2_FAGB                tinf2_FAGB (Timescales[TS::tinf2_FAGB]) - Early Asymptotic Giant Branch tinf2
- * @return                                      Lifetime to second dredge up (tDU)
- */
-double EAGB::CalculateLifetimeTo2ndDredgeUp(const double p_Tinf1_FAGB, const double p_Tinf2_FAGB) const {
-
-    double p1  = gbParams(p) - 1.0;
-    double q1  = gbParams(q) - 1.0;
-
-    double LDU = CalculateLuminosityGivenCoreMass(gbParams(McDU));
-
-    return utils::Compare(LDU, gbParams(Lx)) <= 0
-            ? p_Tinf1_FAGB - (1.0 / (p1 * gbParams(AHe) * gbParams(D))) * PPOW((gbParams(D) / LDU), (p1 / gbParams(p)))
-            : p_Tinf2_FAGB - (1.0 / (q1 * gbParams(AHe) * gbParams(B))) * PPOW((gbParams(B) / LDU), (q1 / gbParams(q)));
-}
-
-
-///////////////////////////////////////////////////////////////////////////////////////
-//                                                                                   //
-//                    MISCELLANEOUS FUNCTIONS / CONTROL FUNCTIONS                    //
-//                                                                                   //
-///////////////////////////////////////////////////////////////////////////////////////
-
-
-/*
- * Choose timestep for evolution
- *
- * Given in the discussion in Hurley et al. 2000
- *
- *
- * ChooseTimestep(const double p_Time)
- *
- * @param   [IN]    p_Time                      Current age of star in Myr
- * @return                                      Suggested timestep (dt)
- */
-double EAGB::ChooseTimestep(const double p_Time) const {
-
-    double dtk = utils::Compare(p_Time, timescales(tMx_FAGB)) <= 0
-                    ? 0.02 * (timescales(tinf1_FAGB) - p_Time)
-                    : 0.02 * (timescales(tinf2_FAGB) - p_Time);
-
-    return std::max(dtk, NUCLEAR_MINIMUM_TIMESTEP);
-}
-
-
-/*
- * Modify the star after it loses its envelope
- *
- * Hurley et al. 2000, section 6 just before eq 76 and after Eq. 105
- *
- * Where necessary updates attributes of star (depending upon stellar type):
- *
- *     - m_StellarType
- *     - m_Timescales
- *     - m_GBparams
- *     - m_Luminosity
- *     - m_Radius
- *     - m_Mass
- *     - m_Mass0
- *     - m_CoreMass
- *     - m_HeCoreMass
- *     - m_COCoreMass
- *     - m_Age
- *
- *
- * STELLAR_TYPE ResolveEnvelopeLoss(bool p_Force)
- *
- * @param   [IN]    p_Force                     Boolean to indicate whether the resolution of the loss of the envelope should be performed
- *                                              without checking the precondition(s).
- *                                              Default is false.
- *
- * @return                                      Stellar Type to which star should evolve after losing envelope
- */
-STELLAR_TYPE EAGB::ResolveEnvelopeLoss(bool p_Force) {
-
-    STELLAR_TYPE stellarType = m_StellarType;
-
-    if (ShouldEnvelopeBeExpelledByPulsations()) m_EnvelopeJustExpelledByPulsations = true;
-
-    if (p_Force || utils::Compare(m_CoreMass, m_Mass) >= 0 || m_EnvelopeJustExpelledByPulsations) {                                         // Envelope lost, form an evolved naked helium giant
-
-        m_Mass       = std::min(m_CoreMass, m_Mass);
-        m_HeCoreMass = m_Mass;
-        m_Mass0      = m_Mass;
-        m_CoreMass   = m_COCoreMass;
-
-        double p1    = gbParams(p) - 1.0;
-        double q1    = gbParams(q) - 1.0;
-        double p1_p  = p1 / gbParams(p);
-        double q1_q  = q1 / gbParams(q);
-
-        timescales(tHeMS) = HeMS::CalculateLifetimeOnPhase_Hurley2000_Static(m_Mass);                                                                  // calculate common values
-
-        double LTHe = HeMS::CalculateLuminosityAtPhaseEnd_Static(m_Mass);
-
-        timescales(tinf1_HeGB) = timescales(tHeMS) + (1.0 / ((p1 * gbParams(AHe) * gbParams(D))) * PPOW((gbParams(D) / LTHe), p1_p));
-        timescales(tx_HeGB)    = timescales(tinf1_HeGB) - (timescales(tinf1_HeGB) - timescales(tHeMS)) * PPOW((LTHe / gbParams(Lx)), p1_p);
-        timescales(tinf2_HeGB) = timescales(tx_HeGB) + ((1.0 / (q1 * gbParams(AHe) * gbParams(B))) * PPOW((gbParams(B) / gbParams(Lx)), q1_q));
-
-        m_Age = HeGB::CalculateAgeOnPhase_Static(m_Mass, m_COCoreMass, timescales(tHeMS), m_GBparams);
-
-        HeHG::CalculateGBparams_Static(m_Mass0, m_Mass, LogMetallicityXiHurley(), m_MassCutoffs, m_AnCoefficients, m_BnCoefficients, m_GBparams); 
-        m_Luminosity = HeGB::CalculateLuminosityOnPhase_Static(m_COCoreMass, gbParams(B), gbParams(D));
-
-        double R1, R2;
-        std::tie(R1, R2) = HeGB::CalculateRadiusOnPhase_Static(m_Mass, m_Luminosity);
-        if (utils::Compare(R1, R2) < 0) {
-            m_Radius    = R1;
-            stellarType = STELLAR_TYPE::NAKED_HELIUM_STAR_HERTZSPRUNG_GAP;
-        }
-        else {
-            m_Radius    = R2;
-            stellarType = STELLAR_TYPE::NAKED_HELIUM_STAR_GIANT_BRANCH;                                 // Has a deep convective envelope
-        }
-    }
-
-    return stellarType;
-}
-
-
-/*
- * Determine if this phase should be skipped entirely
- *
- *
- * bool ShouldSkipPhase()
- *
- * @return                                      Boolean flag: true if this phase should be skipped, false if not
- */
-bool EAGB::ShouldSkipPhase() const {
-
-    double McCOBAGB = CalculateCOCoreMassOnPhase(timescales(tHeI) + timescales(tHe));
-    double McSN     = std::max(CalculateCoreMassAtSN_Static(MCH, m_GBparams[static_cast<int>(GBP::McBAGB)]), 1.05 * McCOBAGB);                       // hack from Hurley fortran code, doesn't seem to be in the paper
-
-    return (utils::Compare(McSN, m_COCoreMass) < 0);                                            // skip phase if core is heavy enough to go supernova
-}
-
-
-/*
- * Determine if evolution should continue on this phase, or whether evolution
- * on this phase should end (and so evolve to next phase)
- *
- *
- * bool ShouldEvolveOnPhase()
- *
- * @return                                      Boolean flag: true if evolution on this phase should continue, false if not
- */
-bool EAGB::ShouldEvolveOnPhase() const {
-
-	double tDU = CalculateLifetimeTo2ndDredgeUp(timescales(tinf1_FAGB), timescales(tinf2_FAGB));
-    return ((utils::Compare(m_Age, tDU) < 0 || utils::Compare(gbParams(McBAGB), MCBUR2) >= 0) && !ShouldEnvelopeBeExpelledByPulsations());
-}
-
-
-/*
- * Determine if star should continue evolution as a Supernova
- *
- *
- * bool IsSupernova()
- *
- * @return                                      Boolean flag: true if star has gone Supernova, false if not
- */
-bool EAGB::IsSupernova() const {
-
-    double McCOBAGB = CalculateCOCoreMassOnPhase(timescales(tHeI) + timescales(tHe));
-    double McSN     = std::max(CalculateCoreMassAtSN_Static(MCH, m_GBparams[static_cast<int>(GBP::McBAGB)]), 1.05 * McCOBAGB);                                // hack from Hurley fortran code, doesn't seem to be in the paper   JR: do we know why? **Ilya**
-
-    return (utils::Compare(McSN, m_COCoreMass) <= 0);                                           // core is heavy enough to go Supernova
-}
-
-
-/*
- * Set parameters for evolution to next phase and return Stellar Type for next phase
- *
- *
- * STELLAR_TYPE EvolveToNextPhase()
- *
- * @return                                      Stellar Type for next phase
- */
-STELLAR_TYPE EAGB::EvolveToNextPhase() {
-    return STELLAR_TYPE::THERMALLY_PULSING_ASYMPTOTIC_GIANT_BRANCH;
 }

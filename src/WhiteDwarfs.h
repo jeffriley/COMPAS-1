@@ -25,14 +25,17 @@ public:
 
 
 
-GNU_CONST static double CalculateLuminosityOnPhase_Hurley2000_Static(const double p_Metallicity, const double p_Mass, const double p_Time, const double p_BaryonNumber);
+GNU_CONST static double CalculateLuminosityOnPhase_Hurley2000_Static(const double p_Mass, const double p_Time, const double p_BaryonNumber);
 
 
-GNU_CONST inline DBL_VECTOR WhiteDwarfs::CalculateGBparams_Hurley2000(const double p_Mass, const double p_ZetaHurley, const DBL_VECTOR& p_GBparams, const DBL_VECTOR& p_MassCutoffs) const { }   // no-op: gb params not used beyond helium stars
 
 
-inline double CalculateRadius_Hurley2000() const override { return CalculateRadius_Hurley2000_Static(m_StateHistory.CurrentState.Mass()); }
-GNU_CONST static inline double CalculateRadius_Hurley2000_Static(const double p_Mass) { return CalculateRadius_Marsh2004_Static(p_Mass); };
+inline double CalculateRadius_Hurley2000() const override { 
+    return CalculateRadius_Hurley2000_Static(m_StateHistory.CurrentState.Mass());
+}
+GNU_CONST static inline double CalculateRadius_Hurley2000_Static(const double p_Mass) { 
+    return CalculateRadius_Marsh2004_Static(p_Mass);
+}
 GNU_CONST static double CalculateRadius_Marsh2004_Static(const double p_Mass);
 
 
@@ -94,11 +97,6 @@ inline double CalculateCOCoreMass() const override { return m_StateHistory.Curre
 inline double CalculateHeCoreMass() const override { return m_StateHistory.CurrentState.HeCoreMass(); } // McHe constant for WDs
 
 
-GNU_CONST inline double CalculateHAbundanceCoreOnPhase(const double p_Tau, const double p_InitialHAbundance) const override { return 0.0; }
-GNU_CONST inline double CalculateHAbundanceSurfaceOnPhase(const double p_Tau, const double p_InitialHAbundance) const override { return 0.0; }
-
-GNU_CONST inline double CalculateHeAbundanceCoreOnPhase(const double p_Metallicity, const double p_Tau, const double p_InitialHeAbundance = 0.0) const override { return 0.0; }
-GNU_CONST inline double CalculateHeAbundanceSurfaceOnPhase(const double p_Metallicity, const double p_Tau, const double p_InitialHeAbundance) const override { return 0.0; }
             
 
             double           CalculateEtaH(const double p_MassIntakeRate);
@@ -135,6 +133,9 @@ GNU_CONST inline double CalculateHeAbundanceSurfaceOnPhase(const double p_Metall
 ///// PHASE END, ETC.      <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 
+inline double CalculateCOCoreMassAtPhaseEnd() const override { return m_StateHistory.CurrentState.COCoreMass(); } // McCO constant for WDs
+
+inline double CalculateCOCoreMassAtPhaseEnd() const override { return m_StateHistory.CurrentState.HeCoreMass(); } // McHe constant for WDs
 
 
 

@@ -47,8 +47,8 @@ protected:
 
 
    // member functions - alphabetically
-            DBL_DBL         CalculateConvectiveEnvelopeMass() const                                                 { return std::tuple<double, double> (m_Mass-m_CoreMass, m_Mass-m_CoreMass); }    // assume entire envelope is convective for TPAGB stars
-            
+
+
 
 
             double          CalculateConvectiveCoreRadius() const                                                   { return std::min(5.0 * CalculateRemnantRadius(), m_Radius); }       // Last paragraph of section 6 of Hurley+ 2000
@@ -60,7 +60,7 @@ protected:
                                                                 // NO-OP
 
             double          CalculateCELambda_Dewi() const;
-            double          CalculateLambdaNanjingStarTrack(const double p_Mass, const double p_Metallicity) const;
+            double          CalculateLambdaNanjingStarTrack(const double p_Mass) const;
             double          CalculateLambdaNanjingEnhanced(const int p_MassIndex, const STELLAR_POPULATION p_StellarPop) const;
 
             double          CalculateLuminosityOnPhase(const double p_Time) const;
@@ -80,10 +80,9 @@ protected:
 
 
 
-GNU_CONST static double CalculateRemnantRadius_Hurley2000_Static(const double p_CoreMass);
 
 
-            double          CalculateRemnantRadius() const;
+
 
 
 
@@ -94,18 +93,37 @@ GNU_CONST static double CalculateRemnantRadius_Hurley2000_Static(const double p_
 ///// ON PHASE FUNCTIONS   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<       
 
 
+DBL_VECTOR CalculateTimescales_Hurley2000() const override {
+    return CalculateTimescales_Hurley2000(
+        m_StateHistory.CurrentState.MassEffectiveInitial(),
+        m_StateHistory.CurrentState.GBparams(),
+        m_StateHistory.CurrentState.TimeScales()
+    );
+}
+COMPAS_PURE DBL_VECTOR CalculateTimescales_Hurley2000(const double p_Mass, const DBL_VECTOR& p_GBparams, const DBL_VECTOR& p_tScales) const;
+
+inline DBL_DBL CalculateConvectiveEnvelopeMass() const override {
+    return CalculateConvectiveEnvelopeMass(m_StateHistory.CurrentState.Mass(), m_StateHistory.CurrentState.CoreMass());
+}
+GNU_CONST DBL_DBL CalculateConvectiveEnvelopeMass(const double p_Mass, const double p_CoreMass) const;
+
+
+        
 double CalculateCoreMass() const override;
 GNU_CONST double CalculateCoreMass_Hurley2000(const double p_MassEffectiveInitial, const double p_Age, const double p_McDU) const;
 
-double CalculateCOCoreMass() const override { return CalculateCoreMass(); } // McCO = Mc on the TPAGB
-double CalculateHeCoreMass() const override { return CalculateCoreMass(); } // McHe = Mc on the TPAGB
+inline double CalculateCOCoreMass() const override { return CalculateCoreMass(); } // McCO = Mc for TPAGB stars  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< check for already computed
+inline double CalculateHeCoreMass() const override { return CalculateCoreMass(); } // McHe = Mc for TPAGB stars  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< check for already computed
 
 double CalculateTau_Hurley2000() const override { return 0.0; } // Tau (relative age) is not used for TPAGB stars in Hurley et al. 2000, so we return 0.0
 
 GNU_CONST double CalculateMcPrime_Hurley2000(const double p_Age, const DBL_VECTOR& p_GBparams, const DBL_VECTOR& p_tScales) const;
 
-            double          CalculateHeCoreMassOnPhase() const                                                      { return m_CoreMass; }  
 
+inine double CalculateRemnantRadius_Hurley2000() const override {
+    return CalculateRemnantRadius_Hurley2000_Static(m_StateHistory.CurrentState.CoreMass());
+}
+GNU_CONST static double CalculateRemnantRadius_Hurley2000_Static(const double p_CoreMass);
 
 
 
@@ -115,10 +133,10 @@ GNU_CONST double CalculateMcPrime_Hurley2000(const double p_Age, const DBL_VECTO
 ///// PHASE END, ETC.      <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 inline double CalculateCOCoreMassAtPhaseEnd() const override {
-    return std::min(m_StateHistory.CurrentState.COCoreMass(), m_StateHistory.CurrentState.Mass()); // McCO should be <= M
+    return std::min(CalculateCoreMass(), m_StateHistory.CurrentState.Mass()); // McCO = Mc for TPAGB stars; McCO should be <= M  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< check for already computed
 }
 
-            double          CalculateHeCoreMassAtPhaseEnd() const                                                   { return m_HeCoreMass; }                                                                // NO-OP
+inline double CalculateHeCoreMassAtPhaseEnd() const override { return CalculateCoreMass(); } // McHe = Mc for TPAGB stars  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< check for already computed
 
 
 
@@ -126,8 +144,7 @@ inline double CalculateCOCoreMassAtPhaseEnd() const override {
             double          CalculateTemperatureAtPhaseEnd(const double p_Luminosity, const double p_Radius) const  { return m_Temperature; }                                                               // NO-OP
             double          CalculateTemperatureAtPhaseEnd() const                                                  { return CalculateTemperatureAtPhaseEnd(m_Luminosity, m_Radius); }                      // Use class member variables
 
-            void            CalculateTimescales(const double p_Mass, DBL_VECTOR &p_Timescales);
-            void            CalculateTimescales()                                                                   { CalculateTimescales(m_Mass0, m_Timescales); }                                         // Use class member variables
+
 
             double          ChooseTimestep(const double p_Time) const;
 
@@ -161,6 +178,27 @@ inline double CalculateCOCoreMassAtPhaseEnd() const override {
 //                                                                                   //
 ///////////////////////////////////////////////////////////////////////////////////////
 
+      
+/*
+ * CalculateConvectiveEnvelopeMass
+ *
+ * @brief
+ * Calculate the convective envelope mass for Thermally Pulsing Asymptotic Giant Bramch, TPAGB, stars.
+ * We assume entire envelope is convective for TPAGB stars.
+ *
+ * DBL_DBL CalculateConvectiveEnvelopeMass(const double p_Mass, const double p_CoreMass) const
+ * 
+ * @param       p_Mass                          Mass of the star (Msol)
+ * @param       p_CoreMass                      Core mass of the star (Msol)
+ * @return                                      Tuple containing:
+ *                                                   TPAGB convective envelope mass (Msol)
+ *                                                   Maximum TPAGB convective envelope mass (Msol)
+ */
+GNU_CONST inline DBL_DBL CalculateConvectiveEnvelopeMass(const double p_Mass, const double p_CoreMass) const {
+    const double mEnv = p_Mass - p_CoreMass;
+    return std::make_tuple(mEnv, mEnv);
+}
+   
 
 /*
  * CalculateCoreMass
@@ -211,28 +249,32 @@ inline double TPAGB::CalculateCoreMass() const {
  * per Hurley et al. 2000, just after eq 73
  *
  *
- * double CalculateCoreMass_Hurley2000(const double      p_Age,
- *                                     const double      p_MassEffInit,
- *                                     const DBL_VECTOR& p_GBparams,
- *                                     const double      p_McDU,
- *                                     const DBL_VECTOR& p_tScales) const
+ * double CalculateCoreMass_Hurley2000(
+ *     const double      p_Age,
+ *     const double      p_MassEffectiveInitial,
+ *     const DBL_VECTOR& p_GBparams,
+ *     const double      p_McDU,
+ *     const DBL_VECTOR& p_tScales
+ * ) const
  *
  * @param       p_Age                           Effective age of the star (Myr)
- * @param       p_MassEffInit                   Effictive initial Mass of the star (Msol)
+ * @param       p_MassEffectiveInitial          Effictive initial Mass of the star (Msol)
  * @param       p_GBparams                      Hurley GB parameters
  * @param       p_McDU                          Core mass at second dredge up (Msol) (see Hurley et al. 2000, eq 69)
  * @param       p_tScales                       Hurley timescales (Myr)
  * @return                                      Core mass on the Thermally Pulsing Asymptotic Giant Branch in Msol
  */
-GNU_CONST inline double TPAGB::CalculateCoreMass_Hurley2000(const double      p_Age,
-                                                            const double      p_MassEffInit,
-                                                            const DBL_VECTOR& p_GBparams,
-                                                            const double      p_McDU,
-                                                            const DBL_VECTOR& p_tScales) const {
+GNU_CONST inline double TPAGB::CalculateCoreMass_Hurley2000(
+    const double      p_Age,
+    const double      p_MassEffectiveInitial,
+    const DBL_VECTOR& p_GBparams,
+    const double      p_McDU,
+    const DBL_VECTOR& p_tScales
+) const {
 
-    const double lambda = std::min(0.9, 0.3 + (0.001 * utils::intPow(p_MassEffInit, 5))); // Hurley et al. 2000, eq 73
-    // Clam core to maximum p_MassEffInit - core should not exceed total mass
-    return std::min((p_McDU +  ((1.0 - lambda) * (CalculateCoreMassPrime_Hurley2000(p_Age, p_GBparams, p_tScales) - p_McDU))), p_MassEffInit);
+    const double lambda = std::min(0.9, 0.3 + (0.001 * utils::intPow(p_MassEffectiveInitial, 5))); // Hurley et al. 2000, eq 73
+    // Clam core to maximum p_MassEffectiveInitial - core should not exceed total mass
+    return std::min((p_McDU +  ((1.0 - lambda) * (CalculateCoreMassPrime_Hurley2000(p_Age, p_GBparams, p_tScales) - p_McDU))), p_MassEffectiveInitial);
 }
 
 
@@ -248,7 +290,7 @@ GNU_CONST inline double TPAGB::CalculateCoreMass_Hurley2000(const double      p_
  *
  * double CalculateCoreMassPrime_Hurley2000(const double p_Age, const DBL_VECTOR& p_GBparams, const DBL_VECTOR& p_tScales) const
  *
- * @param       p_Age                           Age of the star (Myr)
+ * @param       p_Age                           Effective age of the star (Myr)
  * @param       p_GBparams                      Hurley GB parameters
  * @param       p_tScales                       Hurley timescales (Myr)
  * @return                                      M'c (Msol)
@@ -259,7 +301,7 @@ GNU_CONST inline double TPAGB::CalculateCoreMass_Hurley2000(const double      p_
  */
 GNU_CONST inline double TPAGB::CalculateCoreMassPrime_Hurley2000(const double p_Age, const DBL_VECTOR& p_GBparams, const DBL_VECTOR& p_tScales) const {
 // #defines for convenience and readability - undefined at end of function
-#define GBparams(x) p_GBparams[static_cast<int>(GBP::x)]
+#define GBparams(x) p_GBparams[static_cast<int>(HURLEY_GBP:::x)]
 #define tScales(x) tScales[static_cast<int>(TIMESCALE::x)]
 
     return p_Age <= tScales(tMx_SAGB)
@@ -302,7 +344,7 @@ GNU_CONST inline double TPAGB::CalculateCoreMassPrime_Hurley2000(const double p_
  * @return                                      TPAGB luminosity (Lsol)
  */
 GNU_CONST inline double TPAGB::CalculateLuminosity_Hurley2000(const double p_Age, const DBL_VECTOR& p_GBparams, const DBL_VECTOR& p_tScales) const {
-    return CalculateLuminosityGivenCoreMass(CalculateCoreMassPrime_Hurley2000(p_Age, p_GBparams, p_tScales));
+    return CalculateLuminosityGivenCoreMass_Hurley2000(CalculateCoreMassPrime_Hurley2000(p_Age, p_GBparams, p_tScales), p_GBparams);
 }
 
 
@@ -336,14 +378,14 @@ double TPAGB::CalculateRemnantLuminosity() const {
  * CalculateRemnantRadius_Hurley2000_Static
  *
  * @brief
- * Calculate the radius of the remnant the star would become if it lost all of its
- * envelope immediately (i.e. M = Mc, coreMass), per Hurley et al. 2000, at the 
- * end of section 6 (after eq 105).
+ * Calculate the radius of the remnant the star would become if it lost all of its envelope
+ * immediately (i.e. M = Mc), per Hurley et al. 2000, at the end of section 6 (after eq 105).
  *
  *
  * static double CalculateRemnantRadius_Hurley2000_Static(const double p_CoreMass)
  *
- * @return                                      Radius of remnant core in Rsol
+ * @param       p_CoreMass                      Core mass of the star (Msol)
+ * @return                                      Remnant core radius (Rsol)
  */
 GNU_CONST static inline double TPAGB::CalculateRemnantRadius_Hurley2000_Static(const double p_CoreMass) {
     return WhiteDwarfs::CalculateRadiusOnPhase_Marsh2004_Static(p_CoreMass);

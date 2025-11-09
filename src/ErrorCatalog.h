@@ -98,7 +98,6 @@ enum class ERROR: int {
     INVALID_TYPE_ZETA_CALCULATION,                                  // invalid stellar type for Zeta calculation
     INVALID_VALUE_FOR_BOOLEAN_OPTION,                               // invalid value specified for boolean option
     INVALID_VALUE_IN_FILE,                                          // invalid value in file
-    LAMBDA_NOT_POSITIVE,                                            // lambda is <= 0.0 - invalid
     LOW_GAMMA,                                                      // very massive mass-loss prescription being extrapolated to low gamma (<0.5)
     LOW_TEFF_WINDS,                                                 // winds being used at low temperature
     MAXIMUM_MASS_LOST,                                              // (WARNING) maximum mass lost during mass loss calculations
@@ -113,7 +112,6 @@ enum class ERROR: int {
     OPTION_NOT_SUPPORTED_IN_GRID_FILE,                              // option not supported in grid file
     OUT_OF_BOUNDS,                                                  // value out of bounds
     PROGRAM_OPTIONS_ERROR,                                          // program options error
-    RADIUS_NOT_POSITIVE,                                            // radius is <= 0.0 - invalid
     REVERT_FAILED,                                                  // revert to previous state failed
     ROOT_FINDER_FAILED,                                             // root finder threw an exception
     STELLAR_EVOLUTION_STOPPED,                                      // evolution of current star stopped
@@ -277,7 +275,6 @@ const COMPASUnorderedMap<ERROR, std::tuple<ERROR_SCOPE, std::string>> ERROR_CATA
     { ERROR::INVALID_TYPE_ZETA_CALCULATION,                         { ERROR_SCOPE::ALWAYS,              "Invalid stellar type for Zeta calculation" }},
     { ERROR::INVALID_VALUE_FOR_BOOLEAN_OPTION,                      { ERROR_SCOPE::ALWAYS,              "Invalid value specified for BOOLEAN option" }},
     { ERROR::INVALID_VALUE_IN_FILE,                                 { ERROR_SCOPE::ALWAYS,              "Invalid value in file" }},
-    { ERROR::LAMBDA_NOT_POSITIVE,                                   { ERROR_SCOPE::FIRST_IN_OBJECT_ID,  "Lambda <= 0.0" }},
     { ERROR::LOW_GAMMA,                                             { ERROR_SCOPE::ALWAYS,              "Very massive prescription being extrapolated to low gamma (<0.5)" }},
     { ERROR::LOW_TEFF_WINDS,                                        { ERROR_SCOPE::ALWAYS,              "Winds being used at low temperature" }},
     { ERROR::MAXIMUM_MASS_LOST,                                     { ERROR_SCOPE::FIRST_IN_OBJECT_ID,  "Maximum mass lost during mass loss calculations" }},
@@ -293,7 +290,6 @@ const COMPASUnorderedMap<ERROR, std::tuple<ERROR_SCOPE, std::string>> ERROR_CATA
     { ERROR::OPTION_NOT_SUPPORTED_IN_GRID_FILE,                     { ERROR_SCOPE::ALWAYS,              "Option not supported in grid file" }},
     { ERROR::OUT_OF_BOUNDS,                                         { ERROR_SCOPE::ALWAYS,              "Value out of bounds" }},
     { ERROR::PROGRAM_OPTIONS_ERROR,                                 { ERROR_SCOPE::ALWAYS,              "Commandline Options error" }},
-    { ERROR::RADIUS_NOT_POSITIVE,                                   { ERROR_SCOPE::ALWAYS,              "Radius <= 0.0" }},
     { ERROR::REVERT_FAILED,                                         { ERROR_SCOPE::ALWAYS,              "Revert to previous state failed" }},
     { ERROR::ROOT_FINDER_FAILED,                                    { ERROR_SCOPE::ALWAYS,              "Exception encountered in root finder" }},
     { ERROR::STELLAR_EVOLUTION_STOPPED,                             { ERROR_SCOPE::ALWAYS,              "Evolution of current star stopped" }},

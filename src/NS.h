@@ -97,6 +97,10 @@ protected:
 
 
     // member functions - alphabetically
+
+inline DBL_VECTOR CalculateTimescales_Hurley2000() const override { return m_StateHistory.CurrentState.Timescales(); }     // not meaningful for NS and BH
+
+
             void            CalculateAndSetPulsarParameters();
 
             double          CalculateBirthMagneticField();
@@ -120,8 +124,6 @@ protected:
 
             double          CalculateSpinDownRate(const double p_Omega, const double p_MomentOfInteria, const double p_MagField, const double p_Radius) const;
   
-            void            CalculateTimescales(const double p_Mass, DBL_VECTOR &p_Timescales) { }                                                              // not a meaningful calculation for NS and BH
-            void            CalculateTimescales() { }                                                                                                           // not a meaningful calculation for NS and BH
 
             double          ChooseTimestep(const double p_Time) const;
 

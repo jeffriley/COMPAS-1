@@ -8,41 +8,42 @@
  * Determine the star's envelope type, based on the user-specified ENVELOPE_STATE_PRESCRIPTION.
  * 
  *
- * double DetermineEnvelopeType(const double p_Mass, const double p_Temeparture) const
+ * ENVELOPE DetermineEnvelopeType(const double p_Mass, const double p_Temeparture, const double p_CoreMass) const
  *
  * @param       p_Mass                          Mass of the star (Msol)
+ * @param       p_CoreMass                      Core mass of the star (Msol)
  * @param       p_Temperature                   Temperature of the star (Tsol)
  * @return                                      Envelope type (ENVELOPE::{RADIATIVE, CONVECTIVE, REMNANT})
  */
-ENVELOPE MS_gt_07::DetermineEnvelopeType(const double p_Mass, const double p_Temeparture) const {
+COMPAS_PURE ENVELOPE MS_gt_07::DetermineEnvelopeType(const double p_Mass, const double p_Temeparture, const double p_CoreMass) const {
     
-    ENVELOPE envelopeType = ENVELOPE::RADIATIVE;                                                    // default envelope type
+    ENVELOPE envType;
     
-    switch (OPTIONS->EnvelopeStatePrescription()) {                                                 // which envelope prescription?
+    switch (OPTIONS->EnvelopeStatePrescription()) {                                 // which envelope prescription?
             
-        case ENVELOPE_STATE_PRESCRIPTION::LEGACY:                                                   // COMPAS LEGACY
-            envelopeType = ENVELOPE::RADIATIVE;                                                     // always radiative
+        case ENVELOPE_STATE_PRESCRIPTION::CONVECTIVE_MASS_FRACTION:                 // CONVECTIVE_MASS_FRACTION
+            // envelope is convective when the convective mass exceeds specified fraction of the envelope mass
+            double mEnv;
+            std::tie(mEnv, std::ignore) = CalculateConvectiveEnvelopeMass();
+            envType = (mEnv / (p_Mass - p_CoreMass)) > OPTIONS->ConvectiveEnvelopeMassThreshold() ? ENVELOPE::CONVECTIVE : ENVELOPE::RADIATIVE;
             break;
             
-        case ENVELOPE_STATE_PRESCRIPTION::HURLEY:                                                   // HURLEY
-            // there is some convective envelope for stars below 1.25 solar masses
-            // according to Hurley et al. 2002, eq 36, but we simplify
-            envelopeType = p_Mass < 1.25 ? ENVELOPE::CONVECTIVE : ENVELOPE::RADIATIVE;
+        case ENVELOPE_STATE_PRESCRIPTION::FIXED_TEMPERATURE:                        // FIXED_TEMPERATURE
+            // envelope is radiative if temperature exceeds specified threshold, otherwise convective
+            envType = (p_Temeparture * TSOL) > OPTIONS->ConvectiveEnvelopeTemperatureThreshold() ? ENVELOPE::RADIATIVE : ENVELOPE::CONVECTIVE;
             break;
             
-        case ENVELOPE_STATE_PRESCRIPTION::FIXED_TEMPERATURE:                                        // FIXED_TEMPERATURE
-            // envelope is radiative if temperature exceeds fixed threshold, otherwise convective
-            envelopeType = (p_Temeparture * TSOL) > OPTIONS->ConvectiveEnvelopeTemperatureThreshold() ? ENVELOPE::RADIATIVE : ENVELOPE::CONVECTIVE;
+        case ENVELOPE_STATE_PRESCRIPTION::HURLEY:                                   // HURLEY
+            // there is some convective envelope for stars below 1.25 solar masses according to
+            // Hurley et al. 2002, eq 36, but we simplify
+            envType = p_Mass < 1.25 ? ENVELOPE::CONVECTIVE : ENVELOPE::RADIATIVE;
             break;
             
-        case ENVELOPE_STATE_PRESCRIPTION::CONVECTIVE_MASS_FRACTION:                                 // CONVECTIVE_MASS_FRACTION
-            // envelope is labelled convective when the convective mass exceeds a fixed fraction of the envelope mass
-            double convectiveEnvelopeMass, convectiveEnvelopeMassMax;
-            std::tie(convectiveEnvelopeMass, convectiveEnvelopeMassMax) = CalculateConvectiveEnvelopeMass();
-            envelopeType = (convectiveEnvelopeMass / (p_Mass - m_CoreMass)) > OPTIONS->ConvectiveEnvelopeMassThreshold() ? ENVELOPE::CONVECTIVE : ENVELOPE::RADIATIVE;
+        case ENVELOPE_STATE_PRESCRIPTION::LEGACY:                                   // COMPAS LEGACY
+            envType = ENVELOPE::RADIATIVE;                                          // always radiative
             break;
 
-        default:                                                                                    // unknown prescription
+        default:                                                                    // unknown prescription
             // the only way this can happen is if someone added an ENVELOPE_STATE_PRESCRIPTION
             // and it isn't accounted for in this code.  We should not default here, with or without a warning.
             // We are here because the user chose a prescription this code doesn't account for, and that should
@@ -50,10 +51,10 @@ ENVELOPE MS_gt_07::DetermineEnvelopeType(const double p_Mass, const double p_Tem
             // The correct fix for this is to add code for the missing prescription or, if the missing
             // prescription is superfluous, remove it from the option.
 
-            THROW_ERROR(ERROR::UNKNOWN_ENVELOPE_STATE_PRESCRIPTION);                                // throw error            
+            THROW_ERROR(ERROR::UNKNOWN_ENVELOPE_STATE_PRESCRIPTION);                // throw error            
     }
     
-    return envelopeType;
+    return envType;
 }
 
 
@@ -68,6 +69,7 @@ ENVELOPE MS_gt_07::DetermineEnvelopeType(const double p_Mass, const double p_Tem
 
 
 
+/// MS_gt_07_Constituent <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 
 /*

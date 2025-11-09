@@ -179,8 +179,8 @@ extern OBJECT_ID globalObjectId;    // used to uniquely identify objects - used 
 #undef COMPARE_GLOBAL_TOLERANCE // define/undef this to compare floats with/without tolerance (see FLOAT_TOLERANCE_ABSOLUTE, FLOAT_TOLERANCE_RELATIVE and Compare() function)
 #undef CDOUBLE_USE_TOLERANCE // define/undef this to compare floats with/without tolerance (see CDOUBLE class, FLOAT_TOLERANCE_ABSOLUTE, and FLOAT_TOLERANCE_RELATIVE)
 
-constexpr double FLOAT_TOLERANCE_ABSOLUTE               = 5.0E-7;                                                   // absolute tolerance for floating-point comparisons if COMPARE_GLOBAL_TOLERANCE is defined
-constexpr double FLOAT_TOLERANCE_RELATIVE               = 5.0E-7;                                                   // relative tolerance for floating-point comparisons if COMPARE_GLOBAL_TOLERANCE is defined
+constexpr double FLOAT_TOLERANCE_ABSOLUTE               = 1.0E-9;                                                   // absolute tolerance for floating-point comparisons if COMPARE_GLOBAL_TOLERANCE is defined
+constexpr double FLOAT_TOLERANCE_RELATIVE               = 1.0E-6;                                                   // relative tolerance for floating-point comparisons if COMPARE_GLOBAL_TOLERANCE is defined
 
 constexpr double ROOT_ABS_TOLERANCE                     = 1.0E-6;                                                   // absolute tolerance for root finder
 constexpr double ROOT_REL_TOLERANCE                     = 1.0E-6;                                                   // relative tolerance for root finder
@@ -364,9 +364,9 @@ constexpr int    ADAPTIVE_RLOF_MAX_TRIES                = 30;                   
 constexpr int    ADAPTIVE_RLOF_MAX_ITERATIONS           = 50;                                                       // Maximum number of root finder iterations in BaseBinaryStar::MassLossToFitInsideRocheLobe()
 constexpr double ADAPTIVE_RLOF_SEARCH_FACTOR_FRAC       = 1.0;                                                      // Search size factor (fractional part) in BaseBinaryStar::MassLossToFitInsideRocheLobe() (added to 1.0)
 
-constexpr int    ADAPTIVE_RV_MAX_TRIES                  = 30;                                                       // Maximum number of tries in BaseStar::CalculateOStarRotationalVelocity_Static()
-constexpr int    ADAPTIVE_RV_MAX_ITERATIONS             = 50;                                                       // Maximum number of root finder iterations in BaseStar::CalculateOStarRotationalVelocity_Static()
-constexpr double ADAPTIVE_RV_SEARCH_FACTOR_FRAC         = 1.0;                                                      // Search size factor (fractional part) in BaseStar::CalculateOStarRotationalVelocity_Static() (added to 1.0)
+constexpr int    ADAPTIVE_RV_MAX_TRIES                  = 30;                                                       // Maximum number of tries in BaseStar::CalculateRotationalVelocityOStar_Ramirez2013()
+constexpr int    ADAPTIVE_RV_MAX_ITERATIONS             = 50;                                                       // Maximum number of root finder iterations in BaseStar::CalculateRotationalVelocityOStar_Ramirez2013()
+constexpr double ADAPTIVE_RV_SEARCH_FACTOR_FRAC         = 1.0;                                                      // Search size factor (fractional part) in BaseStar::CalculateRotationalVelocityOStar_Ramirez2013() (added to 1.0)
 
 constexpr int    ADAPTIVE_MASS0_MAX_TRIES               = 30;                                                       // Maximum number of tries in HG::Mass0ToMatchDesiredCoreMass()
 constexpr int    ADAPTIVE_MASS0_MAX_ITERATIONS          = 50;                                                       // Maximum number of iterations in HG::Mass0ToMatchDesiredCoreMass()

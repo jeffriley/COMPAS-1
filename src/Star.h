@@ -95,13 +95,13 @@ inline double CalculateCriticalMassRatio_Hurley2002() const                    {
     
     
     
-    inline double               CalculateDynamicalTimescale() const                                         { return m_Star->CalculateDynamicalTimescale(); }
+    inline double               CalculateTimescale_Dynamical() const                                         { return m_Star->CalculateTimescale_Dynamical(); }
     inline double               CalculateLambdaLoveridge() const                                            { return m_Star->CalculateLambdaLoveridge(); }
     inline double               CalculateCELambda_Nanjing() const                                              { return m_Star->CalculateCELambda_Nanjing(); }
     inline double               CalculateCELambdaKruckow() const                                            { return m_Star->CalculateCELambdaKruckow(); }
     inline double               CalculateCELambda_Dewi() const                                                 { return m_Star->CalculateCELambda_Dewi(); }
     inline double               CalculateRadialExpansionTimescale() const                                   { return m_Star->CalculateRadialExpansionTimescale(); }
-    inline double               CalculateThermalTimescale() const                                           { return m_Star->CalculateThermalTimescale(); }
+    inline double               CalculateTimescale_Thermal() const                                           { return m_Star->CalculateTimescale_Thermal(); }
     inline double               COCoreMass() const                                                          { return m_Star->COCoreMass(); }
     inline double               CoreMass() const                                                            { return m_Star->CoreMass(); }
     inline double               Dt() const                                                                  { return m_Star->Dt(); }
@@ -191,15 +191,15 @@ inline double CalculateCriticalMassRatio_Hurley2002() const                    {
 
     inline void                 ApplyMassTransferRejuvenationFactor()                                                               { m_Star->ApplyMassTransferRejuvenationFactor(); }
 
-    inline double               CalculateBindingEnergy(const double p_CoreMass, const double p_EnvMass, const double p_Radius, const double p_Lambda) const {
-                                    return m_Star->CalculateBindingEnergy(p_CoreMass, p_EnvMass, p_Radius, p_Lambda);
+    inline double               CalculateBindingEnergy(const double p_Radius, const double p_CoreMass, const double p_EnvMass, const double p_Lambda) const {
+                                    return m_Star->CalculateBindingEnergy(p_Radius, p_CoreMass, p_EnvMass, p_Lambda);
                                 }
 
     inline double               CalculateConvectiveCoreMass()                                                                       { return m_Star->CalculateConvectiveCoreMass(); }
     inline double               CalculateConvectiveCoreRadius()                                                                     { return m_Star->CalculateConvectiveCoreRadius(); }
 
-    inline double               CalculateConvectiveEnvelopeBindingEnergy(const double p_TotalMass, const double p_ConvectiveEnvelopeMass, const double p_Radius, const double p_Lambda) {
-                                    return m_Star->CalculateConvectiveEnvelopeBindingEnergy(p_TotalMass, p_ConvectiveEnvelopeMass, p_Radius, p_Lambda);
+    inline double               CalculateConvectiveEnvelopeBindingEnergy(const double p_TotalMass, const double p_Radius, const double p_ConvectiveEnvelopeMass, const double p_Lambda) {
+                                    return m_Star->CalculateConvectiveEnvelopeBindingEnergy(p_TotalMass, p_Radius, p_ConvectiveEnvelopeMass, p_Lambda);
                                 }
 
     inline double               CalculateConvectiveEnvelopeLambdaPicker(const DBL_DBL p_convectiveEnvelopeMass) const               { return m_Star->CalculateConvectiveEnvelopeLambdaPicker(p_convectiveEnvelopeMass); }
@@ -233,16 +233,16 @@ inline double CalculateCriticalMassRatio_Hurley2002() const                    {
     
     inline void                 CalculateSNAnomalies(const double p_Eccentricity)                                                   { m_Star->CalculateSNAnomalies(p_Eccentricity); }
     
-    inline double               CalculateSNKickMagnitude(const double p_RemnantMass, const double p_EjectaMass, const STELLAR_TYPE p_StellarType) {
-                                    return m_Star->CalculateSNKickMagnitude(p_RemnantMass, p_EjectaMass, p_StellarType);
+    inline double               CalculateSNkickMagnitude(const double p_EjectaMass, const double p_RemnantMass, const STELLAR_TYPE p_StellarType) {
+                                    return m_Star->CalculateSNkickMagnitude(p_EjectaMass, p_RemnantMass, p_StellarType);
                                 }
 
     inline double               CalculateThermalMassAcceptanceRate(const double p_Radius)                                           { return m_Star->CalculateThermalMassAcceptanceRate(p_Radius); }
     inline double               CalculateThermalMassAcceptanceRate()                                                                { return m_Star->CalculateThermalMassAcceptanceRate(); }
 
-    inline double               CalculateThermalMassLossRate() const                                                                { return m_Star->CalculateThermalMassLossRate(); }
+    inline double               CalculateMLrateThermal() const                                                                { return m_Star->CalculateMLrateThermal(); }
 
-    inline double               CalculateThermalTimescale(const double p_Radius) const                                              { return m_Star->CalculateThermalTimescale(p_Radius); }
+    inline double               CalculateTimescale_Thermal(const double p_Mass, const double p_Radius, const double p_CoreMass) const { return m_Star->CalculateTimescale_Thermal(p_Radius); }
 
     inline double               CalculateTimestep()                                                                                 { return m_Star->CalculateTimestep(); }
 

@@ -39,48 +39,47 @@ double BH::CalculateNeutrinoMassLoss_Static(const double p_BaryonicMass) {
 
 
 /*
- * Calculate the kick given to a black hole based on users chosen assumptions about black hole kicks,
- * fallback and the magnitude of a kick drawn from a distribution
+ * CalculateSNkickWeighting_Static
  *
- * Current options are:
+ * @brief
+ * Calculate the weighting to be applied to the kick magnitude for a Black Hole, BH,
+ * based on the user-supplied black hole kixks mode (via the option `--black-hole-kicks-mode`).
  *
- *    FULL    : Black holes receive the same kicks as neutron stars
- *    REDUCED : Black holes receive the same momentum kick as a neutron star, but downweighted by the black hole mass
- *    ZERO    : Black holes receive zero natal kick
- *    FALLBACK: Black holes receive a kick downweighted by the amount of mass falling back onto them
+ * Option values are:
+ *
+ *    FALLBACK: Black holes receive a kick down-weighted by the amount of mass falling back onto them
+ *    FULL    : Black holes receive the same kicks as neutron stars (weighting = 1.0)
+ *    REDUCED : Black holes receive the same momentum kick as a neutron star, but down-weighted by the black hole mass
+ *    ZERO    : Black holes receive zero natal kick (weighting = 0.0)
  *
  *
- *  double ReweightSupernovaKickByMass_Static(const double p_vK, const double p_FallbackFraction, const double p_BlackHoleMass)
+ * static double CalculateSNkickWeighting_Static(const double p_Mass, const double p_FallbackFraction)
  *
- * @param   [IN]    p_vK                        Kick magnitude that would otherwise be applied to a neutron star
- * @param   [IN]    p_FallbackFraction          Fraction of mass that falls back onto the proto-compact object
- * @param   [IN]    p_BlackHoleMass             Mass of remnant (in Msol)
+ * @param       p_Mass                          Mass of the remnant (BH) (Msol)
+ * @param       p_FallbackFraction              Fraction of mass that falls back onto the proto-compact object [0, 1]
  * @return                                      Kick magnitude
  */
- double BH::ReweightSupernovaKickByMass_Static(const double p_vK, const double p_FallbackFraction, const double p_BlackHoleMass) {
+COMPAS_PURE double BH::CalculateSNkickWeighting_Static(const double p_Mass, const double p_FallbackFraction) {
 
-    double vK;
+    double weighting;
 
-    switch (OPTIONS->BlackHoleKicksMode()) {                                                            // which BH kicks mode?
+    switch (OPTIONS->BlackHoleKicksMode()) {                                                    // which BH kicks mode?
 
-        case BLACK_HOLE_KICKS_MODE::ZERO    : vK = 0.0; break;                                          // BH Kicks are set to zero regardless of BH mass or kick magnitude drawn.
+        case BLACK_HOLE_KICKS_MODE::FALLBACK: weighting = 1.0 - p_FallbackFraction;   break;    // using the so-called 'fallback' mode for BH kicks
+        case BLACK_HOLE_KICKS_MODE::FULL    : weighting = 1.0;                        break;    // full kick - no adjustment necessary
+        case BLACK_HOLE_KICKS_MODE::REDUCED : weighting = NEUTRON_STAR_MASS / p_Mass; break;    // kick is reduced by the ratio of the neutron star mass to the black hole mass
+        case BLACK_HOLE_KICKS_MODE::ZERO    : weighting = 0.0;                        break;    // no kick
 
-        case BLACK_HOLE_KICKS_MODE::FULL    : vK = p_vK; break;                                         // BH receives full kick - no adjustment necessary
-
-        case BLACK_HOLE_KICKS_MODE::REDUCED : vK = p_vK * NEUTRON_STAR_MASS / p_BlackHoleMass; break;   // kick is reduced by the ratio of the neutron star mass to the black hole mass
-
-        case BLACK_HOLE_KICKS_MODE::FALLBACK: vK = p_vK * (1.0 - p_FallbackFraction); break;            // using the so-called 'fallback' mode for BH kicks
-    
-        default:                                                                                        // unknown mode
-            // the only way this can happen is if someone added a BLACK_HOLE_KICKS_MODE
-            // and it isn't accounted for in this code.  We should not default here, with or without a warning.
-            // We are here because the user chose a mode this code doesn't account for, and that should be
-            // flagged as an error and result in termination of the evolution of the star or binary.
+        default:                                                                                // unknown mode
+            // the only way this can happen is if someone added a BLACK_HOLE_KICKS_MODE and it isn't
+            // accounted for in this code.  We should not default here, with or without a warning.
+            // We are here because the user chose a mode this code doesn't account for, and that should
+            // be flagged as an error and result in termination of the evolution of the star or binary.
             // The correct fix for this is to add code for the missing mode or, if the missing mode is
             // superfluous, remove it from the option.
 
-            THROW_ERROR_STATIC(ERROR::UNKNOWN_BH_KICK_MODE);                                            // throw error
+            THROW_ERROR_STATIC(ERROR::UNKNOWN_BH_KICK_MODE);                                    // throw error
     }
 
-    return vK;
+    return weighting;
 }

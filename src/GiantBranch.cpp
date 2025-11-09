@@ -35,36 +35,17 @@
  * the mass of the star changes (probably every timestep).
  *
  *
- * DBL_VECTOR CalculateTimescales_Hurley2000(const double      p_Mass,
- *                                           const double      p_ZetaHurley,
- *                                           const DBL_VECTOR& p_GBparams,
- *                                           const DBL_VECTOR& p_MassCutoffs,
- *                                           const DBL_VECTOR& p_Timescales,
- *                                           const double      p_Alpha3,
- *                                           const DBL_VECTOR& p_aN,
- *                                           const DBL_VECTOR& p_bN) const
+ * DBL_VECTOR CalculateTimescales_Hurley2000(const double p_Mass, const DBL_VECTOR& p_GBparams, const DBL_VECTOR& p_Timescales) const
  *
  * @param       p_Mass                          Mass of the star (Msol)
- * @param       p_ZetaHurley                    Hurley zeta value (log10(Z / ZSOL_HURLEY))
  * @param       p_GBparams                      Hurley GB parameters
- * @param       p_MassCutoffs                   Hurley mass cutoffs (Msol)
  * @param       p_tScales                       Hurley timescales (Myr)
- * @param       p_Alpha3                        Hurley alpha3 constant
- * @param       p_aN                            Hurley a(n) coefficients
- * @param       p_bN                            Hurley b(n) coefficients
  * @return                                      Mutated timescales (Myr)
  */
-DBL_VECTOR GiantBranch::CalculateTimescales_Hurley2000(const double      p_Mass,
-                                                       const double      p_ZetaHurley,
-                                                       const DBL_VECTOR& p_GBparams,
-                                                       const DBL_VECTOR& p_MassCutoffs,
-                                                       const DBL_VECTOR& p_tScales,
-                                                       const double      p_Alpha3,
-                                                       const DBL_VECTOR& p_aN,
-                                                       const DBL_VECTOR& p_bN) const {
+COMPAS_PURE DBL_VECTOR GiantBranch::CalculateTimescales_Hurley2000(const double p_Mass, const DBL_VECTOR& p_GBparams, const DBL_VECTOR& p_tScales) const {
 
 // #defines for convenience and readability - undefined at end of function
-#define GBparams(x) p_GBparams[static_cast<int>(GBP::x)]
+#define GBparams(x) p_GBparams[static_cast<int>(HURLEY_GBP:::x)]
 #define tScales(x) tScales[static_cast<int>(TIMESCALE::x)]
 
     const double p1   = GBparams(p) - 1.0;
@@ -72,12 +53,12 @@ DBL_VECTOR GiantBranch::CalculateTimescales_Hurley2000(const double      p_Mass,
     const double p1_p = p1 / GBparams(p);
     const double q1_q = q1 / GBparams(q);
 
-    const double lBGB = GiantBranch::CalculateLuminosityAtBGB_Hurley2000(p_Mass, p_aN);
+    const double lBGB = GiantBranch::CalculateLuminosityAtBGB_Hurley2000(p_Mass);
 
     DBL_VECTOR tScales = p_tScales; // copy given timescales
 
     // (re)calculate MS timescales
-    DBL_VECTOR tScales = MainSequence::CalculateTimescales_Hurley2000(p_Mass, p_ZetaHurley, p_GBparams, p_MassCutoffs, tScales, p_Alpha3, p_aN, p_bN);
+    DBL_VECTOR tScales = MainSequence::CalculateTimescales_Hurley2000(p_Mass, p_GBparams, tScales);
 
     tScales[static_cast<int>(TIMESCALE::tinf1_FGB)] = tScales(tBGB) + ((1.0 / (p1 * GBparams(AH) * GBparams(D))) * PPOW((GBparams(D) / lBGB), p1_p));
     tScales[static_cast<int>(TIMESCALE::tMx_FGB)]   = tScales(tinf1_FGB) - ((tScales(tinf1_FGB) - tScales(tBGB)) * PPOW((lBGB / GBparams(Lx)), p1_p));
@@ -105,43 +86,32 @@ DBL_VECTOR GiantBranch::CalculateTimescales_Hurley2000(const double      p_Mass,
  * whenever the mass of the star changes (probably every timestep).
  *
  *
- * DBL_VECTOR CalculateGBparams_Hurley2000(const double      p_Mass,
- *                                         const double      p_ZetaHurley,
- *                                         const DBL_VECTOR& p_GBparams,
- *                                         const DBL_VECTOR& p_MassCutoffs,
- *                                         const DBL_VECTOR& p_aN) const
+ * DBL_VECTOR CalculateGBparams_Hurley2000(const double p_Mass, const DBL_VECTOR& p_GBparams) const
  *
  * @param       p_Mass                          Mass of the star (Msol)
- * @param       p_ZetaHurley                    Hurley zeta value (log10(Z / ZSOL_HURLEY))
  * @param       p_GBparams                      Hurley GB parameters
- * @param       p_MassCutoffs                   Hurley mass cutoffs (Msol)
- * @param       p_bN                            Hurley b(n) coefficients
- * @return                                      Mutated GB parameters (Myr)
+ * @return                                      Mutated GB parameters
  */
-DBL_VECTOR GiantBranch::CalculateGBparams_Hurley2000(const double      p_Mass,
-                                                     const double      p_ZetaHurley,
-                                                     const DBL_VECTOR& p_GBparams,
-                                                     const DBL_VECTOR& p_MassCutoffs,
-                                                     const DBL_VECTOR& p_aN) const {
+COMPAS_PURE DBL_VECTOR GiantBranch::CalculateGBparams_Hurley2000(const double p_Mass, const DBL_VECTOR& p_GBparams) const {
 
     DBL_VECTOR GBparams = p_GBparams;   // copy given GBparams
 
-    GBparams[static_cast<int>(GBP::AH)]     = CalculateHRateConstant_Hurley2000(p_Mass);
-    GBparams[static_cast<int>(GBP::AHHe)]   = HHE_RATE_CONSTANT_HURLEY2000;
-    GBparams[static_cast<int>(GBP::AHe)]    = HE_RATE_CONSTANT_HURLEY2000;
+    GBparams[static_cast<int>(HURLEY_GBP:::AH)]     = CalculateHRateConstant_Hurley2000(p_Mass);
+    GBparams[static_cast<int>(HURLEY_GBP:::AHHe)]   = HHE_RATE_CONSTANT_HURLEY2000;
+    GBparams[static_cast<int>(HURLEY_GBP:::AHe)]    = HE_RATE_CONSTANT_HURLEY2000;
 
-    GBparams[static_cast<int>(GBP::B)]      = CalculateCoreMass_Luminosity_B_Hurley2000(p_Mass);
-    GBparams[static_cast<int>(GBP::D)]      = CalculateCoreMass_Luminosity_D_Hurley2000(p_Mass, p_ZetaHurley, p_MassCutoffs[static_cast<int>(MASS_CUTOFF::MHeF)]);
+    GBparams[static_cast<int>(HURLEY_GBP:::B)]      = CalculateCoreMass_Luminosity_B_Hurley2000(p_Mass);
+    GBparams[static_cast<int>(HURLEY_GBP:::D)]      = CalculateCoreMass_Luminosity_D_Hurley2000(p_Mass);
 
-    GBparams[static_cast<int>(GBP::p)]      = CalculateCoreMass_Luminosity_p_Static_Hurley2000(p_Mass, p_MassCutoffs[static_cast<int>(MASS_CUTOFF::MHeF)]);
-    GBparams[static_cast<int>(GBP::q)]      = CalculateCoreMass_Luminosity_q_Static_Hurley2000(p_Mass, p_MassCutoffs[static_cast<int>(MASS_CUTOFF::MHeF)]);
+    GBparams[static_cast<int>(HURLEY_GBP:::p)]      = CalculateCoreMass_Luminosity_p_Static_Hurley2000(p_Mass);
+    GBparams[static_cast<int>(HURLEY_GBP:::q)]      = CalculateCoreMass_Luminosity_q_Static_Hurley2000(p_Mass);
 
-    GBparams[static_cast<int>(GBP::Mx)]     = CalculateCoreMass_Luminosity_Mx_Hurley2000(GBparams);
-    GBparams[static_cast<int>(GBP::Lx)]     = CalculateCoreMass_Luminosity_Lx_Hurley2000(GBparams);
+    GBparams[static_cast<int>(HURLEY_GBP:::Mx)]     = CalculateCoreMass_Luminosity_Mx_Hurley2000(GBparams);
+    GBparams[static_cast<int>(HURLEY_GBP:::Lx)]     = CalculateCoreMass_Luminosity_Lx_Hurley2000(GBparams);
 
-    GBparams[static_cast<int>(GBP::McBAGB)] = CalculateCoreMassAtBAGB_Hurley2000(p_Mass, pbN);
-    GBparams[static_cast<int>(GBP::McDU)]   = CalculateCoreMassAt2ndDredgeUp_Hurley2000(GBparams[static_cast<int>(GBP::McBAGB)]);
-    GBparams[static_cast<int>(GBP::McBGB)]  = CalculateCoreMassAtBGB_Hurley2000(p_Mass, GBparams, p_MassCutoffs[static_cast<int>(MASS_CUTOFF::MHeF)], p_aN);
+    GBparams[static_cast<int>(HURLEY_GBP:::McBAGB)] = CalculateCoreMassAtBAGB_Hurley2000(p_Mass);
+    GBparams[static_cast<int>(HURLEY_GBP:::McDU)]   = CalculateCoreMassAt2ndDredgeUp_Hurley2000(GBparams[static_cast<int>(HURLEY_GBP:::McBAGB)]);
+    GBparams[static_cast<int>(HURLEY_GBP:::McBGB)]  = CalculateCoreMassAtBGB_Hurley2000(p_Mass, GBparams[static_cast<int>(HURLEY_GBP:::McBAGB)]);
 
     // return GB parameters vector by value - NRVO takes care of performance/efficiency
     return GBparams;
@@ -186,7 +156,7 @@ void GiantBranch::CalculateGBparams_Static(const double      p_Mass,
                                            const DBL_VECTOR &p_An, 
                                            const DBL_VECTOR &p_Bn, 
                                                  DBL_VECTOR &p_GBparams) const {
-#define p_GBparams(x) p_GBparams[static_cast<int>(GBP::x)]    // for convenience and readability - undefined at end of function
+#define p_GBparams(x) p_GBparams[static_cast<int>(HURLEY_GBP:::x)]    // for convenience and readability - undefined at end of function
 
     p_GBparams(AH)     = CalculateHRateConstant_Hurley2000_Static(p_Mass);
     p_GBparams(AHHe)   = HHE_RATE_CONSTANT_HURLEY2000;
@@ -317,7 +287,7 @@ double GiantBranch::CalculateCoreMass_Luminosity_q_Hurley2000(const double p_Mas
 
 
 
-
+/// JR FIX THIS <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 /*
  * Perturb Luminosity and Radius
@@ -435,22 +405,21 @@ double GiantBranch::CalculateRadiusAtHeIgnition_Hurley2000(const double      p_M
                                                            const double      p_MHeF,
                                                            const double      p_MFGB,
                                                            const double      p_MinLuminosity,
-                                                           const double      p_Alpha1,
-                                                           const DBL_VECTOR& p_bN) const {
+) const {
 
     double radius;
 
-    const double lHeI = CalculateLuminosityAtHeI_Hurley2000_Static(p_Mass, p_MHeF, m_Alpha1, p_bN);
+    const double lHeI = CalculateLuminosityAtHeI_Hurley2000_Static(p_Mass);
 
     if (p_Mass <= p_MFGB) {
         radius = CalculateRadiusOnPhase(p_Mass, lHeI);
     }
     else if (p_Mass >= std::max(p_MFGB, HIGH_MASS_THRESHOLD)) {
-        const double rmHe = CHeB::CalculateMinimumRadiusOnPhase_Static(p_Mass, p_CoreMass, p_Alpha1, p_MHeF, p_MFGB, p_MinLuminosity, p_bN);
-        radius = std::min(rmHe, EAGB::CalculateRadiusOnPhase_Static(p_Mass, lHeI, p_MHeF, p_bN));
+        const double rmHe = CHeB::CalculateMinimumRadiusOnPhase_Static(p_Mass, p_CoreMass, p_Alpha1, p_MHeF, p_MFGB, p_MinLuminosity);
+        radius = std::min(rmHe, EAGB::CalculateRadiusOnPhase_Static(p_Mass, lHeI, p_MHeF));
     }
     else {
-        const double rmHe = CHeB::CalculateMinimumRadiusOnPhase_Static(p_Mass, p_CoreMass, p_Alpha1, p_MHeF, p_MFGB, p_MinLuminosity, p_bN);
+        const double rmHe = CHeB::CalculateMinimumRadiusOnPhase_Static(p_Mass, p_CoreMass, p_Alpha1, p_MHeF, p_MFGB, p_MinLuminosity);
         radius = rmHe * PPOW((CalculateRadiusOnPhase(p_Mass, lHeI); / rmHe), log10(p_Mass / HIGH_MASS_THRESHOLD) / log10(p_MFGB / HIGH_MASS_THRESHOLD));
     }
 
@@ -489,8 +458,8 @@ double GiantBranch::CalculateRadiusOnZAHB_Hurley2000_Static(const double      p_
                                                             const DBL_VECTOR& p_bN) {
 
     const double rZHe  = HeMS::CalculateRadiusAtZAHeMS_Hurley2000_Static(p_CoreMass);
-    const double lZAHB = GiantBranch::CalculateLuminosityOnZAHB_Hurley2000_Static(p_Mass, p_CoreMass, p_Alpha1, p_MHeF, p_MinLuminosity, p_bN);
-    const double rGB   = GiantBranch::CalculateRadiusOnPhase_Hurley2000_Static(p_Mass, lZAHB, p_bN);
+    const double lZAHB = CalculateLuminosityOnZAHB_Hurley2000_Static(p_Mass, p_CoreMass, p_Alpha1, p_MHeF, p_MinLuminosity, p_bN);
+    const double rGB   = CalculateRadiusOnPhase_Hurley2000_Static(p_Mass, lZAHB, p_bN);
     const double f     = ((1.0 + p_bN[21]) * PPOW((p_Mass - p_CoreMass) / (p_MHeF - p_CoreMass), p_bN[22])) / (1.0 + p_bN[21] * PPOW(mu, p_bN[23]));
 
     return ((1.0 - f)) * rZHe + (f * rGB);
@@ -513,26 +482,26 @@ double GiantBranch::CalculateRadiusOnZAHB_Hurley2000_Static(const double      p_
  * For large enough M, we have McBGB ~ 0.098 * Mass^1.35
  *
  *
- * double CalculateCoreMassAtBGB_Hurley2000(const double p_Mass, const DBL_VECTOR& p_GBparams, const double p_MHef, const DBL_VECTOR& p_aN) const
+ * double CalculateCoreMassAtBGB_Hurley2000(const double p_Mass, const double p_McBAGB) const
  *
  * @param       p_Mass                          Mass of the star (Msol)
- * @param       p_GBparams                      Hurley GB parameters
- * @param       p_MHef                          Maximum initial mass at Helium Flash (Hurley masscutoffs[MHeF]) (Msol)
- * @param       p_aN                            Hurley a(n) coefficients
- * @return                                      Core mass at the Base of the Giant Branch (Msol)
+ * @param       p_McBAGB                        BAGB core mass (Msol)
+ * @return                                      BGB core mass (Msol)
  */
-double GiantBranch::CalculateCoreMassAtBGB_Hurley2000(const double p_Mass, const DBL_VECTOR& p_GBparams, const double p_MHef, const DBL_VECTOR& p_aN) const {
+COMPAS_PURE double GiantBranch::CalculateCoreMassAtBGB_Hurley2000(const double p_Mass, const double p_McBAGB) const {
 
     double McBGB = 0.0;     // default value for McBGB (see comment below)
 
-    // No McBGB for stars with mass below the helium flash threshold
+    const double mHeF = GLOBALS-HurelyMassCutoffs(static_cast<int>(MHeF));
+
+    // no McBGB for stars with mass below the helium flash threshold
     // See Hurley at al. 2000, text immediately prior to eq 44
-    if (p_Mass >= p_MHef) { 
-        const double luminosity = GiantBranch::CalculateLuminosityAtBGB_Hurley2000(p_MHef, p_aN);
+    if (p_Mass >= mHeF) { 
+        const double luminosity = GiantBranch::CalculateLuminosityAtBGB_Hurley2000(mHeF);
         const double Mc_MHeF    = BaseStar::CalculateCoreMass_Hurley2000_Static(luminosity, p_GBparams);
-        const double c          = (utils::IntPow(Mc_MHeF, 4)) - (MC_L_C1 * PPOW(p_MHef, MC_L_C2));
+        const double c          = utils::IntPow(Mc_MHeF, 4) - MC_L_C1 * PPOW(mHeF, MC_L_C2);
     
-        McBGB = std::min((0.95 * p_GBparams(McBAGB)), std::sqrt(std::sqrt(c + (MC_L_C1 * PPOW(p_Mass, MC_L_C2)))));
+        McBGB = std::min(0.95 * p_GBparams(McBAGB), std::sqrt(std::sqrt(c + MC_L_C1 * PPOW(p_Mass, MC_L_C2))));
     }
 
     return McBGB;
@@ -572,11 +541,11 @@ double GiantBranch::CalculateCoreMassAtHeI_Hurley2000(const double      p_Mass,
     double coreMass;
 
     if (p_Mass < p_MHef) {
-        const double luminosity = CalculateLuminosityAtHeI_Hurley2000_Static(p_Mass, p_MHef, p_Alpha1, p_bN);
+        const double luminosity = CalculateLuminosityAtHeI_Hurley2000_Static(p_Mass);
         coreMass = BaseStar::CalculateCoreMass_Hurley2000_Static(luminosity, p_GBparams);
     }
     else {
-        const double lMHeF   = CalculateLuminosityAtHeI_Hurley2000_Static(p_MHef, p_MHef, p_Alpha1, p_bN);
+        const double lMHeF   = CalculateLuminosityAtHeI_Hurley2000_Static(p_MHef);
         const double Mc_MHeF = BaseStar::CalculateCoreMass_Hurley2000_Static(lMHeF, p_GBparams);
         const double McBAGB  = CalculateCoreMassAtBAGB_Hurley2000(p_Mass, p_bN);
         const double c       = (utils::intPow(Mc_MHeF, 4)) - (MC_L_C1 * PPOW(p_MHef, MC_L_C2));
@@ -643,7 +612,7 @@ double GiantBranch::CalculateMassLossRateHurley() {
  */
 double GiantBranch::CalculateLifetimeToHeI_Hurley2000(const double p_Mass, const double p_Tinf1_FGB, const double p_Tinf2_FGB) {
 
-    double LHeI = CalculateLuminosityAtHeI_Hurley2000_Static(p_Mass, massCutoffs(MHeF), m_Alpha1, m_BnCoefficients);
+    double LHeI = CalculateLuminosityAtHeI_Hurley2000_Static(p_Mass);
     double p1   = gbParams(p) - 1.0;
     double q1   = gbParams(q) - 1.0;
 
@@ -653,27 +622,7 @@ double GiantBranch::CalculateLifetimeToHeI_Hurley2000(const double p_Mass, const
 }
 
 
-///////////////////////////////////////////////////////////////////////////////////////
-//                                                                                   //
-//                               ROTATION CALCULATIONS                               //
-//                                                                                   //
-///////////////////////////////////////////////////////////////////////////////////////
 
-/*
- * Calculate moment of inertia
- *
- * Hurley et al., 2000, paragraph immediately following eq 109 
- *
- * 
- * double GiantBranch::CalculateMomentOfInertia()
- * 
- * @return                                      Moment of inertia (Msol AU^2)
- */
-double GiantBranch::CalculateMomentOfInertia() const {
-    double Rc = CalculateRemnantRadius();
-    
-    return (0.1 * (m_Mass - m_CoreMass) * m_Radius * m_Radius) + (0.21 * m_CoreMass * Rc * Rc);
-}
 
 
 
@@ -1713,7 +1662,7 @@ StellarSNDetailsT GiantBranch::ProcessSupernova(const bool p_AllowECSN, const St
     if (utils::IsOneOf(stellarType, SN_REMNANTS)) {
         if (utils::SNEventType(m_SupernovaDetails.events.current) != SN_EVENT::PISN &&          // NOT a PISN event, and ...
            !utils::IsOneOf(stellarType, {STELLAR_TYPE::MASSLESS_REMNANT})) {           // NOT a massless remnant?
-            CalculateSNKickMagnitude(m_Mass, m_SupernovaDetails.totalMassAtCOFormation - p_Mass, stellarType);  // yes - calculate kick magnitude
+            CalculateSNkickMagnitude(m_SupernovaDetails.totalMassAtCOFormation - p_Mass, m_Mass, stellarType);  // yes - calculate kick magnitude
         }
     }
     else {
@@ -1731,6 +1680,63 @@ SNdetails.stellarTypePostCOFormation = stellarType;
 
 
 
+
+/*
+ * CalculateConvectiveEnvelopeMass
+ *
+ * @brief
+ * Calculate the mass of the convective envelope.
+ * 
+ * Approximates the mass of the outer convective envelope.
+ * Follows the fits of Picker, Hirai, Mandel 2024 (see https://arxiv.org/pdf/2402.13180)
+ * 
+ * Mandel, Hirai, Picker 2024 (see https://arxiv.org/pdf/2412.10691)
+ *
+ *
+ * DBL_DBL CalculateConvectiveEnvelopeMass(const double p_Mass, const double p_CoreMass) const
+ * 
+ * @param       p_Mass                          Mass of the star (Msol)
+ * @param       p_MassEffectiveInitial          Effective initial mass of the star (Msol)
+ * @return                                      Tuple containing:
+ *                                                   GB convective envelope mass (Msol)
+ *                                                   Maximum GB convective envelope mass (Msol)
+ */
+COMPAS_PURE DBL_DBL GiantBranch::CalculateConvectiveEnvelopeMass(const double p_Mass, const double p_MassEffectiveInitial) const {
+    
+    // ratio of final intershell mass to final core mass - Picker at al. 2024 eq 8
+    double MiFinalMcFinal = -0.023 * GLOBALS->SigmaHurley() - 0.0023;
+
+    // We need the temperature of the star just after BAGB, which is the temperature at the
+    // start of the EAGB phase.  Since we are on the giant branch here, we can clone this
+    // object as an EAGB object and, as long as it is initialised (to the start of the phase),
+    // we can query the cloned object for its temperature.
+    //
+    // To ensure the clone does not participate in logging, we set its persistence to EPHEMERAL.
+    //
+    // Furthermore, 'this' is const in this function, so we first remove its const-ness (required
+    // to call Clone()) via the use of const_cast<>().  Since we don't know what class the
+    // underlying object is, we cast it to EAGB&.
+
+    EAGB *clone = EAGB::Clone(static_cast<EAGB&>(const_cast<GiantBranch&>(*this)), OBJECT_PERSISTENCE::EPHEMERAL);
+    clone->EvolveOneTimestep(0.0, 0.0, 0.0, true);                                                                          // otherwise, temperature not updated
+    double tMin = clone->Temperature();                                                                                     // get temperature of clone
+    delete clone; clone = nullptr;                                                                                          // return the memory allocated for the clone
+    
+    // Use Eq. 6 of Mandel et al. 2024 eq 6 rather than Picker at al. 2024 eq 6 for tOnset
+    // to avoid issues caused by differences between temperatures in MESA models (used in
+    // fits from Picker et al. 2024) and Pols models (used in Hurley SSE tracks).
+    double tOnset  = tMin / std::min(0.695 - 0.057 * GLOBALS->SigmaHurley(), 0.95);                                        // Mandel et al. 2024, eq 6
+    double McFinal = CalculateCoreMassAtBAGB_Hurley2000(p_MassEffectiveInitial);
+    double mEnvMax = std::max(p_Mass - mCoreFinal * (1.0 + MiFinalMcFinal), 0.0);                                         // Picker at al. 2024, eq 9
+
+    // Picker+ 2024 fits were only made for stars above 8.0 solar masses, with runs down to 5.0 solar masses, 
+    // so using the final core mass as an approximate threshold of validity
+    if(utils::Compare(mCoreFinal, 1.5) < 0) mEnvMax = std::max(p_Mass - mCoreFinal, 0.0);                                  // unlike massive stars, intermediate-mass stars have almost no radiative intershell at maximum convective envelope extent
+    
+    double mEnv = mConvMax / (1.0 + exp(4.6 * (tMin + tOnset - 2.0 * m_Temperature) / (tMin - tOnset)));  // Picker at al. 2024, eq 7
+    
+    return std::make_tuple(mEnv, mEnvMax);
+}
 
 
 
@@ -2166,52 +2172,5 @@ double GiantBranch_Constituent::CalculateZetaAdiabatic_ByEnvelopeType(ZETA_PRESC
     return zeta;
 }
 
-
-/*
- * Approximates the mass of the outer convective envelope.   <<<<<<<<<<<<<<<<< SHOULD THIS BE HERE?  OR in SSE class??????????????????????????
- *
- * This is needed for the Hirai & Mandel (2022) two-stage CE formalism.
- * Follows the fits of Picker, Hirai, Mandel (2024), arXiv:2402.13180
- *
- *
- * std::tuple<double, double> CalculateConvectiveEnvelopeMass()
- *
- * @return                                      Tuple containing the mass of the outer convective envelope and its maximum value
- */
-DBL_DBL GiantBranch_Constituent::CalculateConvectiveEnvelopeMass() const {
-    
-    double MinterfMcoref = -0.023 * m_Log10Metallicity - 0.0023;                                                            // eq. (8) of Picker+ 2024
-
-    // We need the temperature of the star just after BAGB, which is the temperature at the
-    // start of the EAGB phase.  Since we are on the giant branch here, we can clone this
-    // object as an EAGB object and, as long as it is initialised (to the start of the phase),
-    // we can query the cloned object for its temperature.
-    //
-    // To ensure the clone does not participate in logging, we set its persistence to EPHEMERAL.
-    //
-    // Furthermore, 'this' is const in this function, so we first remove its const-ness (required
-    // to call Clone()) via the use of const_cast<>().  Since we don't know what class the
-    // underlying object is, we cast it to EAGB&.
-
-    EAGB *clone = EAGB::Clone(static_cast<EAGB&>(const_cast<GiantBranch&>(*this)), OBJECT_PERSISTENCE::EPHEMERAL);
-    clone->EvolveOneTimestep(0.0, 0.0, 0.0, true);                                                                          // otherwise, temperature not updated
-    double Tmin = clone->Temperature();                                                                                     // get temperature of clone
-    delete clone; clone = nullptr;                                                                                          // return the memory allocated for the clone
-    
-    // Use Eq. 6 of Mandel, Hirai, Picker (2024) rather than Eq. 6 of Picker+ 2024 for Tonset to avoid issues caused by
-    // differences between temperatures in MESA models (used in Picker+ fits) and Pols models (used in Hurley+ SSE tracks)
-    double Tonset     = Tmin / std::min(0.695 - 0.057 * m_Log10Metallicity, 0.95);                                          // eq. (6) of Mandel, Hirai, Picker, 2024
-    
-    double mCoreFinal = CalculateCoreMassAtBAGB_Hurley2000(m_Mass0, p_bN);//m_Mass0 here <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-    double mConvMax   = std::max(m_Mass - mCoreFinal * (1.0 + MinterfMcoref), 0.0);                                         // eq. (9) of Picker+ 2024
-
-    // Picker+ 2024 fits were only made for stars above 8.0 solar masses, with runs down to 5.0 solar masses, 
-    // so using the final core mass as an approximate threshold of validity
-    if(utils::Compare(mCoreFinal, 1.5) < 0) mConvMax = std::max(m_Mass - mCoreFinal, 0.0);                                  // unlike massive stars, intermediate-mass stars have almost no radiative intershell at maximum convective envelope extent
-    
-    double convectiveEnvelopeMass = mConvMax / (1.0 + exp(4.6 * (Tmin + Tonset - 2.0 * m_Temperature) / (Tmin - Tonset)));  // eq. (7) of Picker+ 2024
-    
-    return std::tuple<double, double> (convectiveEnvelopeMass, mConvMax);
-}
 
 

@@ -153,7 +153,7 @@ public:
 
         // create GB parameters and timescales vectors
         // construct vectors of required sizes and initialise each element to std::nullopt
-        for (size_t idx = 0; idx < static_cast<int>(GBP::COUNT); idx++) m_HurleyGBparams.push_back(std::nullopt);
+        for (size_t idx = 0; idx < static_cast<int>(HURLEY_GBP:::COUNT); idx++) m_HurleyGBparams.push_back(std::nullopt);
         for (size_t idx = 0; idx < static_cast<int>(TIMESCALE::COUNT); idx++) m_HurleyTimescales.push_back(std::nullopt);
     }
         

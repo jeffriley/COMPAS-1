@@ -35,13 +35,17 @@ public:
     }
     
     // member functions - alphabetically
-    static  double      CalculateLuminosityOnPhase_Static()                         { return 1.0E-10; }                                                 // Hurley et al. 2000, eq 96
-    static  double      CalculateNeutrinoMassLoss_Static(const double p_BaryonicMass);
+inline static double CalculateLuminosityOnPhase_Hurley2000() const override { return CalculateLuminosityOnPhase_Hurley2000_Static(); }
+inline static double CalculateLuminosityOnPhase_Hurley2000_Static() { return 1.0E-10; } // Hurley et al. 2000, eq 96
+
+
+
+static  double      CalculateNeutrinoMassLoss_Static(const double p_BaryonicMass);
 
 
 
 
-    static  double      ReweightSupernovaKickByMass_Static(const double p_vK, const double p_FallbackFraction, const double p_BlackHoleMass);
+COMPAS_PURE static double CalculateSNkickWeighting_Static(const double p_Mass, const double p_FallbackFraction);
    
     
 protected:
@@ -65,7 +69,7 @@ protected:
     double  CalculateLuminosityOnPhase() const                                      { return CalculateLuminosityOnPhase_Static(); }
 
     
-    double  CalculateMomentOfInertia() const                                        { return (2.0 / 5.0) * m_Mass * m_Radius * m_Radius; }
+
 
 
 ///// ON PHASE FUNCTIONS   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -83,6 +87,11 @@ GNU_CONST static inline double CalculateRadius_Hurley2000_Static(const double p_
 GNU_CONST static inline double CalculateSchwarzschildRadius_Static(const double p_Mass) {
     return 4.24E-6 * p_Mass;                                    // Schwarzschild radius of black hole
 }
+
+inline double CalculateMomentOfInertia() const override { 
+    // MoI for solid sphere *ILYA* JR: that's not really right, is it?
+    return (2.0 / 5.0) * m_StateHistory.CurrentState.Mass() * m_StateHistory.CurrentState.Radius() * m_StateHistory.CurrentState.Radius();
+} 
 
 
 

@@ -36,6 +36,10 @@ public:
                        const KickParameters    p_KickParameters,
                        const double            p_AngularFrequency) {
 
+                        
+    // RECALC GLOBALS HERE IF NECESSARY <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
         // initialise as much of the first state of the star as possible
         // The state history stack has already been initialised - the single
         // entry is the first state of the star
@@ -89,50 +93,7 @@ public:
         
     virtual ~BaseStar() {}
 
-    
-
-
-
-
-
-
-
-    /*
-     * The following Clone() functions should be used to clone a star - any steller type, including BaseStar.
-     * The BaseStar functions will never actually be executed - the derived functions will be called as required.
-     * The static function is provided for cases where a clone is required (e.g. for hypothesis testing), but
-     * no object of the correct class exists.
-     *
-     * Important:
-     *
-     * The Clone() functions return a pointer, created by the 'new' operator.  The 'new' operator dynamically
-     * allocates memory on the heap, not the stack, which is why it is available to the caller of this function
-     * after this function has exited and its stack frame collapsed.  It is the responsibility of the caller of
-     * this function to delete the pointer returned when it is no longer required so that the allocated memory
-     * is return to the pool of available memory - failing to do so will cause a memory leak and the program will
-     * eventually exhaust available memory and fail.  The preferred usage pattern is:
-     *
-     *     T* ptr = Clone(obj, persistence)
-     *     ...
-     *     ...
-     *     delete ptr; ptr = nullptr;
-     *
-     *
-     * BaseStar* Clone(const OBJECT_PERSISTENCE p_Persistence, const bool p_Initialise = true)
-     *
-     * @param   [IN]    p_Star                      (address of) The star to be cloned
-     *                                              Must be BaseStar or one of the stellar type classes derived from the BaseStar class
-     * @param   [IN]    p_Persistence               Specifies the object persistence to be assigned to the cloned star.
-     *                                              If the cloned star is intended to be used temporarily (e.g. for hypothesis testing),
-     *                                              persistence should be EPHEMERAL (the default), otherwise PERMANENT.
-     * @param   [IN]    p_Initialise                Specifies whether the clone should be initialised via the class Initialise() function.
-     *                                              (Default is `true`)
-     * @return                                      (pointer to) The cloned star
-     */
-    
-    virtual BaseStar* Clone(const OBJECT_PERSISTENCE p_Persistence, const bool p_Initialise = true) { return this; }
-    static  BaseStar* Clone(BaseStar* p_Star, const OBJECT_PERSISTENCE p_Persistence, const bool p_Initialise = true) { return p_Star; }
-    
+ 
 
     
     
@@ -140,12 +101,6 @@ public:
     OBJECT_ID                   ObjectId() const                                        { return m_ObjectId; }
     OBJECT_TYPE                 ObjectType() const                                      { return OBJECT_TYPE::BASE_STAR; }
     OBJECT_PERSISTENCE          ObjectPersistence() const                               { return m_ObjectPersistence; }
-
-
-
-//    STELLAR_TYPE                StartingStellarType() const                             { return m_StartingStellarType; }
-//    STELLAR_TYPE                StellarType() const                                     { return m_StellarType; }
-//    STELLAR_TYPE                StellarTypePrev() const                                 { return m_StellarTypePrev; }
     
     
     // Getters - alphabetically
@@ -304,28 +259,41 @@ GNU_CONST inline SN_EVENT ClearSNEvent(const SN_EVENT p_SNEvent) { return SN_EVE
     virtual void                UpdateEffectiveZAMSLandR(){}                                                                                                        // Virtual - default is NO-OP
     
 
-    // Public member function prototypes - alphabetically
+    // Class member functions
     //
-    // Short (one or two line) implementations that don't require a lot of documentation (i.e. that won't clutter here), are in here (and are implied inline)
-    // Short implementations that can still be inlined, but that require more documentation (and would clutter here), are below (after class declaration)
-    // Longer implementations that can still be inlined (that would clutter here) are below (after class declaration)
+    // Short (one or two line) implementations that don't require a lot of documentation (i.e. that won't clutter here),
+    // are in here (and are implied inline).
+    //
+    // Short implementations that can still be inlined, but that require more documentation (and would clutter here),
+    // are below (after class declaration).
+    //
+    // Longer implementations that can still be inlined (that would clutter here) are below (after class declaration).
+    //
     // All other implementations are in the cpp file
-
-    // Function names should indicate the purpose of the function (and should genarally begin with a verb)
+    //
+    //
+    // Function names should indicate the purpose of the function (and should genarally begin with a verb).
     //
     // Functions beginning with:
     //
-    //    - "Calculate" should calculate and return value(s) - they should not update (modify) class member variables
-    //    - "Determine" should determine e.g. current state etc., and return value(s) - they should not update (modify) class member variables
+    //    - "Calculate" should calculate and return value(s) 
+    //    - "Determine" should determine e.g. current state, envelope type, etc., and return value(s)
+    //    - "Draw" should draw a value, or values, from a distribution and return value(s)
     //
-    //    - "Apply"     should update (modify) class member variables, and may return value(s)  /// NO!!!!!! ... maybe <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-    //    - "Update"    should update (modify) class member variables, and may return value(s)  /// NO!!!!!! ... maybe <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+    // Most (almost all) functions should do some operation ("Calculate", "Determine", "Draw", etc.),
+    // and should return the result(s) of that operation - they should not modify class member or state
+    // variables.  class member and/or state variables should be modified in as few places in the code
+    // as possible - this helps:
+    //
+    //     (a) to keep the code clean,
+    //     (b) developers to be clear about what functions do and any side-effects they may have,
+    //     (c) to facilitate our "one (major) things at a time" paradigm
     //
     // Functions that do not update (modify) class member variables should be declared const
     
 
-GNU CONST double CalculateBindingEnergy(const double p_CoreMass, const double p_EnvMass, const double p_Radius, const double p_Lambda) const;
-    double       CalculateBindingEnergy(const double p_Lambda) const                                             { return CalculateBindingEnergy(m_CoreMass, m_Mass - m_CoreMass, m_Radius, p_Lambda); }
+GNU CONST double CalculateBindingEnergy(const double p_Radius, const double p_CoreMass, const double p_EnvMass, const double p_Lambda) const;
+    double       CalculateBindingEnergy(const double p_Lambda) const { return CalculateBindingEnergy(m_Radius, m_CoreMass, m_Mass - m_CoreMass, p_Lambda); }
 
     virtual double              CalculateConvectiveCoreMass() const                                             {return 0.0;}
 
@@ -333,21 +301,19 @@ GNU CONST double CalculateBindingEnergy(const double p_CoreMass, const double p_
 
 GNU_CONST virtual inline double CalculateConvectiveCoreRadius(const double p_Radius, const double p_Tau) const {return 0.0;}
 
-virtual double              CalculateRemnantRadius() const                                                  { return Radius(); }                                                // Relevant for MS stars, over-written for GB stars
 
 
-GNU_CONST CalculateConvectiveEnvelopeBindingEnergy(const double p_Mass, const double p_EnvMass, const double p_Radius, const double p_Lambda) const
+GNU_CONST CalculateConvectiveEnvelopeBindingEnergy(const double p_Mass, const double p_Radius, const double p_EnvMass, const double p_Lambda) const
 GNU_PURE  double CalculateConvectiveEnvelopeLambda_Picker(const double p_Mass, const double p_EnvMass, const double p_EnvMassMax) const;
     
     
     
-    virtual DBL_DBL             CalculateConvectiveEnvelopeMass() const                                         { return std::tuple<double, double> (0.0, 0.0); }
+virtual DBL_DBL CalculateConvectiveEnvelopeMass() const { return std::make_tuple(0.0, 0.0); }
 
 
 
 
 
-    double                      CalculateDynamicalTimescale() const                                             { return CalculateDynamicalTimescale_Static(m_Mass, m_Radius); }    // Use class member variables
     
     
     double                      CalculateEddyTurnoverTimescale() const;
@@ -358,12 +324,10 @@ GNU_PURE  double CalculateConvectiveEnvelopeLambda_Picker(const double p_Mass, c
     double                      CalculateMassChangeTimescale() const                                            { return CalculateMassChangeTimescale_Static(m_StellarType, m_StellarTypePrev, m_Mass, m_MassPrev, m_dtPrev); }  // Use class member variables
     double                      CalculateMassLossValues(double p_Dt, const bool p_UpdateMDot = false);
 
-    virtual double              CalculateMomentOfInertia() const                                                { return (0.1 * (m_Mass) * m_Radius * m_Radius); }                  // Defaults to MS. k2 = 0.1 as defined in Hurley et al. 2000, after eq 109
-    virtual double              CalculateMomentOfInertiaAU() const                                              { return CalculateMomentOfInertia() * RSOL_TO_AU * RSOL_TO_AU; }
     
     double                      CalculateNuclearMassLossRate()                                                  { return m_Mass / CalculateRadialExpansionTimescaleDuringMassTransfer(); }
         
-    GNU_PURE double CalculateCHEAngularFrequency_Static(const double p_MZAMS, const double p_Metallicity) const;
+    COMPAS_PURE static double CalculateAngularFrequencyCHE_Static(const double p_MZAMS) const;
 
     double                      CalculateRadialChange() const                                                   { return (utils::Compare(m_RadiusPrev,0) <= 0)? 0 : std::abs(m_Radius - m_RadiusPrev) / m_RadiusPrev; } // Return fractional radial change (if previous radius is negative or zero, return 0 to avoid NaN
     double                      CalculateRadialExpansionTimescale() const                                       { return CalculateRadialExpansionTimescale_Static(m_StellarType, m_StellarTypePrev, m_Radius, m_RadiusPrev, m_dtPrev); } // Use class member variables
@@ -373,12 +337,10 @@ GNU_PURE  double CalculateConvectiveEnvelopeLambda_Picker(const double p_Mass, c
 
 
 
-    double                      CalculateSNKickMagnitude(const double p_RemnantMass, const double p_EjectaMass, const STELLAR_TYPE p_StellarType);
+    double                      CalculateSNkickMagnitude(const double p_EjectaMass, const double p_RemnantMass, const STELLAR_TYPE p_StellarType);
 
 
-    virtual double              CalculateThermalMassLossRate() const                                            { return m_Mass / CalculateThermalTimescale(); }                    // Use class member variables - and inheritance hierarchy
-    virtual double              CalculateThermalTimescale(const double p_Radius) const;                                                                                             // Use inheritance hierarchy
-    virtual double              CalculateThermalTimescale() const                                               { return CalculateThermalTimescale(m_Radius); }                     // Use inheritance hierarchy
+ 
 
     virtual double              CalculateTAMSCoreMass() const                                                   { return 0.0; }                                                     // Except MS stars
 
@@ -472,123 +434,6 @@ protected:
 
 
 
-/*
-    STELLAR_TYPE            m_StartingStellarType;                      // Stellar type at start of simulation, defined in Hurley et al. 2000
-    STELLAR_TYPE            m_StellarType;                              // Stellar type defined in Hurley et al. 2000
-    ERROR                   m_Error;                                    // Records most recent error encountered for this star
-*/
-    
-//    StarStateT stateZero;
-//    StarStateT stateZAMS;  // << ---- flag this as not set - until it is set (if it is set)
-
-/*
-
-    // Stellar variables
-    bool                    m_CHE;                                      // CHE flag - true if the star spent entire MS as a CH star; false if evolved CH->MS
-    EVOLUTION_STATUS        m_EvolutionStatus;                          // Status of evolution for this star (typically final outcome e.g. DONE, TIMES_UP, etc.)
-    unsigned long int       m_RandomSeed;                               // Seeds the random number generator for this star
-
-    // Zero Age Main Sequence
-    double                  m_InitialHeliumAbundance;                   // Initial helium abundance (Y)
-    double                  m_InitialHydrogenAbundance;                 // Initial hydrogen abundance (X)
-    double                  m_InitialMainSequenceCoreMass;              // Initial main sequence core mass (used in BRCEK core mass prescription)
-    double                  m_LZAMS;                                    // ZAMS Luminosity
-    double                  m_MZAMS;                                    // ZAMS Mass
-    double                  m_OmegaZAMS;                                // ZAMS Angular Frequency
-    double                  m_OmegaCHE;                                 // Minimum angular frequency at which CHE will occur (calculated at ZAMS)
-    double                  m_RZAMS;                                    // ZAMS Radius
-    double                  m_TZAMS;                                    // ZAMS Temperature
-
-    // Effective Zero Age Main Sequence
-    double                  m_LZAMS0;                                   // Effective ZAMS Luminosity
-    double                  m_RZAMS0;                                   // Effective ZAMS Radius
-
-    // Current timestep variables
-    double                  m_Age;                                      // Current effective age (changes with mass loss/gain) (Myr)
-    double                  m_AngularMomentum;                          // Angular Momentum (Msol * AU^2 / yr)
-    double                  m_COCoreMass;                               // Current CO core mass (Msol)
-    double                  m_CoreMass;                                 // Current core mass (Msol)
-    double                  m_dt;                                       // Size of current timestep (Myr)
-    bool                    m_EnvelopeJustExpelledByPulsations;         // Flag to know if the convective envelope has just been expelled by pulsations
-    double                  m_HeCoreMass;                               // Current He core mass (Msol)
-    double                  m_HeliumAbundanceCore;                      // Helium abundance in the core
-    double                  m_HeliumAbundanceSurface;                   // Helium abundance at the surface
-    double                  m_HydrogenAbundanceCore;                    // Hydrogen abundance in the core
-    double                  m_HydrogenAbundanceSurface;                 // Hydrogen abundance at the surface
-    bool                    m_LBVphaseFlag;                             // Flag to know if the star satisfied the conditions, at any point in its evolution, to be considered a Luminous Blue Variable (LBV)
-    double                  m_Luminosity;                               // Current luminosity (Lsol)
-    double                  m_MainSequenceCoreMass;                     // Core mass of main sequence stars (Msol)
-    double                  m_Mass;                                     // Current mass (Msol)
-    double                  m_Mass0;                                    // Current effective initial mass (Msol)
-    double                  m_MinimumLuminosityOnPhase;                 // Only required for CHeB stars, but only needs to be calculated once per star
-    double                  m_Mdot;                                     // Current mass loss rate in winds (Msol per yr)
-    MASS_LOSS_TYPE          m_DominantMassLossRate;                     // Current dominant type of wind mass loss
-
-    double                  m_Mu;                                       // Current small envelope parameter mu
-    double                  m_Radius;                                   // Current radius (Rsol)
-    double                  m_Tau;                                      // Relative time
-    double                  m_Temperature;                              // Current temperature (Tsol)
-    double                  m_Time;                                     // Current physical time the star has been evolved (Myr)
-    double                  m_TotalMassLossRate;                        // Current mass loss/gain rate from mass transfer or winds (Msol per yr)
-
-    // Previous timestep variables
-    double                  m_dtPrev;                                   // Previous timestep
-    double                  m_MassPrev;                                 // Previous mass (Msol)
-    double                  m_RadiusPrev;                               // Previous radius (Rsol)
-    STELLAR_TYPE            m_StellarTypePrev;                          // Stellar type at previous timestep
-
-    // Metallicity variables
-    double                  m_Metallicity;                              // Metallicity
-    double                  m_Log10Metallicity;                         // log10(Metallicity) - for performance
-*/
-
-/*
-    // Metallicity dependent constants
-    double                  m_Alpha1;                                   // Alpha1 in Hurley et al. 2000, just after eq 49
-    double                  m_Alpha3;                                   // Alpha3 in Hurley et al. 2000, just after eq 56
-    double                  m_Alpha4;                                   // Alpha4 in Hurley et al. 2000, just after eq 57
-    double                  m_XExponent;                                // Exponent to which R depends on M - 'x' in Hurley et al. 2000, eq 47
-
-    // Constants only calculated once
-    double                  m_BaryonicMassOfMaximumNeutronStarMass;     // Baryonic mass of MaximumNeutronStarMass 
-
-    // The following vectors were initially implemented as unordered_maps.  The code worked
-    // quite well, except for one small problem - access times (presumably due to hashing)
-    // were prohibitive when accessed hundreds of thousands, and in some cases, millions,
-    // of times as we evolve the star.  So vectors are now used instead - the code is not as
-    // elegant, but performance is better by an order of magnitude
-
-    // Timescales, Giant Branch parameters, mass cutoffs
-    DBL_VECTOR              m_GBparams;                                 // Giant Branch Parameters
-    DBL_VECTOR              m_MassCutoffs;                              // Mass cutoffs
-    DBL_VECTOR              m_Timescales;                               // Timescales
-
-    // Luminosity, Radius, a(n) and b(n) coefficients
-    DBL_VECTOR              m_AnCoefficients;                           // a(n) coefficients
-    DBL_VECTOR              m_BnCoefficients;                           // b(n) coefficients
-    DBL_VECTOR              m_LCoefficients;                            // Luminosity coefficients
-    DBL_VECTOR              m_RCoefficients;                            // Radius coefficients
-
-    // Luminosity, Radius and Gamma constants
-    // These are calculated in CalculateAnCoefficients()
-    // Calculating the a(n) coefficients requires one of the R constants, and the L, R and Gamma
-    // constants are calculated using the a(n) coefficients
-    DBL_VECTOR              m_GammaConstants;                           // Gamma constants
-    DBL_VECTOR              m_LConstants;                               // Luminosity constants
-    DBL_VECTOR              m_RConstants;                               // Radius constants
-*/
-
-/*
-    // Stellar details squirrelled away...
-    SupernovaDetailsT       m_SupernovaDetails;                         // Supernova attributes
-    PulsarDetailsT          m_PulsarDetails;                            // Pulsar attributes
-
-    // Star vector velocity 
-    Vector3d                m_ComponentVelocity;                        // Isolated star velocity vector (binary's centre-of-mass velocity for bound binary)
-
-    // Star mass transfer history 
-    ST_VECTOR               m_MassTransferDonorHistory;                 // List of MT donor stellar types - mostly relevant for binary stars
-*/
 
     // Protected member function prototypes - alphabetically (implementations are in the cpp file)
     // See below (after class declaration) for inline functions declared in this header file
@@ -605,15 +450,14 @@ protected:
 
 
 
-    double       CalculateConvectiveEnvelopeBindingEnergy(const double p_Lambda) const                           { 
-                                                                                                                            double convectiveEnvMass;
-                                                                                                                            std::tie(convectiveEnvMass, std::ignore) = CalculateConvectiveEnvelopeMass();
-                                                                                                                            return CalculateConvectiveEnvelopeBindingEnergy(m_Mass, convectiveEnvMass, m_Radius, p_Lambda);
-                                                                                                                        }
+    double       CalculateConvectiveEnvelopeBindingEnergy(const double p_Lambda) const { 
+ double convectiveEnvMass;
+ std::tie(convectiveEnvMass, std::ignore) = CalculateConvectiveEnvelopeMass();
+ return CalculateConvectiveEnvelopeBindingEnergy(m_Mass, m_Radius, convectiveEnvMass, p_Lambda);
+ }
 
                                                      // Default is NO-OP
 
-    static  double      CalculateDynamicalTimescale_Static(const double p_Mass, const double p_Radius);
 
     virtual double      CalculateEddingtonCriticalRate() const                                                          { return 2.08E-3 / 1.7 * m_Radius * MYR_TO_YEAR * OPTIONS->EddingtonAccretionFactor() ; } // Hurley+, 2002, Eq. (67)
 
@@ -624,8 +468,7 @@ protected:
 
     double              CalculateGBRadiusXExponent() const;
 
-    virtual double      CalculateHeCoreMassAtPhaseEnd() const                                                           { return m_HeCoreMass; }                                                    // Default is NO-OP
-    virtual double      CalculateHeCoreMassOnPhase() const                                                              { return m_HeCoreMass; }                                                    // Default is NO-OP
+                                                 // Default is NO-OP
 
 
 
@@ -639,25 +482,17 @@ GNU_CONST double inline BaseStar::CalculateMLfractionWR(const double p_HeAbundan
     void                CalculateLCoefficients(const double p_LogMetallicityXi, DBL_VECTOR &p_LCoefficients) const;
 
 
-GNU_CONST double CalculateLifetimeToBAGB_Hurley2000(const double p_tHeI, const double p_tHe) const;
-GNU_CONST double CalculateLifetimeToBGB_Hurley2000(const double p_Mass, const DBL_VECTOR& p_aN) const;
 
 
+
+
+COMPAS_PURE double CalculateLuminosityAtBAGB_Hurley2000(double p_Mass) const;
 
 
 
     double              CalculateLuminosityAtBAGB(double p_Mass) const;         // inline implementation below
 
-    virtual double      CalculateLuminosityAtPhaseEnd() const                                                           { return m_Luminosity; }                                                    // Default is NO-OP
-
-
-
-    
-    
-    
-
-
-    virtual double      CalculateLuminosityOnPhase() const                                                              { return m_Luminosity; }                                                    // Default is NO-OP
+                                                 // Default is NO-OP
 
 
 
@@ -668,7 +503,7 @@ GNU_CONST double CalculateLifetimeToBGB_Hurley2000(const double p_Mass, const DB
                                                             const double       p_MassPrev,
                                                             const double       p_DtPrev);
     
-    void                CalculateMassCutoffs(const double p_Metallicity, const double p_LogMetallicityXi, DBL_VECTOR &p_MassCutoffs) const;
+    void                CalculateMassCutoffs(DBL_VECTOR &p_MassCutoffs) const;
 
 
 
@@ -715,13 +550,15 @@ GNU_CONST double CalculateLifetimeToBGB_Hurley2000(const double p_Mass, const DB
 
 
 
+virtual double CalculateMomentOfInertia() const { return (0.1 * (m_Mass) * m_Radius * m_Radius); } // Defaults to MS. k2 = 0.1 as defined in Hurley et al. 2000, after eq 109
+    virtual double              CalculateMomentOfInertiaAU() const                                              { return CalculateMomentOfInertia() * RSOL_TO_AU * RSOL_TO_AU; }
 
 
     GNU_CONST double CalculateEddingtonLuminosity(const double p_Mass, const double p_HeAbundanceSurface) const;
 
 
 
-virtual double CalculateRadiusOnPhase() const { return m_StateHistory.CurrentState.Radius(); }
+
 
 
 
@@ -730,25 +567,150 @@ GNU_CONST double CalculateTemperatureOnPhase() const;
 GNU_CONST double CalculateTemperatureOnPhase(const double p_Luminosity, const double p_Radius) const;
 
 
-    // MASS LOSS
+
+
+
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< ********************************************************* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+
+    ////////////////////////////////////////
+    //   ABUNDANCE                        //
+    ////////////////////////////////////////
+
+    virtual double CalculateHAbundanceCore(const double p_Tau, const double p_InitialHAbundance) const { return m_StateHistory.CurrentState.HAbundanceCore(); }
+    virtual double CalculateHAbundanceSurface(const double p_Tau, const double p_InitialHAbundance) const { return m_StateHistory.CurrentState.HAbundanceSurface(); }
+    virtual double CalculateHeAbundanceCore(const double p_Tau, const double p_InitialHeAbundance = 0.0) const { return m_StateHistory.CurrentState.HeAbundanceCore(); }
+    virtual double CalculateHeAbundanceSurface(const double p_Tau, const double p_InitialHAbundance) const { return m_StateHistory.CurrentState.HeAbundanceSurface(); }
+
+
+    ////////////////////////////////////////
+    //   AGE, LIFETIME, TAU, TIMESCALES   //
+    ////////////////////////////////////////
+
+    virtual double CalculateAgeAfterMassLoss() const;
+    virtual inline double CalculateAgeAfterMassLoss_Hurley2000() const { return m_StateHistory.CurrentState.Age(); } 
+
+    GNU_CONST   double CalculateLifetimeToBAGB_Hurley2000(const double p_tHeI, const double p_tHe) const;
+    COMPAS_PURE double CalculateLifetimeToBGB_Hurley2000_Static(const double p_Mass) const;
+
+    virtual double CalculateTau() const;
+    virtual inline double CalculateTau_Hurley2000() const { return m_StateHistory.CurrentState.Tau(); }
+
+    virtual DBL_VECTOR CalculateTimescales() const;
+    virtual DBL_VECTOR CalculateTimescales_Hurley2000() const { return m_StateHistory.CurrentState.Timescales(); }
+
+    inline double CalculateTimescale_Dynamical() const { 
+        return CalculateTimescale_Dynamical_Kalogera1996(m_StateHistory.CurrentState.Mass(), m_StateHistory.CurrentState.Radius());
+    }
+
+    GNU_CONST double CalculateTimescale_Dynamical_Kalogera1996(const double p_Mass, const double p_Radius) const;
+
+    virtual inline double CalculateTimescale_Thermal() const { 
+        return CalculateTimescale_Thermal(
+            m_StateHistory.CurrentState.Mass(),
+            m_StateHistory.CurrentState.Radius(),
+            m_StateHistory.CurrentState.Luminosity(),
+            m_StateHistory.CurrentState.CoreMass());
+    }
+
+    GNU_CONST double CalculateTimescale_Thermal(const double p_Mass, const double p_Radius, const double p_Luminosity, const double p_CoreMass) const;
+
+
+    ////////////////////////////////////////
+    //   LUMINOSITY                       //
+    ////////////////////////////////////////
+
+    virtual double CalculateLuminosity() const;
+
+    COMPAS_PURE double CalculateLuminosityAtZAMS_Tout1996(const double p_MZAMS) const;
+
+    virtual inline double CalculateLuminosity_Hurley2000() const { return m_StateHistory.ZAMSState().Luminosity(); } 
+
+    GNU_CONST double CalculateLuminosity_Hurley2000(const double p_CoreMass, const DBL_VECTOR& p_GBparams) const;
+
+
+    ////////////////////////////////////////
+    //   MASS                             //
+    ////////////////////////////////////////
+
+    virtual double CalculateCoreMass() const;
+    virtual inline double CalculateCoreMass_Hurley2000() const { return m_StateHistory.CurrentState.CoreMass(); } 
+
+    GNU_CONST static double CalculateCoreMass_Hurley2000_Static(const double p_Luminosity, const DBL_VECTOR& p_GBparams); // <<<<< WHAT'S THIS FOR?????
+
+    virtual double CalculateCOCoreMass() const;
+    virtual inline double CalculateCOCoreMass_Hurley2000() const { return m_StateHistory.CurrentState.COCoreMass(); } 
+
+    virtual double CalculateEffectiveInitialMass() const;
+    virtual inline double CalculateEffectiveInitialMass_Hurley2000() const { return m_StateHistory.CurrentState.MassEffectiveInitial(); }
+
+    virtual double CalculateHeCoreMass() const;
+    virtual inline double CalculateHeCoreMass_Hurley2000() const { return m_StateHistory.CurrentState.HeCoreMass(); } 
+
+
+    ////////////////////////////////////////
+    //   MASS LOSS                        //
+    ////////////////////////////////////////
+
     virtual MASS_LOSS_T CalculateMassLossRate() const;
 
+    // mass loss LBV
     COMPAS_PURE MASS_LOSS_T CalculateMLrateLBV(const double p_Radius, const double p_Luminosity, const LBV_MASS_LOSS_PRESCRIPTION p_LBV_MLprescription) const;
-    GNU_CONST   MASS_LOSS_T CalculateMLrateLBV_Belczynski2010(const double p_LBVfactor) const;
+    COMPAS_PURE MASS_LOSS_T CalculateMLrateLBV_Belczynski2010() const;
     GNU_CONST   MASS_LOSS_T CalculateMLrateLBV_Hurley2000(const double p_Luminosity, const double p_HDlimitfactor) const;
 
+    // mass loss OB
     COMPAS_PURE MASS_LOSS_T CalculateMLrateOB(
-        const double                    p_Metallicity,
         const double                    p_Mass,
         const double                    p_Luminosity,
         const double                    p_Temperature,
         const OB_MASS_LOSS_PRESCRIPTION p_OB_MLprescription
     ) const;
-    GNU_CONST   MASS_LOSS_T CalculateMLrateOB_Bjorklund2022(const double p_Metallicity, const double p_Mass, const double p_Luminosity, const double p_Temperature) const;
-    GNU_CONST   MASS_LOSS_T CalculateMLrateOB_Krticka2018(const double p_Luminosity, const double p_ZetaAsplund) const;
+    COMPAS_PURE MASS_LOSS_T CalculateMLrateOB_Bjorklund2022(const double p_Mass, const double p_Luminosity, const double p_Temperature) const;
+    COMPAS_PURE MASS_LOSS_T CalculateMLrateOB_Krticka2018(const double p_Luminosity) const;
     COMPAS_PURE MASS_LOSS_T CalculateMLrateOB_Vink2001(const double p_Mass, const double p_Luminosity, const double p_Temperature) const;
     COMPAS_PURE MASS_LOSS_T CalculateMLrateOB_VinkSander2021(const double p_Mass, const double p_Luminosity, const double p_Temperature) const;
 
+    // mass loss PRESCRIPTIONS
+    COMPAS_PURE virtual MASS_LOSS_T CalculateMLrate_Belczynski2010(
+        const double p_Mass,
+        const double p_Radius,
+        const double p_Luminosity,
+        const double p_Temperature,
+        const double p_PerturbationMu,
+        const double p_HeAbundanceSurface
+    ) const;
+
+    virtual COMPAS_PURE MASS_LOSS_T CalculateMLrate_Hurley2000(
+        const double p_Mass,
+        const double p_Radius,
+        const double p_Luminosity,
+        const double p_PerturbationMu = 0.0
+    ) const;
+
+    virtual COMPAS_PURE MASS_LOSS_T CalculateMLrate_Merritt2025(
+        const double p_Mass,
+        const double p_Radius,
+        const double p_Luminosity,
+        const double p_Temperature,
+        const double p_PerturbationMu,
+        const double p_mStart,
+        const double p_HeAbundanceSurface
+    ) const;
+
+    COMPAS_PURE MASS_LOSS_T CalculateMLrate_NieuwenhuijzenDeJager1990(const double p_Mass, const double p_Radius, const double p_Luminosity) const;
+    
+    GNU_CONST   MASS_LOSS_T CalculateMLrate_VassiliadisWood1993(const double p_Mass, const double p_Radius, const double p_Luminosity) const;
+
+    COMPAS_PURE double BaseStar::CalculateMLrate_WRenhanced(
+        const double                p_Luminosity, 
+        const double                p_Temperature, 
+        const double                p_HeAbundanceSurface, 
+        const double                p_dMdtOther,
+        const std::optional<double> p_dMdtWR
+    ) const;
+
+    // mass loss RSG
     COMPAS_PURE MASS_LOSS_T CalculateMLrateRSG(
         const double                     p_Mass,
         const double                     p_Radius,
@@ -763,130 +725,104 @@ GNU_CONST double CalculateTemperatureOnPhase(const double p_Luminosity, const do
     GNU_CONST   MASS_LOSS_T CalculateMLrateRSG_VinkSabhahit2023(const double p_Mass, const double p_Luminosity) const;
     GNU_CONST   MASS_LOSS_T CalculateMLrateRSG_Yang2023(const double p_Luminosity) const;
 
+    // mass loss THERMAL
+    virtual double CalculateMLrateThermal() const { return m_StateHistory.CurrentState.Mass() / CalculateTimescale_Thermal(); }
+
+    // mass loss VMS
     COMPAS_PURE MASS_LOSS_T CalculateMLrateVMS(
-        const double                     p_Metallicity,
         const double                     p_Mass,
         const double                     p_Luminosity,
         const double                     p_Temperature,
         const VMS_MASS_LOSS_PRESCRIPTION p_VMS_MLprescription
     ) const;
     GNU_CONST   MASS_LOSS_T CalculateMLrateVMS_Bestenlehner2020(const double p_Mass, const double p_Luminosity) const;
-    COMPAS_PURE MASS_LOSS_T CalculateMLrateVMS_Sabhahit2023(const double p_Metallicity, const double p_Mass, const double p_Luminosity, const double p_Temperature) const;
+    COMPAS_PURE MASS_LOSS_T CalculateMLrateVMS_Sabhahit2023(const double p_Mass, const double p_Luminosity, const double p_Temperature) const;
     COMPAS_PURE MASS_LOSS_T CalculateMLrateVMS_Vink2011(const double p_Mass, const double p_Luminosity, const double p_Temperature) const;
 
+    // mass loss WR
     GNU_CONST   MASS_LOSS_T CalculateMLrateWR_Hurley2000(const double p_Luminosity, const double p_PerturbationMu) const;
     COMPAS_PURE static MASS_LOSS_T CalculateMLrateWR_SanderVink2020_Static(const double p_Luminosity, const double p_PerturbationMu) const;
     COMPAS_PURE static MASS_LOSS_T CalculateMLrateWR_Shenar2019_Static(const double p_Luminosity, const double p_Temperature) const;
-    GNU_CONST   static MASS_LOSS_T CalculateMLrateWR_ZDependent_Static(const double p_Metallicity, const double p_Luminosity, const double p_PerturbationMu) const;
-
-    COMPAS_PURE virtual MASS_LOSS_T CalculateMLrate_Belczynski2010(
-        const double p_Metallicity,
-        const double p_Mass,
-        const double p_Radius,
-        const double p_Luminosity,
-        const double p_Temperature,
-        const double p_PerturbationMu,
-        const double p_HeAbundanceSurface
-    ) const;
-    virtual COMPAS_PURE MASS_LOSS_T CalculateMLrate_Hurley2000(const double p_Mass, const double p_Radius, const double p_Luminosity, const double p_PerturbationMu) const;
-    virtual COMPAS_PURE MASS_LOSS_T CalculateMLrate_Merritt2025(
-        const double p_Metallicity,
-        const double p_Mass,
-        const double p_Radius,
-        const double p_Luminosity,
-        const double p_Temperature,
-        const double p_PerturbationMu,
-        const double p_mStart,
-        const double p_HeAbundanceSurface
-    ) const;
-    COMPAS_PURE MASS_LOSS_T CalculateMLrate_NieuwenhuijzenDeJager1990(const double p_Mass, const double p_Radius, const double p_Luminosity) const;
-    GNU_CONST   MASS_LOSS_T CalculateMLrate_VassiliadisWood1993(const double p_Mass, const double p_Radius, const double p_Luminosity) const;
-
-
-
-
-
-
-
-
-///////////////////////////////////////////////////////////////////////////////////////
-//                                                                                   //
-//                                 RADIUS FUNCTIONS                                  //
-//                                                                                   //
-///////////////////////////////////////////////////////////////////////////////////////
-
-
-
-
-
-
-
-virtual double      CalculateRadiusAtPhaseEnd() const                                                               { return m_Radius; }                                                        // Default is NO-OP
-
-
-
-
-
-
-    double CalculateRadiusOnPhase(const double p_Mass, const double p_Tau, const double p_RZAMS) const;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// inline candidates <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    COMPAS_PURE static MASS_LOSS_T CalculateMLrateWR_ZDependent_Static(const double p_Luminosity, const double p_PerturbationMu) const;
 
     
+    ////////////////////////////////////////
+    //   RADIUS                           //
+    ////////////////////////////////////////
+
+    virtual double CalculateRadius() const;
+
+    COMPAS_PURE double CalculateRadiusAtZAMS_Tout1996(const double p_MZAMS) const;
+
+    virtual inline double CalculateRadius_Hurley2000() const { return m_StateHistory.ZAMSState().Radius(); } 
+
+    virtual double CalculateRemnantRadius() const;
+    virtual inline double CalculateRemnantRadius_Hurley2000() const { return m_StateHistory.CurrentState.Radius(); } // relevant for MS stars, over-written for GB stars
 
 
-    virtual double      CalculateMTRejuvenationFactor()                                                       { return 1.0; }
+    ////////////////////////////////////////
+    //   ROTATION                         //
+    ////////////////////////////////////////
 
-    double       CalculateMaximumCoreMass(double p_Mass) const                                                   { return std::min(((1.45 * p_Mass) - 0.31), p_Mass); }                      // Hurley et al. 2000, eq 89
-
-    /*
-     * CalculateOmegaBreak
-     *
-     * Calculate the break up angular velocity of a star, in rad yr^1, where [G] = 4*pi^2 AU^3 yr^-2 Msol^-1
-     *
-     * Uses current values of:
-     * 
-     *    - m_Radius
-     * 
-     * 
-     * double CalculateOmegaBreak() const
-     *
-     * @return                                      Break up angular velocity (rad yr^-1)
-     */
-    double CalculateOmegaBreak() const {
-	    return _2_PI * std::sqrt(m_Mass / (RSOL_TO_AU * RSOL_TO_AU * RSOL_TO_AU * m_Radius * m_Radius * m_Radius));
-    }
+    COMPAS_PURE double BaseStar::CalculateRotationalVelocityOStar_Ramirez2013() const;
 
 
-    static  double      CalculateOStarRotationalVelocityAnalyticCDF_Static(const double p_Ve);
-        double CalculateOStarRotationalVelocity();
+    ////////////////////////////////////////
+    //   SUPERNOVAE                       //
+    ////////////////////////////////////////
+
+    COMPAS_PURE StellarSNDetailsT CalculateSNkickMagnitude(
+        const STELLAR_TYPE       p_RemnantType,
+        const double             p_Mass,
+        const double             p_EjectaMass,
+        const double             p_RemnantMass,
+        const StellarSNDetailsT& p_SNdetails
+    ) const;
+
+    COMPAS_PURE double DrawSNkickMagnitude(
+        const double   p_COCoreMass,
+        const double   p_EjectaMass,
+        const double   p_RemnantMass,
+        const double   p_Sigma,
+        const double   p_Rand,
+        const SN_EVENT p_SNevent
+    ) const;
+
+    GNU_CONST   double DrawSNkickMagnitude_Muller2016(const double p_COCoreMass) const;
+    COMPAS_PURE double DrawSNkickMagnitude_MullerMandel2020(const double p_COCoreMass, const double p_RemnantMass, const double p_Rand, const SN_EVENT p_SNevent) const;
+
+    GNU_CONST   double DrawSNkickMagnitude_BrayEldridge2018(const double p_EjectaMass, const double p_RemnantMass, const double p_Alpha, const double p_Beta) const;
+    GNU_CONST   double DrawSNkickMagnitude_Flat(const double p_KickMax, const double p_Rand) const;
+    GNU_CONST   double DrawSNkickMagnitude_Maxwellian(const double p_Sigma, const double p_Rand) const;
+    GNU_CONST   double DrawSNkickMagnitude_Muller2016(const double p_COCoreMass) const;
+    COMPAS_PURE double DrawSNkickMagnitude_MullerMandel2020(const double p_COCoreMass, const double p_RemnantMass, const double p_Rand, const SN_EVENT p_SNevent) const;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -917,8 +853,8 @@ virtual double      CalculateRadiusAtPhaseEnd() const                           
 
     void                CalculateRCoefficients(const double p_LogMetallicityXi, DBL_VECTOR &p_RCoefficients) const;
 
-GNU_PURE double CalculateZAMSAngularFrequency_Hurley_Static(const double p_MZAMS, const double p_RZAMS);
-GNU_PURE double CalculateZAMSRotationalVelocity_Static(double p_MZAMS);
+GNU_PURE double CalculateAngularFrequencyAtZAMS_Hurley2000(const double p_MZAMS, const double p_RZAMS);
+GNU_PURE double CalculateRotationalVelocityAtZAMS(double p_MZAMS);
 
 
 
@@ -926,49 +862,34 @@ GNU_PURE double CalculateZAMSRotationalVelocity_Static(double p_MZAMS);
 
 ///// ON PHASE FUNCTIONS   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
-virtual double CalculateAgeAfterMassLoss() const;
-virtual inline double CalculateAgeAfterMassLoss_Hurley2000() const { return m_StateHistory.CurrentState.Age(); } 
-
-virtual double CalculateCoreMass() const;
-virtual inline double CalculateCoreMass_Hurley2000() const { return m_StateHistory.CurrentState.CoreMass(); } 
-
-GNU_CONST static double CalculateCoreMass_Hurley2000_Static(const double p_Luminosity, const DBL_VECTOR& p_GBparams); // <<<<< WHAT'S THIS FOR?????
-
-virtual double CalculateCOCoreMass() const;
-virtual inline double CalculateCOCoreMass_Hurley2000() const { return m_StateHistory.CurrentState.COCoreMass(); } 
-
-virtual double CalculateEffectiveInitialMass() const;
-virtual inline double CalculateEffectiveInitialMass_Hurley2000() const { return m_StateHistory.CurrentState.MassEffectiveInitial(); }
-
-
-
-virtual double CalculateRadius() const;
-virtual inline double CalculateRadius_Hurley2000() const { return m_StateHistory.ZAMSState().Radius(); }  
-
-virtual double CalculateTau() const;
-virtual inline double CalculateTau_Hurley2000() const { return m_StateHistory.CurrentState.Tau(); }
-
-
-virtual double CalculateHAbundanceCore(const double p_Tau, const double p_InitialHAbundance) const { return m_StateHistory.CurrentState.HAbundanceCore(); }
-virtual double CalculateHAbundanceSurface(const double p_Tau, const double p_InitialHAbundance) const { return m_StateHistory.CurrentState.HAbundanceSurface(); }
-virtual double CalculateHeAbundanceCore(const double p_Metallicity, const double p_Tau, const double p_InitialHeAbundance = 0.0) const { return m_StateHistory.CurrentState.HeAbundanceCore(); }
-virtual double CalculateHeAbundanceSurface(const double p_Metallicity, const double p_Tau, const double p_InitialHAbundance) const { return m_StateHistory.CurrentState.HeAbundanceSurface(); }
-
-
-GNU_CONST double CalculateLuminosityGivenCoreMass_Hurley2000(const double p_CoreMass, const DBL_VECTOR& p_GBparams) const;
+virtual DBL_VECTOR CalculateGBparams() const;
+virtual DBL_VECTOR CalculateGBparams_Hurley2000() const { return m_StateHistory.CurrentState.GBparams(); } // only required for GB stars
 
 
 
 
 
-COMPAS_PURE double BaseStar::CalculateMLrate_WRenhanced(
-    const double                p_Metallicity,
-    const double                p_Luminosity, 
-    const double                p_Temperature, 
-    const double                p_HeAbundanceSurface, 
-    const double                p_dMdtOther,
-    const std::optional<double> p_dMdtWR
-) const;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -982,8 +903,14 @@ virtual inline double CalculateCoreMassAtPhaseEnd_Hurley2000() const { return m_
 virtual double CalculateCOCoreMassAtPhaseEnd() const;
 virtual inline double CalculateCOCoreMassAtPhaseEnd_Hurley2000() const { m_StateHistory.CurrentState.COCoreMass(); }
 
+virtual double CalculateHeCoreMassAtPhaseEnd() const;
+virtual inline double CalculateHeCoreMassAtPhaseEnd_Hurley2000() const { m_StateHistory.CurrentState.HeCoreMass(); }
 
+virtual double CalculateRadiusAtPhaseEnd() const;
+virtual inline double CalculateRadiusAtPhaseEnd_Hurley2000() const { m_StateHistory.CurrentState.Radius(); }
 
+virtual double CalculateLuminosityAtPhaseEnd() const;
+virtual inline double CalculateLuminosityAtPhaseEnd_Hurley2000() const { m_StateHistory.CurrentState.Luminosity(); }
 
 
 
@@ -1002,18 +929,11 @@ virtual inline double CalculateCOCoreMassAtPhaseEnd_Hurley2000() const { m_State
 
 
 
-    virtual void        CalculateTimescales()                                                                           { CalculateTimescales(m_Mass0, m_Timescales); }                             // Use class member variables
-    virtual void        CalculateTimescales(const double p_Mass, DBL_VECTOR &p_tScales) { }                                                                                                      // Default is NO-OP
+
 
 
     virtual double      ChooseTimestep(const double p_Time) const                                                       { return m_dt; }
 
-    double              DrawKickMagnitudeBrayEldridge(const double p_EjectaMass, const double p_RemnantMass, const double p_Alpha, const double p_Beta) const;
-    double              DrawKickMagnitudeDistributionFlat(const double p_MaxVK, const double p_Rand) const;
-    double              DrawKickMagnitudeDistributionMaxwell(const double p_Sigma, const double p_Rand) const;
-    double              DrawRemnantKickMuller(const double p_COCoreMass) const;
-    double              DrawRemnantKickMullerMandel(const double p_COCoreMass, const double p_Rand, const double p_RemnantMass) const;
-    double              DrawSNKickMagnitude(const double p_Sigma, const double p_COCoreMass, const double p_Rand, const double p_EjectaMass, const double p_RemnantMass) const;
 
     STELLAR_TYPE        EvolveOnPhase(const double p_DeltaTime);
 
@@ -1064,31 +984,52 @@ virtual inline double CalculateCOCoreMassAtPhaseEnd_Hurley2000() const { m_State
 
 
     /*
-     * Functor for CalculateOStarRotationalVelocity()
+     * OStarRotationVelocityFunctor
      *
+     * @brief
+     * Functor for CalculateRotationalVelocityOStar_Ramirez2013()
      *
+     * Find the ifference between star's Roche Lobe radius and radius after mass loss.
+     * 
+     * The analytic cumulative distribution function (CDF) for the equatorial rotational velocity
+     * of single O stars is modelled as a mixture of a gamma component and a normal component, and
+     * computed per Ramirez-Agudelo et al. 2013, eqs 1-4 (see https://arxiv.org/abs/1309.2929).
+     *
+     * 
      * Constructor: initialise the class
      * template <class T> OStarRotationVelocityFunctor(double p_CDF, ERROR *p_Error)
      *
-     * @param   [IN]    p_CDF                       Desired CDF value
+     * @param       p_CDF                           Desired CDF value
      *
+     * 
      * Function: calculate the CDF of the O star rotational velocity and compare to desired value
      * T OStarRotationVelocityFunctor(double const& p_Ve)
      *
-     * @param   [IN]    p_Ve                        Rotational velocity, km s^-1
+     * @param       p_Ve                            Rotational velocity, km s^-1
      * @return                                      Difference between star's Roche Lobe radius and radius after mass loss
      */
     template <class T>
     struct OStarRotationVelocityFunctor {
-        OStarRotationVelocityFunctor(double p_CDF) {
-            m_CDF              = p_CDF;
-        }
-        T operator()(double const& p_Ve) {
+        OStarRotationVelocityFunctor(double p_CDF) { m_CDF = p_CDF; }
+        T operator()(double const& p_Ve) { 
 
-            return (CalculateOStarRotationalVelocityAnalyticCDF_Static(p_Ve) - m_CDF);
+            constexpr double alpha  = 4.82;
+            constexpr double beta   = 1.0 / 25.0;
+            constexpr double mu     = 205.0;
+            constexpr double sigma  = 190.0;
+            constexpr double iGamma = 0.43;
+
+            boost::math::inverse_gamma_distribution<> gammaComponent(alpha, beta); // (shape, scale) = (alpha, beta)
+            boost::math::normal_distribution<> normalComponent(mu, sigma);
+    
+            // Compute CDF at zero rotational velocity -- the CDF should be relative to this quantity
+            const double CDFzero         = (iGamma * boost::math::cdf(gammaComponent, 0.0)) + ((1.0 - iGamma) * boost::math::cdf(normalComponent, 0.0));
+            const double CDFunnormalised = (iGamma * boost::math::cdf(gammaComponent, p_Ve)) + ((1.0 - iGamma) * boost::math::cdf(normalComponent, p_Ve));
+    
+            return ((CDFunnormalised - CDFzero) / (1.0 - CDFzero)) - m_CDF;
         }
     private:
-        double                 m_CDF;
+        double m_CDF;
     };
 
 
@@ -1108,54 +1049,7 @@ virtual inline double CalculateCOCoreMassAtPhaseEnd_Hurley2000() const { m_State
 
 ///////////////////////////////////////////////////////////////////////////////////////
 //                                                                                   //
-//                                 RADIUS FUNCTIONS                                  //
-//                                                                                   //
-///////////////////////////////////////////////////////////////////////////////////////
-
-
-/*
- * CalculateRadiusOnPhase
- *
- * @brief
- * Calculate the radius of the star at the current evolutionary phase.
- *
- * Calls relevant radius function based on the evolutionary mode given in program options.
- * 
- *
- * double CalculateRadiusOnPhase()
- *
- * @return                                      Radius of the star (Rsol)
- */
-GNU_CONST inline double BaseStar::CalculateRadiusOnPhase() const { 
-
-    double radius;
-
-    Switch (OPTIONS->Mode()) {                                                          // which evolution mode?
-
-        EVOLUTION_MODE::SSE_HURLEY:                                                     // HURLEY SSE
-        EVOLUTION_MODE::BSE_HURLEY:                                                     // HURLEY BSE
-            radius = ();
-            break;
-        
-        default:                                                                        // unknown mode
-            // the only way this can happen is if someone added an EVOLUTION_MODE and it isn't
-            // accounted for in this code.  We should not default here, with or without a warning.
-            // We are here because the user chose a mode this code doesn't account for, and that should
-            // be flagged as an error and result in termination of the evolution of the star or binary.
-            // The correct fix for this is to add code for the missing mode or, if the missing mode is
-            // superfluous, remove it from the option.
-
-            THROW_ERROR(ERROR::UNKNOWN_EVOLUTION_MODE);                                 // throw error
-    }       
-
-    return radius;
-}
-
-
-
-///////////////////////////////////////////////////////////////////////////////////////
-//                                                                                   //
-//                            LIFETIME / AGE CALCULATIONS                            //
+//                         AGE / LIFETIME / TAU / TIMESCALES                         //
 //                                                                                   //
 ///////////////////////////////////////////////////////////////////////////////////////
 
@@ -1173,7 +1067,7 @@ GNU_CONST inline double BaseStar::CalculateRadiusOnPhase() const {
  *
  * @return                                      Age of the star after mass loss (Myr)
  */
-inline double BASESTAR::CalculateAgeAfterMassLoss() const {
+inline double BaseStar::CalculateAgeAfterMassLoss() const {
 
     double age;
 
@@ -1200,6 +1094,54 @@ inline double BASESTAR::CalculateAgeAfterMassLoss() const {
 
 
 /*
+ * CalculateLifetimeToBAGB_Hurley2000
+ *
+ * @brief
+ * Calculate the lifetime to the Base of the Asymptotic Giant Branch, BAGB,
+ * per Hurley et al. 2000, just before eq 69
+ * 
+ * tBAGB = tHeI + tHe
+ *
+ *
+ * double CalculateLifetimeToBAGB_Hurley2000(const double p_tHeI, const double p_tHe)
+ *
+ * @param       p_tHeI                          Time to helium ignition, tHeI (per Hurley timescales) (Myr)
+ * @param       p_tHe                           Time to helium burning, tHe (per Hurley timescales) (Myr)
+ * @return                                      Lifetime to the BAGB (Myr)
+ */
+GNU_CONST inline double BaseStar::CalculateLifetimeToBAGB_Hurley2000(const double p_tHeI, const double p_tHe) const {
+    return p_tHeI + p_tHe;
+}
+
+
+/*
+ * CalculateLifetimeToBGB_Hurley2000_Static
+ *
+ * @brief
+ * Calculate the lifetime to the Base of the Giant Branch, BGB, (end of the Hertzsprung Gap),
+ * per Hurley at al. 2000, eq 4 (plotted in Hurley et al. 2000, fig 5)
+ * 
+ * For high mass stars, tBGB = tHeI.
+ *
+ *
+ * static double CalculateLifetimeToBGB_Hurley2000_Static(const double p_Mass) const
+ *
+ * @param       p_Mass                          Mass of the star (Msol)
+ * @return                                      Lifetime to the Base of the Giant Branch, tBGB (Myr)
+ */
+COMPAS_PURE inline double BaseStar::CalculateLifetimeToBGB_Hurley2000_Static(const double p_Mass) const {
+
+    const DBL_VECTOR a = GLOBALS->HurleyAcoefficients(); // get Hurley a coefficients
+
+    const double m2 = p_Mass * p_Mass;
+    const double m4 = m2 * m2;
+    const double m7 = p_Mass * m2 * m4;
+
+    return (a[1] + (a[2] * m4) + (a[3] * std::sqrt(p_Mass) * p_Mass * m4) + m7) / ((a[4] * m2) + (a[5] * m7));
+}
+
+
+/*
  * CalculateTau
  *
  * @brief
@@ -1213,7 +1155,7 @@ inline double BASESTAR::CalculateAgeAfterMassLoss() const {
  *
  * @return                                      MS-relative age, [0, 1]
  */
-GNU_CONST inline double BaseStar::CalculateTau() const { 
+inline double BaseStar::CalculateTau() const { 
 
     double tau;
 
@@ -1240,86 +1182,86 @@ GNU_CONST inline double BaseStar::CalculateTau() const {
 
 
 /*
- * CalculateLifetimeToBAGB_Hurley2000
+ * CalculateTimescales
  *
  * @brief
- * Calculate the lifetime to the Base of the Asymptotic Giant Branch, per Hurley et al. 2000,
- * just before eq 69
+ * (Re)calculate timescales.
  * 
- * tBAGB = tHeI + tHe
+ * Timescales should be recalculated every timestep.
  *
+ * Calls relevant timescales function based on the evolutionary mode given in program options.
+ * 
  *
- * double CalculateLifetimeToBAGB_Hurley2000(const double p_tHeI, const double p_tHe)
+ * double CalculateTimescales() const
  *
- * @param       p_tHeI                          Time to helium ignition (Myr)
- * @param       p_tHe                           Time to helium burning (Myr)
- * @return                                      Lifetime to the Base of the Asymptotic Giant Branch (Myr)
+ * @return                                      Timescales (Myr)
  */
-inline GNU_CONST double BaseStar::CalculateLifetimeToBAGB_Hurley2000(const double p_tHeI, const double p_tHe) const {
-    return p_tHeI + p_tHe;
+inline DBL_VECTOR BaseStar::CalculateTimescales() const { 
+
+    DBL_VECTOR tScales;
+
+    Switch (OPTIONS->Mode()) {                                                          // which evolution mode?
+
+        EVOLUTION_MODE::SSE_HURLEY:                                                     // HURLEY SSE
+        EVOLUTION_MODE::BSE_HURLEY:                                                     // HURLEY BSE
+            tScales = CalculateTimescales_Hurley2000();
+            break;
+        
+        default:                                                                        // unknown mode
+            // the only way this can happen is if someone added an EVOLUTION_MODE and it isn't
+            // accounted for in this code.  We should not default here, with or without a warning.
+            // We are here because the user chose a mode this code doesn't account for, and that should
+            // be flagged as an error and result in termination of the evolution of the star or binary.
+            // The correct fix for this is to add code for the missing mode or, if the missing mode is
+            // superfluous, remove it from the option.
+
+            THROW_ERROR(ERROR::UNKNOWN_EVOLUTION_MODE);                                 // throw error
+    }       
+
+    return tScales;
 }
 
 
 /*
- * CalculateLifetimeToBGB_Hurley2000
+ * CalculateTimescale_Dynamical_Kalogera1996
  *
  * @brief
- * Calculate the lifetime to the base of the Giant Branch (end of the Hertzsprung Gap),
- * per Hurley at al. 2000, eq 4 (plotted in Hurley et al. 2000, fig 5)
- * 
- * For high mass stars, t_BGB = t_HeI.
+ * Calculate dynamical timescale, per Kalogera & Webbink 1996, eq 1
  *
  *
- * double CalculateLifetimeToBGB_Hurley2000(const double p_Mass, const DBL_VECTOR& p_aN) const
+ * double CalculateTimescale_Dynamical_Kalogera1996(const double p_Mass, const double p_Radius) const
  *
  * @param       p_Mass                          Mass of the star (Msol)
- * @param       p_aN                            Hurley a(n) coefficients
- * @return                                      Lifetime to the Base of the Giant Branch (Myr)
+ * @param       p_Radius                        Radius of the star (Rsol)
+ * @return                                      Dynamical timescale (Myr)
  */
-inline double BaseStar::CalculateLifetimeToBGB_Hurley2000(const double p_Mass, const DBL_VECTOR& p_aN) const {
-    // pow() is slow - use multiplication (sqrt() is much faster than pow())
-    const double m2 = p_Mass * p_Mass;
-    const double m4 = m2 * m2;
-    const double m7 = p_Mass * m2 * m4;
-
-    return (p_aN[1] + (p_aN[2] * m4) + (p_aN[3] * std::sqrt(p_Mass) * p_Mass * m4) + m7) / ((p_aN[4] * m2) + (p_aN[5] * m7));
+GNU_CONST inline double BaseStar::CalculateTimescale_Dynamical_Kalogera1996(const double p_Mass, const double p_Radius) const {
+    return 5.0 * 1.0E-5 * p_Radius * std::sqrt(p_Radius) * YEAR_TO_MYR / std::sqrt(p_Mass);
 }
 
 
 /*
- * Calculate dynamical timescale
+ * CalculateTimescale_Thermal
  *
- * Kalogera & Webbink 1996, eq 1
- *
- *
- * double CalculateDynamicalTimescale_Static(const double p_Mass, const double p_Radius)
- *
- * @param   [IN]    p_Mass                      Mass in Msol
- * @param   [IN]    p_Radius                    Radius in Rsol
- * @return                                      Dynamical timescale in Myr
- */
-double BaseStar::CalculateDynamicalTimescale_Static(const double p_Mass, const double p_Radius) {
-    return 5.0 * 1.0E-5 * p_Radius * std::sqrt(p_Radius) * YEAR_TO_MYR / std::sqrt(p_Mass);   // sqrt() is much faster than pow()
-}
-
-
-/*
+ * @brief
  * Calculate thermal timescale
  *
- * pre-factor from Kalogera & Webbink 1996 (https://arxiv.org/abs/astro-ph/9508072), equation 2, 
+ * Pre-factor from Kalogera & Webbink 1996 (https://arxiv.org/abs/astro-ph/9508072), equation 2, 
  * combined with p_Mass * p_EnvMass case from equation 61 from https://arxiv.org/abs/astro-ph/0201220 for k in {2,3,4,5,6,8,9}
  * [note that equation 61 of BSE (https://arxiv.org/abs/astro-ph/0201220) approximates this with a value a factor of 3 smaller]
  * 
  * 
- * double CalculateThermalTimescale(const double p_Radius) const
+ * double CalculateTimescale_Thermal(const double p_Mass, const double p_Radius, const double p_Luminosity, const double p_CoreMass) const
  *
- * @param   [IN]    p_Radius                    Radius in Rsol
- * @return                                      Thermal timescale in Myr
- *
- * The p_Radius parameter is to accommodate the call (of this function) in BaseBinaryStar::CalculateMassTransfer()
-*/
-double BaseStar::CalculateThermalTimescale(const double p_Radius) const {   
-    return 31.4 * m_Mass * (m_Mass == m_CoreMass ? m_Mass : m_Mass - m_CoreMass) / (p_Radius * m_Luminosity); // G*Msol^2/(Lsol*Rsol) ~ 31.4 Myr (~ 30 Myr in Kalogera & Webbink)
+ * @param       p_Mass                          Mass of the star (Msol)
+ * @param       p_Radius                        Radius of the star (Rsol)
+ * @param       p_Luminosity                    Luminosity of the star (Lsol)
+ * @param       p_CoreMass                      Core mass of the star (Msol)
+ * @return                                      Thermal timescale (Myr)
+ */
+GNU_CONST inline double BaseStar::CalculateTimescale_Thermal(const double p_Mass, const double p_Radius, const double p_Luminosity, const double p_CoreMass) const {   
+    // G*Msol^2/(Lsol*Rsol) ~ 31.4 Myr (~ 30 Myr in Kalogera & Webbink)
+    return 31.4 * p_Mass * (p_Mass == p_CoreMass ? p_Mass : p_Mass - p_CoreMass) / (p_Radius * m_Luminosity);
 }
 
 
@@ -1417,79 +1359,255 @@ double BaseStar::CalculateMassChangeTimescale_Static(const STELLAR_TYPE p_Stella
  *
  * @return                                      eddy turnover timescale (yr)
  */
-double BaseStar::CalculateEddyTurnoverTimescale() const {
+double BaseStar::CalculateEddyTurnoverTimescale_Hurley2000(const double p_Mass, const double p_Radius, const double p_Luminosity, const double p_CoreMass) const {
 
-	double rEnv	= CalculateRadialExtentConvectiveEnvelope();
-    double mEnv, mEnvmax;
-    std::tie(mEnv, mEnvmax) = CalculateConvectiveEnvelopeMass();
-    return 0.4311 * cbrt((mEnv * rEnv * (m_Radius - (0.5 * rEnv))) / (3.0 * m_Luminosity));
+	const double rEnv = CalculateRadialExtentConvectiveEnvelope();
+    double mEnv;
+    std::tie(mEnv, std::ignore) = CalculateConvectiveEnvelopeMass(p_Mass, p_CoreMass);
+    return 0.4311 * std::cbrt((mEnv * rEnv * (p_Radius - (0.5 * rEnv))) / (3.0 * p_Luminosity));
 }
 
 
 
-
-/*
- * CalculateHurleyAlpha1
- *
- * @brief
- * Calculate the constant alpha1, per Hurley et al, 2000, just after eq 49
- *
- * Alpha1 depends on a star's metallicity only - so this only needs to be done once per star (upon creation)
- *
- *
- * double CalculateHurleyAlpha1(const double p_MHeF, const DBL_VECTOR& p_bN) const
- *
- * @param       p_MHeF                          Maximum initial mass at Helium Flash (Hurley masscutoffs[MHeF]) (Msol)
- * @param       p_bN                            Hurley b(n) coefficients
- * @return                                      Hurley constant alpha1
- */
-inline GNU_CONST double BaseStar::CalculateHurleyAlpha1(const double p_MHeF, const DBL_VECTOR& p_bN) const {
-    const double LHeI_MHeF = (p_bN[11] + (p_bN[12] * PPOW(p_MHeF, 3.8))) / (p_bN[13] + (p_MHeF * p_MHeF));
-    return ((p_bN[9] * PPOW(p_MHeF, p_bN[10])) - LHeI_MHeF) / LHeI_MHeF;
-}
+///////////////////////////////////////////////////////////////////////////////////////
+//                                                                                   //
+//                           MISC. CONSTANTS / PARAMETERS                            //
+//                                                                                   //
+///////////////////////////////////////////////////////////////////////////////////////
 
 
 /*
- * CalculateHurleyAlpha3
+ * CalculateGBparams
  *
  * @brief
- * Calculate the constant alpha3, per Hurley et al. 2000, just after eq 56
- *
- * Alpha3 depends on a star's metallicity only - so this only needs to be done once per star (upon creation)
- *
- *
- * double CalculateHurleyAlpha3(const double p_MHeF, const DBL_VECTOR& p_bN) const
+ * (Re)calculate the Giant Branch parameters.
  * 
- * @param       p_MHeF                          Maximum initial mass at Helium Flash (Hurley masscutoffs[MHeF]) (Msol)
- * @param       p_bN                            Hurley b(n) coefficients
- * @return                                      Hurley constant alpha3
+ * Giant Branch parameters should be recalculated every timestep.
+ *
+ * Calls relevant GBparams function based on the evolutionary mode given in program options.
+ * 
+ *
+ * double CalculateGBparams() const
+ *
+ * @return                                      Timescales (Myr)
  */
-inline GNU_CONST double BaseStar::CalculateHurleyAlpha3(const double p_MHeF, const DBL_VECTOR& p_bN) const {
-    const double LBAGB = (p_bN[31] + (p_bN[32] * PPOW(p_MHeF, (p_bN[33] + 1.8)))) / (p_bN[34] + PPOW(p_MHeF, p_bN[33]));
-    return ((p_bN[29] * PPOW(p_MHeF, p_bN[30])) - LBAGB) / LBAGB;
+GNU_CONST inline DBL_VECTOR BaseStar::CalculateGBparams() const { 
+
+    DBL_VECTOR GBparams;
+
+    Switch (OPTIONS->Mode()) {                                                          // which evolution mode?
+
+        EVOLUTION_MODE::SSE_HURLEY:                                                     // HURLEY SSE
+        EVOLUTION_MODE::BSE_HURLEY:                                                     // HURLEY BSE
+            GBparams = CalculateGBparams_Hurley2000();
+            break;
+        
+        default:                                                                        // unknown mode
+            // the only way this can happen is if someone added an EVOLUTION_MODE and it isn't
+            // accounted for in this code.  We should not default here, with or without a warning.
+            // We are here because the user chose a mode this code doesn't account for, and that should
+            // be flagged as an error and result in termination of the evolution of the star or binary.
+            // The correct fix for this is to add code for the missing mode or, if the missing mode is
+            // superfluous, remove it from the option.
+
+            THROW_ERROR(ERROR::UNKNOWN_EVOLUTION_MODE);                                 // throw error
+    }       
+
+    return GBparams;
+}
+
+
+///////////////////////////////////////////////////////////////////////////////////////
+//                                                                                   //
+//                                      RADIUS                                       //
+//                                                                                   //
+///////////////////////////////////////////////////////////////////////////////////////
+
+
+/*
+ * CalculateRadius
+ *
+ * @brief
+ * Calculate the radius of the star.
+ *
+ * Calls relevant radius function based on the evolutionary mode given in program options.
+ * 
+ *
+ * double CalculateRadius() const
+ *
+ * @return                                      Radius (Rsol)
+ */
+inline double BaseStar::CalculateRadius() const { 
+
+    double radius;
+
+    Switch (OPTIONS->Mode()) {                                                          // which evolution mode?
+
+        EVOLUTION_MODE::SSE_HURLEY:                                                     // HURLEY SSE
+        EVOLUTION_MODE::BSE_HURLEY:                                                     // HURLEY BSE
+            radius = CalculateRadius_Hurley2000();
+            break;
+        
+        default:                                                                        // unknown mode
+            // the only way this can happen is if someone added an EVOLUTION_MODE and it isn't
+            // accounted for in this code.  We should not default here, with or without a warning.
+            // We are here because the user chose a mode this code doesn't account for, and that should
+            // be flagged as an error and result in termination of the evolution of the star or binary.
+            // The correct fix for this is to add code for the missing mode or, if the missing mode is
+            // superfluous, remove it from the option.
+
+            THROW_ERROR(ERROR::UNKNOWN_EVOLUTION_MODE);                                 // throw error
+    }       
+
+    return radius;
 }
 
 
 /*
- * CalculateHurleyAlpha4
+ * CalculateRemnantRadius
  *
  * @brief
- * Calculate the constant alpha4, per Hurley et al. 2000, just after eq 57
+ * Calculate radius of the remnant the star would become if it lost all of its
+ * envelope immediately (i.e. M = Mc, coreMass)
  *
- * Alpha4 depends on a star's metallicity only - so this only needs to be done once per star (upon creation)
+ * Calls relevant radius function based on the evolutionary mode given in program options.
+ * 
  *
+ * double CalculateRemnantRadius() const
  *
- * double CalculateHurleyAlpha4(const double p_MHeF, const DBL_VECTOR& p_aN, const DBL_VECTOR& p_bN) const
- *
- * @param       p_MHeF                          Maximum initial mass at Helium Flash (Hurley masscutoffs[MHeF]) (Msol)
- * @param       p_aN                            Hurley a(n) coefficients
- * @param       p_bN                            Hurley b(n) coefficients
- * @return                                      Hurley constant alpha4
+ * @return                                      Radius (Rsol)
  */
-inline GNU_CONST double BaseStar::CalculateHurleyAlpha4(const double p_MHeF, const DBL_VECTOR& p_aN, const DBL_VECTOR& p_bN) const {
-    const double MHeF5 = p_MHeF * p_MHeF * p_MHeF * p_MHeF * p_MHeF;    // pow() is slow - use multiplication   
-    return (((CalculateLifetimeToBGB_Hurley(p_MHeF, p_aN) * (p_bN[41] * PPOW(p_MHeF, p_bN[42]) + p_bN[43] * MHeF5) / (p_bN[44] + MHeF5)) - p_bN[39]) / p_bN[39]);
+inline double BaseStar::CalculateRemnantRadius() const { 
+
+    double radius;
+
+    Switch (OPTIONS->Mode()) {                                                          // which evolution mode?
+
+        EVOLUTION_MODE::SSE_HURLEY:                                                     // HURLEY SSE
+        EVOLUTION_MODE::BSE_HURLEY:                                                     // HURLEY BSE
+            radius = CalculateRemnantRadius_Hurley2000();
+            break;
+        
+        default:                                                                        // unknown mode
+            // the only way this can happen is if someone added an EVOLUTION_MODE and it isn't
+            // accounted for in this code.  We should not default here, with or without a warning.
+            // We are here because the user chose a mode this code doesn't account for, and that should
+            // be flagged as an error and result in termination of the evolution of the star or binary.
+            // The correct fix for this is to add code for the missing mode or, if the missing mode is
+            // superfluous, remove it from the option.
+
+            THROW_ERROR(ERROR::UNKNOWN_EVOLUTION_MODE);                                 // throw error
+    }       
+
+    return radius;
 }
+
+
+
+
+///////////////////////////////////////////////////////////////////////////////////////
+//                                                                                   //
+//                                     ROTATION                                      //
+//                                                                                   //
+///////////////////////////////////////////////////////////////////////////////////////
+
+
+/*
+ * CalculateOmegaBreak
+ *
+ * @brief
+ * Calculate the break up angular velocity of a star, in rad yr^1,
+ * where [G] = 4*pi^2 AU^3 yr^-2 Msol^-1
+ * 
+ * 
+ * double CalculateOmegaBreak(const double p_Mass, const double p_Radius) const
+ *
+ * @return                                      Break up angular velocity (rad yr^-1)
+ */
+GNU_CONST inline double CalculateOmegaBreak(const double p_Mass, const double p_Radius) const {
+ return _2_PI * std::sqrt(p_Mass / (RSOL_TO_AU * RSOL_TO_AU * RSOL_TO_AU * p_Radius * p_Radius * p_Radius));
+}
+
+
+
+
+///////////////////////////////////////////////////////////////////////////////////////
+//                                                                                   //
+//                                    SUPERNOVAE                                     //
+//                                                                                   //
+///////////////////////////////////////////////////////////////////////////////////////
+
+
+/*
+ * DrawSNkickMagnitude_BrayEldridge2018
+ *
+ * @brief
+ * Draw a kick magnitude, per Bray & Eldridge 2016, 2018
+ *
+ * See:
+ *    https://arxiv.org/abs/1605.09529
+ *    https://arxiv.org/abs/1804.04414
+ *
+ *
+ * double DrawSNkickMagnitude_BrayEldridge2018(const double p_EjectaMass, const double p_RemnantMass, const double p_Alpha, const double p_Beta) const
+ *
+ * @param       p_EjectaMass                    Change in mass of the exploding star (i.e. mass of the ejecta) (Msol)
+ * @param       p_RemnantMass                   Mass of the remnant (Msol)
+ * @param       p_Alpha                         Fitting coefficient (see Bray & Eldridge 2016, 2018)
+ * @param       p_Beta                          Fitting coefficient (see Bray & Eldridge 2016, 2018)
+ * @return                                      Drawn kick magnitude (km s^-1)
+ */
+GNU_CONST inline double BaseStar::DrawSNkickMagnitude_BrayEldridge2018(const double p_EjectaMass, const double p_RemnantMass, const double p_Alpha, const double p_Beta) const {
+    return p_Alpha * (p_EjectaMass / p_RemnantMass) + p_Beta;
+}
+
+
+/*
+ * DrawSNkickMagnitude_Flat
+ *
+ * @brief
+ * Draw a kick magnitude from a uniform distribution between 0 and parameter p_MaxVK.
+ *
+ *
+ * double DrawSNkickMagnitude_Flat(const double p_KickMax, const double p_Rand) const
+ *
+ * @param       p_KickMax                       Maximum kick magnitude to draw (km s^-1)
+ * @param       p_Rand                          Random number for drawing from the distribution [0, 1]
+ * @return                                      Drawn kick magnitude (km s^-1)
+ */
+GNU_CONST inline double BaseStar::DrawSNkickMagnitude_Flat(const double p_KickMax, const double p_Rand) const {
+    return p_Rand * p_KickMax;
+}
+
+
+/*
+ * DrawSNkickMagnitude_Maxwellian
+ *
+ * @brief
+ * Draw a kick magnitude from a Maxwellian distribution.  A Maxwellian is a chi
+ * distribution with three degrees of freedom - uses GSL gsl_cdf_chisq_Pinv().
+ *
+ *
+ * double DrawSNkickMagnitude_Maxwellian(const double p_Sigma, const double p_Rand) const
+ *
+ * @param       p_Sigma                         Distribution scale parameter - affects the spread of the distribution
+ * @param       p_Rand                          Random number for drawing from the inverse CDF of the Maxwellian [0, 1]
+ * @return                                      Drawn kick magnitude (km s^-1)
+ */
+GNU_CONST inline double BaseStar::DrawSNkickMagnitude_Maxwellian(const double p_Sigma, const double p_Rand) const {
+    return p_Sigma * std::sqrt(gsl_cdf_chisq_Pinv(p_Rand, 3));
+}
+
+
+
+
+
+
+
+
+
+
+
 
 
 /*
@@ -1553,21 +1671,20 @@ inline double BaseStar::CalculatePerturbationR(const double p_Mu, const double p
 
 
 /*
- * CalculateLuminosityGivenCoreMass_Hurley2000
+ * CalculateLuminosity_Hurley2000
  *
  * @brief
- * Calculate luminosity given the core mass of the star, per Hurley et al. 2000, eq 37
- * (core mass - luminosity relationship)
+ * Calculate luminosity, given the core mass of the star, per Hurley et al. 2000, eq 37
  *
  *
- * double CalculateLuminosityGivenCoreMass_Hurley2000(const double p_CoreMass, const DBL_VECTOR& p_GBparams) const
+ * double CalculateLuminosity_Hurley2000(const double p_CoreMass, const DBL_VECTOR& p_GBparams) const
  *
  * @param       p_CoreMass                      Core mass of the star (Msol)
  * @param       p_GBparams                      Hurley GB parameters
- * @return                                      Luminosity at the Base of the Asymptotic Giant Branch (Lsol)
+ * @return                                      AGB luminosity (Lsol)
  */
-GNU_CONST inline double BaseStar::CalculateLuminosityGivenCoreMass_Hurley2000(const double p_CoreMass, const DBL_VECTOR& p_GBparams) const {
-#define GBparams(x) p_GBparams[static_cast<int>(GBP::x)] // for convenience and readability - undefined at end of function
+GNU_CONST inline double BaseStar::CalculateLuminosity_Hurley2000(const double p_CoreMass, const DBL_VECTOR& p_GBparams) const {
+#define GBparams(x) p_GBparams[static_cast<int>(HURLEY_GBP:::x)] // for convenience and readability - undefined at end of function
     return std::min((GBparams(B) * PPOW(p_CoreMass, GBparams(q))), (GBparams(D) * PPOW(p_CoreMass, GBparams(p))));
 #undef GBparams
 }
@@ -1581,18 +1698,19 @@ GNU_CONST inline double BaseStar::CalculateLuminosityGivenCoreMass_Hurley2000(co
  * per Hurley et al. 2000, eq 56
  *
  *
- * double CalculateLuminosityAtBAGB_Hurley2000(double p_Mass, double p_MHeF, const double p_Alpha3, const DBL_VECTOR& p_bN) const
+ * double CalculateLuminosityAtBAGB_Hurley2000(double p_Mass) const
  *
  * @param       p_Mass                          Effective initial mass (Msol)
- * @param       p_MHeF                          Maximum initial mass at Helium Flash (Hurley masscutoffs[MHeF]) (Msol)
- * @param       p_Alpha3                        Hurley alpha3 constant
- * @param       p_bN                            Hurley b(n) coefficients
  * @return                                      BAGB luminosity (Lsol)
  */
-GNU_CONST inline double BaseStar::CalculateLuminosityAtBAGB_Hurley2000(double p_Mass, double p_MHeF, const double p_Alpha3, const DBL_VECTOR& p_bN) const {
+COMPAS_PURE inline double BaseStar::CalculateLuminosityAtBAGB_Hurley2000(double p_Mass) const {
+#define b(x) GLOBALS->HurleyBCoefficients(x) // for convenience and readability - undefined at end of function
+
     return p_Mass < p_MHeF
-            ? (p_bN[29] * PPOW(p_Mass, p_bN[30])) / (1.0 + (p_Alpha3 * exp(15.0 * (p_Mass - p_MHeF))))
-            : (p_bN[31] + (p_bN[32] * PPOW(p_Mass, (p_bN[33] + 1.8)))) / (p_bN[34] + PPOW(p_Mass, p_bN[33]));
+            ? (b(29) * PPOW(p_Mass, b(30))) / (1.0 + (GLOBALS->HurleyAlpha3() * exp(15.0 * (p_Mass - GLOBALS->HurleyMassCutoffs(static_cast<int>(MASS_CUTOFF::MHeF))))))
+            : (b(31) + (b(32) * PPOW(p_Mass, (b(33) + 1.8)))) / (b(34) + PPOW(p_Mass, b(33)));
+
+#undef bN
 }
 
 
@@ -1617,7 +1735,7 @@ GNU_CONST inline double BaseStar::CalculateLuminosityAtBAGB_Hurley2000(double p_
  *
  * @return                                      Temperature of the star (Tsol)
  */
-GNU_CONST inline double BaseStar::CalculateTemperatureOnPhase() const { 
+inline double BaseStar::CalculateTemperatureOnPhase() const { 
 
     double temperature;
 
@@ -1685,7 +1803,7 @@ GNU_CONST inline double BaseStar::CalculateTemperatureOnPhase(const double p_Lum
 
 ///////////////////////////////////////////////////////////////////////////////////////
 //                                                                                   //
-//                                  MASS FUNCTIONS                                   //
+//                                       MASS                                        //
 //                                                                                   //
 ///////////////////////////////////////////////////////////////////////////////////////
 
@@ -1703,7 +1821,7 @@ GNU_CONST inline double BaseStar::CalculateTemperatureOnPhase(const double p_Lum
  *
  * @return                                      Core mass (Msol)
  */
-GNU_CONST inline double BaseStar::CalculateCoreMass() const { 
+inline double BaseStar::CalculateCoreMass() const { 
 
     double coreMass;
 
@@ -1725,6 +1843,12 @@ GNU_CONST inline double BaseStar::CalculateCoreMass() const {
             THROW_ERROR(ERROR::UNKNOWN_EVOLUTION_MODE);                                 // throw error
     }       
 
+
+    switch (OPTIONS->MainSequenceCoreMassPrescription()) {              // which MS core mass prescription?
+        
+        case MS_CORE_MASS_PRESCRIPTION::BRCEK:                          // BRCEK
+
+
     return coreMass;
 }
 
@@ -1742,7 +1866,7 @@ GNU_CONST inline double BaseStar::CalculateCoreMass() const {
  *
  * @return                                      Core mass (Msol)
  */
-GNU_CONST inline double BaseStar::CalculateCoreMassAtPhaseEnd() const { 
+inline double BaseStar::CalculateCoreMassAtPhaseEnd() const { 
 
     double coreMass;
 
@@ -1784,9 +1908,9 @@ GNU_CONST inline double BaseStar::CalculateCoreMassAtPhaseEnd() const {
  * @return                                      Core mass (Msol)
  */
 GNU_CONST static inline double CalculateCoreMass_Hurley2000_Static(const double p_Luminosity, const DBL_VECTOR& p_GBparams) {
-    return p_Luminosity > p_GBparams[static_cast<int>(GBP::Lx)]
-            ? PPOW((p_Luminosity / p_GBparams[static_cast<int>(GBP::B)]), (1.0 / p_GBparams[static_cast<int>(GBP::q)]))
-            : PPOW((p_Luminosity / p_GBparams[static_cast<int>(GBP::D)]), (1.0 / p_GBparams[static_cast<int>(GBP::p)]));
+    return p_Luminosity > p_GBparams[static_cast<int>(HURLEY_GBP:::Lx)]
+            ? PPOW((p_Luminosity / p_GBparams[static_cast<int>(HURLEY_GBP:::B)]), (1.0 / p_GBparams[static_cast<int>(HURLEY_GBP:::q)]))
+            : PPOW((p_Luminosity / p_GBparams[static_cast<int>(HURLEY_GBP:::D)]), (1.0 / p_GBparams[static_cast<int>(HURLEY_GBP:::p)]));
 }
 
 
@@ -1803,7 +1927,7 @@ GNU_CONST static inline double CalculateCoreMass_Hurley2000_Static(const double 
  *
  * @return                                      CO core mass (Msol)
  */
-GNU_CONST inline double BaseStar::CalculateCOCoreMass() const { 
+inline double BaseStar::CalculateCOCoreMass() const { 
 
     double COcoreMass;
 
@@ -1843,7 +1967,7 @@ GNU_CONST inline double BaseStar::CalculateCOCoreMass() const {
  *
  * @return                                      CO core mass (Msol)
  */
-GNU_CONST inline double BaseStar::CalculateCOCoreMassAtPhaseEnd() const { 
+inline double BaseStar::CalculateCOCoreMassAtPhaseEnd() const { 
 
     double COcoreMass;
 
@@ -1870,6 +1994,85 @@ GNU_CONST inline double BaseStar::CalculateCOCoreMassAtPhaseEnd() const {
 
 
 /*
+ * CalculateHeCoreMass
+ *
+ * @brief
+ * Calculate the Helium (He) core mass of the star.
+ *
+ * Calls relevant He core mass function based on the evolutionary mode given in program options.
+ * 
+ *
+ * double CalculateHeCoreMass() const
+ *
+ * @return                                      He core mass (Msol)
+ */
+inline double BaseStar::CalculateHeCoreMass() const { 
+
+    double HecoreMass;
+
+    Switch (OPTIONS->Mode()) {                                                          // which evolution mode?
+
+        EVOLUTION_MODE::SSE_HURLEY:                                                     // HURLEY SSE
+        EVOLUTION_MODE::BSE_HURLEY:                                                     // HURLEY BSE
+            HecoreMass = CalculateHeCoreMass_Hurley2000();
+            break;
+        
+        default:                                                                        // unknown mode
+            // the only way this can happen is if someone added an EVOLUTION_MODE and it isn't
+            // accounted for in this code.  We should not default here, with or without a warning.
+            // We are here because the user chose a mode this code doesn't account for, and that should
+            // be flagged as an error and result in termination of the evolution of the star or binary.
+            // The correct fix for this is to add code for the missing mode or, if the missing mode is
+            // superfluous, remove it from the option.
+
+            THROW_ERROR(ERROR::UNKNOWN_EVOLUTION_MODE);                                 // throw error
+    }       
+
+    return HecoreMass;
+}
+
+
+/*
+ * CalculateHeCoreMassAtPhaseEnd
+ *
+ * @brief
+ * Calculate the Helium (He) core mass of the star at the end of the current evolutionary
+ * phase.
+ *
+ * Calls relevant He core mass function based on the evolutionary mode given in program options.
+ * 
+ *
+ * double CalculateHeCoreMassAtPhaseEnd() const
+ *
+ * @return                                      He core mass (Msol)
+ */
+inline double BaseStar::CalculateHeCoreMassAtPhaseEnd() const { 
+
+    double HecoreMass;
+
+    Switch (OPTIONS->Mode()) {                                                          // which evolution mode?
+
+        EVOLUTION_MODE::SSE_HURLEY:                                                     // HURLEY SSE
+        EVOLUTION_MODE::BSE_HURLEY:                                                     // HURLEY BSE
+            HecoreMass = CalculateHeCoreMassAtPhaseEnd_Hurley2000();
+            break;
+        
+        default:                                                                        // unknown mode
+            // the only way this can happen is if someone added an EVOLUTION_MODE and it isn't
+            // accounted for in this code.  We should not default here, with or without a warning.
+            // We are here because the user chose a mode this code doesn't account for, and that should
+            // be flagged as an error and result in termination of the evolution of the star or binary.
+            // The correct fix for this is to add code for the missing mode or, if the missing mode is
+            // superfluous, remove it from the option.
+
+            THROW_ERROR(ERROR::UNKNOWN_EVOLUTION_MODE);                                 // throw error
+    }       
+
+    return HecoreMass;
+}
+
+
+/*
  * CalculateEffectiveInitialMass
  *
  * @brief
@@ -1888,7 +2091,7 @@ GNU_CONST inline double BaseStar::CalculateCOCoreMassAtPhaseEnd() const {
  *
  * @return                                      Effective initial mass (Msol)
  */
-GNU_CONST inline double BaseStar::CalculateEffectiveInitialMass() const { 
+inline double BaseStar::CalculateEffectiveInitialMass() const { 
 
     double mass;
 
@@ -1916,7 +2119,7 @@ GNU_CONST inline double BaseStar::CalculateEffectiveInitialMass() const {
 
 ///////////////////////////////////////////////////////////////////////////////////////
 //                                                                                   //
-//                             MASS LOSS RATE FUNCTIONS                              //
+//                                     MASS LOSS                                     //
 //                                                                                   //
 ///////////////////////////////////////////////////////////////////////////////////////
 
@@ -2036,15 +2239,14 @@ GNU_CONST inline MASS_LOSS_T BaseStar::CalculateMLrate_VassiliadisWood1993(const
  * (Humphreys & Davidson 1994), per Belczynski et al. 2010, eq 8 
  * 
  *
- * MASS_LOSS_T CalculateMLrateLBV_Belczynski2010(const double p_LBVfactor) const
+ * MASS_LOSS_T CalculateMLrateLBV_Belczynski2010() const
  *
- * @param       p_LBVfactor                     Luminous Blue Variable factor
  * @return                                      Tuple containing:
  *                                                   DOUBLE         Mass loss rate for LBV stars (Msol yr^-1)
  *                                                   MASS_LOSS_TYPE dominant mass loss type (will be MASS_LOSS_TYPE::LBV)
  */    
-GNU_CONST inline MASS_LOSS_T BaseStar::CalculateMLrateLBV_Belczynski2010(const double p_LBVfactor) const {
-    return std::make_tuple(p_LBVfactor * 1.0E-4, MASS_LOSS_TYPE::LBV);
+COMPAS_PURE inline MASS_LOSS_T BaseStar::CalculateMLrateLBV_Belczynski2010() const {
+    return std::make_tuple(OPTIONS->LuminousBlueVariableFactor() * 1.0E-4, MASS_LOSS_TYPE::LBV);
 } 
 
 
@@ -2078,16 +2280,15 @@ GNU_CONST inline MASS_LOSS_T BaseStar::CalculateMLrateLBV_Hurley2000(const doubl
  * (See https://arxiv.org/pdf/1712.03321.pdf)
  *
  * 
- * MASS_LOSS_T CalculateMLrateOB_Krticka2018(const double p_Luminosity, const double p_ZetaAsplund) const
+ * MASS_LOSS_T CalculateMLrateOB_Krticka2018(const double p_Luminosity) const
  * 
  * @param       p_Luminosity                    Luminosity of the star (Lsol)
- * @param       p_ZetaAsplund                   Asplund zeta value (log10(Z / ZSOL_ASPLUND))
  * @return                                      Tuple containing:
  *                                                   DOUBLE         Mass loss rate for hot OB stars (Msol yr^-1)
  *                                                   MASS_LOSS_TYPE dominant mass loss type (will be MASS_LOSS_TYPE::OB)
  */
-GNU_CONST inline MASS_LOSS_T BaseStar::CalculateMLrateOB_Krticka2018(const double p_Luminosity, const double p_ZetaAsplund) const {
-    return std::make_tuple(PPOW(10.0, -5.70 + 0.50 * p_ZetaAsplund() + (1.61 - 0.12 * p_ZetaAsplund()) * log10(p_Luminosity / 1.0E6)), MASS_LOSS_TYPE::OB);
+COMPAS_PURE inline MASS_LOSS_T BaseStar::CalculateMLrateOB_Krticka2018(const double p_Luminosity) const {
+    return std::make_tuple(PPOW(10.0, -5.70 + 0.50 * GLOBALS->ZetaAsplund()() + (1.61 - 0.12 * GLOBALS->ZetaAsplund()()) * log10(p_Luminosity / 1.0E6)), MASS_LOSS_TYPE::OB);
 }
 
 
@@ -2297,20 +2498,19 @@ COMPAS_PURE inline MASS_LOSS_T BaseStar::CalculateMLrateWR_Shenar2019_Static(con
  * in binaries (Hurley et al. 2000)
  *
  *
- * static MASS_LOSS_T CalculateMLrateWR_ZDependent_Static(const double p_Metallicity, const double p_Luminosity, const double p_PerturbationMu) const
+ * static MASS_LOSS_T CalculateMLrateWR_ZDependent_Static(const double p_Luminosity, const double p_PerturbationMu) const
  *
- * @param       p_Metallicity                   (Fractional) wetallicity of the star
  * @param       p_Luminosity                    Luminosity of the star (Lsol)
  * @param       p_PerturbationMu                Small envelope perturbation parameter, mu
  * @return                                      Tuple containing:
  *                                                   DOUBLE         WR mass loss rate (Msol yr^-1)
  *                                                   MASS_LOSS_TYPE dominant mass loss type (will be MASS_LOSS_TYPE::WR)
  */
-GNU_CONST inline MASS_LOSS_T BaseStar::CalculateMLrateWR_ZDependent_Static(const double p_Metallicity, const double p_Luminosity, const double p_PerturbationMu) const {
+COMPAS_PURE inline MASS_LOSS_T BaseStar::CalculateMLrateWR_ZDependent_Static(const double p_Luminosity, const double p_PerturbationMu) const {
     // StarTrack may still do something different here.
     // There are references to Hamann & Koesterke 1998 and Vink and de Koter 2005.
     // TW - Haven't seen StarTrack but I think H&K gives the original equation and V&dK gives the Z dependence
-    const double dMdt = p_PerturbationMu >= 1.0 ? 0.0 : 1.0E-13 * p_Luminosity * std::sqrt(p_Luminosity) * PPOW(p_Metallicity / ZSOL_ANDERS, 0.86) * (1.0 - p_PerturbationMu);
+    const double dMdt = p_PerturbationMu >= 1.0 ? 0.0 : 1.0E-13 * p_Luminosity * std::sqrt(p_Luminosity) * PPOW(GLOBALS->ReferenceMetallicity() / ZSOL_ANDERS, 0.86) * (1.0 - p_PerturbationMu);
     return std::make_tuple(dMdt, MASS_LOSS_TYPE::WR);
 }    
 
@@ -2320,55 +2520,11 @@ GNU_CONST inline MASS_LOSS_T BaseStar::CalculateMLrateWR_ZDependent_Static(const
 
 
 
-
-
-
-
-/*
- * CalculateConvectiveEnvelopeBindingEnergy
- *
- * @brief
- * Calculate the convective envelope binding energy for the two-stage common envelope formalism of Hirai & Mandel, 2022
- *
- *
- * double CalculateConvectiveEnvelopeBindingEnergy(const double p_Mass, const double p_EnvMass, const double p_Radius, const double p_Lambda) const
- *
- * @param           p_Mass                      Mass (total) of the star (Msol)
- * @param           p_EnvMass                   Mass of the convective outer envelope  (Msol)
- * @param           p_Radius                    Radius of the star (Rsol)
- * @param           p_Lambda                    Lambda parameter for the convective envelope
- * @return                                      Binding energy (erg)
- */
-inline double BaseStar::CalculateConvectiveEnvelopeBindingEnergy(const double p_Mass, const double p_EnvMass, const double p_Radius, const double p_Lambda) const {
-    return CalculateBindingEnergy(p_Mass - p_EnvMass, p_EnvMass, p_Radius, p_Lambda);
-}
-
-
-/*
- * CalculateConvectiveEnvelopeLambda_Picker
- *
- * @brief
- * Calculates (an approximate value of) the lambda binding energy parameter of the outer convective envelope.
- * Follows the fits of Picker et al., 2024, for lambda_He (https://arxiv.org/abs/2402.13180).
- *
- * This is required for the Hirai & Mandel, 2022, two-stage CE formalism.
- *
- *
- * double BaseStar::CalculateConvectiveEnvelopeLambda_Picker(const double p_Mass, const double p_EnvMass, const double p_EnvMassMax) const
- *
- * @param           p_Mass                      Mass of the star (Msol)
- * @param           p_EnvMass                   Mass of the star's convective outer envelope (Msol)
- * @param           p_EnvMassMax                Maximum mass of the star's convective outer envelope (Msol)
- * @return                                      Lambda binding energy parameter for the convective outer envelope
- */
-inline double BaseStar::CalculateConvectiveEnvelopeLambda_Picker(const double p_Mass, const double p_EnvMass, const double p_EnvMassMax) const {
-    
-    const double m2 = 0.0023 * GLOBALS->SigmaHurley() * GLOBALS->SigmaHurley() + 0.0088 * GLOBALS->SigmaHurley() + 0.013;   // Picker et al., 2024, eq 12, and Table 1
-    const double b1 = m2 * p_Mass - 0.23;                                                                                   // ibid., eq 11
-    
-    return std::exp((p_EnvMass / p_EnvMassMax > 0.3 ? 0.42 * p_EnvMass / p_EnvMassMax + b1 : 0.3 * 0.42 + b1));
-}
-
+///////////////////////////////////////////////////////////////////////////////////////
+//                                                                                   //
+//                                    LUMINOSITY                                     //
+//                                                                                   //
+///////////////////////////////////////////////////////////////////////////////////////
 
 
 /*
@@ -2391,17 +2547,8 @@ GNU_CONST inline double BaseStar::CalculateEddingtonLuminosity(const double p_Ma
 }
 
 
-
-
-///////////////////////////////////////////////////////////////////////////////////////
-//                                                                                   //
-//                                 RADIUS FUNCTIONS                                  //
-//                                                                                   //
-///////////////////////////////////////////////////////////////////////////////////////
-
-
 /*
- * CalculateRadius
+ * CalculateLuminosity
  *
  * @brief
  * Calculate the radius of the star.
@@ -2409,19 +2556,19 @@ GNU_CONST inline double BaseStar::CalculateEddingtonLuminosity(const double p_Ma
  * Calls relevant radius function based on the evolutionary mode given in program options.
  * 
  *
- * double CalculateRadius() const
+ * double CalculateLuminosity() const
  *
  * @return                                      Radius (Rsol)
  */
-GNU_CONST inline double BaseStar::CalculateRadius() const { 
+inline double BaseStar::CalculateLuminosity() const { 
 
-    double radius;
+    double luminosity;
 
     Switch (OPTIONS->Mode()) {                                                          // which evolution mode?
 
         EVOLUTION_MODE::SSE_HURLEY:                                                     // HURLEY SSE
         EVOLUTION_MODE::BSE_HURLEY:                                                     // HURLEY BSE
-            radius = CalculateRadius_Hurley2000();
+            luminosity = CalculateLuminosity_Hurley2000();
             break;
         
         default:                                                                        // unknown mode
@@ -2435,8 +2582,13 @@ GNU_CONST inline double BaseStar::CalculateRadius() const {
             THROW_ERROR(ERROR::UNKNOWN_EVOLUTION_MODE);                                 // throw error
     }       
 
-    return radius;
+    return luminosity;
 }
+
+
+
+
+
 
 
 
@@ -2478,6 +2630,8 @@ inline bool BaseStar::IsOneOf(const STELLAR_TYPE_LIST p_List) const {
 
 //// <<<<<<<<<<<<<<<<<<<<<<<<<<<<< constituent functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
+
+    virtual double      CalculateMTRejuvenationFactor()                                                       { return 1.0; }
 
     virtual MT_CASE             DetermineMassTransferTypeAsDonor() const                                        { return MT_CASE::OTHER; }                                          // Not A, B, C, or NONE
 
@@ -2545,10 +2699,7 @@ GNU_CONST double CalculateCELambdaKruckow(const double p_Radius, const double p_
 
 
 
-GNU_PURE  virtual double CalculateCELambda_Nanjing_StarTrack(const double p_Metallicity,
-                                                             const double p_Mass,
-                                                             const double p_Radius,
-                                                             const double p_CoreMass) const { return 1.0; } // Default for stellar types with no LamdaNanjing definitions - 1.0 is benign
+COMPAS_PURE  virtual double CalculateCELambda_Nanjing_StarTrack(const double p_Mass, const double p_Radius, const double p_CoreMass) const { return 1.0; } // Default for stellar types with no LamdaNanjing definitions - 1.0 is benign
 
 
 
@@ -2601,6 +2752,50 @@ GNU_PURE  double CalculateCELambda_Nanjing_ZInterpolated(const double p_Z, const
 
 
 
+/*
+ * CalculateConvectiveEnvelopeBindingEnergy
+ *
+ * @brief
+ * Calculate the convective envelope binding energy for the two-stage common envelope formalism of Hirai & Mandel, 2022
+ *
+ *
+ * double CalculateConvectiveEnvelopeBindingEnergy(const double p_Mass, const double p_Radius, const double p_EnvMass, const double p_Lambda) const
+ *
+ * @param           p_Mass                      Mass (total) of the star (Msol)
+ * @param           p_Radius                    Radius of the star (Rsol)
+ * @param           p_EnvMass                   Mass of the convective outer envelope  (Msol)
+ * @param           p_Lambda                    Lambda parameter for the convective envelope
+ * @return                                      Binding energy (erg)
+ */
+inline double BaseStar::CalculateConvectiveEnvelopeBindingEnergy(const double p_Mass, const double p_Radius, const double p_EnvMass, const double p_Lambda) const {
+    return CalculateBindingEnergy(p_Mass - p_EnvMass, p_Radius, p_EnvMass, p_Lambda);
+}
+
+
+/*
+ * CalculateConvectiveEnvelopeLambda_Picker
+ *
+ * @brief
+ * Calculates (an approximate value of) the lambda binding energy parameter of the outer convective envelope.
+ * Follows the fits of Picker et al., 2024, for lambda_He (https://arxiv.org/abs/2402.13180).
+ *
+ * This is required for the Hirai & Mandel, 2022, two-stage CE formalism.
+ *
+ *
+ * double BaseStar::CalculateConvectiveEnvelopeLambda_Picker(const double p_Mass, const double p_EnvMass, const double p_EnvMassMax) const
+ *
+ * @param           p_Mass                      Mass of the star (Msol)
+ * @param           p_EnvMass                   Mass of the star's convective outer envelope (Msol)
+ * @param           p_EnvMassMax                Maximum mass of the star's convective outer envelope (Msol)
+ * @return                                      Lambda binding energy parameter for the convective outer envelope
+ */
+inline double BaseStar::CalculateConvectiveEnvelopeLambda_Picker(const double p_Mass, const double p_EnvMass, const double p_EnvMassMax) const {
+    
+    const double m2 = 0.0023 * GLOBALS->SigmaHurley() * GLOBALS->SigmaHurley() + 0.0088 * GLOBALS->SigmaHurley() + 0.013;   // Picker et al., 2024, eq 12, and Table 1
+    const double b1 = m2 * p_Mass - 0.23;                                                                                   // ibid., eq 11
+    
+    return std::exp((p_EnvMass / p_EnvMassMax > 0.3 ? 0.42 * p_EnvMass / p_EnvMassMax + b1 : 0.3 * 0.42 + b1));
+}
 
 
 

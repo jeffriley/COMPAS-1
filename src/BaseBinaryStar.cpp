@@ -180,12 +180,12 @@ BaseBinaryStar::BaseBinaryStar(const unsigned long int p_Seed, const long int p_
             // create new stars with equal masses - all other ZAMS values recalculated
             delete m_Star1;
             m_Star1 = !OPTIONS->OptionDefaulted("rotational-frequency-1")                                                               // user specified primary rotational frequency?
-                        ? new BinaryConstituentStar(m_RandomSeed, mass1, metallicity, kickParameters1, OPTIONS->RotationalFrequency1() * SECONDS_IN_YEAR) // yes - use it (convert from Hz to cycles per year - see BaseStar::CalculateZAMSAngularFrequency())
+                        ? new BinaryConstituentStar(m_RandomSeed, mass1, metallicity, kickParameters1, OPTIONS->RotationalFrequency1() * SECONDS_IN_YEAR) // yes - use it (convert from Hz to cycles per year - see BaseStar::CalculateAngularFrequencyAtZAMS())
                         : new BinaryConstituentStar(m_RandomSeed, mass1, metallicity, kickParameters1);                                 // no - let it be calculated
 
             delete m_Star2;
             m_Star2 = !OPTIONS->OptionDefaulted("rotational-frequency-2")                                                               // user specified secondary rotational frequency?
-                        ? new BinaryConstituentStar(m_RandomSeed, mass2, metallicity, kickParameters2, OPTIONS->RotationalFrequency2() * SECONDS_IN_YEAR) // yes - use it (convert from Hz to cycles per year - see BaseStar::CalculateZAMSAngularFrequency())
+                        ? new BinaryConstituentStar(m_RandomSeed, mass2, metallicity, kickParameters2, OPTIONS->RotationalFrequency2() * SECONDS_IN_YEAR) // yes - use it (convert from Hz to cycles per year - see BaseStar::CalculateAngularFrequencyAtZAMS())
                         : new BinaryConstituentStar(m_RandomSeed, mass2, metallicity, kickParameters2);                                 // no - let it be calculated
         
             starToRocheLobeRadiusRatio1 = (m_Star1->Radius() * RSOL_TO_AU) / (m_SemiMajorAxis * CalculateRocheLobeRadius_Static(mass1, mass2)); //eccentricity already zero
@@ -2101,7 +2101,7 @@ void BaseBinaryStar::CalculateMassTransfer(const double p_Dt) {
     
     m_MassTransferTimescale         = MT_TIMESCALE::NONE;                                                                       // initial reset
 
-    double donorMassLossRateThermal = m_Donor->CalculateThermalMassLossRate();
+    double donorMassLossRateThermal = m_Donor->CalculateMLrateThermal();
  
     std::tie(std::ignore, m_FractionAccreted) = m_Accretor->CalculateMassAcceptanceRate(donorMassLossRateThermal,
                                                                                         m_Accretor->CalculateThermalMassAcceptanceRate(accretorRLradius), donorIsHeRich);

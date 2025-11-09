@@ -5,7 +5,7 @@
 
 ///////////////////////////////////////////////////////////////////////////////////////
 //                                                                                   //
-//             PARAMETERS, MISCELLANEOUS CALCULATIONS AND FUNCTIONS ETC.             //
+//                         AGE / LIFETIME / TAU / TIMESCALES                         //
 //                                                                                   //
 ///////////////////////////////////////////////////////////////////////////////////////
 
@@ -20,36 +20,17 @@
  * the mass of the star changes (probably every timestep).
  *
  *
- * DBL_VECTOR CalculateTimescales_Hurley2000(const double      p_Mass,
- *                                           const double      p_ZetaHurley,
- *                                           const DBL_VECTOR& p_GBparams,
- *                                           const DBL_VECTOR& p_MassCutoffs,
- *                                           const DBL_VECTOR& p_Timescales,
- *                                           const double      p_Alpha3,
- *                                           const DBL_VECTOR& p_aN,
- *                                           const DBL_VECTOR& p_bN) const
+ * DBL_VECTOR CalculateTimescales_Hurley2000(const double p_Mass, const DBL_VECTOR& p_GBparams, const DBL_VECTOR& p_tScales) const
  *
  * @param       p_Mass                          Mass of the star (Msol)
- * @param       p_ZetaHurley                    Hurley zeta value (log10(Z / ZSOL_HURLEY))
  * @param       p_GBparams                      Hurley GB parameters
- * @param       p_MassCutoffs                   Hurley mass cutoffs (Msol)
  * @param       p_tScales                       Hurley timescales (Myr)
- * @param       p_Alpha3                        Hurley alpha3 constant
- * @param       p_aN                            Hurley a(n) coefficients
- * @param       p_bN                            Hurley b(n) coefficients
  * @return                                      Mutated timescales (Myr)
  */
-DBL_VECTOR TPAGB::CalculateTimescales_Hurley2000(const double      p_Mass,
-                                                 const double      p_ZetaHurley,
-                                                 const DBL_VECTOR& p_GBparams,
-                                                 const DBL_VECTOR& p_MassCutoffs,
-                                                 const DBL_VECTOR& p_tScales,
-                                                 const double      p_Alpha3,
-                                                 const DBL_VECTOR& p_aN,
-                                                 const DBL_VECTOR& p_bN) const {
+COMPAS_PURE DBL_VECTOR TPAGB::CalculateTimescales_Hurley2000(const double p_Mass, const DBL_VECTOR& p_GBparams, const DBL_VECTOR& p_tScales) const {
 
 // #defines for convenience and readability - undefined at end of function
-#define GBparams(x) p_GBparams[static_cast<int>(GBP::x)]
+#define GBparams(x) p_GBparams[static_cast<int>(HURLEY_GBP:::x)]
 #define tScales(x) tScales[static_cast<int>(TIMESCALE::x)]
 
     double p1   = GBparams(p) - 1.0;
@@ -57,12 +38,12 @@ DBL_VECTOR TPAGB::CalculateTimescales_Hurley2000(const double      p_Mass,
     double p1_p = p1 / GBparams(p);
     double q1_q = q1 / GBparams(q);
 
-    double lDU  = CalculateLuminosityGivenCoreMass(GBparams(McDU));
+    double lDU  = CalculateLuminosityGivenCoreMass_Hurley2000(GBparams(McDU), p_GBparams);
 
     DBL_VECTOR tScales = p_tScales; // copy given timescales
 
     // (re)calculate EAGB timescales (Note: EAGB does not recalculate earlier timescales) <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-    tScales = EAGB::CalculateTimescales_Hurley(p_Mass, p_ZetaHurley, p_GBparams, p_MassCutoffs, tScales, p_Alpha3, p_aN, p_bN);
+    tScales = EAGB::CalculateTimescales_Hurley(p_Mass, p_GBparams, tScales);
 
     tScales[static_cast<int>(TIMESCALE::tP)] = CalculateLifetimeTo2ndDredgeUp(tScales(tinf1_FAGB), tScales(tinf2_FAGB));
 
@@ -249,21 +230,20 @@ double TPAGB::CalculateCELambda_Nanjing_Enhanced(const double             p_Mass
  * This function good for TPAGB stars.
  *
  *
- * double CalculateLambdaNanjingStarTrack(const double p_Mass, const double p_Metallicity)
+ * double CalculateLambdaNanjingStarTrack(const double p_Mass)
  *
  * @param   [IN]    p_Mass                      Mass
- * @param   [IN]    p_Metallicity               Metallicity
  * 
  * @return                                      Nanjing lambda for use in common envelope
  */
-double TPAGB::CalculateLambdaNanjingStarTrack(const double p_Mass, const double p_Metallicity) const {
+double TPAGB::CalculateLambdaNanjingStarTrack(const double p_Mass) const {
 
 	DBL_VECTOR maxBG    = {};                                                       // [0] = maxB, [1] = maxG
 	DBL_VECTOR lambdaBG = {};                                                       // [0] = lambdaB, [1] = lambdaG
 	DBL_VECTOR a        = {};                                                       // 0..5 a_coefficients
 	DBL_VECTOR b        = {};                                                       // 0..5 b_coefficients
 
-    if (utils::Compare(p_Metallicity, LAMBDA_NANJING_ZLIMIT_STARTRACK) > 0) {                 // Z>0.5 Zsun: popI
+    if (utils::Compare(GLOBALS->ReferenceMetallicity(), LAMBDA_NANJING_ZLIMIT_STARTRACK) > 0) {                 // Z>0.5 Zsun: popI
         if (utils::Compare(p_Mass, 1.5) < 0) {
             maxBG = { 2.5, 1.5 };
             if (utils::Compare(m_Radius, 200.0) > 0) lambdaBG = { 0.05, 0.05 };
@@ -522,7 +502,7 @@ double TPAGB::CalculateLambdaNanjingStarTrack(const double p_Mass, const double 
     }
 
     if (lambdaBG.empty()) {                                                         // calculate lambda B & G - not approximated by hand
-         if (utils::Compare(p_Metallicity, LAMBDA_NANJING_ZLIMIT_STARTRACK) > 0 &&
+         if (utils::Compare(GLOBALS->ReferenceMetallicity(), LAMBDA_NANJING_ZLIMIT_STARTRACK) > 0 &&
             (utils::Compare(p_Mass, 1.5) < 0 || (utils::Compare(p_Mass, 25.0) < 0 && utils::Compare(p_Mass, 18.0) >= 0)) ) {
             double x  = (m_Mass - m_CoreMass) / m_Mass;
             double x2 = x * x;
@@ -535,8 +515,8 @@ double TPAGB::CalculateLambdaNanjingStarTrack(const double p_Mass, const double 
 
             lambdaBG = { 1.0 / y1, 1.0 / y2 };
         }
-        else if ( (utils::Compare(p_Metallicity, LAMBDA_NANJING_ZLIMIT_STARTRACK) > 0  && utils::Compare(p_Mass, 2.5) >= 0 && utils::Compare(p_Mass, 5.5) < 0) ||
-                  (utils::Compare(p_Metallicity, LAMBDA_NANJING_ZLIMIT_STARTRACK) <= 0 && utils::Compare(p_Mass, 2.5) >= 0 && utils::Compare(p_Mass, 4.5) < 0)) {
+        else if ( (utils::Compare(GLOBALS->ReferenceMetallicity(), LAMBDA_NANJING_ZLIMIT_STARTRACK) > 0  && utils::Compare(p_Mass, 2.5) >= 0 && utils::Compare(p_Mass, 5.5) < 0) ||
+                  (utils::Compare(GLOBALS->ReferenceMetallicity(), LAMBDA_NANJING_ZLIMIT_STARTRACK) <= 0 && utils::Compare(p_Mass, 2.5) >= 0 && utils::Compare(p_Mass, 4.5) < 0)) {
             double x  = m_Radius;
             double x2 = x * x;
             double x3 = x2 * x;
@@ -663,7 +643,7 @@ double TPAGB::CalculateRadiusOnPhase_Static(const double      p_Mass,
  * @return                                      Stellar Type to which star should evolve after losing envelope
  */
 STELLAR_TYPE TPAGB::ResolveEnvelopeLoss(bool p_Force) {
-#define gbParams(x) m_GBparams[static_cast<int>(GBP::x)]    // for convenience and readability - undefined at end of function
+#define gbParams(x) m_GBparams[static_cast<int>(HURLEY_GBP:::x)]    // for convenience and readability - undefined at end of function
 
     STELLAR_TYPE stellarType = m_StellarType;
 
@@ -720,10 +700,10 @@ double TPAGB::ChooseTimestep(const double p_Time) const {
  */
 bool TPAGB::IsSupernova() const {
     double snMass = CalculateInitialSupernovaMass();
-    bool isCCSN = utils::Compare(m_COCoreMass, CalculateCoreMassAtSN_Static(MCH, m_GBparams[static_cast<int>(GBP::McBAGB)])) >= 0 &&
+    bool isCCSN = utils::Compare(m_COCoreMass, CalculateCoreMassAtSN_Static(MCH, m_GBparams[static_cast<int>(HURLEY_GBP:::McBAGB)])) >= 0 &&
         utils::Compare(snMass, OPTIONS->MCBUR1()) >= 0 && utils::Compare(m_COCoreMass, m_Mass) < 0;
     bool isECSN = utils::Compare(snMass, MCBUR2) < 0 && (!m_MassTransferDonorHistory.empty() || OPTIONS->AllowNonStrippedECSN()) &&
-        utils::Compare(m_COCoreMass, CalculateCoreMassAtSN_Static(MECS, m_GBparams[static_cast<int>(GBP::McBAGB)])) >= 0 &&
+        utils::Compare(m_COCoreMass, CalculateCoreMassAtSN_Static(MECS, m_GBparams[static_cast<int>(HURLEY_GBP:::McBAGB)])) >= 0 &&
         utils::Compare(snMass, OPTIONS->MCBUR1()) >= 0 && utils::Compare(m_COCoreMass, m_Mass) < 0;
     return isCCSN || isECSN;
 }

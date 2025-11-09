@@ -24,7 +24,7 @@ public:
     // member functions
     
     
-            double  CalculateRemnantRadius() const                                                              { return Radius(); }
+
 
 
 protected:
@@ -38,10 +38,26 @@ protected:
 
 ///// ON PHASE FUNCTIONS   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
+DBL_VECTOR CalculateTimescales_Hurley2000() const override {
+    return TPAGB::CalculateTimescales_Hurley2000(
+        m_StateHistory.CurrentState.MassEffectiveInitial(),
+        m_StateHistory.CurrentState.GBparams(),
+        m_StateHistory.CurrentState.TimeScales()
+    );
+}
+
+inline DBL_VECTOR CalculateGBparams_Hurley2000(const double p_Mass, const DBL_VECTOR& p_GBparams) const override {
+    return m_StateHistory.CurrentState.GBparams(); // gb params not used beyond helium stars
+}
+
+
 inline double CalculateCOCoreMass() const override { return m_StateHistory.CurrentState.Mass(); } // McCO = M for remnants
 
+inline double CalculateHeCoreMass() const override { return m_StateHistory.CurrentState.Mass(); } // McHe = M for remnants
+
     double          CalculateConvectiveCoreRadius() const                                                       { return m_Radius; }                                                    // All core
-    DBL_DBL         CalculateConvectiveEnvelopeMass() const                                                     { return std::tuple<double, double> (0.0, 0.0); }
+
+inline DBL_DBL CalculateConvectiveEnvelopeMass() const override { return std::tuple<double, double> (0.0, 0.0); } // no envelope for remnants
 
     double          CalculateCoreMassOnPhase() const                                                            { return m_Mass; }                                                      // Return m_Mass
 
@@ -51,43 +67,39 @@ GNU_CONST static DBL_DBL CalculateRemnantMass_Static(const double p_COCoreMass);
 GNU_CONST static DBL_DBL CalculateRemnantMass_Hurley2000_Static(const double p_COCoreMass);
 
 
-
-// per Hurley SSE code, we don't (re)calculate gbparams for anything above and including whitedwarfs
-///    void            CalculateGBparams(const double p_Mass, DBL_VECTOR &p_GBparams)                              { GiantBranch::CalculateGBparams(p_Mass, p_GBparams); }                 // Default to GiantBranch  
-///    void            CalculateGBparams()                                                                         { CalculateGBparams(m_Mass0, m_GBparams); }                             // Use class member variables
+inline double CalculateRemnantRadius() const override { return m_StateHistory.CurrentState.Radius(); }
 
 
-GNU_CONST inline double CalculateHAbundanceCoreOnPhase(const double p_Tau, const double p_InitialHAbundance) const override { return 0.0; };
-GNU_CONST inline double CalculateHAbundanceSurfaceOnPhase(const double p_Tau, const double p_InitialHAbundance) const override { return 0.0; };
+GNU_CONST inline double CalculateHAbundanceCore(const double p_Tau, const double p_InitialHAbundance) const override { return 0.0; }; // No hydrogen in the core for remnants
+GNU_CONST inline double CalculateHAbundanceSurface(const double p_Tau, const double p_InitialHAbundance) const override { return 0.0; }; // No hydrogen on the surface for remnants
 
-GNU_CONST inline double CalculateHeAbundanceCoreOnPhase(const double p_Metallicity, const double p_Tau, const double p_InitialHeAbundance = 0.0) const override { return 0.0; };
-GNU_CONST inline double CalculateHeAbundanceSurfaceOnPhase(const double p_Metallicity, const double p_Tau, const double p_InitialHeAbundance) const override { return 0.0; };
+COMPAS_PURE inline double CalculateHeAbundanceCore(const double p_Tau, const double p_InitialHeAbundance = 0.0) const override { return 0.0; }; // No helium in the core for remnants (except HeWD)
+COMPAS_PURE inline double CalculateHeAbundanceSurface(const double p_Tau, const double p_InitialHeAbundance) const override { return 0.0; }; // No helium on the surface for remnants (except HeWD)
     
     
-    double          CalculateHeCoreMassOnPhase() const                                                          { return m_Mass; }                                                      // Return m_Mass
+
 
     double          CalculateInitialSupernovaMass() const                                                       { return GiantBranch::CalculateInitialSupernovaMass(); }                // Use GiantBranch
 
 
-    double          CalculateMassLossRateHurley()                                                               { m_DominantMassLossRate = MASS_LOSS_TYPE::NONE ; return 0.0; }
+    GNU_CONST double          CalculateMassLossRateHurley()                                                               { m_DominantMassLossRate = MASS_LOSS_TYPE::NONE ; return 0.0; }
 
-MASS_LOSS_T CalculateMassLossRateBelczynski2010(const double p_Metallicity, const double p_Luminosity, const double p_HeAbundanceSurface) { return make_tuple(0.0, MASS_LOSS_TYPE::NONE); }
+    GNU_CONST MASS_LOSS_T CalculateMassLossRateBelczynski2010(const double p_Luminosity, const double p_HeAbundanceSurface) { return make_tuple(0.0, MASS_LOSS_TYPE::NONE); }
 
-    double          CalculateMassLossRateMerritt2025()                                                          { m_DominantMassLossRate = MASS_LOSS_TYPE::NONE ; return 0.0; }                                                         // 
+    GNU_CONST double          CalculateMassLossRateMerritt2025()                                                          { m_DominantMassLossRate = MASS_LOSS_TYPE::NONE ; return 0.0; }                                                         // 
 
     double          CalculatePerturbationMuOnPhase() const                                                      { return m_Mu; }                                                        // NO-OP
 
-    double          CalculateRadialExtentConvectiveEnvelope() const                                             { return 0.0; }         // WD stars don't have a convective envelope
+    GNU_CONST double          CalculateRadialExtentConvectiveEnvelope() const                                             { return 0.0; }         // WD stars don't have a convective envelope
 
     std::tuple <double, STELLAR_TYPE> CalculateRadiusAndStellarTypeOnPhase() const                              { return BaseStar::CalculateRadiusAndStellarTypeOnPhase(); }
    
-    double          CalculateThermalTimescale(const double p_Radius = 1.0) const                                { return CalculateDynamicalTimescale(); }                               // Parameter is ignored
-    double          CalculateThermalTimescale() const                                                           { return CalculateThermalTimescale(m_Radius); }                         // Use inheritance hierarchy
 
-    double          CalculateThermalMassLossRate() const                                                        { return BaseStar::CalculateThermalMassLossRate(); }                    // Set thermal mass gain rate to be effectively infinite, using dynamical timescale (in practice, will be Eddington limited), avoid division by zero
+inline double CalculateTimescale_Thermal() const override { return CalculateTimescale_Dynamical(); }
 
-    void            CalculateTimescales(const double p_Mass, DBL_VECTOR &p_Timescales)                          { return TPAGB::CalculateTimescales(p_Mass, p_Timescales); }            // Use TPAGB
-    void            CalculateTimescales()                                                                       { CalculateTimescales(m_Mass0, m_Timescales); }                         // Use class member variables
+inline double CalculateMLrateThermal() const override{ return BaseStar::CalculateMLrateThermal(); } // Set thermal mass gain rate to be effectively infinite, using dynamical timescale (in practice, will be Eddington limited), avoid division by zero
+
+
 
     double          ChooseTimestep(const double p_Time) const;
     
@@ -101,6 +113,9 @@ MASS_LOSS_T CalculateMassLossRateBelczynski2010(const double p_Metallicity, cons
 
 ///// PHASE END, ETC.      <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
+inline double CalculateCOCoreMassAtPhaseEnd() const override { return m_StateHistory.CurrentState.Mass(); } // McCO = M for remnants
+
+inline double CalculateHeCoreMassAtPhaseEnd() const override { return m_StateHistory.CurrentState.Mass(); } // McHe = M for remnants
 
 
 
@@ -242,7 +257,7 @@ protected:
 
 
     double          CalculateCELambda_Dewi() const                                                                 { return BaseStar::CalculateCELambda_Dewi(); }
-    double          CalculateLambdaNanjingStarTrack(const double p_Mass, const double p_Metallicity) const      { return BaseStar::CalculateLambdaNanjingStarTrack(0.0, 0.0); }
+    double          CalculateLambdaNanjingStarTrack(const double p_Mass) const      { return BaseStar::CalculateLambdaNanjingStarTrack(0.0, 0.0); }
 
     DBL_DBL         CalculateMassAcceptanceRate(const double p_DonorMassRate,
                                                 const double p_AccretorMassRate);
