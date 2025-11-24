@@ -254,7 +254,7 @@ double BinaryConstituentStar::CalculateCircularisationTimescale(const double p_S
 	        double tauConv          = CalculateEddyTurnoverTimescale();
 	        double fConv            = 1.0;                                                                                              // currently, as COMPAS doesn't have rotating stars tested, we set f_conv = 1 always.
             double fConvOverTauConv = fConv / tauConv;
-            double rOverAPow8       = rOverA * rOverA * rOverA * rOverA * rOverA * rOverA * rOverA * rOverA;                            // use multiplication - pow() is slow
+            double rOverAPow8       = utils::IntPow(rOverA, 8);
 
 	        timescale               = 1.0 / (fConvOverTauConv * ((Mass() - CoreMass()) / Mass()) * q2 * (1.0 + q2) * rOverAPow8);
         } break;
@@ -263,7 +263,7 @@ double BinaryConstituentStar::CalculateCircularisationTimescale(const double p_S
 
             double rInAU                  = Radius() * RSOL_TO_AU;
             double rInAUPow3              = rInAU * rInAU * rInAU;                                                                      // use multiplication - pow() is slow
-            double rOverAPow10            = rOverA * rOverA * rOverA * rOverA * rOverA * rOverA * rOverA * rOverA * rOverA * rOverA;    // use multiplication - pow() is slow
+            double rOverAPow10            = utils::IntPow(rOverA, 10);
             double rOverAPow21Over2       = rOverAPow10 * rOverA * std::sqrt(rOverA);                                                   // sqrt() is faster than pow()
 
 		    double	secondOrderTidalCoeff = 1.592E-09 * PPOW(Mass(), 2.84);                                                             // aka E_2.    

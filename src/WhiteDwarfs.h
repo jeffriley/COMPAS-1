@@ -120,7 +120,8 @@ inline double CalculateHeCoreMass() const override { return m_StateHistory.Curre
 
 
 
-            ENVELOPE         DetermineEnvelopeType() const                                                      { return ENVELOPE::CONVECTIVE; }                                // Always CONVECTIVE
+GNU_CONST inline ENVELOPE DetermineEnvelopeType() const override { return ENVELOPE::CONVECTIVE; } // Always CONVECTIVE for White Dwarfs
+
 
             bool             IsMassAboveChandrasekhar() const                                                   { return (utils::Compare(m_Mass, MCH) > 0); }                   // Mass exceeds Chandrasekhar limit 
 

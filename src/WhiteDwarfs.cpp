@@ -138,7 +138,7 @@ double WhiteDwarfs::CalculateEtaPTY(const double p_MassTransferRate) {
  * @return                                      Luminosity of the White Dwarf (Lsol)
  */
 double WhiteDwarfs::CalculateLuminosityOnPhase_Hurley2000_Static(const double p_Mass, const double p_Time, const double p_BaryonNumber) {
-    return (635.0 * p_Mass * PPOW(GLOBALS->ReferenceMetallicity(), 0.4)) / PPOW(p_BaryonNumber * (p_Time + 0.1), 1.4);
+    return (635.0 * p_Mass * PPOW(GLOBALS->Metallicity(), 0.4)) / PPOW(p_BaryonNumber * (p_Time + 0.1), 1.4);
 }
 
 

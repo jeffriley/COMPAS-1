@@ -26,18 +26,6 @@ public:
         if (p_Initialise) Initialise();                                                                                                                                                             // Initialise if required
     }
 
-    HeMS* Clone(const OBJECT_PERSISTENCE p_Persistence, const bool p_Initialise = true) {
-        HeMS* clone = new HeMS(*this, p_Initialise); 
-        clone->SetPersistence(p_Persistence); 
-        return clone; 
-    }
-
-    static HeMS* Clone(HeMS& p_Star, const OBJECT_PERSISTENCE p_Persistence, const bool p_Initialise = true) {
-        HeMS* clone = new HeMS(p_Star, p_Initialise); 
-        clone->SetPersistence(p_Persistence); 
-        return clone; 
-    }
-
 
     // member functions - alphabetically
 
@@ -113,9 +101,9 @@ inline double CalculateRemnantRadius() const override { return m_StateHistory.Cu
 
 GNU_CONST inline double CalculateCOCoreMass() const override { return 0.0; } // McCO = 0.0 for HeMS stars
 
-inline double CalculateHeCoreMass() const override { return m_StateHistory.CurrentState.Mass(); } // McHe(HeMS) = Mass
+inline double CalculateHeCoreMass() const override { return Mass(); } // McHe(HeMS) = Mass
 
-inline double CalculateEffectiveInitialMass_Hurley2000() const override { return m_StateHistory.CurrentState.Mass(); } // per Hurley et al. 2000, section 7.1
+inline double CalculateEffectiveInitialMass_Hurley2000() const override { return Mass(); } // per Hurley et al. 2000, section 7.1
 
 
 
@@ -193,11 +181,11 @@ GNU_CONST inline double CalculateRadiusAtPhaseEnd_Hurley2000() const override {
 
 
 
-GNU_CONST inline double CalculateHAbundanceCore(const double p_Tau, const double p_InitialHAbundance) const override { return 0.0; } // No hydrogen in the core for HeMS stars
-double inline CalculateHAbundanceSurface(const double p_Tau, const double p_InitialHAbundance) const override { return m_StateHistory.CurrentState.HAbundanceSurface(); }
+GNU_CONST inline double CalculateHAbundanceCore(const double p_Tau) const override { return 0.0; } // No hydrogen in the core for HeMS stars
+double inline CalculateHAbundanceSurface(const double p_Tau) const override { return HAbundanceSurface(); }
 
-GNU_CONST double CalculateHeAbundanceCore(const double p_Tau, const double p_InitialHeAbundance = 0.0) const override;
-double inline CalculateHeAbundanceSurface(const double p_Tau, const double p_InitialHeAbundance) const override { return m_StateHistory.CurrentState.HeAbundanceSurface(); }
+COMPAS_PURE double CalculateHeAbundanceCore(const double p_Tau) const override;
+double inline CalculateHeAbundanceSurface(const double p_Tau) const override { return HeAbundanceSurface(); }
 
 
             double          CalculateHeliumAbundanceCoreAtPhaseEnd() const                                          { return CalculateHeliumAbundanceCoreOnPhase(); }
@@ -223,7 +211,9 @@ double inline CalculateHeAbundanceSurface(const double p_Tau, const double p_Ini
 
             double          CalculateMomentOfInertia() const                                                        { return MainSequence::CalculateMomentOfInertia(); }
 
-            double          CalculatePerturbationMu() const                                                         { return 5.0; }                                                                 // Hurley et al. 2000, eqs 97 & 98
+
+GNU_CONST inline double CalculateHurleyPerturbationMu() const { return 5.0; } // Hurley et al. 2000, eqs 97 & 98
+
 
             double          CalculateRadiusAtPhaseEnd(const double p_Mass) const                                    { return CalculateRadiusAtPhaseEnd_Static(p_Mass); }
             double          CalculateRadiusAtPhaseEnd() const                                                       { return CalculateRadiusAtPhaseEnd(m_Mass); }                                   // Use class member variables
@@ -235,9 +225,7 @@ double inline CalculateHeAbundanceSurface(const double p_Tau, const double p_Ini
 
 
 
-double CalculateTau_Hurley2000() const override {
-    return CalculateTau_Hurley2000(m_StateHistory.CurrentState.Age(), m_StateHistory.CurrentState.Timescales(tHeMS));
-}
+inline double CalculateTau_Hurley2000() const override { return CalculateTau_Hurley2000(Age(), Timescales(TIMESCALE::tHeMS)); }
 GNU_CONST double CalculateTau_Hurley2000(const double p_Age, const double p_tHeMS) const;
 
 
@@ -252,7 +240,7 @@ inline double CalculateMLrateThermal() const override { return BaseStar::Calcula
 
             STELLAR_TYPE    EvolveToNextPhase();
 
-            ENVELOPE        DetermineEnvelopeType() const                                                           { return ENVELOPE::RADIATIVE; }                                                 // Always RADIATIVE
+GNU_CONST inline ENVELOPE DetermineEnvelopeType() const override { return ENVELOPE::RADIATIVE; } // Always RADIATIVE for HeMS stars
 
 
 
@@ -308,14 +296,13 @@ inline double CalculateMLrateThermal() const override { return BaseStar::Calcula
  * 
  * Should one day be updated to match detailed models.
  *
- * double CalculateHeAbundanceCore(const double p_Tau, const double p_InitialHeAbundance)
+ * double CalculateHeAbundanceCore(const double p_Tau)
  * 
  * @param       p_Tau                           Phase-relative age of the star [0, 1]
- * @param       p_InitialHeAbundance            Initial helium abundance of the star (not used here)
  * @return                                      Helium abundance in the core of the star
  */
-COMPAS_PURE inline double HeMS::CalculateHeAbundanceCore(const double p_Tau, const double p_InitialHeAbundance) const {
-    return (1.0 - GLOBALS->ReferenceMetallicity()) * (1.0 - p_Tau);
+COMPAS_PURE inline double HeMS::CalculateHeAbundanceCore(const double p_Tau) const {
+    return (1.0 - GLOBALS->Metallicity()) * (1.0 - p_Tau);
 }
 
 
@@ -643,7 +630,7 @@ GNU_CONST static inline double HeMS::CalculateRadius_Hurley2000_Static(const dou
  *                                                   MASS_LOSS_TYPE dominant mass loss type (will be MASS_LOSS_TYPE::WR)
  */
 static GNU_CONST inline MASS_LOSS_T HeMS::CalculateMLrate_Belczynski2010_Static(const double p_Luminosity) {
-    return BaseStar::CalculateMLrateWR_ZDependent_Static(GLOBALS->ReferenceMetallicity(), p_Luminosity, 0.0);
+    return BaseStar::CalculateMLrateWR_ZDependent_Static(GLOBALS->Metallicity(), p_Luminosity, 0.0);
 }
 
 

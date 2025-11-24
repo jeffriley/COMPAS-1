@@ -78,22 +78,11 @@ protected:
     //   RADIUS                           //
     ////////////////////////////////////////
 
-    inline double CalculateRadius_Hurley2000() const override {
-        return CalculateRadius_Hurley2000(
-            m_StateHistory.CurrentState.Mass(),
-            m_StateHistory.CurrentState.Tau(),
-            m_StateHistory.ZAMSState.Radius(), // will exist for MS - if called with MS having existed, will fail
-            m_StateHistory.CurrentState.Timescales(static_cast<int>(tBGB))
-        );
-    }
+    inline double CalculateRadius_Hurley2000() const override { return CalculateRadius_Hurley2000(Mass(), Tau(), RZAMS(), Timescale(TIMESCALE::tBGB)); } // RZAMS() will exist for MS - if called with MS having existed, will fail
 
     COMPAS_PURE double CalculateRadius_Hurley2000(const double p_Mass, const double p_Tau, const double p_RZAMS, const double p_tBGB) const;
 
-    inline double CalculateRadiusAtPhaseEnd_Hurley2000() const override {
-        return CalculateRadiusAtPhaseEnd_Hurley2000_Static(
-            m_StateHistory.CurrentState.Mass(), m_StateHistory.ZAMSState.Radius() // will exist for MS - if called with MS having existed, will fail
-        );
-    }
+    inline double CalculateRadiusAtPhaseEnd_Hurley2000() const override { return CalculateRadiusAtPhaseEnd_Hurley2000_Static(Mass(), RZAMS()); } // RZAMS()will exist for MS - if called with MS having existed, will fail
 
     COMPAS_PURE static double CalculateRadiusAtPhaseEnd_Hurley2000_Static(const double p_Mass, const double p_RZAMS);
 
@@ -111,25 +100,15 @@ GNU_CONST inline double CalculateCOCoreMass() const override { return 0.0; } // 
 
 GNU_CONST inline double CalculateHeCoreMass() const { return 0.0; } // McHe = 0.0 for MS stars
 
-inline double CalculateLuminosity_Hurley2000() const override {
-    return CalculateLuminosity_Hurley2000(
-        m_StateHistory.CurrentState.Mass(),
-        m_StateHistory.CurrentState.Time(),
-        m_StateHistory.ZAMSState.Luminosity(), // will exist for MS  <<<<<<<<<<<<<<<<< CHECK IF CALLED FROM OTHER STELLAR TYPES!!!!! <<<<<<<<<<<<<<<<<<<<<<<<<<<
-        m_StateHistory.CurrentState.Timescales(static_cast<int>(tMS)),
-        m_StateHistory.CurrentState.Timescales(static_cast<int>(tBGB))
-    );
-}
+inline double CalculateLuminosity_Hurley2000() const override { return CalculateLuminosity_Hurley2000(Mass(), Age(), LZAMS(), Timescale(TIMESCALE::tMS), Timescale(TIMESCALE::tBGB)); } // LZAMS() will exist for MS  <<<<<<<<<<<<<<<<< CHECK IF CALLED FROM OTHER STELLAR TYPES!!!!! <<<<<<<<<<<<<<<<<<<<<<<<<<<
 
-COMPAS_PURE double CalculateLuminosity_Hurley2000(const double p_Mass, const double p_Time, const double p_LZAMS, const double p_tMS, const double p_tBGB) const;
+COMPAS_PURE double CalculateLuminosity_Hurley2000(const double p_Mass, const double p_Age, const double p_LZAMS, const double p_tMS, const double p_tBGB) const;
 
 
 
 
 
-inline DBL_VECTOR CalculateTimescales_Hurley2000() const override {
-    return CalculateTimescales_Hurley2000(m_StateHistory.CurrentState.MassEffectiveInitial(), m_StateHistory.CurrentState.TimeScales());
-}
+inline DBL_VECTOR CalculateTimescales_Hurley2000() const override { return CalculateTimescales_Hurley2000(Mass0(), TimeScales()); }
 
 GNU_CONST inline DBL_VECTOR HeMS::CalculateTimescales_Hurley2000(const double p_Mass, const DBL_VECTOR& p_tScales) const;
 
@@ -137,9 +116,7 @@ GNU_CONST inline DBL_VECTOR HeMS::CalculateTimescales_Hurley2000(const double p_
 
 
 
-inline DBL_DBL CalculateConvectiveEnvelopeMass() const override {
-    return CalculateConvectiveEnvelopeMass_Hurley2000(m_StateHistory.CurrentState.Mass(), m_StateHistory.CurrentState.Tau());
-}
+inline DBL_DBL CalculateConvectiveEnvelopeMass() const override { return CalculateConvectiveEnvelopeMass_Hurley2000(Mass(), Tau()); }
 
 GNU_CONST DBL_DBL CalculateConvectiveEnvelopeMass_Hurley2000(const double p_Mass, const double p_Tau) const;
 
@@ -170,13 +147,16 @@ GNU_CONST DBL_DBL CalculateConvectiveEnvelopeMass_Hurley2000(const double p_Mass
 
 
 
-inline double CalculateEffectiveInitialMass_Hurley2000() const override { return m_StateHistory.CurrentState.Mass(); } // per Hurley et al. 2000, section 7.1
+inline double CalculateEffectiveInitialMass_Hurley2000() const override { return Mass(); } // per Hurley et al. 2000, section 7.1
 
 
 
 
     double          CalculateConvectiveCoreMass() const;
-    double          CalculateConvectiveCoreRadius() const;
+    
+double          CalculateConvectiveCoreRadius() const;
+
+
     DBL_DBL         CalculateConvectiveEnvelopeMass() const;
     double          CalculateBetaL(const double p_Mass) const;
     double          CalculateBetaR(const double p_Mass) const;
@@ -211,11 +191,11 @@ GNU_CONST inline double CalculateHeCoreMassAtPhaseEnd() const { return 0.0; } //
     double          CalculateHeliumAbundanceCoreAtPhaseEnd() const                          { return CalculateHeliumAbundanceCoreOnPhase(); }
 
 
-COMPAS_PURE double CalculateHAbundanceCoreOnPhase(const double p_Tau, const double p_InitialHAbundance) const override;                                
-inline double CalculateHAbundanceSurfaceOnPhase(const double p_Tau, const double p_InitialHAbundance) const override { return m_StateHistory.CurrentState.HAbundanceSurface(); }
+COMPAS_PURE double CalculateHAbundanceCoreOnPhase(const double p_Tau) const override;                                
+inline double CalculateHAbundanceSurfaceOnPhase(const double p_Tau) const override { return HAbundanceSurface(); }
 
-COMPAS_PURE double CalculateHeAbundanceCoreOnPhase(const double p_Tau, const double p_InitialHeAbundance = 0.0) const override;
-inline double CalculateHeAbundanceSurfaceOnPhase(const double p_Tau, const double p_InitialHeAbundance) const override { return m_StateHistory.CurrentState.HeAbundanceSurface(); }
+COMPAS_PURE double CalculateHeAbundanceCoreOnPhase(const double p_Tau) const override;
+inline double CalculateHeAbundanceSurfaceOnPhase(const double p_Tau) const override { return HeAbundanceSurface(); }
 
     
 
@@ -233,9 +213,7 @@ inline double CalculateHeAbundanceSurfaceOnPhase(const double p_Tau, const doubl
 COMPAS_PURE inline double CalculatePhaseLifetime_Hurley2000(const double p_Mass, const double p_TBGB) const;
 
 
-double CalculateTau_Hurley2000() const override {
-    return CalculateTau_Hurley2000(m_StateHistory.CurrentState.Age(), m_StateHistory.CurrentState.Timescales(tMS));
-}
+inline double CalculateTau_Hurley2000() const override { return CalculateTau_Hurley2000(Age(), Timescale(TIMESCALE::tMS)); }
 GNU_CONST double CalculateTau_Hurley2000(const double p_Age, const double p_tMS) const;
 
     double          CalculateLuminosityAtPhaseEnd() const                                   { return CalculateLuminosityAtPhaseEnd(m_Mass0); }                      // Use class member variables
@@ -254,12 +232,19 @@ GNU_CONST double CalculateTau_Hurley2000(const double p_Age, const double p_tMS)
     double          CalculateLuminosityShikauchi(const double p_CoreMass, const double p_HeliumAbundanceCore) const;
     double          CalculateLuminosityTransitionToHG(const double p_Mass, const double p_Age, double const p_LZAMS) const;
     DBL_DBL         CalculateMainSequenceCoreMassBrcek(const double p_Dt, const double p_MassLossRate);
-    double          CalculateInitialMainSequenceCoreMass(const double p_Mass, const double p_HeliumAbundanceCore) const;
+
+
+COMPAS_PURE double CalculateCNOprocessedCoreMassAtZAMS_Shikauchi2024(const double p_MZAMS) const;
+COMPAS_PURE double CalculateCNOprocessedCoreMass_Brcek2025(const double p_Mass, const double p_HeAbundanceCore) const;
+
+
     double          CalculateMomentOfInertia() const                                        { return (0.1 * (m_Mass) * m_Radius * m_Radius); }                      // k2 = 0.1 as defined in Hurley et al. 2000, after eq 109
 
-    double          CalculatePerturbationMu() const                                         { return 5.0; }                                                         // mu(MS) = 5.0 (Hurley et al. 2000, eqs 97 & 98)
 
-    double          CalculateRadialExtentConvectiveEnvelope() const;
+GNU_CONST inline double CalculateHurleyPerturbationMu() const { return 5.0; } // Hurley et al. 2000, eqs 97 & 98
+
+
+    double          CalculateConvectiveEnvelopeRadialExtent() const;
 
     double          CalculateRadiusOnMassChange(double p_dM)                                { return CalculateRadiusOnPhase(m_Mass + p_dM, m_Tau, CalculateRadiusAtZAMS(m_Mass + p_dM)); }
     
@@ -552,6 +537,61 @@ double MainSequence::CalculateRadiusAtPhaseEnd(const EVOLUTION_MODE p_Mode, cons
 
 
 
+
+
+///////////////////////////////////////////////////////////////////////////////////////
+//                                                                                   //
+//                                       MASS                                        //
+//                                                                                   //
+///////////////////////////////////////////////////////////////////////////////////////
+
+
+/*
+ * CalculateCNOprocessedCoreMassAtZAMS_Shikauchi2024
+ *
+ * @brief
+ * Calculate the CNO-processed core mass of a main sequence star at ZAMS,
+ * per Shikauchi et al. 2024
+ *
+ * 
+ * !*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!
+ * !*!*!*!*! ZAMS attribute warning *!*!*!*!*!
+ * !*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!
+ * 
+ * This function relies on the value of the ZAMS mass of the star, and should not be used
+ * if the ZAMS mass is not known.
+ * 
+ * 
+ * double CalculateCNOprocessedCoreMassAtZAMS_Shikauchi2024(const double p_MZAMS) const
+ *
+ * @param       p_MZAMS                         ZAMS mass of the star (Msol)
+ * @return                                      ZAMS CNO-processed core mass (Msol)
+ */
+COMPAS_PURE inline double MainSequence::CalculateCNOprocessedCoreMassAtZAMS_Shikauchi2024(const double p_MZAMS) const {
+    DBL_VECTOR fCoeffs = GLOBALS->ShikauskifMixCoefficients(); // get Shikauchi fMix coefficients from GLOBALS
+    return p_MZAMS * (fCoeffs[0] + fCoeffs[1] * std::exp(-p_MZAMS / fCoeffs[2]));
+}
+
+
+/*
+ * CalculateCNOprocessedCoreMass_Brcek2025
+ *
+ * @brief
+ * Calculate the CNO-processed core mass of a main sequence star after full mixing (due to
+ * merger or CHE) for an arbitrary central helium fraction, per Brcek et al. 2025
+ * 
+ *
+ * double CalculateCNOprocessedCoreMass_Brcek2025(const double p_Mass, const double p_HeAbundanceCore)
+ *
+ * @param       p_Mass                          Mass of the star (Msol)
+ * @param       p_HeAbundanceCore               Helium abundance in the core of the star 
+ * @return                                      CNO-processed core mass (Msol)
+ */
+COMPAS_PURE inline double MainSequence::CalculateCNOprocessedCoreMass_Brcek2025(const double p_Mass, const double p_HeAbundanceCore) const {
+    DBL_VECTOR fCoeffs = BRCEK_FMIX_COEFFICIENTS; // get Brcek fMix coefficients from constants.h
+    const double mh    = p_Mass * PPOW(10.0, p_HeAbundanceCore * (p_HeAbundanceCore + 2.0) / 4.0);
+    return p_Mass * (fCoeffs[0] + fCoeffs[1] * std::exp(-mh / fCoeffs[2])) * PPOW(1.0 - fCoeffs[4] / mh, fCoeffs[3]);
+}
 
 
 /*

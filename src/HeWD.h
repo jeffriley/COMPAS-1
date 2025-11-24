@@ -64,8 +64,8 @@ protected:
     // member functions - alphabetically
 
 
-COMPAS_PURE inline double CalculateHeAbundanceCore(const double p_Tau, const double p_InitialHeAbundance = 0.0) const override { return 1.0 - GLOBALS->ReferenceMetallicity(); }
-COMPAS_PURE inline double CalculateHeAbundanceSurface(const double p_Tau, const double p_InitialHeAbundance) const override { return 1.0 - GLOBALS->ReferenceMetallicity(); }
+COMPAS_PURE inline double CalculateHeAbundanceCore(const double p_Tau) const override { return 1.0 - GLOBALS->Metallicity(); }
+COMPAS_PURE inline double CalculateHeAbundanceSurface(const double p_Tau) const override { return 1.0 - GLOBALS->Metallicity(); }
     
     
     double          CalculateCELambda_Dewi() const                                                             { return BaseStar::CalculateCELambda_Dewi(); }

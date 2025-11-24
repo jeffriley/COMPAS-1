@@ -2320,14 +2320,14 @@ double BaseBinaryStar::MassLossToFitInsideRocheLobe(BaseBinaryStar *p_Binary, Bi
 
         // we have a solution from the root finder - it may not be an acceptable solution
         // so we check if it is within our preferred tolerance
-        if (fabs(func(root.first + (root.second - root.first) / 2.0)) <= ROOT_ABS_TOLERANCE) {          // solution within tolerance?
+        if (std::fabs(func(root.first + (root.second - root.first) / 2.0)) <= ROOT_ABS_TOLERANCE) {     // solution within tolerance?
             done = true;                                                                                // yes - we're done
         }
-        else if (fabs(func(root.first)) <= ROOT_ABS_TOLERANCE) {                                        // solution within tolerance at endpoint 1?
+        else if (std::fabs(func(root.first)) <= ROOT_ABS_TOLERANCE) {                                   // solution within tolerance at endpoint 1?
             root.second=root.first;
             done = true;                                                                                // yes - we're done
         }
-        else if (fabs(func(root.second)) <= ROOT_ABS_TOLERANCE) {                                       // solution within tolerance at endpoint 2?
+        else if (std::fabs(func(root.second)) <= ROOT_ABS_TOLERANCE) {                                  // solution within tolerance at endpoint 2?
             root.first=root.second;
             done = true;                                                                                // yes - we're done
         }
@@ -2336,7 +2336,7 @@ double BaseBinaryStar::MassLossToFitInsideRocheLobe(BaseBinaryStar *p_Binary, Bi
             factorFrac /= 2.0;                                                                          // reduce fractional part of factor
             factor      = 1.0 + factorFrac;                                                             // new search step size
             tries++;                                                                                    // increment number of tries
-            if (tries > ADAPTIVE_RLOF_MAX_TRIES || fabs(factor - 1.0) <= ROOT_ABS_TOLERANCE) {          // too many tries, or step size 0.0?
+            if (tries > ADAPTIVE_RLOF_MAX_TRIES || std::fabs(factor - 1.0) <= ROOT_ABS_TOLERANCE) {     // too many tries, or step size 0.0?
                 // we've tried as much as we can - fail here with -ve return value
                 root.first  = -1.0;                                                                     // yes - set error return
                 root.second = -1.0;
@@ -2959,14 +2959,14 @@ double BaseBinaryStar::OmegaAfterSynchronisation(const double p_M1, const double
 
         // we have a solution from the root finder - it may not be an acceptable solution
         // so we check if it is within our preferred tolerance
-        if (fabs(func(root.first + (root.second - root.first) / 2.0)) <= ROOT_ABS_TOLERANCE) {          // solution within tolerance?
+        if (std::fabs(func(root.first + (root.second - root.first) / 2.0)) <= ROOT_ABS_TOLERANCE) {     // solution within tolerance?
             done = true;                                                                                // yes - we're done
         }
-        else if (fabs(func(root.first)) <= ROOT_ABS_TOLERANCE) {                                        // solution within tolerance at endpoint 1?
+        else if (std::fabs(func(root.first)) <= ROOT_ABS_TOLERANCE) {                                   // solution within tolerance at endpoint 1?
             root.second=root.first;
             done = true;                                                                                // yes - we're done
         }
-        else if (fabs(func(root.second)) <= ROOT_ABS_TOLERANCE) {                                       // solution within tolerance at endpoint 2?
+        else if (std::fabs(func(root.second)) <= ROOT_ABS_TOLERANCE) {                                  // solution within tolerance at endpoint 2?
             root.first=root.second;
             done = true;                                                                                // yes - we're done
         }
@@ -2975,7 +2975,7 @@ double BaseBinaryStar::OmegaAfterSynchronisation(const double p_M1, const double
             factorFrac /= 10.0;                                                                         // reduce fractional part of factor
             factor      = 1.0 + factorFrac;                                                             // new search step size
             tries++;                                                                                    // increment number of tries
-            if (tries > TIDES_OMEGA_MAX_TRIES || fabs(factor - 1.0) <= ROOT_ABS_TOLERANCE) {            // too many tries, or step size 0.0?
+            if (tries > TIDES_OMEGA_MAX_TRIES || std::fabs(factor - 1.0) <= ROOT_ABS_TOLERANCE) {       // too many tries, or step size 0.0?
                 // we've tried as much as we can - fail here with -ve return value
                 root.first  = -1.0;                                                                     // yes - set error return
                 root.second = -1.0;
@@ -3081,9 +3081,9 @@ double BaseBinaryStar::ChooseTimestep(const double p_Factor) {
         
         // limit time step for stars losing mass on nuclear timescale
         if (utils::Compare(radiusToRL1 * (1.0 + 0.5 * OPTIONS->RadialChangeFraction()), 1.0) > 0)
-            dt = std::min(dt, 0.5 * OPTIONS->RadialChangeFraction() * m_Star1->CalculateRadialExpansionTimescaleDuringMassTransfer());
+            dt = std::min(dt, 0.5 * OPTIONS->RadialChangeFraction() * m_Star1->CalculateTimescale_RadialExpansion_DuringMT());
         if (utils::Compare(radiusToRL2 * (1.0 + 0.5 * OPTIONS->RadialChangeFraction()), 1.0) > 0)
-            dt = std::min(dt, 0.5 * OPTIONS->RadialChangeFraction() * m_Star2->CalculateRadialExpansionTimescaleDuringMassTransfer());
+            dt = std::min(dt, 0.5 * OPTIONS->RadialChangeFraction() * m_Star2->CalculateTimescale_RadialExpansion_DuringMT());
         
         if (OPTIONS->EmitGravitationalRadiation()) {                                        // emitting GWs?
             dt = std::min(dt, -1.0E-2 * m_SemiMajorAxis / m_DaDtGW);                        // yes - reduce timestep if necessary to ensure that the orbital separation does not change by more than ~1% per timestep due to GW emission

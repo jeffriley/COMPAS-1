@@ -110,7 +110,7 @@ double          CalculateConvectiveCoreRadius() const { return std::min(Calculat
 
 
 
-            double          CalculateRadialExtentConvectiveEnvelope() const;
+            double          CalculateConvectiveEnvelopeRadialExtent() const;
 
 
 
@@ -196,9 +196,9 @@ inline double CalculateEffectiveInitialMass_Hurley2000() const override { return
 
 
  
-GNU_CONST inline STELLAR_TYPE GiantBranch::CalculateRemnantType_Muller2016(const double p_COCoreMass) const;
+GNU_CONST STELLAR_TYPE GiantBranch::CalculateRemnantType_Muller2016(const double p_COCoreMass) const;
 
-GNU_CONST inline double CalculatePerturbationMu_Hurley2000(const double p_Mass, const double p_Luminosity, const double p_CoreMass) const;
+GNU_CONST double CalculateHurleyPerturbationMu(const double p_Mass, const double p_Luminosity, const double p_CoreMass) const;
 
 
 GNU_CONST double CalculateProtoCoreMass_Fryer2012_Delayed(const double p_COCoreMass) const;
@@ -332,21 +332,21 @@ GNU_CONST inline double GiantBranch::CalculateHRateConstant_Hurley2000(const dou
 
 
 /*
- * CalculatePerturbationMu_Hurley2000
+ * CalculateHurleyPerturbationMu
  *
  * @brief
- * Calculate the small envelope perturbation parameter, mu, per Hurley et al. 2000,
- * eqs 97 & 98
+ * Calculate the Hurley small envelope perturbation parameter, mu,
+ * per Hurley et al. 2000 eqs 97 & 98
  *
  *
- * double CalculatePerturbationMu_Hurley2000(const double p_Mass, const double p_Luminosity, const double p_CoreMass) const
+ * double CalculateHurleyPerturbationMu(const double p_Mass, const double p_Luminosity, const double p_CoreMass) const
  *
  * @param       p_Mass                          Mass of the star (Msol)
  * @param       p_Luminosity                    Luminosity of the star (Lsol)
  * @param       p_CoreMass                      Core mass of the star (Msol)
  * @return                                      Small envelope perturbation parameter, mu
  */
-GNU_CONST inline double GiantBranch::CalculatePerturbationMu_Hurley2000(const double p_Mass, const double p_Luminosity, const double p_CoreMass) const {
+GNU_CONST inline double GiantBranch::CalculateHurleyPerturbationMu(const double p_Mass, const double p_Luminosity, const double p_CoreMass) const {
     constexpr double kappa = -0.5;
     constexpr double L0    = 7.0E4;
     return ((p_Mass - p_CoreMass) / p_Mass) * (std::min(5.0, std::max(1.2, PPOW((p_Luminosity / L0), kappa))));
@@ -605,7 +605,7 @@ COMPAS_PURE inline double GiantBranch::CalculateRadius_Hurley2000_Static(const d
  */
 COMPAS_PURE inline double GiantBranch::CalculateRemnantRadius_Hurley2000(const double p_Mass, const double p_CoreMass) const {
     const double mHeF = GLOBALS->HurleyMassCutoffs(static_cast<int>(MHeF));
-    return p_Mass > mHeF ? HeMS::CalculateRadiusAtZAHeMS_Hurley2000_Static(p_CoreMass) : WhiteDwarfs::CalculateRadiusOnPhase_Marsh2004_Static(p_CoreMass);
+    return p_Mass > mHeF ? HeMS::CalculateRadiusAtZAHeMS_Hurley2000_Static(p_CoreMass) : WhiteDwarfs::CalculateRadius_Marsh2004_Static(p_CoreMass);
 }
 
 
@@ -734,7 +734,7 @@ GNU_CONST static inline double GiantBranch::CalculateLuminosityOnZAHB_Hurley2000
 COMPAS_PURE inline double GiantBranch::CalculateRemnantLuminosity_Hurley2000(const double p_Mass, const double p_CoreMass, const double p_MHeF) const {
     return p_Mass > p_MHeF
             ? HeMS::CalculateLuminosityAtZAHeMS_Hurley2000_Static(p_CoreMass)
-            : WhiteDwarfs::CalculateLuminosityOnPhase_Hurley2000_Static(p_CoreMass, 0.0, GLOBALS->ReferenceMetallicity(), WD_Baryon_Number.at(STELLAR_TYPE::HELIUM_WHITE_DWARF));
+            : WhiteDwarfs::CalculateLuminosityOnPhase_Hurley2000_Static(p_CoreMass, 0.0, GLOBALS->Metallicity(), WD_Baryon_Number.at(STELLAR_TYPE::HELIUM_WHITE_DWARF));
 }
 
 
@@ -753,7 +753,7 @@ COMPAS_PURE inline double GiantBranch::CalculateRemnantLuminosity_Hurley2000(con
  * STELLAR_TYPE CalculateRemnantType_Muller2016(const double p_COCoreMass) const
  *
  * @param       p_COCoreMass                    CO core mass of the star (Msol)
- * @return                                      Remnant stellar type (STELLAR_TYPE)
+ * @return                                      Remnant stellar type
  */
 GNU_CONST inline STELLAR_TYPE GiantBranch::CalculateRemnantType_Muller2016(const double p_COCoreMass) const {
 

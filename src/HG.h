@@ -18,24 +18,9 @@ class HG: virtual public BaseStar, public GiantBranch {
     
 public:
     
-    HG() { m_StellarType = STELLAR_TYPE::HERTZSPRUNG_GAP; };
+    HG() {};
+    HG(const BaseStar &p_BaseStar, const bool p_Initialise = true) : BaseStar(p_BaseStar), GiantBranch(p_BaseStar) { if (p_Initialise) Initialise(); }
     
-    HG(const BaseStar &p_BaseStar, const bool p_Initialise = true) : BaseStar(p_BaseStar), GiantBranch(p_BaseStar) {
-        m_StellarType = STELLAR_TYPE::HERTZSPRUNG_GAP;                                                                                                                          // Set stellar type
-        if (p_Initialise) Initialise();                                                                                                                                         // Initialise if required
-    }
-    
-    HG* Clone(const OBJECT_PERSISTENCE p_Persistence, const bool p_Initialise = true) {
-        HG* clone = new HG(*this, p_Initialise);
-        clone->SetPersistence(p_Persistence);
-        return clone;
-    }
-    
-    static HG* Clone(HG& p_Star, const OBJECT_PERSISTENCE p_Persistence, const bool p_Initialise = true) {
-        HG* clone = new HG(p_Star, p_Initialise);
-        clone->SetPersistence(p_Persistence);
-        return clone;
-    }
     
     
 private:
@@ -100,7 +85,7 @@ protected:
 inline double CalculateLuminosity_Hurley2000() const override { 
     return CalculateLuminosity_Hurley2000_Static(m_StateHistory.CurrentState.MassEffectiveInitial(), m_StateHistory.CurrentState.Tau());
 } 
-GNU_CONST inline double CalculateLuminosity_Hurley2000_Static(const double p_Mass, const double p_Tau) const;
+COMPAS_PURE inline double CalculateLuminosity_Hurley2000_Static(const double p_Mass, const double p_Tau) const;
 
 
 
@@ -137,38 +122,25 @@ double CalculateRadiusOnPhase() const override; { return CalculateRadiusOnPhase(
 ///// ON PHASE FUNCTIONS   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 
-inline double CalculateCoreMass_Hurley2000() const override {
-    return CalculateCoreMass_Hurley2000(m_StateHistory.CurrentState.Mass(),
-                                        m_StateHistory.CurrentState.Tau(),
-                                        m_StateHistory.CurrentState.CoreMass());
-}
+inline double CalculateCoreMass_Hurley2000() const override { return CalculateCoreMass_Hurley2000(Mass(), Tau(), CoreMass()); }
 
 GNU_CONST inline double CalculateCOCoreMass() const override { return 0.0; } // McCO = 0.0 for HG stars
 
-inline double CalculateHeCoreMass() const override { return m_StateHistory.CurrentState.Coremass(); } // McHe = Mc for HG stars
+inline double CalculateHeCoreMass() const override { return Coremass(); } // McHe = Mc for HG stars
 
-inline double CalculateTau_Hurley2000() const override {
-    return CalculateTau_Hurley2000(m_StateHistory.CurrentState.Age(),
-                                   m_StateHistory.CurrentState.Timescales(tMS),
-                                   m_StateHistory.CurrentState.Timescales(tBGB));
-}
+inline double CalculateTau_Hurley2000() const override { return CalculateTau_Hurley2000(Age(), Timescales(TIMESCALE::tMS), Timescales(TIMESCALE::tBGB)); }
 
-inline double CalculateEffectiveInitialMass_Hurley2000() const override {
-    return CalculateEffectiveInitialMass_Hurley2000(m_StateHistory.CurrentState.Mass(),
-                                                    m_StateHistory.CurrentState.Tau(),
-                                                    m_StateHistory.CurrentState.Coremass(),
-                                                    m_StateHistory.CurrentState.MassEffectiveInitial());
-}
+inline double CalculateEffectiveInitialMass_Hurley2000() const override { return CalculateEffectiveInitialMass_Hurley2000(Mass(), Tau(), Coremass(), MassEffectiveInitial()); }
 
 
 
 
 
 GNU_CONST inline double CalculateHAbundanceCore() const override { return 0.0; } // No hydrogen in the core for HG stars
-inline double CalculateHAbundanceSurface() const override { return m_StateHistory.CurrentState.HAbundanceSurface(); }
+inline double CalculateHAbundanceSurface() const override { return HAbundanceSurface(); }
     
-GNU_CONST inline double CalculateHeAbundanceCore() const override { return 1.0 - m_StateHistory.CurrentState.Metallicity(); }
-inline double CalculateHeAbundanceSurface() const override { return m_StateHistory.CurrentState.HeAbundanceSurface(); }
+COMPAS_PURE inline double CalculateHeAbundanceCore() const override { return 1.0 - GLOBALS->Metallicity(); }
+inline double CalculateHeAbundanceSurface() const override { return HeAbundanceSurface(); }
 
  
 
@@ -190,7 +162,7 @@ inline double CalculateHeCoreMassAtPhaseEnd() const override { return m_StateHis
 GNU_CONST inline double CalculateHAbundanceCoreAtPhaseEnd() const override { return CalculateHAbundanceCore(); }
 inline double CalculateHAbundanceSurfaceAtPhaseEnd() const override { return CalculateHAbundanceSurface(); }
 
-GNU_CONST inline double CalculateHeAbundanceCoreAtPhaseEnd() const override { return CalculateHeAbundanceCore(); }
+COMPAS_PURE inline double CalculateHeAbundanceCoreAtPhaseEnd() const override { return CalculateHeAbundanceCore(); }
 inline double CalculateHeAbundanceSurfaceAtPhaseEnd() const override { return CalculateHeAbundanceSurface(); }
 
 
@@ -199,7 +171,9 @@ inline double CalculateHeAbundanceSurfaceAtPhaseEnd() const override { return Ca
 
     double          ChooseTimestep(const double p_Time) const;
 
-    ENVELOPE        DetermineEnvelopeType() const;
+
+COMPAS_PURE ENVELOPE HG::DetermineEnvelopeType(const double p_Mass, const double p_Temperature, const double p_CoreMass) const override;
+
 
     STELLAR_TYPE    EvolveToNextPhase();
 
@@ -331,14 +305,14 @@ GNU_PURE  double CalculateAgeAfterMassLoss_Hurley(const double p_Mass, const dou
 
             // we have a solution from the root finder - it may not be an acceptable solution
             // so we check if it is within our preferred tolerance
-            if (fabs(func(root.first + (root.second - root.first) / 2.0)) <= ROOT_ABS_TOLERANCE) {          // solution within tolerance?
+            if (std::fabs(func(root.first + (root.second - root.first) / 2.0)) <= ROOT_ABS_TOLERANCE) {     // solution within tolerance?
                 done = true;                                                                                // yes - we're done
             }
-            else if (fabs(func(root.first)) <= ROOT_ABS_TOLERANCE) {                                        // solution within tolerance at endpoint 1?
+            else if (std::fabs(func(root.first)) <= ROOT_ABS_TOLERANCE) {                                   // solution within tolerance at endpoint 1?
                 root.second=root.first;
                 done = true;                                                                                // yes - we're done
             }
-            else if (fabs(func(root.second)) <= ROOT_ABS_TOLERANCE) {                                       // solution within tolerance at endpoint 2?
+            else if (std::fabs(func(root.second)) <= ROOT_ABS_TOLERANCE) {                                  // solution within tolerance at endpoint 2?
                 root.first=root.second;
                 done = true;                                                                                // yes - we're done
             }
@@ -347,7 +321,7 @@ GNU_PURE  double CalculateAgeAfterMassLoss_Hurley(const double p_Mass, const dou
                 factorFrac /= 2.0;                                                                          // reduce fractional part of factor
                 factor      = 1.0 + factorFrac;                                                             // new search step size
                 tries++;                                                                                    // increment number of tries
-                if (tries > ADAPTIVE_MASS0_MAX_TRIES || fabs(factor - 1.0) <= ROOT_ABS_TOLERANCE) {         // too many tries, or step size 0.0?
+                if (tries > ADAPTIVE_MASS0_MAX_TRIES || std::fabs(factor - 1.0) <= ROOT_ABS_TOLERANCE) {    // too many tries, or step size 0.0?
                     // we've tried as much as we can - fail here with -ve return value
                     root.first  = -1.0;                                                                     // yes - set error return
                     root.second = -1.0;
@@ -639,10 +613,10 @@ COMPAS_PURE inline double HG::CalculateLuminosityAtPhaseEnd_Hurley2000_Static(co
  * static double CalculateLuminosity_Hurley2000_Static(const double p_Mass, const double p_Tau)
  *
  * @param       p_Mass                          Mass of the star (Msol)
- * @param       p_Tau                           Phase-relative age of the star (Myr)
+ * @param       p_Tau                           Phase-relative age of the star [0, 1]
  * @return                                      HG luminosity (Lsol)
  */
-GNU_CONST inline double HG::CalculateLuminosity_Hurley2000_Static(const double p_Mass, const double p_Tau) const {
+COMPAS_PURE inline double HG::CalculateLuminosity_Hurley2000_Static(const double p_Mass, const double p_Tau) const {
     const double lTMS = MainSequence::CalculateLuminosityAtPhaseEnd_Hurley2000(p_Mass);
     return lTMS * PPOW((CalculateLuminosityAtPhaseEnd_Hurley2000_Static(p_Mass) / lTMS), p_Tau);
 }

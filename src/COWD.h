@@ -21,18 +21,6 @@ public:
         if (p_Initialise) Initialise();                                                                                                                         // Initialise if required
     }
 
-    COWD* Clone(const OBJECT_PERSISTENCE p_Persistence, const bool p_Initialise = true) {
-        COWD* clone = new COWD(*this, p_Initialise); 
-        clone->SetPersistence(p_Persistence); 
-        return clone; 
-    }
-
-    static COWD* Clone(COWD& p_Star, const OBJECT_PERSISTENCE p_Persistence, const bool p_Initialise = true) {
-        COWD* clone = new COWD(p_Star, p_Initialise); 
-        clone->SetPersistence(p_Persistence); 
-        return clone; 
-    }
-
 
     // member functions
 

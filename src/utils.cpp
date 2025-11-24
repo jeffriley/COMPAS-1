@@ -187,15 +187,15 @@ namespace utils {
     int Compare(const double p_X, const double p_Y, const double p_Tolerance, const bool p_Absolute) {
         if (p_Tolerance > 0.0) {                                                                                                // use tolerance passed?
             if (p_Absolute) {                                                                                                   // yes - absolute tolerance?
-                return (fabs(p_X - p_Y) <= p_Tolerance) ? 0 : (p_X < p_Y ? -1 : 1);                                             // yes
+                return (std::fabs(p_X - p_Y) <= p_Tolerance) ? 0 : (p_X < p_Y ? -1 : 1);                                        // yes
             }
             else {                                                                                                              // no - relative tolerance
-                return (fabs(p_X - p_Y) <= p_Tolerance * std::max(fabs(p_X), fabs(p_Y))) ? 0 : (p_X < p_Y ? -1 : 1);
+                return (std::fabs(p_X - p_Y) <= p_Tolerance * std::max(std::fabs(p_X), std::fabs(p_Y))) ? 0 : (p_X < p_Y ? -1 : 1);
             }
         }
         else {                                                                                                                  // use global tolerance
     #ifdef COMPARE_GLOBAL_TOLERANCE
-            return (fabs(p_X - p_Y) <= std::max(FLOAT_TOLERANCE_ABSOLUTE, FLOAT_TOLERANCE_RELATIVE * std::max(fabs(p_X), fabs(p_Y)))) ? 0 : (p_X < p_Y ? -1 : 1);
+            return (std::abs(p_X - p_Y) <= std::max(FLOAT_TOLERANCE_ABSOLUTE, FLOAT_TOLERANCE_RELATIVE * std::max(std::fabs(p_X), std::fabs(p_Y)))) ? 0 : (p_X < p_Y ? -1 : 1);
     #else
             return (p_X == p_Y) ? 0 : (p_X < p_Y ? -1 : 1);
     #endif
@@ -274,8 +274,8 @@ namespace utils {
                 break;
 
             case KICK_DIRECTION_DISTRIBUTION::POLES:                                                                // POLES: Direct the kick in a small cone around the poles
-                if (rand < 0.5) theta = M_PI_2 - fabs(RAND->RandomGaussian(delta));                                 // UP - slightly less than or equal to pi/2
-                else            theta = fabs(RAND->RandomGaussian(delta)) - M_PI_2;                                 // DOWN - slightly more than or equal to -pi/2
+                if (rand < 0.5) theta = M_PI_2 - std::fabs(RAND->RandomGaussian(delta));                            // UP - slightly less than or equal to pi/2
+                else            theta = std::fabs(RAND->RandomGaussian(delta)) - M_PI_2;                            // DOWN - slightly more than or equal to -pi/2
 
                 phi   = RAND->Random() * _2_PI;                                                                     // allow to randomly take an angle 0 - 2pi in the plane
                 break;
@@ -1437,9 +1437,9 @@ namespace utils {
      * @return                                    Boolean indicating if the brackets bounds are within tolerance
      */
     bool BracketTolerance(const double p_Bracket1, const double p_Bracket2) {
-        double diff = fabs(p_Bracket1 - p_Bracket2);                                            // absolute value of difference
+        double diff = std::fabs(p_Bracket1 - p_Bracket2);                                       // absolute value of difference
         double min  = std::min(p_Bracket1, p_Bracket2);                                         // minimum bracket value - could straddle 0.0
-        return diff <= ROOT_ABS_TOLERANCE || fabs(diff / min) <= ROOT_REL_TOLERANCE;
+        return diff <= ROOT_ABS_TOLERANCE || std::fabs(diff / min) <= ROOT_REL_TOLERANCE;
     }
 
 

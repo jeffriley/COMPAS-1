@@ -94,23 +94,23 @@ Star::Star(const Star& p_Star) {
 
 
 /*
- * SitwchTo
+ * SwitchTo
  *
  * @brief
- * Switch to required star type
+ * Switch to required stellar type
  *
  * Instantiates new object of required class, deletes existing pointer to star object and
  * replaces it with pointer to newly instantiated object.
  * 
  * Optionally sets new star's starting stellar type.
- * Optionally records switch in SwithcLog file.
+ * Optionally records switch in SwitchLog file.
  *
  *
  * STELLAR_TYPE SwitchTo(const STELLAR_TYPE p_StellarType, bool p_SetStartingType, bool p_NoLog)
  *
  * @param       p_StellarType                   StellarType to switch to
  * @param       p_SetStartingType               Flag to indicate whether the starting stellar type of the star should be set to p_StellarType
- * @param       p_NoLog                         Flag to indicate whether the swicth should be logged in the SwitchLog file
+ * @param       p_NoLog                         Flag to indicate whether the switch should be logged in the SwitchLog file
  * @return                                      Stellar type of star before switch (previous stellar type)
  */
 STELLAR_TYPE Star::SwitchTo(const STELLAR_TYPE p_StellarType, bool p_SetStartingType, bool p_NoLog) {
@@ -156,7 +156,8 @@ STELLAR_TYPE Star::SwitchTo(const STELLAR_TYPE p_StellarType, bool p_SetStarting
             delete m_Star;
             m_Star = ptr;
 
-            if (p_SetStartingType) m_Star->SetStartingType(p_StellarType);
+            m_Star->SetStellarType(p_StellarType);                                  // set stellar type
+            if (p_SetStartingType) m_Star->SetStartingType(p_StellarType);          // set starting stellar type if required
         }
 
         // write to switch log file if required
@@ -177,6 +178,152 @@ STELLAR_TYPE Star::SwitchTo(const STELLAR_TYPE p_StellarType, bool p_SetStarting
 
     return stellarTypePrev;
 }
+
+
+/*
+ * CloneAs
+ *
+ * @brief
+ * Clone the current star, and switch to specified stellar type
+ *
+ * Instantiates new object of specified class (stellar type), and returns
+ * a std::unique_ptr to the caller.  The caller does not need to return any
+ * memory allocated - the std::unique_ptr is automatically destroyed (and
+ * memory returned) when it goes out of the caller's scope.
+ * 
+ * Sets object persistence (PERMANENT or EPHEMERAL).
+ * Optionally initialises new star.
+ *
+ *
+ * std::unique_ptr<BaseStar> CloneAs(STELLAR_TYPE p_StellarType, const OBJECT_PERSISTENCE p_Persistence, const bool p_Initialise = true) const
+ *
+ * @param       p_StellarType                   Resultant stellar type of the clone
+ * @param       p_Persistence                   Object persistence ({OBJECT_PERSISTENCE::PERMAMNENT, OBJECT_PERSISTENCE::EPHEMERAL})
+ * @param       p_Initialise                    Flag to indicate whether the clone star should be initialised (default is TRUE) (bool)
+ * @return                                      Pointer to the cloned star (std::unique_ptr<BaseStar>)
+ */
+
+COMPAS_PURE std::unique_ptr<BaseStar> Star::CloneAs(STELLAR_TYPE p_StellarType, const OBJECT_PERSISTENCE p_Persistence, const bool p_Initialise = true) const {
+
+    BaseStar* ptr = nullptr;
+
+    switch (p_StellarType) {
+        case STELLAR_TYPE::MS_LTE_07                                : {ptr = new MS_lte_07(*m_Star, p_Initialise);} break;
+        case STELLAR_TYPE::MS_GT_07                                 : {ptr = new MS_gt_07(*m_Star, p_Initialise);} break;
+        case STELLAR_TYPE::CHEMICALLY_HOMOGENEOUS                   : {ptr = new CH(*m_Star, p_Initialise);} break;
+        case STELLAR_TYPE::HERTZSPRUNG_GAP                          : {ptr = new HG(*m_Star, p_Initialise);} break;
+        case STELLAR_TYPE::FIRST_GIANT_BRANCH                       : {ptr = new FGB(*m_Star, p_Initialise);} break;
+        case STELLAR_TYPE::CORE_HELIUM_BURNING                      : {ptr = new CHeB(*m_Star, p_Initialise);} break;
+        case STELLAR_TYPE::EARLY_ASYMPTOTIC_GIANT_BRANCH            : {ptr = new EAGB(*m_Star, p_Initialise);} break;
+        case STELLAR_TYPE::THERMALLY_PULSING_ASYMPTOTIC_GIANT_BRANCH: {ptr = new TPAGB(*m_Star, p_Initialise);} break;
+        case STELLAR_TYPE::NAKED_HELIUM_STAR_MS                     : {ptr = new HeMS(*m_Star, p_Initialise);} break;
+        case STELLAR_TYPE::NAKED_HELIUM_STAR_HERTZSPRUNG_GAP        : {ptr = new HeHG(*m_Star, p_Initialise);} break;
+        case STELLAR_TYPE::NAKED_HELIUM_STAR_GIANT_BRANCH           : {ptr = new HeGB(*m_Star, p_Initialise);} break;
+        case STELLAR_TYPE::HELIUM_WHITE_DWARF                       : {ptr = new HeWD(*m_Star, p_Initialise);} break;
+        case STELLAR_TYPE::CARBON_OXYGEN_WHITE_DWARF                : {ptr = new COWD(*m_Star, p_Initialise);} break;
+        case STELLAR_TYPE::OXYGEN_NEON_WHITE_DWARF                  : {ptr = new ONeWD(*m_Star, p_Initialise);} break;
+        case STELLAR_TYPE::NEUTRON_STAR                             : {ptr = new NS(*m_Star, p_Initialise);} break;
+        case STELLAR_TYPE::BLACK_HOLE                               : {ptr = new BH(*m_Star, p_Initialise);} break;
+        case STELLAR_TYPE::MASSLESS_REMNANT                         : {ptr = new MR(*m_Star, p_Initialise);} break;
+
+        default:                                                                // unexpected stellar type
+            // the only way this can happen is if the STELLAR_TYPE passed to this function is not accounted
+            // for in this code.  We should not default here, with or without a warning.
+            // We are here because the code passed a STELLAR_TYPE that this function doesn't account for,
+            // and that should be flagged as an error and result in termination of the evolution of the star
+            // or binary.
+            // The correct fix for this is to add code to this function for the missing STELLAR_TYPE,
+            // or fix the calling code to pass a STELLAR_TYPE that is handled by this function.
+
+            THROW_ERROR(ERROR::UNEXPECTED_STELLAR_TYPE);                        // throw error
+            break;
+    }
+
+    if (!ptr) { THROW_ERROR(ERROR::CLONE_CREATION_FAILED); }                    // null pointer - "new" failed
+
+    ptr->SetStellarType(p_StellarType);                                         // set new stellar type
+    ptr->SetPersistence(p_Persistence);                                         // set object persistence
+
+    std::unique_ptr<BaseStar> uPtr(ptr);                                        // convert raw pointer to std::unique_ptr
+
+    return uPtr;                                                                // return std::unique_ptr
+};
+
+
+/*
+ * MakeStar
+ *
+ * @brief
+ * Make a new star of the specified stellar type
+ *
+ * Instantiates new object of specified class (stellar type), and returns
+ * a std::unique_ptr to the caller.  The caller does not need to return any
+ * memory allocated - the std::unique_ptr is automatically destroyed (and
+ * memory returned) when it goes out of the caller's scope.
+ * 
+ * Sets object persistence (PERMANENT or EPHEMERAL).
+ * Optionally initialises new star.
+ *
+ *
+ * std::unique_ptr<BaseStar> MakeStar(STELLAR_TYPE p_StellarType, const OBJECT_PERSISTENCE p_Persistence, const bool p_Initialise) const
+ *
+ * @param       p_StellarType                   Resultant stellar type of the clone
+ * @param       p_Persistence                   Object persistence ({OBJECT_PERSISTENCE::PERMAMNENT, OBJECT_PERSISTENCE::EPHEMERAL})
+ * @param       p_Initialise                    Flag to indicate whether the clone star should be initialised (default is TRUE) (bool)
+ * @return                                      Pointer to the new star (std::unique_ptr<BaseStar>)
+ */
+
+COMPAS_PURE std::unique_ptr<BaseStar> Star::MakeStar(STELLAR_TYPE p_StellarType, const OBJECT_PERSISTENCE p_Persistence, const bool p_Initialise) const {
+
+    BaseStar* ptr = nullptr;
+    BaseStar star = BaseStar();
+
+    switch (p_StellarType) {
+        case STELLAR_TYPE::MS_LTE_07                                : {ptr = new MS_lte_07(star, p_Initialise);} break;
+        case STELLAR_TYPE::MS_GT_07                                 : {ptr = new MS_gt_07(star, p_Initialise);} break;
+        case STELLAR_TYPE::CHEMICALLY_HOMOGENEOUS                   : {ptr = new CH(star, p_Initialise);} break;
+        case STELLAR_TYPE::HERTZSPRUNG_GAP                          : {ptr = new HG(star, p_Initialise);} break;
+        case STELLAR_TYPE::FIRST_GIANT_BRANCH                       : {ptr = new FGB(star, p_Initialise);} break;
+        case STELLAR_TYPE::CORE_HELIUM_BURNING                      : {ptr = new CHeB(star, p_Initialise);} break;
+        case STELLAR_TYPE::EARLY_ASYMPTOTIC_GIANT_BRANCH            : {ptr = new EAGB(star, p_Initialise);} break;
+        case STELLAR_TYPE::THERMALLY_PULSING_ASYMPTOTIC_GIANT_BRANCH: {ptr = new TPAGB(star, p_Initialise);} break;
+        case STELLAR_TYPE::NAKED_HELIUM_STAR_MS                     : {ptr = new HeMS(star, p_Initialise);} break;
+        case STELLAR_TYPE::NAKED_HELIUM_STAR_HERTZSPRUNG_GAP        : {ptr = new HeHG(star, p_Initialise);} break;
+        case STELLAR_TYPE::NAKED_HELIUM_STAR_GIANT_BRANCH           : {ptr = new HeGB(star, p_Initialise);} break;
+        case STELLAR_TYPE::HELIUM_WHITE_DWARF                       : {ptr = new HeWD(star, p_Initialise);} break;
+        case STELLAR_TYPE::CARBON_OXYGEN_WHITE_DWARF                : {ptr = new COWD(star, p_Initialise);} break;
+        case STELLAR_TYPE::OXYGEN_NEON_WHITE_DWARF                  : {ptr = new ONeWD(star, p_Initialise);} break;
+        case STELLAR_TYPE::NEUTRON_STAR                             : {ptr = new NS(star, p_Initialise);} break;
+        case STELLAR_TYPE::BLACK_HOLE                               : {ptr = new BH(star, p_Initialise);} break;
+        case STELLAR_TYPE::MASSLESS_REMNANT                         : {ptr = new MR(star, p_Initialise);} break;
+
+        default:                                                                // unexpected stellar type
+            // the only way this can happen is if the STELLAR_TYPE passed to this function is not accounted
+            // for in this code.  We should not default here, with or without a warning.
+            // We are here because the code passed a STELLAR_TYPE that this function doesn't account for,
+            // and that should be flagged as an error and result in termination of the evolution of the star
+            // or binary.
+            // The correct fix for this is to add code to this function for the missing STELLAR_TYPE,
+            // or fix the calling code to pass a STELLAR_TYPE that is handled by this function.
+
+            THROW_ERROR(ERROR::UNEXPECTED_STELLAR_TYPE);                        // throw error
+            break;
+    }
+
+    if (!ptr) { THROW_ERROR(ERROR::CLONE_CREATION_FAILED); }                    // null pointer - "new" failed
+
+    ptr->SetStellarType(p_StellarType);                                         // set stellar type
+    ptr->SetStartingType(p_StellarType);                                        // set starting stellar type
+    ptr->SetPersistence(p_Persistence);                                         // set object persistence
+
+    std::unique_ptr<BaseStar> uPtr(ptr);                                        // convert raw pointer to std::unique_ptr
+
+    return uPtr;                                                                // return std::unique_ptr
+};
+
+
+
+
 
 
 ////////////////////////////// Check need for this <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<

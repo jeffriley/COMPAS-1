@@ -24,18 +24,6 @@ public:
         if (p_Initialise) Initialise(currentStellarType);                                                                                                               // Initialise if required
     }
 
-    HeGB* Clone(const OBJECT_PERSISTENCE p_Persistence, const bool p_Initialise = true) {
-        HeGB* clone = new HeGB(*this, p_Initialise); 
-        clone->SetPersistence(p_Persistence); 
-        return clone; 
-    }
-
-    static HeGB* Clone(HeGB& p_Star, const OBJECT_PERSISTENCE p_Persistence, const bool p_Initialise = true) {
-        HeGB* clone = new HeGB(p_Star, p_Initialise); 
-        clone->SetPersistence(p_Persistence); 
-        return clone; 
-    }
-
 
     // member functions - alphabetically
 
@@ -61,7 +49,7 @@ public:
 
     GNU_CONST static double CalculateRadius_Hurley2000_Static(const double p_Mass, const double p_Luminosity);
 
-    GNU_CONST inline ENVELOPE DetermineEnvelopeType() const { return ENVELOPE::CONVECTIVE; } // Always CONVECTIVE    
+    GNU_CONST inline ENVELOPE DetermineEnvelopeType() const override { return ENVELOPE::CONVECTIVE; } // Always CONVECTIVE for HeGB stars
 
 
 private:

@@ -22,17 +22,6 @@ public:
         if (p_Initialise) Initialise();                                                                                                                 // Initialise if required
     }
     
-    BH* Clone(const OBJECT_PERSISTENCE p_Persistence, const bool p_Initialise = true) {
-        BH* clone = new BH(*this, p_Initialise);
-        clone->SetPersistence(p_Persistence);
-        return clone;
-    }
-    
-    static BH* Clone(BH& p_Star, const OBJECT_PERSISTENCE p_Persistence, const bool p_Initialise = true) {
-        BH* clone = new BH(p_Star, p_Initialise);
-        clone->SetPersistence(p_Persistence);
-        return clone;
-    }
     
     // member functions - alphabetically
 inline static double CalculateLuminosityOnPhase_Hurley2000() const override { return CalculateLuminosityOnPhase_Hurley2000_Static(); }
@@ -74,24 +63,15 @@ protected:
 
 ///// ON PHASE FUNCTIONS   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
-inline MASS_LOSS_T CalculateMassLossRate() const override { return std::make_tuple(0.0, MASS_LOSS_TYPE::NONE); } // Ensure that NSs don't lose mass in winds
+GNU_CONST inline MASS_LOSS_T CalculateMassLossRate() const override { return std::make_tuple(0.0, MASS_LOSS_TYPE::NONE); } // Ensure that NSs don't lose mass in winds
 
-GNU_CONST inline double CalculateRadius_Hurley2000() const override {
-    return CalculateRadius_Hurley2000_Static(m_StateHistory.CurrentState.Mass());
-}
+inline double CalculateRadius_Hurley2000() const override { return CalculateRadius_Hurley2000_Static(Mass()); }
 
-GNU_CONST static inline double CalculateRadius_Hurley2000_Static(const double p_Mass) { 
-    return CalculateSchwarzschildRadius_Static(p_Mass);         // Hurley et al. 2000, eq 94
-}
+GNU_CONST static inline double CalculateRadius_Hurley2000_Static(const double p_Mass) { return CalculateSchwarzschildRadius_Static(p_Mass); } // Hurley et al. 2000, eq 94
 
-GNU_CONST static inline double CalculateSchwarzschildRadius_Static(const double p_Mass) {
-    return 4.24E-6 * p_Mass;                                    // Schwarzschild radius of black hole
-}
+GNU_CONST static inline double CalculateSchwarzschildRadius_Static(const double p_Mass) { return 4.24E-6 * p_Mass; } // Schwarzschild radius of black hole
 
-inline double CalculateMomentOfInertia() const override { 
-    // MoI for solid sphere *ILYA* JR: that's not really right, is it?
-    return (2.0 / 5.0) * m_StateHistory.CurrentState.Mass() * m_StateHistory.CurrentState.Radius() * m_StateHistory.CurrentState.Radius();
-} 
+inline double CalculateMomentOfInertia() const override { return (2.0 / 5.0) * Mass() * Radius() * Radius(); } // MoI for solid sphere *ILYA* JR: that's not really right, is it?
 
 
 

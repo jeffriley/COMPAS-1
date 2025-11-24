@@ -23,18 +23,6 @@ public:
         if (p_Initialise) Initialise();                                                                                                                                                     // Initialise if required
     }
 
-    HeHG* Clone(const OBJECT_PERSISTENCE p_Persistence, const bool p_Initialise = true) {
-        HeHG* clone = new HeHG(*this, p_Initialise); 
-        clone->SetPersistence(p_Persistence); 
-        return clone; 
-    }
-
-    static HeHG* Clone(HeHG& p_Star, const OBJECT_PERSISTENCE p_Persistence, const bool p_Initialise = true) {
-        HeHG* clone = new HeHG(p_Star, p_Initialise); 
-        clone->SetPersistence(p_Persistence); 
-        return clone; 
-    }
-
 
     // member functions
 
@@ -121,8 +109,10 @@ GNU_CONST static double CalculateRemnantRadius_Hurley2000_Static(const double p_
 
             double          CalculateMomentOfInertia() const                                                        { return GiantBranch::CalculateMomentOfInertia(); }
 
-            double          CalculatePerturbationMu() const;
-            double          CalculatePerturbationMuAtPhaseEnd() const                                               { return m_Mu; }                                                        // NO-OP
+
+GNU_CONST double CalculateHurleyPerturbationMu() const;
+inline double CalculateHurleyPerturbationMuAtPhaseEnd() const { return m_Mu; }
+
 
             double          CalculateRadiusAtPhaseEnd() const                                                       { return m_Radius; }                                                    // NO-OP
    
@@ -155,7 +145,7 @@ inline double CalculateHeCoreMass() const override { return m_StateHistory.Curre
 
 GNU_CONST inline double HeHG::CalculateHurleyPerturbationMu(const double p_Mass, const double p_CoreMass) const;
 
-double CalculateTau_Hurley2000() const override { return 0.0; } // Tau (relative age) is not used for HeHG stars in Hurley et al. 2000, so we return 0.0
+GNU_CONST inline double CalculateTau_Hurley2000() const override { return 0.0; } // Tau (relative age) is not used for HeHG stars in Hurley et al. 2000, so we return 0.0
 
 
     inline double CalculateLuminosity_Hurley2000() const override {
@@ -170,8 +160,8 @@ double CalculateTau_Hurley2000() const override { return 0.0; } // Tau (relative
         return HeGB::CalculateRadius_Hurley2000_Static(m_StateHistory.CurrentState.Mass(), m_StateHistory.CurrentState.Luminosity());
     }
 
-    GNU_CONST inline double CalculateHAbundanceCore(const double p_Tau, const double p_InitialHAbundance) const override { return 0.0; } // No hydrogen in the core for HeHG stars
-    GNU_CONST inline double CalculateHeAbundanceCore(const double p_Tau, const double p_InitialHeAbundance = 0.0) const override { return 0.0; } // No helium in the core for HeHG stars
+    GNU_CONST inline double CalculateHAbundanceCore(const double p_Tau) const override { return 0.0; } // No hydrogen in the core for HeHG stars
+    GNU_CONST inline double CalculateHeAbundanceCore(const double p_Tau) const override { return 0.0; } // No helium in the core for HeHG stars
 
  
 
@@ -193,7 +183,9 @@ inline double CalculateMLrateThermal() const override { return GiantBranch::Calc
 
             double          ChooseTimestep(const double p_Time) const;
 
-            ENVELOPE        DetermineEnvelopeType() const;
+
+COMPAS_PURE ENVELOPE DetermineEnvelopeType(const double p_Mass, const double p_Temperature, const double p_CoreMass) const override;
+
 
             STELLAR_TYPE    EvolveToNextPhase();
 

@@ -243,7 +243,7 @@ double TPAGB::CalculateLambdaNanjingStarTrack(const double p_Mass) const {
 	DBL_VECTOR a        = {};                                                       // 0..5 a_coefficients
 	DBL_VECTOR b        = {};                                                       // 0..5 b_coefficients
 
-    if (utils::Compare(GLOBALS->ReferenceMetallicity(), LAMBDA_NANJING_ZLIMIT_STARTRACK) > 0) {                 // Z>0.5 Zsun: popI
+    if (utils::Compare(GLOBALS->Metallicity(), LAMBDA_NANJING_ZLIMIT_STARTRACK) > 0) {                 // Z>0.5 Zsun: popI
         if (utils::Compare(p_Mass, 1.5) < 0) {
             maxBG = { 2.5, 1.5 };
             if (utils::Compare(m_Radius, 200.0) > 0) lambdaBG = { 0.05, 0.05 };
@@ -502,7 +502,7 @@ double TPAGB::CalculateLambdaNanjingStarTrack(const double p_Mass) const {
     }
 
     if (lambdaBG.empty()) {                                                         // calculate lambda B & G - not approximated by hand
-         if (utils::Compare(GLOBALS->ReferenceMetallicity(), LAMBDA_NANJING_ZLIMIT_STARTRACK) > 0 &&
+         if (utils::Compare(GLOBALS->Metallicity(), LAMBDA_NANJING_ZLIMIT_STARTRACK) > 0 &&
             (utils::Compare(p_Mass, 1.5) < 0 || (utils::Compare(p_Mass, 25.0) < 0 && utils::Compare(p_Mass, 18.0) >= 0)) ) {
             double x  = (m_Mass - m_CoreMass) / m_Mass;
             double x2 = x * x;
@@ -515,8 +515,8 @@ double TPAGB::CalculateLambdaNanjingStarTrack(const double p_Mass) const {
 
             lambdaBG = { 1.0 / y1, 1.0 / y2 };
         }
-        else if ( (utils::Compare(GLOBALS->ReferenceMetallicity(), LAMBDA_NANJING_ZLIMIT_STARTRACK) > 0  && utils::Compare(p_Mass, 2.5) >= 0 && utils::Compare(p_Mass, 5.5) < 0) ||
-                  (utils::Compare(GLOBALS->ReferenceMetallicity(), LAMBDA_NANJING_ZLIMIT_STARTRACK) <= 0 && utils::Compare(p_Mass, 2.5) >= 0 && utils::Compare(p_Mass, 4.5) < 0)) {
+        else if ( (utils::Compare(GLOBALS->Metallicity(), LAMBDA_NANJING_ZLIMIT_STARTRACK) > 0  && utils::Compare(p_Mass, 2.5) >= 0 && utils::Compare(p_Mass, 5.5) < 0) ||
+                  (utils::Compare(GLOBALS->Metallicity(), LAMBDA_NANJING_ZLIMIT_STARTRACK) <= 0 && utils::Compare(p_Mass, 2.5) >= 0 && utils::Compare(p_Mass, 4.5) < 0)) {
             double x  = m_Radius;
             double x2 = x * x;
             double x3 = x2 * x;

@@ -8,14 +8,14 @@
  * Determine the star's envelope type, based on the user-specified ENVELOPE_STATE_PRESCRIPTION.
  * 
  *
- * ENVELOPE DetermineEnvelopeType(const double p_Mass, const double p_Temeparture, const double p_CoreMass) const
+ * ENVELOPE DetermineEnvelopeType(const double p_Mass, const double p_Temperature, const double p_CoreMass) const
  *
  * @param       p_Mass                          Mass of the star (Msol)
  * @param       p_CoreMass                      Core mass of the star (Msol)
  * @param       p_Temperature                   Temperature of the star (Tsol)
  * @return                                      Envelope type (ENVELOPE::{RADIATIVE, CONVECTIVE, REMNANT})
  */
-COMPAS_PURE ENVELOPE MS_gt_07::DetermineEnvelopeType(const double p_Mass, const double p_Temeparture, const double p_CoreMass) const {
+COMPAS_PURE ENVELOPE MS_gt_07::DetermineEnvelopeType(const double p_Mass, const double p_Temperature, const double p_CoreMass) const {
     
     ENVELOPE envType;
     
@@ -30,7 +30,7 @@ COMPAS_PURE ENVELOPE MS_gt_07::DetermineEnvelopeType(const double p_Mass, const 
             
         case ENVELOPE_STATE_PRESCRIPTION::FIXED_TEMPERATURE:                        // FIXED_TEMPERATURE
             // envelope is radiative if temperature exceeds specified threshold, otherwise convective
-            envType = (p_Temeparture * TSOL) > OPTIONS->ConvectiveEnvelopeTemperatureThreshold() ? ENVELOPE::RADIATIVE : ENVELOPE::CONVECTIVE;
+            envType = (p_Temperature * TSOL) > OPTIONS->ConvectiveEnvelopeTemperatureThreshold() ? ENVELOPE::RADIATIVE : ENVELOPE::CONVECTIVE;
             break;
             
         case ENVELOPE_STATE_PRESCRIPTION::HURLEY:                                   // HURLEY
@@ -44,8 +44,8 @@ COMPAS_PURE ENVELOPE MS_gt_07::DetermineEnvelopeType(const double p_Mass, const 
             break;
 
         default:                                                                    // unknown prescription
-            // the only way this can happen is if someone added an ENVELOPE_STATE_PRESCRIPTION
-            // and it isn't accounted for in this code.  We should not default here, with or without a warning.
+            // the only way this can happen is if someone added an ENVELOPE_STATE_PRESCRIPTION and it isn't
+            // accounted for in this code.  We should not default here, with or without a warning.
             // We are here because the user chose a prescription this code doesn't account for, and that should
             // be flagged as an error and result in termination of the evolution of the star or binary.
             // The correct fix for this is to add code for the missing prescription or, if the missing

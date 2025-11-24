@@ -18,17 +18,13 @@ public:
 
     // constructors
 
-    CH() { m_StellarType = STELLAR_TYPE::CHEMICALLY_HOMOGENEOUS; };
-    
-    CH(const BaseStar &p_BaseStar, const bool p_Initialise = true) : BaseStar(p_BaseStar), MS_gt_07(p_BaseStar) {
-        m_StellarType = STELLAR_TYPE::CHEMICALLY_HOMOGENEOUS; // Set stellar type // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-        if (p_Initialise) Initialise();  // Initialise if required
-    }
+    CH() {};
+    CH(const BaseStar &p_BaseStar, const bool p_Initialise = true) : BaseStar(p_BaseStar), MS_gt_07(p_BaseStar) { if (p_Initialise) Initialise(); }
 
 
 private: 
 
-    void Initialise() {
+    inline void Initialise() {
         CalculateTimescales(); // Initialise timescales
         m_Age = 0.0; // Set age appropriately   // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
         m_CHE = true; // initially for CH stars  // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<                                                                                                                                                          // Set age appropriately
@@ -43,10 +39,10 @@ protected:
 ///// ON PHASE FUNCTIONS   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     // abundances
-    GNU_CONST   double CalculateHAbundanceCore(const double p_Tau, const double p_InitialHAbundance) const override;
-    GNU_CONST   double CalculateHAbundanceSurface(const double p_Tau, const double p_InitialHAbundance) const override;
-    COMPAS_PURE double CalculateHeAbundanceCore(const double p_Tau, const double p_InitialHeAbundance = 0.0) const override;
-    COMPAS_PURE double CalculateHeAbundanceSurface(const double p_Tau, const double p_InitialHeAbundance) const override;
+    COMPAS_PURE double CalculateHAbundanceCore(const double p_Tau) const override;
+    COMPAS_PURE double CalculateHAbundanceSurface(const double p_Tau) const override;
+    COMPAS_PURE double CalculateHeAbundanceCore(const double p_Tau) const override;
+    COMPAS_PURE double CalculateHeAbundanceSurface(const double p_Tau) const override;
 
 
     // age, lifetime, tau, timescales
@@ -66,10 +62,21 @@ protected:
 
     GNU_CONST double CalculateLogLuminositiesRatio(const double p_Mass) const;
 
-    COMPAS_PURE double CH::CalculateLuminosity_Hurley2000(
+    inline double CalculateLuminosity_Hurley2000() const override {
+        return CalculateLuminosity_Hurley2000(
+            m_StateHistory.CurrentState.Mass(),
+            m_StateHistory.CurrentState.Tau(),
+            m_StateHistory.CurrentState.Age(),
+            m_StateHistory.ZAMSState.Luminosity(), // will exist for MS  <<<<<<<<<<<<<<<<< CHECK IF CALLED FROM OTHER STELLAR TYPES!!!!! <<<<<<<<<<<<<<<<<<<<<<<<<<<
+            m_StateHistory.CurrentState.Timescales(static_cast<int>(tMS)),
+            m_StateHistory.CurrentState.Timescales(static_cast<int>(tBGB))
+        );
+    }
+
+    COMPAS_PURE double CalculateLuminosity_Hurley2000(
         const double p_Mass,
         const double p_Tau,
-        const double p_Time,
+        const double p_Age,
         const double p_LZAMS,
         const double p_tMS,
         const double p_tBGB
@@ -120,7 +127,7 @@ double CalculateLuminosityOnPhase(
     m_StateHistory.ZAMSState().Luminosity(),
     m_StateHistory.Timescales(),
     m_StateHistory.CurrentState().Time(),
-    GLOBALS->ReferenceMetallicity(),
+    GLOBALS->Metallicity(),
     GLOBALS->HurleyACoefficients(),
     GLOBALS->HurleyLuminosityConstants()
 );
@@ -210,14 +217,13 @@ double CalculateLuminosityOnPhase(
  * Should one day be updated to match detailed models.
  * 
  *
- * double CalculateHAbundanceCore(const double p_Tau, const double p_InitialHAbundance) const
+ * double CalculateHAbundanceCore(const double p_Tau) const
  * 
  * @param       p_Tau                           Phase-relative age of the star [0, 1]
- * @param       p_InitialHAbundance             Initial hydrogen abundance of the star
  * @return                                      Hydrogen abundance in the core of the star
  */
-GNU_CONST inline double CH::CalculateHAbundanceCore(const double p_Tau, const double p_InitialHAbundance) const {
-    return p_InitialHAbundance * (1.0 - p_Tau);
+COMPAS_PURE inline double CH::CalculateHAbundanceCore(const double p_Tau) const {
+    return GLOBALS->ZAMSHAbundance() * (1.0 - p_Tau);
 }
 
 
@@ -230,14 +236,13 @@ GNU_CONST inline double CH::CalculateHAbundanceCore(const double p_Tau, const do
  * same abundances.
  * 
  *
- * double CalculateHAbundanceSurface(const double p_Tau, const double p_InitialHAbundance) const
+ * double CalculateHAbundanceSurface(const double p_Tau) const
  * 
  * @param       p_Tau                           Phase-relative age of the star [0, 1]
- * @param       p_InitialHAbundance             Initial hydrogen abundance of the star
  * @return                                      Hydrogen abundance at the surface of the star
  */
-GNU_CONST inline double CH::CalculateHAbundanceSurface(const double p_Tau, const double p_InitialHAbundance) const {
-    return CalculateHAbundanceCore(p_Tau, p_InitialHAbundance);
+COMPAS_PURE inline double CH::CalculateHAbundanceSurface(const double p_Tau) const {
+    return CalculateHAbundanceCore(p_Tau);
 }
 
 
@@ -252,14 +257,13 @@ GNU_CONST inline double CH::CalculateHAbundanceSurface(const double p_Tau, const
  * Should one day be updated to match detailed models.
  * 
  *
- * double CalculateHeAbundanceCore(const double p_Tau, const double p_InitialHeAbundance) const
+ * double CalculateHeAbundanceCore(const double p_Tau) const
  * 
  * @param       p_Tau                           Phase-relative age of the star [0, 1]
- * @param       p_InitialHeAbundance            Initial helium abundance of the star
  * @return                                      Helium abundance in the core of the star
  */
-COMPAS_PURE inline double CH::CalculateHeAbundanceCore(const double p_Tau, const double p_InitialHeAbundance) const {
-    return ((1.0 - GLOBALS->ReferenceMetallicity() - p_InitialHeAbundance) * p_Tau) + p_InitialHeAbundance;
+COMPAS_PURE inline double CH::CalculateHeAbundanceCore(const double p_Tau) const {
+    return ((1.0 - GLOBALS->Metallicity() - GLOBALS->ZAMSHeAbundance()) * p_Tau) + GLOBALS->ZAMSHeAbundance();
 }
 
 
@@ -272,14 +276,13 @@ COMPAS_PURE inline double CH::CalculateHeAbundanceCore(const double p_Tau, const
  * same abundances.
  * 
  * 
- * double CalculateHeAbundanceSurface(const double p_Tau, const double p_InitialHeAbundance) const
+ * double CalculateHeAbundanceSurface(const double p_Tau) const
  * 
  * @param       p_Tau                           Phase-relative age of the star [0, 1]
- * @param       p_InitialHeAbundance            Initial helium abundance of the star
  * @return                                      Helium abundance at the surface of the star
  */
-COMPAS_PURE inline double CH::CalculateHeAbundanceSurface(const double p_Tau, const double p_InitialHeAbundance) const {
-    return CalculateHeAbundanceCore(p_Tau, p_InitialHeAbundance);
+COMPAS_PURE inline double CH::CalculateHeAbundanceSurface(const double p_Tau) const {
+    return CalculateHeAbundanceCore(p_Tau);
 }
 
 
@@ -487,7 +490,7 @@ COMPAS_PURE MASS_LOSS_T inline CH::CalculateMLrate_Merritt2025(
 
 ///////////////////////////////////////////////////////////////////////////////////////
 //                                                                                   //
-//                              LUMINOSITY CALCULATIONS                              //
+//                                    LUMINOSITY                                     //
 //                                                                                   //
 ///////////////////////////////////////////////////////////////////////////////////////
 

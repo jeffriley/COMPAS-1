@@ -155,7 +155,7 @@ COMPAS_VARIABLE BaseStar::StellarPropertyValue(const T_ANY_PROPERTY p_Property) 
         case ANY_STAR_PROPERTY::MASS_0:                                             value = Mass0();                                                break;
         case ANY_STAR_PROPERTY::MDOT:                                               value = Mdot();                                                 break;
         case ANY_STAR_PROPERTY::MEAN_ANOMALY:                                       value = SN_MeanAnomaly();                                       break;
-        case ANY_STAR_PROPERTY::METALLICITY:                                        value = Metallicity();                                          break;
+        case ANY_STAR_PROPERTY::METALLICITY:                                        value = GLOBALS->Metallicity();                                          break;
         case ANY_STAR_PROPERTY::MOMENT_OF_INERTIA:                                  value = CalculateMomentOfInertia();                             break;
         case ANY_STAR_PROPERTY::MZAMS:                                              value = MZAMS();                                                break;
         case ANY_STAR_PROPERTY::OMEGA:                                              value = Omega() / SECONDS_IN_YEAR;                              break;
@@ -436,13 +436,13 @@ MASS_LOSS_T BaseStar::CalculateMassLossRate() const {
     // All were originally ZAMS mass
     // We can easily get ZAMS mass if it exists (i.e. we started on MS), but we need to manage if it doesn't
 
-    const double mass               = m_StateHistory.CurrentState().Mass();                 // current mass of the star
+    const double mass               = Mass();                 // current mass of the star
     const double mStart             = m_StateHistory.StartState().Mass();                   // mass of the star at the start of the simulation
-    const double radius             = m_StateHistory.CurrentState().Radius();               // current radius of the star
-    const double luminosity         = m_StateHistory.CurrentState().Luminosity();           // current luminosity of the star
-    const double temperature        = m_StateHistory.CurrentState().Temperature();          // current temperature of the star
-    const double perturbationMu     = m_StateHistory.CurrentState().PerturbationMu();       // current small envelope perturbation parameter
-    const double HeAbundanceSurface = m_StateHistory.CurrentState().HeAbundanceSurface();   // He abundance on the surface of the star
+    const double radius             = Radius();               // current radius of the star
+    const double luminosity         = Luminosity();           // current luminosity of the star
+    const double temperature        = Temperature();          // current temperature of the star
+    const double perturbationMu     = PerturbationMu();       // current small envelope perturbation parameter
+    const double HeAbundanceSurface = HeAbundanceSurface();   // He abundance on the surface of the star
 
     double dMdt;
     MASS_LOSS_TYPE dominantMLtype;
@@ -651,7 +651,7 @@ COMPAS_PURE MASS_LOSS_T BaseStar::CalculateMLrateOB(const double p_Mass, const d
 COMPAS_PURE MASS_LOSS_T BaseStar::CalculateMLrateOB_Bjorklund2022(const double p_Mass, const double p_Luminosity, const double p_Temperature) const {
 
     const double gamma   = (p_Luminosity * LSOLW) / CalculateEddingtonLuminosity(p_Mass, 0.1);  // Bjorklund et al. 2022, para 3, assumes He abundance = 0.1
-    const double logZ    = log10(GLOBALS->ReferenceMetallicity() / 0.014);                      // Bjorklund et al. 2022 uses 0.014
+    const double logZ    = log10(GLOBALS->Metallicity() / 0.014);                      // Bjorklund et al. 2022 uses 0.014
     const double logL    = log10(p_Luminosity / 1.0E6);
     const double logTeff = log10(p_Temperature * TSOL / 45000.0);           
     const double logMeff = log10(p_Mass * (1.0 - gamma) / 45.0);
@@ -1010,7 +1010,7 @@ COMPAS_PURE MASS_LOSS_T BaseStar::CalculateMLrateVMS_Sabhahit2023(const double p
     double dMdt;                        
     MASS_LOSS_TYPE dominantMLtype;
 
-    const double mSwitch = PPOW(GLOBALS->ReferenceMetallicity(), -1.574) * 0.0615 + 18.10;  // obtained from a powerlaw fit to Sabhahit 2023, table 2, given teff = 45kK
+    const double mSwitch = PPOW(GLOBALS->Metallicity(), -1.574) * 0.0615 + 18.10;  // obtained from a powerlaw fit to Sabhahit 2023, table 2, given teff = 45kK
     const double lSwitch = PPOW(10.0, (-1.91 * GLOBALS->SigmaHurley() + 2.36));             // loglinear fits to Sabhahit 2023, table 2 
 
     if ((p_Luminosity / p_Mass) > (lSwitch / mSwitch)) {                                    // in the VMS regime according to Sabhahit+ 2023?
@@ -1020,7 +1020,7 @@ COMPAS_PURE MASS_LOSS_T BaseStar::CalculateMLrateVMS_Sabhahit2023(const double p
 
     }
     else {                                                                                  // no, fall back to default OB mass loss prescription
-        std::tie(dMdt, dominantMLtype) = CalculateMLrateOB(GLOBALS->ReferenceMetallicity(), p_Mass, p_Luminosity, p_Temperature, OPTIONS->OBMassLossPrescription());
+        std::tie(dMdt, dominantMLtype) = CalculateMLrateOB(GLOBALS->Metallicity(), p_Mass, p_Luminosity, p_Temperature, OPTIONS->OBMassLossPrescription());
     }
 
     return std::make_tuple(dMdt, dominantMLtype);
@@ -1129,9 +1129,9 @@ COMPAS_PURE MASS_LOSS_T BaseStar::CalculateMLrate_Belczynski2010(
             // (transition between OB and WR mass loss rates)
             if (OPTIONS->ScaleMassLossWithSurfaceHeliumAbundance()) {
                 double dMdtWR;
-                std::tie(dMdtWR, std::ignore) = CalculateMLrateWR_ZDependent_Static(GLOBALS->ReferenceMetallicity(), p_Luminosity, 0.0);
+                std::tie(dMdtWR, std::ignore) = CalculateMLrateWR_ZDependent_Static(GLOBALS->Metallicity(), p_Luminosity, 0.0);
                 MASS_LOSS_TYPE thisDominantMLType;
-                std::tie(dMdtOther, thisDominantMLType) = CalculateMLrate_WRenhanced(GLOBALS->ReferenceMetallicity(), p_Luminosity, p_Temperature, p_HeAbundanceSurface, dMdtOther, dMdtWR);
+                std::tie(dMdtOther, thisDominantMLType) = CalculateMLrate_WRenhanced(GLOBALS->Metallicity(), p_Luminosity, p_Temperature, p_HeAbundanceSurface, dMdtOther, dMdtWR);
                 if (thisDominantMLType != MASS_LOSS_TYPE::NONE) dominantMLtypeOther = thisDominantMLType;
             }
         }
@@ -1193,7 +1193,7 @@ COMPAS_PURE double BaseStar::CalculateMLrate_WRenhanced(
         double dMdtWRfactor = 0.0;
 
         if (pdMdtWR.has_value()) dMdtWRfactor = fractionWR * pdMdtWR.value();
-        else                     dMdtWRfactor = fractionWR * HeMS::CalculateMLrate_Merritt2025_Static(GLOBALS->ReferenceMetallicity(), p_Luminosity, p_Temperature);
+        else                     dMdtWRfactor = fractionWR * HeMS::CalculateMLrate_Merritt2025_Static(GLOBALS->Metallicity(), p_Luminosity, p_Temperature);
         
         if (dMdtWRfactor > dMdt) {                      // WR winds dominant?
             m_DominantMassLossRate =MASS_LOSS_TYPE::WR; // yes 
@@ -1360,13 +1360,13 @@ COMPAS_PURE MASS_LOSS_T BaseStar::CalculateMLrate_Merritt2025(
         // no - VMS winds regime?
         else if (p_Mass >= VMS_MASS_THRESHOLD) {
             // yes - VMS mass loss rate
-            std::tie(dMdtOther, dominantMLtypeOther) = CalculateMLrateVMS(GLOBALS->ReferenceMetallicity(), p_Mass, p_Luminosity, p_Temperature, GLOBALS->ZetaAnders(), OPTIONS->ScaleTerminalWindVelocityWithMetallicityPower());
+            std::tie(dMdtOther, dominantMLtypeOther) = CalculateMLrateVMS(GLOBALS->Metallicity(), p_Mass, p_Luminosity, p_Temperature, GLOBALS->ZetaAnders(), OPTIONS->ScaleTerminalWindVelocityWithMetallicityPower());
 
             // scale mass loss with the surface helium abundance if necessary
             // (transition between OB and WR mass loss rates)
             if (OPTIONS->ScaleMassLossWithSurfaceHeliumAbundance()) {
                 MASS_LOSS_TYPE thisDominantMLType;
-                std::tie(dMdtOther, thisDominantMLType) = CalculateMLrate_WRenhanced(GLOBALS->ReferenceMetallicity(), p_Luminosity, p_Temperature, p_HeAbundanceSurface, dMdtOther, std::nullopt);
+                std::tie(dMdtOther, thisDominantMLType) = CalculateMLrate_WRenhanced(GLOBALS->Metallicity(), p_Luminosity, p_Temperature, p_HeAbundanceSurface, dMdtOther, std::nullopt);
                 if (thisDominantMLType != MASS_LOSS_TYPE::NONE) dominantMLtypeOther = thisDominantMLType;
             }
         }
@@ -1374,13 +1374,13 @@ COMPAS_PURE MASS_LOSS_T BaseStar::CalculateMLrate_Merritt2025(
         // otherwise...
         else {
             // OB mass loss rate
-            std::tie(dMdtOther, dominantMLtypeOther) = CalculateMLrateOB(GLOBALS->ReferenceMetallicity(), p_Mass, p_Luminosity, p_Temperature, OPTIONS->OBMassLossPrescription());
+            std::tie(dMdtOther, dominantMLtypeOther) = CalculateMLrateOB(GLOBALS->Metallicity(), p_Mass, p_Luminosity, p_Temperature, OPTIONS->OBMassLossPrescription());
 
             // scale mass loss with the surface helium abundance if necessary
             // (transition between OB and WR mass loss rates)
             if (OPTIONS->ScaleMassLossWithSurfaceHeliumAbundance()) {
                 MASS_LOSS_TYPE thisDominantMLType;
-                std::tie(dMdtOther, thisDominantMLType) = CalculateMLrate_WRenhanced(GLOBALS->ReferenceMetallicity(), p_Luminosity, p_Temperature, p_HeAbundanceSurface, dMdtOther, std::nullopt);
+                std::tie(dMdtOther, thisDominantMLType) = CalculateMLrate_WRenhanced(GLOBALS->Metallicity(), p_Luminosity, p_Temperature, p_HeAbundanceSurface, dMdtOther, std::nullopt);
                 if (thisDominantMLType != MASS_LOSS_TYPE::NONE) dominantMLtypeOther = thisDominantMLType;
             }
         }
@@ -1568,10 +1568,10 @@ COMPAS_PURE double BaseStar::CalculateRadiusAtZAMS_Tout1996(const double p_MZAMS
  */
 COMPAS_PURE double BaseStar::CalculateRotationalVelocityOStar_Ramirez2013() const {
 
-    double desiredCDF            = RAND->Random();                                              // R\random desired CDF
+    double desiredCDF            = RAND->Random();                                                  // random desired CDF
 
-    const boost::uintmax_t maxit = ADAPTIVE_RV_MAX_ITERATIONS;                                  // limit to maximum iterations.
-    boost::uintmax_t it          = maxit;                                                       // initially our chosen max iterations, but updated with actual
+    const boost::uintmax_t maxit = ADAPTIVE_RV_MAX_ITERATIONS;                                      // limit to maximum iterations.
+    boost::uintmax_t it          = maxit;                                                           // initially our chosen max iterations, but updated with actual
 
     // find root
     // we use an iterative algorithm to find the root here:
@@ -1583,19 +1583,19 @@ COMPAS_PURE double BaseStar::CalculateRotationalVelocityOStar_Ramirez2013() cons
     //       - if we reach the maximum number of search step reduction iterations, or the search step factor reduces to 1.0 (so search step size = 0.0),
     //         we stop and return a negative value for the root (indicating no root found)
    
-    double guess      = 100.0;                                                                  // guess at 100 km s^-1 (arbitrary initial guess)
+    double guess      = 100.0;                                                                      // guess at 100 km s^-1 (arbitrary initial guess)
 
-    double factorFrac = ADAPTIVE_RV_SEARCH_FACTOR_FRAC;                                         // search step size factor fractional part
-    double factor     = 1.0 + factorFrac;                                                       // factor to determine search step size (size = guess * factor)
+    double factorFrac = ADAPTIVE_RV_SEARCH_FACTOR_FRAC;                                             // search step size factor fractional part
+    double factor     = 1.0 + factorFrac;                                                           // factor to determine search step size (size = guess * factor)
     
-    std::pair<double, double> root(-1.0, -1.0);                                                 // initialise root - default return
-    std::size_t tries = 0;                                                                      // number of tries
-    bool done         = false;                                                                  // finished (found root or exceed maximum tries)?
+    std::pair<double, double> root(-1.0, -1.0);                                                     // initialise root - default return
+    std::size_t tries = 0;                                                                          // number of tries
+    bool done         = false;                                                                      // finished (found root or exceed maximum tries)?
     ERROR error       = ERROR::NONE;
     OStarRotationVelocityFunctor<double> func = OStarRotationVelocityFunctor<double>(desiredCDF);
-    while (!done) {                                                                             // while no error and acceptable root found
+    while (!done) {                                                                                 // while no error and acceptable root found
 
-        bool isRising = true;                                                                   // guess for direction of search; CDF increases monotonically
+        bool isRising = true;                                                                       // guess for direction of search; CDF increases monotonically
 
         // run the root finder
         // regardless of any exceptions or errors, display any problems as a warning, then
@@ -1608,42 +1608,42 @@ COMPAS_PURE double BaseStar::CalculateRotationalVelocityOStar_Ramirez2013() cons
             error = ERROR::NONE;
             root  = boost::math::tools::bracket_and_solve_root(func, guess, factor, isRising, utils::BracketTolerance, it); // find root
             // root finder returned without raising an exception
-            if (error != ERROR::NONE) { SHOW_WARN(error); }                                     // root finder encountered an error
-            else if (it >= maxit) { SHOW_WARN(ERROR::TOO_MANY_RV_ITERATIONS); }                 // too many root finder iterations
+            if (error != ERROR::NONE) { SHOW_WARN(error); }                                         // root finder encountered an error
+            else if (it >= maxit) { SHOW_WARN(ERROR::TOO_MANY_RV_ITERATIONS); }                     // too many root finder iterations
         }
-        catch(std::exception& e) {                                                              // catch generic boost root finding error
+        catch(std::exception& e) {                                                                  // catch generic boost root finding error
             // root finder exception
             // could be too many iterations, or unable to bracket root - it may not
             // be a hard error - so no matter what the reason is that we are here,
             // we'll just emit a warning and keep trying
-            if (it >= maxit) { SHOW_WARN(ERROR::TOO_MANY_RV_ITERATIONS); }                      // too many root finder iterations
-            else             { SHOW_WARN(ERROR::ROOT_FINDER_FAILED, e.what()); }                // some other problem - show it as a warning
+            if (it >= maxit) { SHOW_WARN(ERROR::TOO_MANY_RV_ITERATIONS); }                          // too many root finder iterations
+            else             { SHOW_WARN(ERROR::ROOT_FINDER_FAILED, e.what()); }                    // some other problem - show it as a warning
         }
 
         // we have a solution from the root finder - it may not be an acceptable solution
         // so we check if it is within our preferred tolerance
-        if (fabs(func(root.first + (root.second - root.first) / 2.0)) <= ROOT_ABS_TOLERANCE) {  // solution within tolerance?
-            done = true;                                                                        // yes - we're done
+        if (std::fabs(func(root.first + (root.second - root.first) / 2.0)) <= ROOT_ABS_TOLERANCE) { // solution within tolerance?
+            done = true;                                                                            // yes - we're done
         }
-        else if (fabs(func(root.first)) <= ROOT_ABS_TOLERANCE) {                                // solution within tolerance at endpoint 1?
+        else if (std::fabs(func(root.first)) <= ROOT_ABS_TOLERANCE) {                               // solution within tolerance at endpoint 1?
             root.second=root.first;
-            done = true;                                                                        // yes - we're done
+            done = true;                                                                            // yes - we're done
         }
-        else if (fabs(func(root.second)) <= ROOT_ABS_TOLERANCE) {                               // solution within tolerance at endpoint 2?
+        else if (std::fabs(func(root.second)) <= ROOT_ABS_TOLERANCE) {                              // solution within tolerance at endpoint 2?
             root.first=root.second;
-            done = true;                                                                        // yes - we're done
+            done = true;                                                                            // yes - we're done
         }
-        else {                                                                                  // no - try again
+        else {                                                                                      // no - try again
             // we don't have an acceptable solution - reduce search step size and try again
-            factorFrac /= 2.0;                                                                  // reduce fractional part of factor
-            factor      = 1.0 + factorFrac;                                                     // new search step size
-            tries++;                                                                            // increment number of tries
-            if (tries > ADAPTIVE_RV_MAX_TRIES || fabs(factor - 1.0) <= ROOT_ABS_TOLERANCE) {    // too many tries, or step size 0.0?
+            factorFrac /= 2.0;                                                                      // reduce fractional part of factor
+            factor      = 1.0 + factorFrac;                                                         // new search step size
+            tries++;                                                                                // increment number of tries
+            if (tries > ADAPTIVE_RV_MAX_TRIES || std::fabs(factor - 1.0) <= ROOT_ABS_TOLERANCE) {   // too many tries, or step size 0.0?
                 // we've tried as much as we can - fail here with -ve return value
-                root.first  = -1.0;                                                             // yes - set error return
+                root.first  = -1.0;                                                                 // yes - set error return
                 root.second = -1.0;
-                SHOW_WARN(ERROR::TOO_MANY_RV_TRIES);                                            // show warning
-                done = true;                                                                    // we're done
+                SHOW_WARN(ERROR::TOO_MANY_RV_TRIES);                                                // show warning
+                done = true;                                                                        // we're done
             }
         }
     }
@@ -1869,7 +1869,7 @@ COMPAS_PURE double BaseStar::CalculateAngularFrequencyCHE_Static(const double p_
     }
 
     // calculate omegaCHE(M, Z)
-    return (1.0 / ((0.09 * log(GLOBALS->ReferenceMetallicity() / 0.004)) + 1.0) * omegaZ004) * SECONDS_IN_YEAR;
+    return (1.0 / ((0.09 * log(GLOBALS->Metallicity() / 0.004)) + 1.0) * omegaZ004) * SECONDS_IN_YEAR;
 }
 
 
@@ -1896,7 +1896,7 @@ COMPAS_PURE double BaseStar::CalculateAngularFrequencyCHE_Static(const double p_
  *     const StellarSNDetailsT& p_SNdetails
  * ) const
  *
- * @param       p_RemnantType                   Expected stellr type of the remnant (STELLAR_TYPE) (must be NS or BH)
+ * @param       p_RemnantType                   Expected stellar type of the remnant (must be NS or BH)
  * @param       p_Mass                          Mass of the star (Msol)
  * @param       p_EjectaMass                    Change in mass of the exploding star (i.e. mass of the ejecta) (Msol)
  * @param       p_RemnantMass                   The mass of the remnant (Msol)
@@ -2293,7 +2293,7 @@ if (OPTIONS->DebugLevel() > 0) std::cout << std::boolalpha << std::setprecision(
     // there is a chance that mass loss from winds is much faster than previously estimated if, say, LBV winds have turned on
     // we therefore precompute the mass loss rate to avoid taking an overly long timestep, despite the extra computational costs
     double massChangeWinds = m_Mass - CalculateMassLossValues(dt, false);
-    if (utils::Compare(massChangeWinds, 0.0) != 0) dt = std::min(dt, OPTIONS->MassChangeFraction() * (dt * m_Mass / fabs(massChangeWinds)));
+    if (utils::Compare(massChangeWinds, 0.0) != 0) dt = std::min(dt, OPTIONS->MassChangeFraction() * (dt * m_Mass / std::fabs(massChangeWinds)));
 if (OPTIONS->DebugLevel() > 0) std::cout << std::boolalpha << std::setprecision(15) << "BaseStar::CalculateTimestep(@4), dt = " << dt << "\n";  
 
     dt = std::max(QUANTISE_DT(dt), NUCLEAR_MINIMUM_TIMESTEP);                                               // quantised; not less than nuclear minimum
@@ -2481,7 +2481,7 @@ if (OPTIONS->DebugLevel() > 0) std::cout << std::boolalpha << std::setprecision(
         std::tie(m_Radius, nextStellarType) = CalculateRadiusAndStellarTypeOnPhase();   // radius and possibly new stellar type
 if (OPTIONS->DebugLevel() > 0) std::cout << std::boolalpha << std::setprecision(15) << "BaseStar::EvolveOnPhase(@4), p_dt = " << p_dt << ", m_Mass = " << m_Mass << ", m_radius = " << m_Radius << ", m_Tau = " << m_Tau << "\n";
 
-        m_Mu = CalculatePerturbationMuOnPhase();
+        m_Mu = CalculateHurleyPerturbationMu();
 
         PerturbLuminosityAndRadiusOnPhase();
 
@@ -2527,13 +2527,12 @@ StarState BaseStar::AdvanceOneTimestep(const double p_dt, const StarState& p_Sta
 
     // unpack variables from the current state - so we call the getters only once
     
-    const double age         = m_StateHistory.CurrentState.Age();
-    const double luminosity  = m_StateHistory.CurrentState.Luminosity();
-    const double mass        = m_StateHistory.CurrentState.Mass();
-    const double massEffInit = m_StateHistory.CurrentState.MassEffectiveInitial()
-    const double radius      = m_StateHistory.CurrentState.Radius();
-    const double tau         = m_StateHistory.CurrentState.Tau();
-    const double time        = m_StateHistory.CurrentState.Time();
+    const double age        = Age();
+    const double luminosity = Luminosity();
+    const double mass       = Mass();
+    const double radius     = Radius();
+    const double tau        = Tau();
+    const double time       = Time();
 
     
 
@@ -2575,8 +2574,25 @@ StarState BaseStar::AdvanceOneTimestep(const double p_dt, const StarState& p_Sta
 
     // masses
 
-    double deltaMassEffInit = massEffInit - CalculateEffectiveInitialMass();    // <<<<<<<<<< DONE >>>>>>>>>>  effective initial mass delta (relavant to MS, HG, and HeMS stars only)
-    interimState.SetEffectiveInitialMass(massEffInit + deltaMassEffectiveInitial()); // update interim state
+    // effective initial mass
+    //
+    // The effective initial mass of the star is the variable M0 in Hurley et al. 2000.  M0 is introduced in
+    // section 7 of Hurley et al. 2000 and is described there as the "initial mass". M0 is the phase-specific
+    // initial mass - i.e., it is the initial mass for the current evolutionary phase of the star, but can 
+    // track Mt (mass at time t), depending upon the phase, so (as stated in Hurley et al. 2000), it is really
+    // the "effective initial mass".
+    //
+    // The effective initial mass in Hurley et al. 2000 is relavant to MS, HG, and HeMS stars only.
+    //
+    // Since M0, or the effective initial mass, is a Hurley construct, we only calculate it here if the evolution
+    // mode is a Hurley evolution mode, and we only provide the Hurley method for calculating it.  If the addition
+    // of other evolution modes require a similar "effective intial mass" construct, we can add functionality later
+    // to calculate M0 as required for different modes of evolution.
+    //  
+    if (OPTIONS->Mode() == EVOLUTION_MODE::SSE_HURLEY || OPTIONS->Mode() == EVOLUTION_MODE::BSE_HURLEY) {   // Hurley evolution mode?
+                                                                                                            // yes
+        interimState.SetEffectiveInitialMass(CalculateEffectiveInitialMass_Hurley2000());                   // update interim state  <<<<<<<<<< DONE >>>>>>>>>> 
+    }
 
     // calculate mass loss for dt, clamped to [0.0, photon tiring limit]
     //
@@ -2585,14 +2601,15 @@ StarState BaseStar::AdvanceOneTimestep(const double p_dt, const StarState& p_Sta
 
     double dMdt;
     MASS_LOSS_TYPE dominantMLtype;
-    std::tie(dMdt, dominantMLtype) = CalculateMassLossRate();                   // <<<<<<<<<< DONE >>>>>>>>>>  Msol yr^1; +ve is mass loss; -ve is mass gain
+    std::tie(dMdt, dominantMLtype) = CalculateMassLossRate();                   // <<<<<<<<<< DONE >>>>>>>>>>  Msol yr^1, [0, 1]
     
-    dMdt = dt > 0.0 ? dMdt * 1.0E6 : 0.0;                                       // dMdt (Msol Myr^-1)
+    dMdt = dt > 0.0 ? dMdt * 1.0E6 : 0.0;                                       // dMdt (Msol Myr^-1, [0, 1])
 
     const double upperBound = OPTIONS->CheckPhotonTiringLimit() ? luminosity / (G_SOLAR_YEAR * mass / radius) : DBL_MAX;
-    const double massLoss   = std::min(std::max(0.0, dMdt * dt), upperBound);   // mass loss (Msol)
+    const double deltaMass  = -std::min(std::max(0.0, dMdt * dt), upperBound);  // mass loss (Msol) (-ve for mass loss)
 
-    double deltaMass = mass - massLoss;                                         // mass delta from mass loss(/gain)
+    // calculate masses
+
     interimState.SetMass(mass + deltaMass);                                     // update interim state
 
 
@@ -2754,7 +2771,7 @@ StarState BaseStar::AdvanceOneTimestep(const double p_dt, const StarState& p_Sta
             std::tie(m_Radius, nextStellarType) = CalculateRadiusAndStellarTypeOnPhase();   // radius and possibly new stellar type
     if (OPTIONS->DebugLevel() > 0) std::cout << std::boolalpha << std::setprecision(15) << "BaseStar::EvolveOnPhase(@4), p_dt = " << p_dt << ", m_Mass = " << m_Mass << ", m_radius = " << m_Radius << ", m_Tau = " << m_Tau << "\n";
     
-            m_Mu = CalculatePerturbationMuOnPhase();
+            m_Mu = CalculateHurleyPerturbationMu();
     
             PerturbLuminosityAndRadiusOnPhase();
     
@@ -2795,14 +2812,14 @@ StarState BaseStar::AdvanceOneTimestep(const double p_dt, const StarState& p_Sta
                 // Calculate abundances
                 m_HydrogenAbundanceCore    = CalculateHAbundanceCore(p_Tau, p_InitialHAbundance);
                 m_HydrogenAbundanceSurface = CalculateHAbundanceSurface(p_Tau, p_InitialHAbundance);  
-                m_HeliumAbundanceCore      = CalculateHeAbundanceCore(GLOBALS->ReferenceMetallicity(), p_Tau, p_InitialHeAbundance);
+                m_HeliumAbundanceCore      = CalculateHeAbundanceCore(GLOBALS->Metallicity(), p_Tau, p_InitialHeAbundance);
                 m_HeliumAbundanceSurface   = CalculateHeAbundanceSurface(p_Tau, p_InitialHAbundance);
                
         if (OPTIONS->DebugLevel() > 0) std::cout << std::boolalpha << std::setprecision(15) << "BaseStar::EvolveOnPhase(@3), p_dt = " << p_dt << ", m_Mass = " << m_Mass << ", m_radius = " << m_Radius << ", m_Tau = " << m_Tau << "\n";
                 std::tie(m_Radius, nextStellarType) = CalculateRadiusAndStellarTypeOnPhase();   // radius and possibly new stellar type
         if (OPTIONS->DebugLevel() > 0) std::cout << std::boolalpha << std::setprecision(15) << "BaseStar::EvolveOnPhase(@4), p_dt = " << p_dt << ", m_Mass = " << m_Mass << ", m_radius = " << m_Radius << ", m_Tau = " << m_Tau << "\n";
         
-                m_Mu = CalculatePerturbationMuOnPhase();
+                m_Mu = CalculateHurleyPerturbationMu();
         
                 PerturbLuminosityAndRadiusOnPhase();
         
@@ -2857,7 +2874,7 @@ STELLAR_TYPE BaseStar::ResolveEndOfPhase() {
 
         m_Radius        = CalculateRadiusAtPhaseEnd();
 
-        m_Mu            = CalculatePerturbationMuAtPhaseEnd();
+        m_Mu            = CalculateHurleyPerturbationMu();
 
         PerturbLuminosityAndRadiusAtPhaseEnd();
 
@@ -2925,11 +2942,11 @@ COMPAS_PURE double BaseStar::CalculateCELambda_Nanjing(const double p_Mass, cons
     if (OPTIONS->CommonEnvelopeLambdaNanjingEnhanced()) {                                               // use enhanced Nanjing prescription?
                                                                                                         // yes
         // set stellar population based on metallicity
-        STELLAR_POPULATION stellarPop = GLOBALS->ReferenceMetallicity() < LAMBDA_NANJING_ZLIMIT ? STELLAR_POPULATION::POPULATION_II : STELLAR_POPULATION::POPULATION_I;
+        STELLAR_POPULATION stellarPop = GLOBALS->Metallicity() < LAMBDA_NANJING_ZLIMIT ? STELLAR_POPULATION::POPULATION_II : STELLAR_POPULATION::POPULATION_I;
 
         if (OPTIONS->CommonEnvelopeLambdaNanjingInterpolateInMass()) {                                  // interpolate across mass models?
             if (OPTIONS->CommonEnvelopeLambdaNanjingInterpolateInMetallicity()) {                       // yes - interpolate across stellar populations?
-                lambda = BaseStar::CalculateCELambda_Nanjing_MassAndZInterpolated(GLOBALS->ReferenceMetallicity(), p_Mass, p_Radius, p_CoreMass);   // yes
+                lambda = BaseStar::CalculateCELambda_Nanjing_MassAndZInterpolated(GLOBALS->Metallicity(), p_Mass, p_Radius, p_CoreMass);   // yes
             }
             else {                                                                                      // no - not interpolating across stellar populations
                 lambda = BaseStar::CalculateCELambda_Nanjing_MassInterpolated(p_Mass, p_Radius, p_CoreMass, stellarPop);
@@ -2942,7 +2959,7 @@ COMPAS_PURE double BaseStar::CalculateCELambda_Nanjing(const double p_Mass, cons
             else                                                massIndex = utils::BinarySearch(NANJING_MASSES_MIDPOINTS, p_Mass)[1]; // bin edge indices - use upper
 
             if (OPTIONS->CommonEnvelopeLambdaNanjingInterpolateInMetallicity()) {                       // interpolate across stellar populations?
-                lambda = BaseStar::CalculateCELambda_Nanjing_ZInterpolated(GLOBALS->ReferenceMetallicity(), p_Mass, p_Radius, p_CoreMass, GLOBALS->SigmaHurley(), massIndex); // yes
+                lambda = BaseStar::CalculateCELambda_Nanjing_ZInterpolated(GLOBALS->Metallicity(), p_Mass, p_Radius, p_CoreMass, GLOBALS->SigmaHurley(), massIndex); // yes
             }
             else {                                                                                      // no - not interpolating across stellar populations
                 lambda = BaseStar::CalculateCELambda_Nanjing_Enhanced(p_Mass, p_Radius, p_CoreMass, massIndex, stellarPop);
@@ -3052,8 +3069,8 @@ double BaseStar::CalculateCELambda_Nanjing_MassInterpolated(const double p_Mass,
 double BaseStar::CalculateCELambda_Nanjing_ZInterpolated(const double p_Mass, const double p_Radius, const double p_CoreMass, const size_t p_MassIndex) const {
     double lambda;
     
-         if (GLOBALS->ReferenceMetallicity() < LAMBDA_NANJING_POPII_Z) lambda = CalculateCELambda_Nanjing_Enhanced(p_Mass, p_Radius, p_CoreMass, p_MassIndex, STELLAR_POPULATION::POPULATION_II);   // lambda for pop. II metallicity
-    else if (GLOBALS->ReferenceMetallicity() > LAMBDA_NANJING_POPI_Z)  lambda = CalculateCELambda_Nanjing_Enhanced(p_Mass, p_Radius, p_CoreMass, p_MassIndex, STELLAR_POPULATION::POPULATION_I);    // lambda for pop. I metallicity
+         if (GLOBALS->Metallicity() < LAMBDA_NANJING_POPII_Z) lambda = CalculateCELambda_Nanjing_Enhanced(p_Mass, p_Radius, p_CoreMass, p_MassIndex, STELLAR_POPULATION::POPULATION_II);   // lambda for pop. II metallicity
+    else if (GLOBALS->Metallicity() > LAMBDA_NANJING_POPI_Z)  lambda = CalculateCELambda_Nanjing_Enhanced(p_Mass, p_Radius, p_CoreMass, p_MassIndex, STELLAR_POPULATION::POPULATION_I);    // lambda for pop. I metallicity
     else {
         // linear interpolation in logZ between pop. I and pop. II metallicities
         const double lambdaLow = CalculateCELambda_Nanjing_Enhanced(p_Mass, p_Radius, p_CoreMass, p_MassIndex, STELLAR_POPULATION::POPULATION_II);
@@ -3477,7 +3494,7 @@ DBL_DBL_DBL_DBL BaseStar::CalculateImKnmDynamical(const double p_Omega, const do
 
     double radiusAU              = m_Radius * RSOL_TO_AU;
     double coreRadiusAU          = CalculateConvectiveCoreRadius() * RSOL_TO_AU;
-    double convectiveEnvRadiusAU = CalculateRadialExtentConvectiveEnvelope() * RSOL_TO_AU;
+    double convectiveEnvRadiusAU = CalculateConvectiveEnvelopeRadialExtent() * RSOL_TO_AU;
     double radiusIntershellAU    = radiusAU - convectiveEnvRadiusAU;                                    // Outer radial coordinate of radiative intershell
 
     // There should be no Dynamical tides if the entire star is convective, i.e. if there are no convective-radiative boundaries. 
@@ -3641,7 +3658,7 @@ DBL_DBL_DBL_DBL BaseStar::CalculateImKnmEquilibrium(const double p_Omega, const 
     // Viscous dissipation
     // No contribution from convective core; only convective envelope.
 
-    double rEnvAU = CalculateRadialExtentConvectiveEnvelope() * RSOL_TO_AU;
+    double rEnvAU = CalculateConvectiveEnvelopeRadialExtent() * RSOL_TO_AU;
     double envMass, envMassMax;
     std::tie(envMass, envMassMax) = CalculateConvectiveEnvelopeMass();
     

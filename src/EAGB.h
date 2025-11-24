@@ -83,7 +83,7 @@ COMPAS_PURE static double CalculateRadiusOnPhase_Hurley2000_Static(const double 
 GNU_CONST inline double EAGB::CalculateRemnantRadius_Hurley2000(const double p_HeCoreMass) const;
 
 
-GNU_CONST double CalculateTau_Hurley2000() const override { return 0.0; }; // Tau (relative age) is not used for EAGB stars in Hurley et al. 2000, so we return 0.0
+GNU_CONST inline double CalculateTau_Hurley2000() const override { return 0.0; }; // Tau (relative age) is not used for EAGB stars in Hurley et al. 2000, so we return 0.0
 
 
 
@@ -134,7 +134,9 @@ inline double CalculateHeCoreMassAtPhaseEnd() const override { return m_StateHis
 
     double          ChooseTimestep(const double p_Time) const;
 
-    ENVELOPE        DetermineEnvelopeType() const                                                   { return ENVELOPE::CONVECTIVE; }                                    // Always CONVECTIVE
+
+GNU_CONST inline ENVELOPE DetermineEnvelopeType() const override { return ENVELOPE::CONVECTIVE; } // Always CONVECTIVE for EAGB stars
+
 
     STELLAR_TYPE    EvolveToNextPhase();
 

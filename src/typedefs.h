@@ -142,48 +142,80 @@ typedef std::tuple<double, MASS_LOSS_TYPE> MASS_LOSS_T;
 // note that the order of entries is not significant - the code should not rely on these being in any order
 // (and so the stellar type symbols having any value or order.  e.g. it is not guaranteed that the integer
 // value for stellar type NEUTRON_STAR will be > the integr value for stellar type HERTZSPRUNG_GAP)
-enum class STELLAR_TYPE: int {                      // Hurley
-    MS_LTE_07,                                      //   0
-    MS_GT_07,                                       //   1
-    HERTZSPRUNG_GAP,                                //   2
-    FIRST_GIANT_BRANCH,                             //   3
-    CORE_HELIUM_BURNING,                            //   4
-    EARLY_ASYMPTOTIC_GIANT_BRANCH,                  //   5
-    THERMALLY_PULSING_ASYMPTOTIC_GIANT_BRANCH,      //   6
-    NAKED_HELIUM_STAR_MS,                           //   7
-    NAKED_HELIUM_STAR_HERTZSPRUNG_GAP,              //   8
-    NAKED_HELIUM_STAR_GIANT_BRANCH,                 //   9
-    HELIUM_WHITE_DWARF,                             //  10
-    CARBON_OXYGEN_WHITE_DWARF,                      //  11
-    OXYGEN_NEON_WHITE_DWARF,                        //  12
-    NEUTRON_STAR,                                   //  13
-    BLACK_HOLE,                                     //  14
-    MASSLESS_REMNANT,                               //  15
-    CHEMICALLY_HOMOGENEOUS,                         //  16  : this is here to preserve the Hurley type numbers, but note that Hurley type number progression doesn't necessarily indicate class inheritance
-    STAR,                                           //  17  : star is created this way, then switches as required (down here so stellar types consistent with Hurley et al. 2000)
-    BINARY_STAR,                                    //  18  : here mainly for diagnostics
-    NONE,                                           //  19  : here mainly for diagnostics
+enum class STELLAR_TYPE: int {               // Hurley
+    MS_LTE_07                                 = 0,
+    MS_GT_07                                  = 1,
+    HERTZSPRUNG_GAP                           = 2,
+    HG                                        = 2,
+    FIRST_GIANT_BRANCH                        = 3,
+    FGB                                       = 3,
+    CORE_HELIUM_BURNING                       = 4,
+    CHeB                                      = 4,
+    EARLY_ASYMPTOTIC_GIANT_BRANCH             = 5,
+    EAGB                                      = 5,
+    THERMALLY_PULSING_ASYMPTOTIC_GIANT_BRANCH = 6,
+    TPAGB                                     = 6,
+    NAKED_HELIUM_STAR_MS                      = 7,
+    HeMS                                      = 7,
+    NAKED_HELIUM_STAR_HERTZSPRUNG_GAP         = 8,
+    HeHG                                      = 8,
+    NAKED_HELIUM_STAR_GIANT_BRANCH            = 9,
+    HeGB                                      = 9,
+    HELIUM_WHITE_DWARF                        = 10,
+    HeWD                                      = 10,
+    CARBON_OXYGEN_WHITE_DWARF                 = 11,
+    COWD                                      = 11,
+    OXYGEN_NEON_WHITE_DWARF                   = 12,
+    ONeWD                                     = 12,
+    NEUTRON_STAR                              = 13,
+    NS                                        = 13,
+    BLACK_HOLE                                = 14,
+    BH                                        = 14,
+    MASSLESS_REMNANT                          = 15,
+    MR                                        = 15,
+    CHEMICALLY_HOMOGENEOUS                    = 16, // this is here to preserve the Hurley type numbers, but note that Hurley type number progression doesn't necessarily indicate class inheritance
+    CH                                        = 16,
 
-    COUNT                                           // Sentinel for entry count
+    STAR                                      = 17, // star is created this way, then switches as required (down here so stellar types consistent with Hurley et al. 2000)
+    BINARY_STAR                               = 18, // mainly for diagnostics
+    STELLAR_BINARY                            = 19, // maily for diagnostics
+    NONE                                      = 20, // here mainly for diagnostics
+
+    STELLAR_TYPE_COUNT                        = 17  // count of unique evolvable stellar types
 };
 const COMPASUnorderedMap<STELLAR_TYPE, std::string> STELLAR_TYPE_LABEL = {
     { STELLAR_TYPE::MS_LTE_07,                                 "Main_Sequence_<=_0.7" },
     { STELLAR_TYPE::MS_GT_07,                                  "Main_Sequence_>_0.7" },
     { STELLAR_TYPE::HERTZSPRUNG_GAP,                           "Hertzsprung_Gap" },
+    { STELLAR_TYPE::HG,                                        "Hertzsprung_Gap" },
     { STELLAR_TYPE::FIRST_GIANT_BRANCH,                        "First_Giant_Branch" },
+    { STELLAR_TYPE::FGB,                                       "First_Giant_Branch" },
     { STELLAR_TYPE::CORE_HELIUM_BURNING,                       "Core_Helium_Burning" },
+    { STELLAR_TYPE::CHeB,                                      "Core_Helium_Burning" },
     { STELLAR_TYPE::EARLY_ASYMPTOTIC_GIANT_BRANCH,             "Early_Asymptotic_Giant_Branch" },
+    { STELLAR_TYPE::EAGB,                                      "Early_Asymptotic_Giant_Branch" },
     { STELLAR_TYPE::THERMALLY_PULSING_ASYMPTOTIC_GIANT_BRANCH, "Thermally_Pulsing_Asymptotic_Giant_Branch" },
+    { STELLAR_TYPE::TPAGB,                                     "Thermally_Pulsing_Asymptotic_Giant_Branch" },
     { STELLAR_TYPE::NAKED_HELIUM_STAR_MS,                      "Naked_Helium_Star_MS" },
+    { STELLAR_TYPE::HeMS,                                      "Naked_Helium_Star_MS" },
     { STELLAR_TYPE::NAKED_HELIUM_STAR_HERTZSPRUNG_GAP,         "Naked_Helium_Star_Hertzsprung_Gap" },
+    { STELLAR_TYPE::HeHG,                                      "Naked_Helium_Star_Hertzsprung_Gap" },
     { STELLAR_TYPE::NAKED_HELIUM_STAR_GIANT_BRANCH,            "Naked_Helium_Star_Giant_Branch" },
+    { STELLAR_TYPE::HeGB,                                      "Naked_Helium_Star_Giant_Branch" },
     { STELLAR_TYPE::HELIUM_WHITE_DWARF,                        "Helium_White_Dwarf" },
+    { STELLAR_TYPE::HeWD,                                      "Helium_White_Dwarf" },
     { STELLAR_TYPE::CARBON_OXYGEN_WHITE_DWARF,                 "Carbon-Oxygen_White_Dwarf" },
+    { STELLAR_TYPE::COWD,                                      "Carbon-Oxygen_White_Dwarf" },
     { STELLAR_TYPE::OXYGEN_NEON_WHITE_DWARF,                   "Oxygen-Neon_White_Dwarf" },
+    { STELLAR_TYPE::ONeWD,                                     "Oxygen-Neon_White_Dwarf" },
     { STELLAR_TYPE::NEUTRON_STAR,                              "Neutron_Star" },
+    { STELLAR_TYPE::NS,                                        "Neutron_Star" },
     { STELLAR_TYPE::BLACK_HOLE,                                "Black_Hole" },
+    { STELLAR_TYPE::BH,                                        "Black_Hole" },
     { STELLAR_TYPE::MASSLESS_REMNANT,                          "Massless_Remnant" },
-    { STELLAR_TYPE::CHEMICALLY_HOMOGENEOUS,                    "Chemically_Homogeneous" },
+    { STELLAR_TYPE::MR,                                        "Massless_Remnant" },
+    { STELLAR_TYPE::CH,                                        "Chemically_Homogeneous" },
+    { STELLAR_TYPE::CH,                                        "Chemically_Homogeneous" },
     { STELLAR_TYPE::STAR,                                      "Star" },
     { STELLAR_TYPE::BINARY_STAR,                               "Binary_Star" },
     { STELLAR_TYPE::NONE,                                      "Not_a_Star!" }

@@ -548,49 +548,54 @@ bool CHeB::ShouldEvolveOnPhase() const {
 
 
 /*
- * Determine the star's envelope type.
+ * DetermineEnvelopeType
  *
+ * @brief
+ * Determine the star's envelope type, based on the user-specified ENVELOPE_STATE_PRESCRIPTION.
+ * 
  *
+ * ENVELOPE DetermineEnvelopeType(const double p_Mass, const double p_Temperature, const double p_CoreMass) const
  *
- * ENVELOPE DetermineEnvelopeType()
- *
- * @return                                      ENVELOPE::{ RADIATIVE, CONVECTIVE, REMNANT }
+ * @param       p_Mass                          Mass of the star (Msol)
+ * @param       p_CoreMass                      Core mass of the star (Msol)
+ * @param       p_Temperature                   Temperature of the star (Tsol)
+ * @return                                      Envelope type (ENVELOPE::{RADIATIVE, CONVECTIVE, REMNANT})
  */
-ENVELOPE CHeB::DetermineEnvelopeType() const {
+COMPAS_PURE ENVELOPE CHeB::DetermineEnvelopeType(const double p_Mass, const double p_Temperature, const double p_CoreMass) const {
     
-    ENVELOPE envelope = ENVELOPE::CONVECTIVE;                                                       // default envelope type
+    ENVELOPE envType;
     
-    switch (OPTIONS->EnvelopeStatePrescription()) {                                                 // which envelope prescription?
-            
-        case ENVELOPE_STATE_PRESCRIPTION::LEGACY:
-        case ENVELOPE_STATE_PRESCRIPTION::HURLEY:
-            envelope = ENVELOPE::CONVECTIVE;
-            break;
-            
-        case ENVELOPE_STATE_PRESCRIPTION::FIXED_TEMPERATURE:
-            // envelope is radiative if temperature exceeds fixed threshold, otherwise convective
-            envelope = utils::Compare(Temperature() * TSOL, OPTIONS->ConvectiveEnvelopeTemperatureThreshold()) > 0 ? ENVELOPE::RADIATIVE : ENVELOPE::CONVECTIVE;
-            break;
+    switch (OPTIONS->EnvelopeStatePrescription()) {                                 // which envelope prescription?
 
-        case ENVELOPE_STATE_PRESCRIPTION::CONVECTIVE_MASS_FRACTION:
-            // envelope is labeled convective when the convective mass exceeds a fixed fraction of the envelope mass
-            double convectiveEnvelopeMass, convectiveEnvelopeMassMax;
-            std::tie(convectiveEnvelopeMass, convectiveEnvelopeMassMax) = CalculateConvectiveEnvelopeMass();
-            envelope = utils::Compare(convectiveEnvelopeMass / (m_Mass - m_CoreMass), OPTIONS->ConvectiveEnvelopeMassThreshold()) > 0 ? ENVELOPE::CONVECTIVE : ENVELOPE::RADIATIVE;
+        case ENVELOPE_STATE_PRESCRIPTION::CONVECTIVE_MASS_FRACTION:                 // CONVECTIVE_MASS_FRACTION
+            // envelope is convective when the convective mass exceeds specified fraction of the envelope mass
+            double mEnv;
+            std::tie(mEnv, std::ignore) = CalculateConvectiveEnvelopeMass();
+            envType = (mEnv / (p_Mass - p_CoreMass)) > OPTIONS->ConvectiveEnvelopeMassThreshold() ? ENVELOPE::CONVECTIVE : ENVELOPE::RADIATIVE;
             break;
             
-        default:                                                                                    // unknown prescription
-            // the only way this can happen is if someone added an ENVELOPE_STATE_PRESCRIPTION
-            // and it isn't accounted for in this code.  We should not default here, with or without a warning.
+        case ENVELOPE_STATE_PRESCRIPTION::FIXED_TEMPERATURE:                        // FIXED_TEMPERATURE
+            // envelope is radiative if temperature exceeds specified threshold, otherwise convective
+            envType = (p_Temperature * TSOL) > OPTIONS->ConvectiveEnvelopeTemperatureThreshold() ? ENVELOPE::RADIATIVE : ENVELOPE::CONVECTIVE;
+            break;
+            
+        case ENVELOPE_STATE_PRESCRIPTION::HURLEY:                                   // HURLEY
+        case ENVELOPE_STATE_PRESCRIPTION::LEGACY:                                   // COMPAS LEGACY
+            envType = ENVELOPE::CONVECTIVE;                                         // always convective
+            break;
+            
+        default:                                                                    // unknown prescription
+            // the only way this can happen is if someone added an ENVELOPE_STATE_PRESCRIPTION and it isn't
+            // accounted for in this code.  We should not default here, with or without a warning.
             // We are here because the user chose a prescription this code doesn't account for, and that should
             // be flagged as an error and result in termination of the evolution of the star or binary.
             // The correct fix for this is to add code for the missing prescription or, if the missing
             // prescription is superfluous, remove it from the option.
 
-            THROW_ERROR(ERROR::UNKNOWN_ENVELOPE_STATE_PRESCRIPTION);                                // throw error             
+            THROW_ERROR(ERROR::UNKNOWN_ENVELOPE_STATE_PRESCRIPTION);                // throw error             
     }
     
-    return envelope;
+    return envType;
 }
 
 
@@ -908,7 +913,7 @@ double CHeB::CalculateLambdaNanjingStarTrack(const double p_Mass, const double p
     auto it = std::upper_bound(NANJING_MASSES_MIDPOINTS.begin(), NANJING_MASSES_MIDPOINTS.end(), p_Mass);
     const size_t massIndex = it != arr.end() ? std::distance(NANJING_MASSES_MIDPOINTS.begin(), it) : NANJING_MASSES_MIDPOINTS.size();
 
-    if (GLOBALS->ReferenceMetallicity() > LAMBDA_NANJING_ZLIMIT_STARTRACK) {                // Z > LAMBDA_NANJING_ZLIMIT_STARTRACK?
+    if (GLOBALS->Metallicity() > LAMBDA_NANJING_ZLIMIT_STARTRACK) {                // Z > LAMBDA_NANJING_ZLIMIT_STARTRACK?
                                                                                             // yes
              if (massIndex == 0 && p_Radius > 200.0) lambdaBGidx = 0;
         else if (massIndex == 1) {
@@ -999,7 +1004,7 @@ double CHeB::CalculateLambdaNanjingStarTrack(const double p_Mass, const double p
     }
 
     // get limits and (defined) lambdas
-    NANJING_Z_LIMITS_LAMBDAS                              ZlimitsLambdas = GLOBALS->ReferenceMetallicity() < LAMBDA_NANJING_ZLIMIT ? std::get<0>(NANJING_LIMITS_LAMBDAS_STARTRACK) : std::get<1>(NANJING_LIMITS_LAMBDAS_STARTRACK);
+    NANJING_Z_LIMITS_LAMBDAS                              ZlimitsLambdas = GLOBALS->Metallicity() < LAMBDA_NANJING_ZLIMIT ? std::get<0>(NANJING_LIMITS_LAMBDAS_STARTRACK) : std::get<1>(NANJING_LIMITS_LAMBDAS_STARTRACK);
     std::tuple<NANJING_LIMITS_STARTRACK, NANJING_LAMBDAS> limitsLambdas  = ZlimitsLambdas[p_MassIndex];
 
     std::tuple<double, double> maxBG = std::get<0>(limitsLambdas)[limitBGidx];              // {maxB, maxG}
@@ -1017,7 +1022,7 @@ double CHeB::CalculateLambdaNanjingStarTrack(const double p_Mass, const double p
 
         // get B & G coefficients vector
         std::tuple<NANJING_POP_COEFFICIENTS, NANJING_POP_COEFFICIENTS> evolStageCoeffs = NANJING_COEFFICIENTS[evolStage - 1];
-        NANJING_POP_COEFFICIENTS                                       ZCoeffs         = GLOBALS->ReferenceMetallicity() < LAMBDA_NANJING_ZLIMIT ? std::get<0>(evolStageCoeffs) : std::get<1>(evolStageCoeffs);
+        NANJING_POP_COEFFICIENTS                                       ZCoeffs         = GLOBALS->Metallicity() < LAMBDA_NANJING_ZLIMIT ? std::get<0>(evolStageCoeffs) : std::get<1>(evolStageCoeffs);
         std::tuple<DBL_VECTOR, DBL_VECTOR>                             BGcoeffs        = ZCoeffs[p_MassIndex][coeffsBGidx];
 
         DBL_VECTOR Bcoeffs = std::get<0>(BGcoeffs);
@@ -1025,25 +1030,25 @@ double CHeB::CalculateLambdaNanjingStarTrack(const double p_Mass, const double p
         
         double Rin = p_Radius;
 
-        if (GLOBALS->ReferenceMetallicity() < LAMBDA_NANJING_ZLIMIT && p_MassIndex == 0 && p_Radius > 2.7) {
+        if (GLOBALS->Metallicity() < LAMBDA_NANJING_ZLIMIT && p_MassIndex == 0 && p_Radius > 2.7) {
             lambdaB = 2.33 - (Rin * 9.18E-03);
             lambdaG = 1.12 - (Rin * 4.59E-03);
         }
-        else if (GLOBALS->ReferenceMetallicity() < LAMBDA_NANJING_ZLIMIT && p_MassIndex == 13) {
+        else if (GLOBALS->Metallicity() < LAMBDA_NANJING_ZLIMIT && p_MassIndex == 13) {
             lambdaB = 1.2 * exp(-Rin / 90.0);
             lambdaG = 0.55 * exp(-Rin / 160.0);
         }
-        else if (GLOBALS->ReferenceMetallicity() >= LAMBDA_NANJING_ZLIMIT && p_MassIndex == 0 && p_Radius > 12.0) {
+        else if (GLOBALS->Metallicity() >= LAMBDA_NANJING_ZLIMIT && p_MassIndex == 0 && p_Radius > 12.0) {
             lambdaB = 1.8 * exp(-Rin / 80.0);
             lambdaG = exp(-Rin / 45.0);
         }
-        else if (GLOBALS->ReferenceMetallicity() >= LAMBDA_NANJING_ZLIMITI && p_MassIndex == 9) {
+        else if (GLOBALS->Metallicity() >= LAMBDA_NANJING_ZLIMITI && p_MassIndex == 9) {
             const double tmp = exp(-Rin / 35.0);
             lambdaB = 1.75 * tmp;
             lambdaG = 0.9 * tmp;
         }
         else {
-            if (GLOBALS->ReferenceMetallicity() < LAMBDA_NANJING_ZLIMIT && p_MassIndex == 0) Rin = (p_Mass - p_CoreMass) / p_Mass;
+            if (GLOBALS->Metallicity() < LAMBDA_NANJING_ZLIMIT && p_MassIndex == 0) Rin = (p_Mass - p_CoreMass) / p_Mass;
             
             const double Rin2 = Rin  * Rin;
             const double Rin3 = Rin  * Rin2;
@@ -1053,7 +1058,7 @@ double CHeB::CalculateLambdaNanjingStarTrack(const double p_Mass, const double p
             lambdaB = Bcoeffs[0] + (Bcoeffs[1] * Rin) + (Bcoeffs[2] * Rin2) + (Bcoeffs[3] * Rin3) + (Bcoeffs[4] * Rin4) + (Bcoeffs[5] * Rin5);
             lambdaG = Gcoeffs[0] + (Gcoeffs[1] * Rin) + (Gcoeffs[2] * Rin2) + (Gcoeffs[3] * Rin3) + (Gcoeffs[4] * Rin4) + (Gcoeffs[5] * Rin5);
 
-            if (GLOBALS->ReferenceMetallicity() < LAMBDA_NANJING_ZLIMIT && p_MassIndex == 0) {
+            if (GLOBALS->Metallicity() < LAMBDA_NANJING_ZLIMIT && p_MassIndex == 0) {
                 lambdaB = 1.0 / lambdaB;
                 lambdaG = 1.0 / lambdaG;                
             }

@@ -70,11 +70,10 @@ GNU_CONST static DBL_DBL CalculateRemnantMass_Hurley2000_Static(const double p_C
 inline double CalculateRemnantRadius() const override { return m_StateHistory.CurrentState.Radius(); }
 
 
-GNU_CONST inline double CalculateHAbundanceCore(const double p_Tau, const double p_InitialHAbundance) const override { return 0.0; }; // No hydrogen in the core for remnants
-GNU_CONST inline double CalculateHAbundanceSurface(const double p_Tau, const double p_InitialHAbundance) const override { return 0.0; }; // No hydrogen on the surface for remnants
-
-COMPAS_PURE inline double CalculateHeAbundanceCore(const double p_Tau, const double p_InitialHeAbundance = 0.0) const override { return 0.0; }; // No helium in the core for remnants (except HeWD)
-COMPAS_PURE inline double CalculateHeAbundanceSurface(const double p_Tau, const double p_InitialHeAbundance) const override { return 0.0; }; // No helium on the surface for remnants (except HeWD)
+GNU_CONST inline double CalculateHAbundanceCore(const double p_Tau) const override       { return 0.0; }; // No hydrogen in the core for remnants
+GNU_CONST inline double CalculateHAbundanceSurface(const double p_Tau) const override    { return 0.0; }; // No hydrogen on the surface for remnants
+GNU_CONST inline double CalculateHeAbundanceCore(const double p_Tau) const override    { return 0.0; }; // No helium in the core for remnants (except HeWD)
+GNU_CONST inline double CalculateHeAbundanceSurface(const double p_Tau) const override { return 0.0; }; // No helium on the surface for remnants (except HeWD)
     
     
 
@@ -88,9 +87,13 @@ COMPAS_PURE inline double CalculateHeAbundanceSurface(const double p_Tau, const 
 
     GNU_CONST double          CalculateMassLossRateMerritt2025()                                                          { m_DominantMassLossRate = MASS_LOSS_TYPE::NONE ; return 0.0; }                                                         // 
 
-    double          CalculatePerturbationMuOnPhase() const                                                      { return m_Mu; }                                                        // NO-OP
 
-    GNU_CONST double          CalculateRadialExtentConvectiveEnvelope() const                                             { return 0.0; }         // WD stars don't have a convective envelope
+inline double CalculateHurleyPerturbationMu() const { return m_Mu; }
+
+
+GNU_CONST double CalculateConvectiveEnvelopeRadialExtent() const { return 0.0; } // WD stars don't have a convective envelope
+
+
 
     std::tuple <double, STELLAR_TYPE> CalculateRadiusAndStellarTypeOnPhase() const                              { return BaseStar::CalculateRadiusAndStellarTypeOnPhase(); }
    
@@ -103,7 +106,7 @@ inline double CalculateMLrateThermal() const override{ return BaseStar::Calculat
 
     double          ChooseTimestep(const double p_Time) const;
     
-    ENVELOPE        DetermineEnvelopeType() const                                                               { return ENVELOPE::REMNANT; }                                           // Always REMNANT
+GNU_CONST inline ENVELOPE DetermineEnvelopeType() const override { return ENVELOPE::REMNANT; } // Always REMNANT for remnants
 
 
 

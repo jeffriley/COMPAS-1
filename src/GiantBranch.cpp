@@ -315,8 +315,8 @@ void GiantBranch::PerturbLuminosityAndRadius() {
         double Lc = CalculateRemnantLuminosity();
         double Rc = CalculateRemnantRadius();
 
-        double s = CalculatePerturbationS(m_Mu, m_Mass);
-        double r = CalculatePerturbationR(m_Mu, m_Mass, m_Radius, Rc);
+        double s = CalculateHurleyPerturbationS(m_Mass, m_Mu);
+        double r = CalculateHurleyPerturbationR(m_Mass, m_Radius, m_Mu, Rc);
 
         m_Luminosity = Lc * PPOW((m_Luminosity / Lc), s);        
         m_Radius     = Rc * PPOW((m_Radius / Rc), r);

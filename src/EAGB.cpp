@@ -512,7 +512,7 @@ COMPAS_PURE double EAGB::CalculateLambdaNanjingStarTrack(const double p_Mass, co
     auto it = std::upper_bound(NANJING_MASSES_MIDPOINTS.begin(), NANJING_MASSES_MIDPOINTS.end(), p_Mass);
     const size_t massIndex = it != arr.end() ? std::distance(NANJING_MASSES_MIDPOINTS.begin(), it) : NANJING_MASSES_MIDPOINTS.size();
 
-    if (GLOBALS->ReferenceMetallicity() > LAMBDA_NANJING_ZLIMIT_STARTRACK) {                // Z > LAMBDA_NANJING_ZLIMIT_STARTRACK?
+    if (GLOBALS->Metallicity() > LAMBDA_NANJING_ZLIMIT_STARTRACK) {                // Z > LAMBDA_NANJING_ZLIMIT_STARTRACK?
                                                                                             // yes
              if (massIndex == 0 && p_Radius > 200.0) lambdaBGidx = 0;
         else if (massIndex == 1) {
@@ -604,7 +604,7 @@ COMPAS_PURE double EAGB::CalculateLambdaNanjingStarTrack(const double p_Mass, co
     }
 
     // get limits and (defined) lambdas
-    NANJING_Z_LIMITS_LAMBDAS                              ZlimitsLambdas = GLOBALS->ReferenceMetallicity() < LAMBDA_NANJING_ZLIMIT ? std::get<0>(NANJING_LIMITS_LAMBDAS_STARTRACK) : std::get<1>(NANJING_LIMITS_LAMBDAS_STARTRACK);
+    NANJING_Z_LIMITS_LAMBDAS                              ZlimitsLambdas = GLOBALS->Metallicity() < LAMBDA_NANJING_ZLIMIT ? std::get<0>(NANJING_LIMITS_LAMBDAS_STARTRACK) : std::get<1>(NANJING_LIMITS_LAMBDAS_STARTRACK);
     std::tuple<NANJING_LIMITS_STARTRACK, NANJING_LAMBDAS> limitsLambdas  = ZlimitsLambdas[p_MassIndex];
 
     std::tuple<double, double> maxBG = std::get<0>(limitsLambdas)[limitBGidx];              // {maxB, maxG}
@@ -622,7 +622,7 @@ COMPAS_PURE double EAGB::CalculateLambdaNanjingStarTrack(const double p_Mass, co
 
         // get B & G coefficients vector
         std::tuple<NANJING_POP_COEFFICIENTS, NANJING_POP_COEFFICIENTS> evolStageCoeffs = NANJING_COEFFICIENTS[evolStage - 1];
-        NANJING_POP_COEFFICIENTS                                       ZCoeffs         = GLOBALS->ReferenceMetallicity() < LAMBDA_NANJING_ZLIMIT ? std::get<0>(evolStageCoeffs) : std::get<1>(evolStageCoeffs);
+        NANJING_POP_COEFFICIENTS                                       ZCoeffs         = GLOBALS->Metallicity() < LAMBDA_NANJING_ZLIMIT ? std::get<0>(evolStageCoeffs) : std::get<1>(evolStageCoeffs);
         std::tuple<DBL_VECTOR, DBL_VECTOR>                             BGcoeffs        = ZCoeffs[p_MassIndex][coeffsBGidx];
 
         DBL_VECTOR Bcoeffs = std::get<0>(BGcoeffs);
@@ -630,25 +630,25 @@ COMPAS_PURE double EAGB::CalculateLambdaNanjingStarTrack(const double p_Mass, co
         
         double Rin = p_Radius;
 
-        if (GLOBALS->ReferenceMetallicity() < LAMBDA_NANJING_ZLIMIT && p_MassIndex == 0 && p_Radius > 2.7) {
+        if (GLOBALS->Metallicity() < LAMBDA_NANJING_ZLIMIT && p_MassIndex == 0 && p_Radius > 2.7) {
             lambdaB = 2.33 - (Rin * 9.18E-03);
             lambdaG = 1.12 - (Rin * 4.59E-03);
         }
-        else if (GLOBALS->ReferenceMetallicity() < LAMBDA_NANJING_ZLIMIT && p_MassIndex == 13) {
+        else if (GLOBALS->Metallicity() < LAMBDA_NANJING_ZLIMIT && p_MassIndex == 13) {
             lambdaB = 1.2 * exp(-Rin / 90.0);
             lambdaG = 0.55 * exp(-Rin / 160.0);
         }
-        else if (GLOBALS->ReferenceMetallicity() >= LAMBDA_NANJING_ZLIMIT && p_MassIndex == 0 && p_Radius > 12.0) {
+        else if (GLOBALS->Metallicity() >= LAMBDA_NANJING_ZLIMIT && p_MassIndex == 0 && p_Radius > 12.0) {
             lambdaB = 1.8 * exp(-Rin / 80.0);
             lambdaG = exp(-Rin / 45.0);
         }
-        else if (GLOBALS->ReferenceMetallicity() >= LAMBDA_NANJING_ZLIMITI && p_MassIndex == 9) {
+        else if (GLOBALS->Metallicity() >= LAMBDA_NANJING_ZLIMITI && p_MassIndex == 9) {
             const double tmp = exp(-Rin / 35.0);
             lambdaB = 1.75 * tmp;
             lambdaG = 0.9 * tmp;
         }
         else {
-            if (GLOBALS->ReferenceMetallicity() < LAMBDA_NANJING_ZLIMIT && p_MassIndex == 0) Rin = (p_Mass - p_CoreMass) / p_Mass;
+            if (GLOBALS->Metallicity() < LAMBDA_NANJING_ZLIMIT && p_MassIndex == 0) Rin = (p_Mass - p_CoreMass) / p_Mass;
             
             const double Rin2 = Rin  * Rin;
             const double Rin3 = Rin  * Rin2;
@@ -658,7 +658,7 @@ COMPAS_PURE double EAGB::CalculateLambdaNanjingStarTrack(const double p_Mass, co
             lambdaB = Bcoeffs[0] + (Bcoeffs[1] * Rin) + (Bcoeffs[2] * Rin2) + (Bcoeffs[3] * Rin3) + (Bcoeffs[4] * Rin4) + (Bcoeffs[5] * Rin5);
             lambdaG = Gcoeffs[0] + (Gcoeffs[1] * Rin) + (Gcoeffs[2] * Rin2) + (Gcoeffs[3] * Rin3) + (Gcoeffs[4] * Rin4) + (Gcoeffs[5] * Rin5);
 
-            if (GLOBALS->ReferenceMetallicity() < LAMBDA_NANJING_ZLIMIT && p_MassIndex == 0) {
+            if (GLOBALS->Metallicity() < LAMBDA_NANJING_ZLIMIT && p_MassIndex == 0) {
                 lambdaB = 1.0 / lambdaB;
                 lambdaG = 1.0 / lambdaG;                
             }
@@ -706,7 +706,7 @@ double EAGB::CalculateLambdaNanjingStarTrack(const double p_Mass) const {
 	DBL_VECTOR a        = {};                                                       // 0..5 a_coefficients
 	DBL_VECTOR b        = {};                                                       // 0..5 b_coefficients
 
-    if (utils::Compare(GLOBALS->ReferenceMetallicity(), LAMBDA_NANJING_ZLIMIT_STARTRACK) > 0) {                 // Z>0.5 Zsun: popI
+    if (utils::Compare(GLOBALS->Metallicity(), LAMBDA_NANJING_ZLIMIT_STARTRACK) > 0) {                 // Z>0.5 Zsun: popI
         if (utils::Compare(p_Mass, 1.5) < 0) {                                      // Should probably use effective mass m_Mass0 instead for Lambda calculations
             maxBG = { 2.5, 1.5 };
             if (utils::Compare(m_Radius, 200.0) > 0) lambdaBG = { 0.05, 0.05 };
@@ -972,7 +972,7 @@ double EAGB::CalculateLambdaNanjingStarTrack(const double p_Mass) const {
     }
 
     if (lambdaBG.empty()) {                                                 // calculate lambda B & G - not approximated by hand
-        if (utils::Compare(GLOBALS->ReferenceMetallicity(), LAMBDA_NANJING_ZLIMIT_STARTRACK) > 0 &&
+        if (utils::Compare(GLOBALS->Metallicity(), LAMBDA_NANJING_ZLIMIT_STARTRACK) > 0 &&
             (utils::Compare(p_Mass, 1.5) < 0 || (utils::Compare(p_Mass, 25.0) < 0 && utils::Compare(p_Mass, 18.0) >= 0)) ) {
             double x  = (m_Mass - m_CoreMass) / m_Mass;
             double x2 = x * x;
@@ -985,8 +985,8 @@ double EAGB::CalculateLambdaNanjingStarTrack(const double p_Mass) const {
 
             lambdaBG = { 1.0 / y1, 1.0 / y2 };
         }
-        else if ( (utils::Compare(GLOBALS->ReferenceMetallicity(), LAMBDA_NANJING_ZLIMIT_STARTRACK) > 0  && utils::Compare(p_Mass, 2.5) >= 0 && utils::Compare(p_Mass, 5.5) < 0) ||
-                  (utils::Compare(GLOBALS->ReferenceMetallicity(), LAMBDA_NANJING_ZLIMIT_STARTRACK) <= 0 && utils::Compare(p_Mass, 2.5) >= 0 && utils::Compare(p_Mass, 4.5) < 0)) {
+        else if ( (utils::Compare(GLOBALS->Metallicity(), LAMBDA_NANJING_ZLIMIT_STARTRACK) > 0  && utils::Compare(p_Mass, 2.5) >= 0 && utils::Compare(p_Mass, 5.5) < 0) ||
+                  (utils::Compare(GLOBALS->Metallicity(), LAMBDA_NANJING_ZLIMIT_STARTRACK) <= 0 && utils::Compare(p_Mass, 2.5) >= 0 && utils::Compare(p_Mass, 4.5) < 0)) {
             double x  = m_Radius;
             double x2 = x * x;
             double x3 = x2 * x;

@@ -18,23 +18,22 @@ public:
 
     // constructors
 
-    MS_lte_07() { m_StellarType = STELLAR_TYPE::MS_LTE_07; };
-    
-    MS_lte_07(const BaseStar &p_BaseStar, const bool p_Initialise = true) : BaseStar(p_BaseStar), MainSequence(p_BaseStar) {
-        m_StellarType = STELLAR_TYPE::MS_LTE_07; // Set stellar type // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-        if (p_Initialise) Initialise();                                                                 // Initialise if required
-    }
+    MS_lte_07() {}
+    MS_lte_07(const BaseStar &p_BaseStar, const bool p_Initialise = true) : BaseStar(p_BaseStar), MainSequence(p_BaseStar) { if (p_Initialise) Initialise(); }
 
-    // member functions - alphabetically
 
-    GNU_CONST inline ENVELOPE DetermineEnvelopeType() const override { return ENVELOPE::CONVECTIVE; }   // Always CONVECTIVE
+    // public member functions - alphabetically
+
+    GNU_CONST inline ENVELOPE DetermineEnvelopeType() const override { return ENVELOPE::CONVECTIVE; }   // Always CONVECTIVE for MS_lte_07 stars
 
 
 private:
 
-    void Initialise() {
-        CalculateTimescales(); // Initialise timescales // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-        m_Age = 0.0; // Set age appropriately // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+    // private member functions - alphabetically
+
+    inline void Initialise() {
+        CalculateTimescales(); // Initialise timescales - need to do here for cloning // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+        m_StateHistory.CurrentState.SetAge(0.0); // Set age appropriately - again, for cloning // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
     }
 
 };

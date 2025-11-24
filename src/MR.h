@@ -14,23 +14,10 @@ class MR: virtual public BaseStar, public Remnants {
 
 public:
 
-    MR() { m_StellarType = STELLAR_TYPE::MASSLESS_REMNANT; };
+    MR() {};
     
     MR(const BaseStar &p_BaseStar, const bool p_Initialise = true) : BaseStar(p_BaseStar), Remnants(p_BaseStar) {
-        m_StellarType = STELLAR_TYPE::MASSLESS_REMNANT;                                                     // Set stellar type
-        if (p_Initialise) Initialise();                                                                     // Initialise if required
-    }
-
-    MR* Clone(const OBJECT_PERSISTENCE p_Persistence, const bool p_Initialise = true) {
-        MR* clone = new MR(*this, p_Initialise); 
-        clone->SetPersistence(p_Persistence); 
-        return clone; 
-    }
-
-    static MR* Clone(MR& p_Star, const OBJECT_PERSISTENCE p_Persistence, const bool p_Initialise = true) {
-        MR* clone = new MR(p_Star, p_Initialise); 
-        clone->SetPersistence(p_Persistence); 
-        return clone; 
+        if (p_Initialise) Initialise();
     }
 
 

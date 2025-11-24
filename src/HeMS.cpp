@@ -239,7 +239,7 @@ COMPAS_PURE static MASS_LOSS_T HeMS::CalculateMLrate_Merritt2025_Static(const do
     switch (OPTIONS->WRMassLossPrescription()) {                                                     // which WR mass loss prescription?
 
         case WR_MASS_LOSS_PRESCRIPTION::BELCZYNSKI2010:                             // BELCZYNSKI2010
-            std::tie(dMdt, dominantMLtype) = HeMS::CalculateMLrate_Belczynski2010_Static(GLOBALS->ReferenceMetallicity(), p_Luminosity);
+            std::tie(dMdt, dominantMLtype) = HeMS::CalculateMLrate_Belczynski2010_Static(GLOBALS->Metallicity(), p_Luminosity);
             break;
 
         case WR_MASS_LOSS_PRESCRIPTION::SANDERVINK2023:                             // SANDERVINK2023

@@ -16,31 +16,15 @@ class FGB: virtual public BaseStar, public HG {
 
 public:
 
-    FGB() { m_StellarType = STELLAR_TYPE::FIRST_GIANT_BRANCH; };
-    
-    FGB(const BaseStar &p_BaseStar, const bool p_Initialise = true) : BaseStar(p_BaseStar), HG(p_BaseStar, false) {
-        m_StellarType = STELLAR_TYPE::FIRST_GIANT_BRANCH;                                                                                                                                           // Set stellar type
-        if (p_Initialise) Initialise();                                                                                                                                                             // Initialise if required
-    }
-
-    FGB* Clone(const OBJECT_PERSISTENCE p_Persistence, const bool p_Initialise = true) {
-        FGB* clone = new FGB(*this, p_Initialise); 
-        clone->SetPersistence(p_Persistence); 
-        return clone; 
-    }
-
-    static FGB* Clone(FGB& p_Star, const OBJECT_PERSISTENCE p_Persistence, const bool p_Initialise = true) {
-        FGB* clone = new FGB(p_Star, p_Initialise); 
-        clone->SetPersistence(p_Persistence); 
-        return clone; 
-    }
+    FGB() {};
+    FGB(const BaseStar &p_BaseStar, const bool p_Initialise = true) : BaseStar(p_BaseStar), HG(p_BaseStar, false) { if (p_Initialise) Initialise(); }
 
 
 protected:
 
-    void Initialise() {
-        CalculateTimescales();                                                                                                                                                                      // Initialise timescales
-        m_Age = m_Timescales[static_cast<int>(TIMESCALE::tBGB)];                                                                                                                                    // Set age appropriately
+    inline void Initialise() {
+        CalculateTimescales(); // Initialise timescales
+        m_Age = m_Timescales[static_cast<int>(TIMESCALE::tBGB)]; // Set age appropriately
         
         EvolveOnPhase(0.0);
     }
@@ -82,9 +66,7 @@ GNU_CONST inline double CalculateCOCoreMass() const override { return 0.0; }    
 inline double CalculateHeCoreMass() const override { return CalculateCoreMass(); } // McHe = Mc for FGB stars  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< check for already computed
 
 
-double CalculateTau_Hurley2000() const override {
-    return CalculateTau_Hurley2000(m_StateHistory.CurrentState.Age(), m_StateHistory.CurrentState.Timescales(tBGB), m_StateHistory.CurrentState.Timescales(tHeI));
-}
+inline double CalculateTau_Hurley2000() const override { return CalculateTau_Hurley2000(Age(), Timescales(TIMESCALE::tBGB), Timescales(TIMESCALE::tHeI)); }
 GNU_CONST double CalculateTau_Hurley2000(const double p_Age, const double p_tBGB, const double p_tHeI) const;
 
 
@@ -131,7 +113,9 @@ inline double CalculateHeCoreMassAtPhaseEnd() const override { return CalculateC
 
     double          ChooseTimestep(const double p_Time) const;
 
-    ENVELOPE        DetermineEnvelopeType() const                                                   { return ENVELOPE::CONVECTIVE; }                                                                // Always CONVECTIVE
+
+GNU_CONST inline ENVELOPE DetermineEnvelopeType() const override { return ENVELOPE::CONVECTIVE; } // Always CONVECTIVE for FGB stars
+
 
     STELLAR_TYPE    EvolveToNextPhase();
 

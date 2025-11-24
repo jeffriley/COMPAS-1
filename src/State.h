@@ -121,8 +121,6 @@ private:
     std::optional<double>            m_Mass;
     std::optional<double>            m_MassEffectiveInitial;
         
-    std::optional<double>            m_Metallicity;
-        
     std::optional<double>            m_Radius;
     std::optional<double>            m_RadiusEffectiveInitial;
         
@@ -192,8 +190,6 @@ public:
     void SetMass(const double p_Mass)                                         { m_Mass = p_Mass; }
     void SetMassEffectiveInitial(const double p_Mass)                         { m_MassEffectiveInitial = p_Mass; }
         
-    void SetMetallicity(const double p_Metallicity)                           { m_Metallicity = p_Metallicity; }
-        
     void SetRadius(const double p_Radius)                                     { m_Radius = p_Radius; }
     void SetRadiusEffectiveInitial(const double p_Radius)                     { m_RadiusEffectiveInitial = p_Radius; }
         
@@ -211,7 +207,7 @@ public:
     void SetTimescales(const TIMESCALE p_Timescale, const double p_Value)     { m_HurleyTimescales[static_cast<int>(p_Timescale)] = p_Value; }
                
         
-    // getters
+    // getters   <<<<<<<<<<<<<<<<<<<<<<< REVISIT <<<<<<<<<<<<<<<<<<< from current state??? Ah, no, to be used with state qualifier - need to document
 
     double AngularFrequency() const                      { RET_VALUE(m_AngularFrequency); }
         
@@ -245,8 +241,6 @@ public:
         
     double Mass() const                                  { RET_VALUE(m_Mass); }
     double MassEffectiveInitial() const                  { RET_VALUE(m_MassEffectiveInitial); }
-        
-    double Metallicity() const                           { RET_VALUE(m_Metallicity); }
         
     double Radius() const                                { RET_VALUE(m_Radius); }
     double RadiusEffectiveInitial() const                { RET_VALUE(m_RadiusEffectiveInitial); }
@@ -304,8 +298,6 @@ public:
         
     bool Mass_HasValue() const                                  { return m_Mass.has_value(); }
     bool MassEffectiveInitial_HasValue() const                  { return m_MassEffectiveInitial.has_value(); }
-        
-    bool Metallicity_HasValue() const                           { return m_Metallicity.has_value(); }
         
     bool Radius_HasValue() const                                { return m_Radius.has_value(); }
     bool RadiusEffectiveInitial_HasValue() const                { return m_RadiusEffectiveInitial.has_value(); }

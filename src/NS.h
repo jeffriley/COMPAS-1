@@ -42,18 +42,6 @@ public:
         if (p_Initialise) Initialise();                                                                                                                         // Initialise if required
     }
 
-    NS* Clone(const OBJECT_PERSISTENCE p_Persistence, const bool p_Initialise = true) {
-        NS* clone = new NS(*this, p_Initialise); 
-        clone->SetPersistence(p_Persistence); 
-        return clone; 
-    }
-
-    static NS* Clone(NS& p_Star, const OBJECT_PERSISTENCE p_Persistence, const bool p_Initialise = true) {
-        NS* clone = new NS(p_Star, p_Initialise); 
-        clone->SetPersistence(p_Persistence); 
-        return clone; 
-    }
-
 
     // member variables
 
@@ -149,7 +137,7 @@ inline DBL_VECTOR CalculateTimescales_Hurley2000() const override { return m_Sta
 
 ///// ON PHASE FUNCTIONS   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
-inline MASS_LOSS_T CalculateMassLossRate() const override { return std::make_tuple(0.0, MASS_LOSS_TYPE::NONE); } // Ensure that NSs don't lose mass in winds
+GNU_CONST inline MASS_LOSS_T CalculateMassLossRate() const override { return std::make_tuple(0.0, MASS_LOSS_TYPE::NONE); } // Ensure that NSs don't lose mass in winds
 
 
 

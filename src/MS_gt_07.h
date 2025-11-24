@@ -18,19 +18,17 @@ public:
 
     // constructors
 
-    MS_gt_07() { m_StellarType = STELLAR_TYPE::MS_GT_07; };
-    
-    MS_gt_07(const BaseStar &p_BaseStar, const bool p_Initialise = true) : BaseStar(p_BaseStar), MainSequence(p_BaseStar) {
-        m_StellarType = STELLAR_TYPE::MS_GT_07; // Set stellar type // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-        if (p_Initialise) Initialise();                                     // Initialise if required
-    }
+    MS_gt_07() {};
+    MS_gt_07(const BaseStar &p_BaseStar, const bool p_Initialise = true) : BaseStar(p_BaseStar), MainSequence(p_BaseStar) { if (p_Initialise) Initialise(); }
 
-    // member functions - alphabetically
+    // public member functions - alphabetically
 
-    COMPAS_PURE ENVELOPE DetermineEnvelopeType() const override;
+    COMPAS_PURE ENVELOPE MS_gt_07::DetermineEnvelopeType(const double p_Mass, const double p_Temperature, const double p_CoreMass) const override;
 
 
 private:
+
+    // private member functions - alphabetically
 
     void Initialise() {
         CalculateTimescales(); // Initialise timescales // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -43,7 +41,7 @@ private:
             utils::Compare(m_MZAMS, BRCEK_LOWER_MASS_LIMIT) >= 0                         &&                                                             // ZAMS mass >= BRCEK_LOWER_MASS_LIMIT?
             m_Time <= 0.0) {                                                                                                                            // star not yet aged past creation?
                                                                                                                                                         // yes - initialise
-            m_InitialMainSequenceCoreMass = MainSequence::CalculateInitialMainSequenceCoreMass(m_MZAMS, m_InitialHeliumAbundance);
+            m_InitialMainSequenceCoreMass = CalculateCNOprocessedCoreMassAtZAMS_Shikauchi2024(m_MZAMS);
             m_MainSequenceCoreMass        = m_InitialMainSequenceCoreMass;
             m_Luminosity                  = MainSequence::CalculateLuminosityOnPhase(m_Age, m_Mass0, BaseStar::CalculateLuminosityAtZAMS(m_Mass0));
             m_Radius                      = MainSequence::CalculateRadiusOnPhase(m_Mass, m_Tau, m_RZAMS0);

@@ -115,7 +115,7 @@ GNU_CONST double CalculateCoreMass_Hurley2000(const double p_MassEffectiveInitia
 inline double CalculateCOCoreMass() const override { return CalculateCoreMass(); } // McCO = Mc for TPAGB stars  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< check for already computed
 inline double CalculateHeCoreMass() const override { return CalculateCoreMass(); } // McHe = Mc for TPAGB stars  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< check for already computed
 
-double CalculateTau_Hurley2000() const override { return 0.0; } // Tau (relative age) is not used for TPAGB stars in Hurley et al. 2000, so we return 0.0
+GNU_CONST inline double CalculateTau_Hurley2000() const override { return 0.0; } // Tau (relative age) is not used for TPAGB stars in Hurley et al. 2000, so we return 0.0
 
 GNU_CONST double CalculateMcPrime_Hurley2000(const double p_Age, const DBL_VECTOR& p_GBparams, const DBL_VECTOR& p_tScales) const;
 
@@ -148,7 +148,7 @@ inline double CalculateHeCoreMassAtPhaseEnd() const override { return CalculateC
 
             double          ChooseTimestep(const double p_Time) const;
 
-            ENVELOPE        DetermineEnvelopeType() const                                                           { return ENVELOPE::CONVECTIVE; }                                                        // Always CONVECTIVE
+GNU_CONST inline ENVELOPE DetermineEnvelopeType() const override { return ENVELOPE::CONVECTIVE; } // Always CONVECTIVE for TPAGB stars
 
             STELLAR_TYPE    EvolveToNextPhase()                                                                     { return m_StellarType; }                                                               // NO-OP
 

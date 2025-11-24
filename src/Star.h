@@ -65,6 +65,13 @@ public:
     virtual ~Star() { delete m_Star; }
 
 
+COMPAS_PURE std::unique_ptr<BaseStar> CloneAs(STELLAR_TYPE p_StellarType, const OBJECT_PERSISTENCE p_Persistence, const bool p_Initialise = true) const;
+std::function<std::unique_ptr<BaseStar>(STELLAR_TYPE, OBJECT_PERSISTENCE, bool)> CloneAs = std::bind(&Star::CloneAs, this, std::placeholders::_1,std::placeholders::_2, std::placeholders::_3);
+
+COMPAS_PURE std::unique_ptr<BaseStar> MakeStar(STELLAR_TYPE p_StellarType, const OBJECT_PERSISTENCE p_Persistence, const bool p_Initialise = true) const;
+std::function<std::unique_ptr<BaseStar>(STELLAR_TYPE, OBJECT_PERSISTENCE, bool)> MakeStar = std::bind(&Star::MakeStar, this, std::placeholders::_1,std::placeholders::_2, std::placeholders::_3);
+
+
     // object identifiers - all classes have these
     inline OBJECT_ID            ObjectId() const                                                            { return m_ObjectId; }
     inline OBJECT_TYPE          ObjectType() const                                                          { return OBJECT_TYPE::STAR; }
@@ -136,7 +143,6 @@ inline double CalculateCriticalMassRatio_Hurley2002() const                    {
     inline double               Mass() const                                                                { return m_Star->Mass(); }
     inline double               Mass0() const                                                               { return m_Star->Mass0(); }
     inline double               MassPrev() const                                                            { return m_Star->MassPrev(); }
-    inline double               Metallicity() const                                                         { return m_Star->Metallicity(); }
     inline double               MZAMS() const                                                               { return m_Star->MZAMS(); }
     inline double               Omega() const                                                               { return m_Star->Omega(); }
     inline double               OmegaBreak() const                                                          { return m_Star->OmegaBreak(); }
@@ -223,9 +229,9 @@ inline double CalculateCriticalMassRatio_Hurley2002() const                    {
     
     inline double               CalculateNuclearMassLossRate()                                                                      { return m_Star->CalculateNuclearMassLossRate(); }
     
-    inline double               CalculateRadialExpansionTimescaleDuringMassTransfer()                                               { return m_Star->CalculateRadialExpansionTimescaleDuringMassTransfer(); }
+    inline double               CalculateTimescale_RadialExpansion_DuringMT()                                               { return m_Star->CalculateTimescale_RadialExpansion_DuringMT(); }
     
-    inline double               CalculateRadialExtentConvectiveEnvelope()                                                           { return m_Star->CalculateRadialExtentConvectiveEnvelope(); }
+    inline double               CalculateConvectiveEnvelopeRadialExtent()                                                           { return m_Star->CalculateConvectiveEnvelopeRadialExtent(); }
 
     inline double               CalculateRadiusOnMassChange(double p_dM)                                                            { return m_Star->CalculateRadiusOnMassChange(p_dM); }
     

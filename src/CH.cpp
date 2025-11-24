@@ -3,57 +3,11 @@
 
 
 
-
-
-
-/*
- * CalculateLuminosity_Hurley2000
- *
- * @brief
- * Calculate the luminosity of a CH star on the (CH) MS.  The luminosity will be
- * enhanced if option `--enhance-CHE-lifetimes-luminosities` was specified.
- * 
- * 
- * double CalculateLuminosity_Hurley2000(
- *     const double p_Mass,
- *     const double p_Tau,
- *     const double p_Time,
- *     const double p_LZAMS,
- *     const double p_tMS,
- *     const double p_tBGB
- * ) const
- *
- * @param       p_Mass                          Mass of the star (Msol)
- * @param       p_Tau                           Phase-relative age of the star [0, 1]
- * @param       p_Time                          Time elapsed since ZAMS (Myr)
- * @param       p_LZAMS                         ZAMS luminosity of the star (Lsol)
- * @param       p_tMS                           MS lifetime, tMS (per Hurley timescales) (Myr)
- * @param       p_tBGB                          Time to Base of Giant Branch, tBGB (per Hurley timescales) (Myr)
- * @return                                      CH luminosity (Lsol)
- */
-COMPAS_PURE double CH::CalculateLuminosity_Hurley2000(
-    const double p_Mass,
-    const double p_Tau,
-    const double p_Time,
-    const double p_LZAMS,
-    const double p_tMS,
-    const double p_tBGB
-) const {
-
-    // unenhanced CH luminosity is just MS luminosity
-    double luminosity = MainSequence::CalculateLuminosity_Hurley2000(GLOBALS->ReferenceMetallicity(), p_Mass, p_Time, p_LZAMS, p_tMS, p_tBGB);
-
-    if (OPTIONS->EnhanceCHELifetimesLuminosities()) {               // enhance luminosity of CH stars?
-                                                                    // yes
-        // enhancement should not reduce luminosity, so ratio is clamped to a minimum of +1.0
-        // enhancement amount grows from 1 to logLuminosityRatio over main-sequence
-        const double enhancement = 1.0 + (std::max(CalculateLogLuminositiesRatio(mass), 1.0) - 1.0) * p_Tau * p_Tau;
-
-        luminosity = PPOW(10.0, log10(luminosity) * enhancement);   // apply enhancement
-    }
-
-    return luminosity;
-}
+///////////////////////////////////////////////////////////////////////////////////////
+//                                                                                   //
+//                         AGE / LIFETIME / TAU / TIMESCALES                         //
+//                                                                                   //
+///////////////////////////////////////////////////////////////////////////////////////
 
 
 /*
@@ -96,6 +50,65 @@ COMPAS_PURE DBL_VECTOR CH::CalculateTimescales_Hurley2000(const double p_Mass, c
 }
 
 
+///////////////////////////////////////////////////////////////////////////////////////
+//                                                                                   //
+//                                    LUMINOSITY                                     //
+//                                                                                   //
+///////////////////////////////////////////////////////////////////////////////////////
+
+
+/*
+ * CalculateLuminosity_Hurley2000
+ *
+ * @brief
+ * Calculate the luminosity of a CH star on the (CH) MS, per Hurley et al. 2000, eq 12
+ * 
+ * The luminosity will be enhanced if option `--enhance-CHE-lifetimes-luminosities` was specified.
+ * 
+ * 
+ * double CalculateLuminosity_Hurley2000(
+ *     const double p_Mass,
+ *     const double p_Tau,
+ *     const double p_Age,
+ *     const double p_LZAMS,
+ *     const double p_tMS,
+ *     const double p_tBGB
+ * ) const
+ *
+ * @param       p_Mass                          Mass of the star (Msol)
+ * @param       p_Tau                           Phase-relative age of the star [0, 1]
+ * @param       p_Age                           Time elapsed since ZAMS (Myr)
+ * @param       p_LZAMS                         ZAMS luminosity of the star (Lsol)
+ * @param       p_tMS                           MS lifetime, tMS (per Hurley timescales) (Myr)
+ * @param       p_tBGB                          Time to Base of Giant Branch, tBGB (per Hurley timescales) (Myr)
+ * @return                                      CH luminosity (Lsol)
+ */
+COMPAS_PURE double CH::CalculateLuminosity_Hurley2000(
+    const double p_Mass,
+    const double p_Tau,
+    const double p_Age,
+    const double p_LZAMS,
+    const double p_tMS,
+    const double p_tBGB
+) const {
+
+    // unenhanced CH luminosity is just MS luminosity
+    double luminosity = MainSequence::CalculateLuminosity_Hurley2000(p_Mass, p_Time, p_LZAMS, p_tMS, p_tBGB);
+
+    if (OPTIONS->EnhanceCHELifetimesLuminosities()) {               // enhance luminosity of CH stars?
+                                                                    // yes
+        // enhancement should not reduce luminosity, so ratio is clamped to a minimum of +1.0
+        // enhancement amount grows from 1 to logLuminosityRatio over main-sequence
+        const double enhancement = 1.0 + (std::max(CalculateLogLuminositiesRatio(mass), 1.0) - 1.0) * p_Tau * p_Tau;
+
+        luminosity = PPOW(10.0, log10(luminosity) * enhancement);   // apply enhancement
+    }
+
+    return luminosity;
+}
+
+
+
 
 
 
@@ -113,7 +126,7 @@ STELLAR_TYPE CH::EvolveToNextPhase() {
         
         // if BRCEK core mass calculations enabled, initialise the core mass based on current mass and central helium fraction
         if ((OPTIONS->MainSequenceCoreMassPrescription() == MS_CORE_MASS_PRESCRIPTION::BRCEK) && (utils::Compare(m_MZAMS, BRCEK_LOWER_MASS_LIMIT) >= 0))
-            m_MainSequenceCoreMass = MainSequence::CalculateInitialMainSequenceCoreMass(m_Mass, m_HeliumAbundanceCore);
+            m_MainSequenceCoreMass = MainSequence::CalculateCNOprocessedCoreMass_Brcek2025(m_Mass, m_HeliumAbundanceCore);
     }
     else {                                                                  // yes
         stellarType = STELLAR_TYPE::NAKED_HELIUM_STAR_MS;                   // evolve as HeMS star now
