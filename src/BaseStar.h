@@ -489,8 +489,9 @@ protected:
 
 
 
-    
-GNU_CONST double inline BaseStar::CalculateMLfractionWR(const double p_HeAbundanceSurface) const;
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+// removed in PR 1445    
+//GNU_CONST double inline BaseStar::CalculateMLfractionWR(const double p_HeAbundanceSurface) const;
 
 
 
@@ -717,6 +718,9 @@ GNU_CONST double CalculateTemperatureOnPhase(const double p_Luminosity, const do
     
     GNU_CONST   MASS_LOSS_T CalculateMLrate_VassiliadisWood1993(const double p_Mass, const double p_Radius, const double p_Luminosity) const;
 
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+// removed in PR 1445
+/*
     COMPAS_PURE double BaseStar::CalculateMLrate_WRenhanced(
         const double                p_Luminosity, 
         const double                p_Temperature, 
@@ -724,6 +728,7 @@ GNU_CONST double CalculateTemperatureOnPhase(const double p_Luminosity, const do
         const double                p_dMdtOther,
         const std::optional<double> p_dMdtWR
     ) const;
+*/
 
     // mass loss RSG
     COMPAS_PURE MASS_LOSS_T CalculateMLrateRSG(
@@ -2123,6 +2128,8 @@ inline double BaseStar::CalculateHeCoreMassAtPhaseEnd() const {
 ///////////////////////////////////////////////////////////////////////////////////////
 
 
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+// removed in PR 1445
 /*
  * CalculateMLfractionWR
  *
@@ -2144,14 +2151,15 @@ inline double BaseStar::CalculateHeCoreMassAtPhaseEnd() const {
  *
  * @param       p_HeAbundanceSurface            Helium abundance at the surface of the star
  * @return                                      Fraction of mass loss attributable to WR mass loss
- */
-GNU_CONST double inline BaseStar::CalculateMLfractionWR(const double p_HeAbundanceSurface) const {
+ //
+GNU_CONST inline double BaseStar::CalculateMLfractionWR(const double p_HeAbundanceSurface) const {
 
     constexpr double limOB = 0.55;                                          // per Yoon et al. 2006
     constexpr double limWR = 0.70;                                          // per Yoon et al. 2006
 
     return std::min(1.0, std::max (0.0, (p_HeAbundanceSurface - limOB) / (limWR - limOB)));
 }
+*/
 
 
 /*
@@ -2497,7 +2505,7 @@ COMPAS_PURE inline MASS_LOSS_T BaseStar::CalculateMLrateWR_Shenar2019_Static(con
  * in binaries (Hurley et al. 2000)
  *
  *
- * static MASS_LOSS_T CalculateMLrateWR_ZDependent_Static(const double p_Luminosity, const double p_PerturbationMu) const
+ * static MASS_LOSS_T CalculateMLrateWR_ZDependent_Static(const double p_Luminosity, const double p_PerturbationMu)
  *
  * @param       p_Luminosity                    Luminosity of the star (Lsol)
  * @param       p_PerturbationMu                Small envelope perturbation parameter, mu
@@ -2505,7 +2513,7 @@ COMPAS_PURE inline MASS_LOSS_T BaseStar::CalculateMLrateWR_Shenar2019_Static(con
  *                                                   DOUBLE         WR mass loss rate (Msol yr^-1)
  *                                                   MASS_LOSS_TYPE dominant mass loss type (will be MASS_LOSS_TYPE::WR)
  */
-COMPAS_PURE inline MASS_LOSS_T BaseStar::CalculateMLrateWR_ZDependent_Static(const double p_Luminosity, const double p_PerturbationMu) const {
+COMPAS_PURE inline MASS_LOSS_T BaseStar::CalculateMLrateWR_ZDependent_Static(const double p_Luminosity, const double p_PerturbationMu) {
     // StarTrack may still do something different here.
     // There are references to Hamann & Koesterke 1998 and Vink and de Koter 2005.
     // TW - Haven't seen StarTrack but I think H&K gives the original equation and V&dK gives the Z dependence

@@ -1124,16 +1124,6 @@ COMPAS_PURE MASS_LOSS_T BaseStar::CalculateMLrate_Belczynski2010(
         else  {                                                                     // no - hot star
             // add Vink et al. 2001 winds (ignoring bistability jump)
             std::tie(dMdtOther, dominantMLtypeOther) = CalculateMLrateOB_Vink2001(p_Mass, p_Luminosity, p_Temperature);
-
-            // scale mass loss with the surface helium abundance if necessary
-            // (transition between OB and WR mass loss rates)
-            if (OPTIONS->ScaleMassLossWithSurfaceHeliumAbundance()) {
-                double dMdtWR;
-                std::tie(dMdtWR, std::ignore) = CalculateMLrateWR_ZDependent_Static(GLOBALS->Metallicity(), p_Luminosity, 0.0);
-                MASS_LOSS_TYPE thisDominantMLType;
-                std::tie(dMdtOther, thisDominantMLType) = CalculateMLrate_WRenhanced(GLOBALS->Metallicity(), p_Luminosity, p_Temperature, p_HeAbundanceSurface, dMdtOther, dMdtWR);
-                if (thisDominantMLType != MASS_LOSS_TYPE::NONE) dominantMLtypeOther = thisDominantMLType;
-            }
         }
 
         if (dMdtOther > dMdt) dominantMLtype = dominantMLtypeOther;                 // dominant ML type
@@ -1145,6 +1135,8 @@ COMPAS_PURE MASS_LOSS_T BaseStar::CalculateMLrate_Belczynski2010(
 }
 
 
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+// removed in PR 1445
 /*
  * CalculateMLrate_WRenhanced
  *
@@ -1172,7 +1164,7 @@ COMPAS_PURE MASS_LOSS_T BaseStar::CalculateMLrate_Belczynski2010(
  *                                                  MASS_LOSS_TYPE dominant mass loss type
  *                                                                 will be MASS_LOSS_TYPE::WR if WR winds are dominant,
  *                                                                 otherwise MASS_LOSS_TYPE::NONE, indicating no change in dominance)
- */
+//
 COMPAS_PURE double BaseStar::CalculateMLrate_WRenhanced(
     const double                p_Luminosity, 
     const double                p_Temperature, 
@@ -1205,6 +1197,7 @@ COMPAS_PURE double BaseStar::CalculateMLrate_WRenhanced(
     // clamp winds to [0.0, MAXIMUM_WIND_MASS_LOSS_RATE]
     return std::make_tuple(std::max(std::min(dMdt, MAXIMUM_WIND_MASS_LOSS_RATE), 0.0), dominantMLtype);
 }
+*/
 
 
 /*
@@ -1346,43 +1339,24 @@ COMPAS_PURE MASS_LOSS_T BaseStar::CalculateMLrate_Merritt2025(
 
         // RSG winds regime, massive star, and core helium burning giant (CHeB, FGB, EAGB, TPAGB), or HG?
         if (teff < RSG_MAXIMUM_TEMP && p_mStart >= MASSIVE_THRESHOLD && (IsOneOf(GIANTS) || IsOneOf({STELLAR_TYPE::HERTZSPRUNG_GAP}))) {
-            // yes - RSG mass loss rate
+                                                                            // yes - RSG mass loss rate
             std::tie(dMdtOther, dominantMLtypeOther) = CalculateMLrateRSG(p_Mass, p_Radius, p_Luminosity, p_Temperature, p_mStart, OPTIONS->RSGMassLossPrescription());
         }
 
         // no - cool star?
-        else if (teff < VINK_MASS_LOSS_MINIMUM_TEMP) {
-            // yes - HURLEY mass loss rate
+        else if (teff < VINK_MASS_LOSS_MINIMUM_TEMP) {                      // yes - HURLEY mass loss rate
             std::tie(dMdtOther, dominantMLtypeOther) = CalculateMLrate_Hurley2000(p_Mass, p_Radius, p_Luminosity, p_PerturbationMu);
             dMdt *= OPTIONS->CoolWindMassLossMultiplier();                  // apply cool wind mass loss multiplier
         }
 
         // no - VMS winds regime?
-        else if (p_Mass >= VMS_MASS_THRESHOLD) {
-            // yes - VMS mass loss rate
-            std::tie(dMdtOther, dominantMLtypeOther) = CalculateMLrateVMS(GLOBALS->Metallicity(), p_Mass, p_Luminosity, p_Temperature, GLOBALS->ZetaAnders(), OPTIONS->ScaleTerminalWindVelocityWithMetallicityPower());
-
-            // scale mass loss with the surface helium abundance if necessary
-            // (transition between OB and WR mass loss rates)
-            if (OPTIONS->ScaleMassLossWithSurfaceHeliumAbundance()) {
-                MASS_LOSS_TYPE thisDominantMLType;
-                std::tie(dMdtOther, thisDominantMLType) = CalculateMLrate_WRenhanced(GLOBALS->Metallicity(), p_Luminosity, p_Temperature, p_HeAbundanceSurface, dMdtOther, std::nullopt);
-                if (thisDominantMLType != MASS_LOSS_TYPE::NONE) dominantMLtypeOther = thisDominantMLType;
-            }
+        else if (p_Mass >= VMS_MASS_THRESHOLD) {                            // yes - VMS mass loss rate
+            std::tie(dMdtOther, dominantMLtypeOther) = CalculateMLrateVMS(p_Mass, p_Luminosity, p_Temperature, OPTIONS->VMSMassLossPrescription());
         }
 
         // otherwise...
-        else {
-            // OB mass loss rate
+        else {                                                              // OB mass loss rate
             std::tie(dMdtOther, dominantMLtypeOther) = CalculateMLrateOB(GLOBALS->Metallicity(), p_Mass, p_Luminosity, p_Temperature, OPTIONS->OBMassLossPrescription());
-
-            // scale mass loss with the surface helium abundance if necessary
-            // (transition between OB and WR mass loss rates)
-            if (OPTIONS->ScaleMassLossWithSurfaceHeliumAbundance()) {
-                MASS_LOSS_TYPE thisDominantMLType;
-                std::tie(dMdtOther, thisDominantMLType) = CalculateMLrate_WRenhanced(GLOBALS->Metallicity(), p_Luminosity, p_Temperature, p_HeAbundanceSurface, dMdtOther, std::nullopt);
-                if (thisDominantMLType != MASS_LOSS_TYPE::NONE) dominantMLtypeOther = thisDominantMLType;
-            }
         }
 
         if (dMdtOther > dMdt) dominantMLtype = dominantMLtypeOther;         // dominant ML type

@@ -630,7 +630,7 @@ GNU_CONST static inline double HeMS::CalculateRadius_Hurley2000_Static(const dou
  *                                                   MASS_LOSS_TYPE dominant mass loss type (will be MASS_LOSS_TYPE::WR)
  */
 static GNU_CONST inline MASS_LOSS_T HeMS::CalculateMLrate_Belczynski2010_Static(const double p_Luminosity) {
-    return BaseStar::CalculateMLrateWR_ZDependent_Static(GLOBALS->Metallicity(), p_Luminosity, 0.0);
+    return BaseStar::CalculateMLrateWR_ZDependent_Static(ßp_Luminosity, 0.0);
 }
 
 

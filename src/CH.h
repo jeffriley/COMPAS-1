@@ -154,8 +154,8 @@ double CalculateLuminosityOnPhase(
     ) const override;
 
 
-    double          CalculateMassLossRateBelczynski2010()               { return BaseStar::CalculateMassLossRateBelczynski2010() * CalculateMassLossRateEnhancementRotation(); }
-    double          CalculateMassLossRateMerritt2025()                  { return BaseStar::CalculateMassLossRateBelczynski2010() * CalculateMassLossRateEnhancementRotation(); }
+    ////double          CalculateMassLossRateBelczynski2010()               { return BaseStar::CalculateMassLossRateBelczynski2010() * CalculateMassLossRateEnhancementRotation(); }
+    ////double          CalculateMassLossRateMerritt2025()                  { return BaseStar::CalculateMassLossRateBelczynski2010() * CalculateMassLossRateEnhancementRotation(); }
 
 
     double          CalculateMassLossRateWeightOB(const double p_HeliumAbundanceSurface);
@@ -461,7 +461,7 @@ COMPAS_PURE inline MASS_LOSS_T CH::CalculateMLrate_Belczynski2010(
  *                                                   DOUBLE         WR mass loss rate (Msol yr^-1)
  *                                                   MASS_LOSS_TYPE dominant mass loss type (could be MASS_LOSS_TYPE::NONE)
  */
-COMPAS_PURE MASS_LOSS_T inline CH::CalculateMLrate_Merritt2025(
+COMPAS_PURE inline MASS_LOSS_T CH::CalculateMLrate_Merritt2025(
     const double p_Mass,
     const double p_Radius,
     const double p_Luminosity,
@@ -485,6 +485,37 @@ COMPAS_PURE MASS_LOSS_T inline CH::CalculateMLrate_Merritt2025(
 
     // return mass loss rate, enhanced for rotation if required, and dominant mass loss type
     return std::make_tuple(dMdt * (OPTIONS->EnableRotationallyEnhancedMassLoss() ? CalculateMLrateRotationEnhancement_Langer1998() : 1.0), dominantMLtype);
+}
+
+
+/*
+ * CalculateMLfractionOB
+ *
+ * @brief
+ * Calculate the fraction of mass loss attributable to OB mass loss, per Yoon et al. 2006
+ *
+ * The model described in Yoon et al. 2006 (also Szecsi et al. 2015) uses OB mass loss while the
+ * He surface abundance is below 0.55, WR mass loss when the surface He abundance is above 0.7,
+ * and linearly interpolate when the He surface abundance is between those limits.
+ *
+ * This function calculates the fraction of mass loss attributable to OB mass loss, based on
+ * the He surface abundance and the abundance limits described in Yoon et al. 2006.  The value
+ * returned will be 1.0 if 100% of the mass loss is attributable to OB mass lass, 0.0 if 100% of
+ * the mass loss is attributable to WR mass loss, and in the range (0.0, 1.0) if the mass loss is
+ * a mix of OB and WR.
+ *
+ *
+ * double CalculateMLfractionOB(const double p_HeAbundanceSurface) const
+ *
+ * @param       p_HeAbundanceSurface            Helium abundance at the surface of the star
+ * @return                                      Fraction of mass loss attributable to OB mass loss
+ */
+GNU_CONST inline double CH::CalculateMLfractionOB(const double p_HeAbundanceSurface) const {
+
+    constexpr double limOB = 0.55;                                          // per Yoon et al. 2006
+    constexpr double limWR = 0.70;                                          // per Yoon et al. 2006
+
+    return std::min(1.0, std::max (0.0, (limWR - p_HeAbundanceSurface) / (limWR - limOB)));
 }
 
 

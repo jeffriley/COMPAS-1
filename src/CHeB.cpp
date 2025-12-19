@@ -338,7 +338,6 @@ double CHeB::CalculateLuminosity_Hurley2000(const double p_Mass, const double p_
  *
  * @param       p_Mass                          Mass of the star (Msol)
  * @param       p_CoreMass                      Core Mass of the star (Msol)
- * @param       p_Alpha1                        Hurley alpha1 constant
  * @param       p_MHeF                          Maximum initial mass at Helium Flash (Hurley masscutoffs[MHeF]) (Msol)
  * @param       p_MFGB                          Maximum initial mass at helium ignition on the FGB (Hurley masscutoffs[MFGB]) (Msol)
  * @param       p_MinLuminosity                 Minimum luminosity during Core Helium Burning (Lsol)

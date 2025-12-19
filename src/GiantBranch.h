@@ -703,16 +703,14 @@ COMPAS_PURE static inline double GiantBranch::CalculateLuminosityAtHeI_Hurley200
  * @return                                      ZAHB luminosity (Lsol)
  */
 GNU_CONST static inline double GiantBranch::CalculateLuminosityOnZAHB_Hurley2000_Static(const double p_Mass, const double p_CoreMass) {
-#define b(x) GLOBALS->HurleyBCoefficients(x) // for convenience and readability - undefined at end of function
 
-    const double mHef = GLOBALS->HurleyMassCutoffs(static_cast<int>(MHeF));
-    const double mu   = (p_Mass - p_CoreMass) / (mHef - p_CoreMass);
-    const double lZHe = HeMS::CalculateLuminosityAtZAHeMS_Hurley2000_Static(p_CoreMass);
-    const double tmp  = (b(18) * PPOW(mu, b(19))) / (1.0 + (b(18) + lZHe - GLOBALS->MinLuminosity_CHeB()) / (GLOBALS->MinLuminosity_CHeB() - lZHe) * exp(15.0 * (p_Mass - mHef)));
+    const DBL_VECTOR b = GLOBALS->HurleyBcoefficients(); // get Hurley b coefficients
+    const double mHef  = GLOBALS->HurleyMassCutoffs(static_cast<int>(MHeF));
+    const double mu    = (p_Mass - p_CoreMass) / (mHef - p_CoreMass);
+    const double lZHe  = HeMS::CalculateLuminosityAtZAHeMS_Hurley2000_Static(p_CoreMass);
+    const double tmp   = (b[18] * PPOW(mu, b[19])) / (1.0 + (b[18] + lZHe - GLOBALS->MinLuminosity_CHeB()) / (GLOBALS->MinLuminosity_CHeB() - lZHe) * exp(15.0 * (p_Mass - mHef)));
 
-    return lZHe + ((1.0 + b(20)) / (1.0 + (b(20) * PPOW(mu, 1.6479))) * tmp);
-
-#undef bN
+    return lZHe + ((1.0 + b[20]) / (1.0 + (b[20] * PPOW(mu, 1.6479))) * tmp);
 }
 
 

@@ -333,7 +333,7 @@ void GiantBranch::PerturbLuminosityAndRadius() { }
 
 ///////////////////////////////////////////////////////////////////////////////////////
 //                                                                                   //
-//                               LUMINOSITY FUNCTIONS                                //
+//                                    LUMINOSITY                                     //
 //                                                                                   //
 ///////////////////////////////////////////////////////////////////////////////////////
 
@@ -343,7 +343,7 @@ void GiantBranch::PerturbLuminosityAndRadius() { }
 
 ///////////////////////////////////////////////////////////////////////////////////////
 //                                                                                   //
-//                                 RADIUS FUNCTIONS                                  //
+//                                      RADIUS                                       //
 //                                                                                   //
 ///////////////////////////////////////////////////////////////////////////////////////
 
@@ -383,13 +383,13 @@ double GiantBranch::CalculateConvectiveEnvelopeRadialExtent_Hurley2002(const dou
  * Calculate radius at Helium Ignition, per Hurley et al. 2000, eq 50
  *
  *
- * double CalculateRadiusAtHeIgnition_Hurley2000(const double      p_Mass,
- *                                               const double      p_CoreMass,
- *                                               const double      p_MHeF,
- *                                               const double      p_MFGB,
- *                                               const double      p_MinLuminosity,
- *                                               const double      p_Alpha1,
- *                                               const DBL_VECTOR& p_bN) const
+ * double CalculateRadiusAtHeIgnition_Hurley2000(
+ *     const double p_Mass,
+ *     const double p_CoreMass,
+ *     const double p_MHeF,
+ *     const double p_MFGB,
+ *     const double p_MinLuminosity
+ * ) const
  *
  * @param       p_Mass                          Mass of the star (Msol)
  * @param       p_CoreMass                      Core mass of the star (Msol)
@@ -400,11 +400,12 @@ double GiantBranch::CalculateConvectiveEnvelopeRadialExtent_Hurley2002(const dou
  * @param       p_bN                            Hurley b(n) coefficients
  * @return                                      Radius at Helium Ignition (Rsol)
  */
-double GiantBranch::CalculateRadiusAtHeIgnition_Hurley2000(const double      p_Mass,
-                                                           const double      p_CoreMass,
-                                                           const double      p_MHeF,
-                                                           const double      p_MFGB,
-                                                           const double      p_MinLuminosity,
+double GiantBranch::CalculateRadiusAtHeIgnition_Hurley2000(
+    const double p_Mass,
+    const double p_CoreMass,
+    const double p_MHeF,
+    const double p_MFGB,
+    const double p_MinLuminosity
 ) const {
 
     double radius;
@@ -452,13 +453,10 @@ double GiantBranch::CalculateRadiusAtHeIgnition_Hurley2000(const double      p_M
  */
 double GiantBranch::CalculateRadiusOnZAHB_Hurley2000_Static(const double      p_Mass,
                                                             const double      p_CoreMass,
-                                                            const double      p_MHeF,
-                                                            const double      p_MinLuminosity,
-                                                            const double      p_Alpha1,
-                                                            const DBL_VECTOR& p_bN) {
+                                                            const double      p_MHeF) {
 
     const double rZHe  = HeMS::CalculateRadiusAtZAHeMS_Hurley2000_Static(p_CoreMass);
-    const double lZAHB = CalculateLuminosityOnZAHB_Hurley2000_Static(p_Mass, p_CoreMass, p_Alpha1, p_MHeF, p_MinLuminosity, p_bN);
+    const double lZAHB = CalculateLuminosityOnZAHB_Hurley2000_Static(p_Mass, p_CoreMass);
     const double rGB   = CalculateRadiusOnPhase_Hurley2000_Static(p_Mass, lZAHB, p_bN);
     const double f     = ((1.0 + p_bN[21]) * PPOW((p_Mass - p_CoreMass) / (p_MHeF - p_CoreMass), p_bN[22])) / (1.0 + p_bN[21] * PPOW(mu, p_bN[23]));
 
@@ -468,7 +466,7 @@ double GiantBranch::CalculateRadiusOnZAHB_Hurley2000_Static(const double      p_
 
 ///////////////////////////////////////////////////////////////////////////////////////
 //                                                                                   //
-//                                  MASS FUNCTIONS                                   //
+//                                       MASS                                        //
 //                                                                                   //
 ///////////////////////////////////////////////////////////////////////////////////////
 
