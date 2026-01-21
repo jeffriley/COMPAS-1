@@ -193,6 +193,20 @@ STELLAR_TYPE Star::SwitchTo(const STELLAR_TYPE p_StellarType, bool p_SetStarting
  * 
  * Sets object persistence (PERMANENT or EPHEMERAL).
  * Optionally initialises new star.
+ * 
+ * Occasionally during the evolution of a star or binary we want to check an attribute of the
+ * current star if it were to switch to a different stellar type - we don't actually want to
+ * switch to a new stellar type, we just want to know what would happen if we did.  The solution
+ * in these cases is to call a class member function for the stellar type in question, but in most
+ * cases we don't have an instantiated object of the required class (stellar type).  The best
+ * solution is to call a static function of the class required, but sometimes exposing the required
+ * static function is impractical - the function may call other functions, which in turn may call
+ * other functions, all of which would have to be exposed as static functions.  Where exposing a 
+ * static function is not practical, cloning the current star and switching the clone to the new
+ * stellar type is a good solution - the clone can be discarded once the attribute checks are made.
+ * 
+ * There is some overhead in instantiating the clone object, so the preferred solution is a static
+ * function whenever possible - use clones sparingly, and only when necessary.
  *
  *
  * std::unique_ptr<BaseStar> CloneAs(STELLAR_TYPE p_StellarType, const OBJECT_PERSISTENCE p_Persistence, const bool p_Initialise = true) const
@@ -264,6 +278,10 @@ COMPAS_PURE std::unique_ptr<BaseStar> Star::CloneAs(STELLAR_TYPE p_StellarType, 
  * Sets object persistence (PERMANENT or EPHEMERAL).
  * Optionally initialises new star.
  *
+ * This is similar functionality to CloneAs() above, but instead of cloning an existing star,
+ * a new, unevolved, star of the required stellar type is instantiated.  See description of
+ * CloneAs() above for use cases and caveats.
+ * 
  *
  * std::unique_ptr<BaseStar> MakeStar(STELLAR_TYPE p_StellarType, const OBJECT_PERSISTENCE p_Persistence, const bool p_Initialise) const
  *

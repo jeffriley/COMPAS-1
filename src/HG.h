@@ -27,10 +27,10 @@ private:
 
 COMPAS_PURE double CalculateCoreMassAtPhaseEnd_Hurley2000(const double p_Mass, const DBL_VECTOR& p_GBparams) const;
 
-GNU_CONST double CalculateCoreMass_Hurley2000(const double p_Mass, const double p_Tau, const double p_CoreMass) const;
-static GNU_CONST double CalculateCoreMass_Hurley2000_Unconstrained_Static(const double p_Mass, const double p_Tau) const;
-GNU_CONST double CalculateEffectiveInitialMass_Hurley2000(const double p_Mass, const double p_Tau, const double p_Coremass, const double p_MassEffectiveInitial) const;
-static GNU_CONST double CalculateRho_Hurley2000_Static(const double p_Mass) const;
+GNU_CONST double CalculateCoreMass_Hurley2000(const double p_Mass, const double p_Tau, const double p_CoreMass, const DBL_VECTOR& p_GBparams) const;
+GNU_CONST double CalculateCoreMass_Hurley2000_Unconstrained(const double p_Mass, const double p_Tau, const DBL_VECTOR& p_GBparams) const;
+GNU_CONST double CalculateEffectiveInitialMass_Hurley2000(const double p_Mass, const double p_Tau, const double p_Coremass, const DBL_VECTOR& p_GBparams, const double p_MassEffectiveInitial) const;
+GNU_CONST double CalculateRho_Hurley2000(const double p_Mass) const;
 GNU_CONST double CalculateTau_Hurley2000(const double p_Age, const double p_tMS, const double p_tBGB) const;
 
 
@@ -122,7 +122,7 @@ double CalculateRadiusOnPhase() const override; { return CalculateRadiusOnPhase(
 ///// ON PHASE FUNCTIONS   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 
-inline double CalculateCoreMass_Hurley2000() const override { return CalculateCoreMass_Hurley2000(Mass(), Tau(), CoreMass()); }
+inline double CalculateCoreMass_Hurley2000() const override { return CalculateCoreMass_Hurley2000(Mass(), Tau(), CoreMass()); } //// <<<< GBPARAMS!!!!!
 
 GNU_CONST inline double CalculateCOCoreMass() const override { return 0.0; } // McCO = 0.0 for HG stars
 
@@ -130,7 +130,7 @@ inline double CalculateHeCoreMass() const override { return Coremass(); } // McH
 
 inline double CalculateTau_Hurley2000() const override { return CalculateTau_Hurley2000(Age(), Timescales(TIMESCALE::tMS), Timescales(TIMESCALE::tBGB)); }
 
-inline double CalculateEffectiveInitialMass_Hurley2000() const override { return CalculateEffectiveInitialMass_Hurley2000(Mass(), Tau(), Coremass(), MassEffectiveInitial()); }
+inline double CalculateEffectiveInitialMass_Hurley2000() const override { return CalculateEffectiveInitialMass_Hurley2000(Mass(), Tau(), Coremass(), MassEffectiveInitial()); } /// <<<<<< GBPARAMS
 
 
 
@@ -347,7 +347,7 @@ GNU_PURE  double CalculateAgeAfterMassLoss_Hurley(const double p_Mass, const dou
 
 
 /*
- * CalculateRho_Hurley2000_Static
+ * CalculateRho_Hurley2000
  *
  * @brief
  * Calculate the parameter rho for the Hertzsprung Gap, per Hurley et al. 2000, eq 29.
@@ -355,12 +355,12 @@ GNU_PURE  double CalculateAgeAfterMassLoss_Hurley(const double p_Mass, const dou
  * Rho is calculated such that McTMS = Rho * McEHG
  * 
  *
- * static double CalculateRho_Hurley2000_Static(const double p_Mass) const
+ * double CalculateRho_Hurley2000(const double p_Mass) const
  *
  * @param       p_Mass                          Mass of the star (Msol)
  * @return                                      HG rho
  */
-GNU_CONST inline double HG::CalculateRho_Hurley2000_Static(const double p_Mass) const {
+GNU_CONST inline double HG::CalculateRho_Hurley2000(const double p_Mass) const {
     const double m5_25 = utils::intPow(p_Mass, 5) * std::sqrt(std::sqrt(p_Mass)); // sqrt() is much faster than pow()
     return (1.586 + m5_25) / (2.434 + (1.02 * m5_25));
 }
@@ -466,6 +466,7 @@ inline double HG::CalculateAgeAfterMassLoss() const {
 //                                                                                   //
 ///////////////////////////////////////////////////////////////////////////////////////
 
+
 /*
  * CalculateCoreMassAtPhaseEnd_Hurley2000
  *
@@ -500,6 +501,7 @@ COMPAS_PURE inline double HG::CalculateCoreMassAtPhaseEnd_Hurley2000(const doubl
 /*
  * CalculateCoreMass_Hurley2000
  *
+ * @brief
  * Calculate core mass on the Hertzsprung Gap, per Hurley et al. 2000, eq 30
  * (see Section 7
  *
@@ -508,22 +510,25 @@ COMPAS_PURE inline double HG::CalculateCoreMassAtPhaseEnd_Hurley2000(const doubl
  * reduce the size of the core (per Hurley).
  *
  *
- * double CalculateCoreMass_Hurley2000(const double p_Mass, const double p_Tau, const double p_CoreMass) const
+ * double CalculateCoreMass_Hurley2000(const double p_Mass, const double p_Tau, const double p_CoreMass, const DBL_VECTOR& p_GBparams) const
  *
  * @param       p_Mass                          Mass of the star (Msol)
  * @param       p_Tau                           Phase-relative age of the star [0, 1]
  * @param       p_CoreMass                      Current core mass of the star (Msol)
+ * @param       p_GBparams                      Hurley GB parameters
  * @return                                      HG core mass (Msol)
  */
-GNU_CONST inline double HG::CalculateCoreMass_Hurley2000(const double p_Mass, const double p_Tau, const double p_CoreMass) const {
-    return std::max(CalculateCoreMass_Hurley2000_Unconstrained_Static(p_Mass, p_Tau), p_CoreMass);
+GNU_CONST inline double HG::CalculateCoreMass_Hurley2000(const double p_Mass, const double p_Tau, const double p_CoreMass, const DBL_VECTOR& p_GBparams) const {
+    return std::max(CalculateCoreMass_Hurley2000_Unconstrained(p_Mass, p_Tau, p_GBparams), p_CoreMass);
 }
 
 
 /*
- * CalculateCoreMass_Hurley2000_Unconstrained_Static
+ * CalculateCoreMass_Hurley2000_Unconstrained
  *
- * Calculate core mass on the Hertzsprung Gap without accounting for previous core mass.
+ * @brief
+ * Calculate core mass on the Hertzsprung Gap without accounting for previous core mass,
+ * based on Hurley et al. 2000 (eq 30).
  *
  * This ignores the previous core mass constraint (see section 7 of Hurley et al. 2000)
  * when computing the expected core mass, and just follows eq. 30.  This is useful for
@@ -531,15 +536,15 @@ GNU_CONST inline double HG::CalculateCoreMass_Hurley2000(const double p_Mass, co
  * core mass should not be allowed to drop.
  *
  *
- * static double CalculateCoreMass_Hurley2000_Unconstrained_Static(const double p_Mass, const double p_Tau) const
+ * double CalculateCoreMass_Hurley2000_Unconstrained(const double p_Mass, const double p_Tau, const DBL_VECTOR& p_GBparams) const
  *
  * @param       p_Mass                          Mass of the star (Msol)
  * @param       p_Tau                           Phase-relative age of the star [0, 1]
+ * @param       p_GBparams                      Hurley GB parameters
  * @return                                      HG core mass (Msol)
  */
-GNU_CONST inline double HG::CalculateCoreMass_Hurley2000_Unconstrained_Static(const double p_Mass, const double p_Tau) const {
-    const double McEHG = CalculateCoreMassAtPhaseEnd_Hurley2000(p_Mass, p_GBparams, p_MHeF, p_MFGB, p_aN);
-    return (((1.0 - p_Tau) * CalculateRho_Hurley2000_Static(p_Mass)) + p_Tau) * McEHG;
+GNU_CONST inline double HG::CalculateCoreMass_Hurley2000_Unconstrained(const double p_Mass, const double p_Tau, const DBL_VECTOR& p_GBparams) const {
+    return (((1.0 - p_Tau) * CalculateRho_Hurley2000(p_Mass)) + p_Tau) * CalculateCoreMassAtPhaseEnd_Hurley2000(p_Mass, p_GBparams);
 }
 
 
@@ -562,16 +567,29 @@ GNU_CONST inline double HG::CalculateCoreMass_Hurley2000_Unconstrained_Static(co
  * than would be expected for the current mass value according to the Hurley prescription).
  *
  * 
- * double CalculateEffectiveInitialMass_Hurley2000(const double p_Mass, const double p_Tau, const double p_Coremass, const double p_MassEffectiveInitia) const
+ * double CalculateEffectiveInitialMass_Hurley2000(
+ *     const double      p_Mass,
+ *     const double      p_Tau,
+ *     const double      p_Coremass,
+ *     const DBL_VECTOR& p_GBparams,
+ *     const double      p_MassEffectiveInitia1
+ * ) const
  * 
  * @param       p_Mass                          Mass of the star (Msol)
  * @param       p_Tau                           Phase-relative age of the star [0, 1]
  * @param       p_CoreMass                      Core mass of the star (Msol)
+ * @param       p_GBparams                      Hurley GB parameters
  * @param       p_MassEffectiveInitial          Current effective initial mass of the star (Msol)
  * @return                                      HG effective initial mass (Msol) (may be unchanged)
  */
-GNU_CONST inline double HG::CalculateEffectiveInitialMass_Hurley2000(const double p_Mass, const double p_Tau, const double p_Coremass, const double p_MassEffectiveInitial) const {
-    return ((p_MassEffectiveInitial > p_Mass) && (p_Coremass <= CalculateCoreMass_Hurley2000_Unconstrained_Static(p_Mass, p_Tau))) ? p_Mass : p_MassEffectiveInitial;
+GNU_CONST inline double HG::CalculateEffectiveInitialMass_Hurley2000(
+    const double      p_Mass,
+    const double      p_Tau,
+    const double      p_Coremass,
+    const DBL_VECTOR& p_GBparams,
+    const double      p_MassEffectiveInitial
+) const {
+    return ((p_MassEffectiveInitial > p_Mass) && (p_Coremass <= CalculateCoreMass_Hurley2000_Unconstrained(p_Mass, p_Tau, p_GBparams))) ? p_Mass : p_MassEffectiveInitial;
 }
 
 

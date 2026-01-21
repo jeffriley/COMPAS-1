@@ -239,13 +239,13 @@ COMPAS_PURE static MASS_LOSS_T HeMS::CalculateMLrate_Merritt2025_Static(const do
     switch (OPTIONS->WRMassLossPrescription()) {                                                     // which WR mass loss prescription?
 
         case WR_MASS_LOSS_PRESCRIPTION::BELCZYNSKI2010:                             // BELCZYNSKI2010
-            std::tie(dMdt, dominantMLtype) = HeMS::CalculateMLrate_Belczynski2010_Static(GLOBALS->Metallicity(), p_Luminosity);
+            std::tie(dMdt, dominantMLtype) = HeMS::CalculateMLrate_Belczynski2010_Static(p_Luminosity);
             break;
 
         case WR_MASS_LOSS_PRESCRIPTION::SANDERVINK2023:                             // SANDERVINK2023
 
             // start with Sander & Vink 2020
-            std::tie(dMdt, dominantMLtype) = BaseStar::CalculateMLrateWR_SanderVink2020_Static(p_Luminosity, 0.0, GLOBALS->ZetaAnders());
+            std::tie(dMdt, dominantMLtype) = BaseStar::CalculateMLrateWR_SanderVink2020_Static(p_Luminosity, 0.0);
 
             // apply the Sander et al. 2023 temperature correction to the Sander & Vink 2020
             // rate if necessary - gives the Sander & Vink 2023 rate
@@ -269,7 +269,7 @@ COMPAS_PURE static MASS_LOSS_T HeMS::CalculateMLrate_Merritt2025_Static(const do
 
             const double dMdtVink2017;
             const double dominantMLtypeVink2017;
-            std::tie(dMdtVink2017, dominantMLtypeVink2017) = HeMS::CalculateMLrate_Vink2017_Static(p_Luminosity, GLOBALS->ZetaAnders());
+            std::tie(dMdtVink2017, dominantMLtypeVink2017) = HeMS::CalculateMLrate_Vink2017_Static(p_Luminosity);
             if (dMdtVink2017 > dMdt) {
                 dMdt           = dMdtVink2017;
                 dominantMLtype = dominantMLtypeVink2017;
@@ -279,14 +279,14 @@ COMPAS_PURE static MASS_LOSS_T HeMS::CalculateMLrate_Merritt2025_Static(const do
         case WR_MASS_LOSS_PRESCRIPTION::SHENAR2019:                                 // SHENAR2019
 
             // start with Shenar+ 2019
-            std::tie(dMdt, dominantMLtype) = HeMS::CalculateMLrateWR_Shenar2019_Static(p_Luminosity, p_Temperature, GLOBALS->SigmaHurley());
+            std::tie(dMdt, dominantMLtype) = HeMS::CalculateMLrateWR_Shenar2019_Static(p_Luminosity, p_Temperature);
 
             // compare Shenar+ 2019 mass loss rate to Vink 2017, and clamp to a minimum
             // of Vink 2017 to avoid extrapolating to low luminosity
 
             const double dMdtVink2017;
             const double dominantMLtypeVink2017;
-            std::tie(dMdtVink2017, dominantMLtypeVink2017) = HeMS::CalculateMLrate_Vink2017_Static(p_Luminosity, GLOBALS->ZetaAnders());
+            std::tie(dMdtVink2017, dominantMLtypeVink2017) = HeMS::CalculateMLrate_Vink2017_Static(p_Luminosity);
             if (dMdtVink2017 > dMdt) {
                 dMdt           = dMdtVink2017;
                 dominantMLtype = dominantMLtypeVink2017;

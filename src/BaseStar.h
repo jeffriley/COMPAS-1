@@ -1096,22 +1096,22 @@ inline double BaseStar::CalculateAgeAfterMassLoss() const {
 
     double age;
 
-    Switch (OPTIONS->Mode()) {                                                                                  // which evolution mode?
+    Switch (OPTIONS->Mode()) {                                                          // which evolution mode?
 
-        EVOLUTION_MODE::SSE_HURLEY:                                                                             // HURLEY SSE
-        EVOLUTION_MODE::BSE_HURLEY:                                                                             // HURLEY BSE
+        EVOLUTION_MODE::SSE_HURLEY:                                                     // HURLEY SSE
+        EVOLUTION_MODE::BSE_HURLEY:                                                     // HURLEY BSE
             age = CalculateAgeAfterMassLoss_Hurley2000();
             break;
 
-        default:                                                                                                // unknown mode
-            // the only way this can happen is if someone added an EVOLUTION_MODE
-            // and it isn't accounted for in this code.  We should not default here, with or without a warning.
+        default:                                                                        // unknown mode
+            // the only way this can happen is if someone added an EVOLUTION_MODE and it isn't accounted
+            // for in this code.  We should not default here, with or without a warning.
             // We are here because the user chose a mode this code doesn't account for, and that should
             // be flagged as an error and result in termination of the evolution of the star or binary.
             // The correct fix for this is to add code for the missing mode or, if the missing mode is
             // superfluous, remove it from the option.
 
-            THROW_ERROR(ERROR::UNKNOWN_EVOLUTION_MODE);                                                         // throw error
+            THROW_ERROR(ERROR::UNKNOWN_EVOLUTION_MODE);                                 // throw error
     }
 
     return age;
@@ -1192,8 +1192,8 @@ inline double BaseStar::CalculateTau() const {
             break;
         
         default:                                                                        // unknown mode
-            // the only way this can happen is if someone added an EVOLUTION_MODE and it isn't
-            // accounted for in this code.  We should not default here, with or without a warning.
+            // the only way this can happen is if someone added an EVOLUTION_MODE and it isn't accounted
+            // for in this code.  We should not default here, with or without a warning.
             // We are here because the user chose a mode this code doesn't account for, and that should
             // be flagged as an error and result in termination of the evolution of the star or binary.
             // The correct fix for this is to add code for the missing mode or, if the missing mode is
@@ -1233,8 +1233,8 @@ inline DBL_VECTOR BaseStar::CalculateTimescales() const {
             break;
         
         default:                                                                        // unknown mode
-            // the only way this can happen is if someone added an EVOLUTION_MODE and it isn't
-            // accounted for in this code.  We should not default here, with or without a warning.
+            // the only way this can happen is if someone added an EVOLUTION_MODE and it isn't accounted
+            // for in this code.  We should not default here, with or without a warning.
             // We are here because the user chose a mode this code doesn't account for, and that should
             // be flagged as an error and result in termination of the evolution of the star or binary.
             // The correct fix for this is to add code for the missing mode or, if the missing mode is
@@ -1500,8 +1500,8 @@ inline double BaseStar::CalculateRadius() const {
             break;
         
         default:                                                                        // unknown mode
-            // the only way this can happen is if someone added an EVOLUTION_MODE and it isn't
-            // accounted for in this code.  We should not default here, with or without a warning.
+            // the only way this can happen is if someone added an EVOLUTION_MODE and it isn't accounted
+            // for in this code.  We should not default here, with or without a warning.
             // We are here because the user chose a mode this code doesn't account for, and that should
             // be flagged as an error and result in termination of the evolution of the star or binary.
             // The correct fix for this is to add code for the missing mode or, if the missing mode is
@@ -1540,8 +1540,8 @@ inline double BaseStar::CalculateRemnantRadius() const {
             break;
         
         default:                                                                        // unknown mode
-            // the only way this can happen is if someone added an EVOLUTION_MODE and it isn't
-            // accounted for in this code.  We should not default here, with or without a warning.
+            // the only way this can happen is if someone added an EVOLUTION_MODE and it isn't accounted
+            // for in this code.  We should not default here, with or without a warning.
             // We are here because the user chose a mode this code doesn't account for, and that should
             // be flagged as an error and result in termination of the evolution of the star or binary.
             // The correct fix for this is to add code for the missing mode or, if the missing mode is
@@ -1766,7 +1766,7 @@ COMPAS_PURE inline double BaseStar::CalculateLuminosityAtBAGB_Hurley2000(double 
 
 ///////////////////////////////////////////////////////////////////////////////////////
 //                                                                                   //
-//                               TEMPERATURE FUNCTIONS                               //
+//                                    TEMPERATURE                                    //
 //                                                                                   //
 ///////////////////////////////////////////////////////////////////////////////////////
 
@@ -1797,8 +1797,8 @@ inline double BaseStar::CalculateTemperatureOnPhase() const {
             break;
         
         default:                                                                        // unknown mode
-            // the only way this can happen is if someone added an EVOLUTION_MODE and it isn't
-            // accounted for in this code.  We should not default here, with or without a warning.
+            // the only way this can happen is if someone added an EVOLUTION_MODE and it isn't accounted
+            // for in this code.  We should not default here, with or without a warning.
             // We are here because the user chose a mode this code doesn't account for, and that should
             // be flagged as an error and result in termination of the evolution of the star or binary.
             // The correct fix for this is to add code for the missing mode or, if the missing mode is
@@ -1882,8 +1882,8 @@ inline double BaseStar::CalculateCoreMass() const {
             break;
         
         default:                                                                        // unknown mode
-            // the only way this can happen is if someone added an EVOLUTION_MODE and it isn't
-            // accounted for in this code.  We should not default here, with or without a warning.
+            // the only way this can happen is if someone added an EVOLUTION_MODE and it isn't accounted
+            // for in this code.  We should not default here, with or without a warning.
             // We are here because the user chose a mode this code doesn't account for, and that should
             // be flagged as an error and result in termination of the evolution of the star or binary.
             // The correct fix for this is to add code for the missing mode or, if the missing mode is
@@ -1927,8 +1927,8 @@ inline double BaseStar::CalculateCoreMassAtPhaseEnd() const {
             break;
         
         default:                                                                        // unknown mode
-            // the only way this can happen is if someone added an EVOLUTION_MODE and it isn't
-            // accounted for in this code.  We should not default here, with or without a warning.
+            // the only way this can happen is if someone added an EVOLUTION_MODE and it isn't accounted
+            // for in this code.  We should not default here, with or without a warning.
             // We are here because the user chose a mode this code doesn't account for, and that should
             // be flagged as an error and result in termination of the evolution of the star or binary.
             // The correct fix for this is to add code for the missing mode or, if the missing mode is
@@ -1988,8 +1988,8 @@ inline double BaseStar::CalculateCOCoreMass() const {
             break;
         
         default:                                                                        // unknown mode
-            // the only way this can happen is if someone added an EVOLUTION_MODE and it isn't
-            // accounted for in this code.  We should not default here, with or without a warning.
+            // the only way this can happen is if someone added an EVOLUTION_MODE and it isn't accounted
+            // for in this code.  We should not default here, with or without a warning.
             // We are here because the user chose a mode this code doesn't account for, and that should
             // be flagged as an error and result in termination of the evolution of the star or binary.
             // The correct fix for this is to add code for the missing mode or, if the missing mode is
@@ -2028,8 +2028,8 @@ inline double BaseStar::CalculateCOCoreMassAtPhaseEnd() const {
             break;
         
         default:                                                                        // unknown mode
-            // the only way this can happen is if someone added an EVOLUTION_MODE and it isn't
-            // accounted for in this code.  We should not default here, with or without a warning.
+            // the only way this can happen is if someone added an EVOLUTION_MODE and it isn't accounted
+            // for in this code.  We should not default here, with or without a warning.
             // We are here because the user chose a mode this code doesn't account for, and that should
             // be flagged as an error and result in termination of the evolution of the star or binary.
             // The correct fix for this is to add code for the missing mode or, if the missing mode is
@@ -2067,8 +2067,8 @@ inline double BaseStar::CalculateHeCoreMass() const {
             break;
         
         default:                                                                        // unknown mode
-            // the only way this can happen is if someone added an EVOLUTION_MODE and it isn't
-            // accounted for in this code.  We should not default here, with or without a warning.
+            // the only way this can happen is if someone added an EVOLUTION_MODE and it isn't accounted
+            // for in this code.  We should not default here, with or without a warning.
             // We are here because the user chose a mode this code doesn't account for, and that should
             // be flagged as an error and result in termination of the evolution of the star or binary.
             // The correct fix for this is to add code for the missing mode or, if the missing mode is
@@ -2107,8 +2107,8 @@ inline double BaseStar::CalculateHeCoreMassAtPhaseEnd() const {
             break;
         
         default:                                                                        // unknown mode
-            // the only way this can happen is if someone added an EVOLUTION_MODE and it isn't
-            // accounted for in this code.  We should not default here, with or without a warning.
+            // the only way this can happen is if someone added an EVOLUTION_MODE and it isn't accounted
+            // for in this code.  We should not default here, with or without a warning.
             // We are here because the user chose a mode this code doesn't account for, and that should
             // be flagged as an error and result in termination of the evolution of the star or binary.
             // The correct fix for this is to add code for the missing mode or, if the missing mode is
@@ -2579,8 +2579,8 @@ inline double BaseStar::CalculateLuminosity() const {
             break;
         
         default:                                                                        // unknown mode
-            // the only way this can happen is if someone added an EVOLUTION_MODE and it isn't
-            // accounted for in this code.  We should not default here, with or without a warning.
+            // the only way this can happen is if someone added an EVOLUTION_MODE and it isn't accounted
+            // for in this code.  We should not default here, with or without a warning.
             // We are here because the user chose a mode this code doesn't account for, and that should
             // be flagged as an error and result in termination of the evolution of the star or binary.
             // The correct fix for this is to add code for the missing mode or, if the missing mode is
@@ -2618,8 +2618,8 @@ inline double BaseStar::CalculateLuminosityAtPhaseEnd() const {
             break;
         
         default:                                                                        // unknown mode
-            // the only way this can happen is if someone added an EVOLUTION_MODE and it isn't
-            // accounted for in this code.  We should not default here, with or without a warning.
+            // the only way this can happen is if someone added an EVOLUTION_MODE and it isn't accounted
+            // for in this code.  We should not default here, with or without a warning.
             // We are here because the user chose a mode this code doesn't account for, and that should
             // be flagged as an error and result in termination of the evolution of the star or binary.
             // The correct fix for this is to add code for the missing mode or, if the missing mode is

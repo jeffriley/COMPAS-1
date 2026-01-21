@@ -118,18 +118,29 @@ COMPAS_PURE double CH::CalculateLuminosity_Hurley2000(
  * If option `--scale-mass-loss-with-surface-helium-abundance` was specified,
  * the mass loss rate will be scaled with the surface helium abundance.
  *
- * Modifications for CH stars
+ * If option `--enable-rotationally-enhanced-mass-loss` was specified,
+ * the mass loss rate will be enhance due to rotation.
  * 
- * double CalculateMLrate_Belczynski2010(
+ * 
+ * MASS_LOSS_T CalculateMLrate_Belczynski2010(
  *     const double p_Mass,
  *     const double p_Radius,
  *     const double p_Luminosity,
  *     const double p_Temperature,
  *     const double p_PerturbationMu,
- *     const double p_HeAbundanceSurface
+ *     const double p_HeAbundanceSurface,
  * ) const
  *
- * @return                                      Mass loss rate in Msol per year
+ * @param       p_Mass                          Mass of the star (Msol)
+ * @param       p_Radius                        Radius of the star (Rsol)
+ * @param       p_Luminosity                    Luminosity of the star (Lsol)
+ * @param       p_Temperature                   Temperature of the star (Tsol)
+ * @param       p_PerturbationMu                Small envelope perturbation parameter, mu
+ * @param       p_HeAbundanceSurface            Helium abundance at the surface of the star
+ * @return                                      Tuple containing:
+ *                                                   DOUBLE         Mass loss rate (Msol yr^-1)
+ *                                                   MASS_LOSS_TYPE dominant mass loss type
+ *                                                                  (will be MASS_LOSS_TYPE::WR or MASS_LOSS_TYPE::OB)
  */
 double CH::CalculateMLrate_Belczynski2010(
     const double p_Mass,
@@ -148,18 +159,21 @@ double CH::CalculateMLrate_Belczynski2010(
     // scale mass loss with the surface helium abundance if required
     // (transition between OB and WR mass loss rates)
     if (OPTIONS->ScaleCHEMassLossWithSurfaceHeliumAbundance()) {
-        double dMdtWR = 0.0;  
-        MASS_LOSS_TYPE dominantMLtypeWR;
-        std::tie(dMdtWR, dominantMLTypeWR) = CalculateMLrateWR_ZDependent_Static(p_Luminosity, 0.0); // *Ilya* should we use p_PerturbationMu here (since we have it)?
-        
-        double fractionOB = CalculateMLfractionOB(p_HeAbundanceSurface);
-        
-        dMdt   *= fractionOB;
-        dMdtWR *= (1.0 - fractionOB);
 
-        if (dMdtWR > dMdt) dominantMLtype = dominantMLTypeWR;   // dominant mass loss type
+        double fractionOB = CalculateMLfractionOB(p_HeAbundanceSurface);
+
+        if (fractionOB < 1.0) {
+            double dMdtWR = 0.0;  
+            MASS_LOSS_TYPE dominantMLtypeWR;
+            std::tie(dMdtWR, dominantMLTypeWR) = CalculateMLrateWR_ZDependent_Static(p_Luminosity, 0.0); // *Ilya* should we use p_PerturbationMu here (since we have it)?
         
-        dMdt += dMdtWR;                                         // scaled mass loss rate
+            dMdt   *= fractionOB;
+            dMdtWR *= (1.0 - fractionOB);
+
+            if (dMdtWR > dMdt) dominantMLtype = dominantMLTypeWR;   // dominant mass loss type
+        
+            dMdt += dMdtWR;                                         // scaled mass loss rate
+        }
     }
 
     // enhance mass loss rate due to rotation if required
@@ -169,70 +183,79 @@ double CH::CalculateMLrate_Belczynski2010(
 }
 
 
-
-
-
-
-
 /*
- * Calculate the dominant mass loss mechanism and associated rate for the star 
- * at the current evolutionary phase
- * 
- * According to Merritt et al. 2024 prescription
+ * CalculateMLrate_Merritt2025
  *
- * Modifications for CH stars
+ * Calculate mass loss rate, and dominant mass loss type, at the current evolutionary phase,
+ * per Merritt et al., 2025.
  * 
- * double CalculateMassLossRateMerritt2025()
+ * If option `--scale-mass-loss-with-surface-helium-abundance` was specified,
+ * the mass loss rate will be scaled with the surface helium abundance.
+ *
+ * If option `--enable-rotationally-enhanced-mass-loss` was specified,
+ * the mass loss rate will be enhance due to rotation.
  * 
- * @return                                      Mass loss rate in Msol per year
+ * 
+ * MASS_LOSS_T CalculateMLrate_Merritt2025(
+ *     const double p_Mass,
+ *     const double p_Radius,
+ *     const double p_Luminosity,
+ *     const double p_Temperature,
+ *     [[maybe_unused]] const double p_PerturbationMu,
+ *     [[maybe_unused]] const double p_mStart,
+ *     const double p_HeAbundanceSurface
+ * ) const
+ * 
+ * @param       p_Mass                          Mass of the star (Msol)
+ * @param       p_Radius                        Radius of the star (Rsol)
+ * @param       p_Luminosity                    Luminosity of the star (Lsol)
+ * @param       p_Temperature                   Temperature of the star (Tsol)
+ * @param       p_PerturbationMu                Small envelope perturbation parameter, mu (not used here)
+ * @param       p_mStart                        Mass of the star at the start of the simulation (first state) (Msol) (not used here)
+ * @param       p_HeAbundanceSurface            Helium abundance at the surface of the star
+ * @return                                      Tuple containing:
+ *                                                   DOUBLE         WR mass loss rate (Msol yr^-1)
+ *                                                   MASS_LOSS_TYPE dominant mass loss type (could be MASS_LOSS_TYPE::NONE)
  */
-double CH::CalculateMassLossRateMerritt2025(
+double CH::CalculateMLrate_Merritt2025(
     const double p_Mass,
     const double p_Radius,
     const double p_Luminosity,
     const double p_Temperature,
-    const double p_PerturbationMu,
-    const double p_mStart,
+    [[maybe_unused]] const double p_PerturbationMu,
+    [[maybe_unused]] const double p_mStart,
     const double p_HeAbundanceSurface
 ) const {
 
-    // Define variables
-    double Mdot   = 0.0;
-    double MdotOB = 0.0;
-    double MdotWR = 0.0;
-    double fractionOB = 1.0;    // Initialised to 1.0 to allow us to use the OB mass loss rate by default
-
-    // Calculate OB mass loss rate 
+    // calculate OB mass loss rate 
     double dMdt;
     MASS_LOSS_TYPE dominantMLtype;
     std::tie(dMdt, dominantMLtype) = BaseStar::CalculateMLrateOB(p_Mass, p_Luminosity, p_Temperature, OPTIONS->OBMassLossPrescription());
 
-    // If user wants to transition between OB and WR mass loss rates
+    // scale mass loss with the surface helium abundance if required
+    // (transition between OB and WR mass loss rates)
     if (OPTIONS->ScaleCHEMassLossWithSurfaceHeliumAbundance()) {
 
-        // Here we are going to pretend that this CH star is an HeMS star by
-        // cloning it, so that we can ask it what its mass loss rate would be if it were
-        // a HeMS star
-        HeMS *clone = HeMS::Clone((HeMS&)static_cast<const CH&>(*this), OBJECT_PERSISTENCE::EPHEMERAL, false);  // Do not initialise so that we can use same mass, luminosity, radius etc
-        MdotWR      = clone->CalculateMassLossRateMerritt2025();                                                // Calculate WR mass loss rate              
-        delete clone; clone = nullptr;                                                                          // return the memory allocated for the clone  
+        double fractionOB = CalculateMassLossFractionOB(p_HeAbundanceSurface);
 
-        HeMS::CalculateMLrate_Merritt2025_Static(const double p_Luminosity, const double p_Temperature);
-        // Calculate weight for combining these into total mass-loss rate
-        fractionOB = CalculateMassLossFractionOB(m_HeliumAbundanceSurface);
+        if (fractionOB < 1.0) {
+            double dMdtWR = 0.0;  
+            MASS_LOSS_TYPE dominantMLtypeWR;
+            std::tie(dMdtWR, dominantMLTypeWR) = HeMS::CalculateMLrate_Merritt2025_Static(const double p_Luminosity, const double p_Temperature);
+
+            dMdt   *= fractionOB;
+            dMdtWR *= (1.0 - fractionOB);
+
+            if (dMdtWR > dMdt) dominantMLtype = dominantMLTypeWR;   // dominant mass loss type
+        
+            dMdt += dMdtWR;                                         // scaled mass loss rate
+        }
     }
 
-    // Finally, combine each of these prescriptions according to the OB wind fraction
-    Mdot = (fractionOB * MdotOB) + ((1.0 - fractionOB) * MdotWR);
+    // enhance mass loss rate due to rotation if required
+    if (OPTIONS->EnableRotationallyEnhancedMassLoss()) dMdt *= CalculateMLrateRotationEnhancement_Langer1998();
 
-    // Set dominant mass loss rate
-    m_DominantMassLossRate = (fractionOB * MdotOB) > ((1.0 - fractionOB) * MdotWR) ? MASS_LOSS_TYPE::OB : MASS_LOSS_TYPE::WR;
-
-    // Enhance mass loss rate due to rotation
-    Mdot *= CalculateMassLossRateEnhancementRotation();
-    CalculateMLrateRotationEnhancement_Langer1998
-
-    return Mdot;
+    return std::make_tuple(dMdt, dominantMLtype);
 }
 
 

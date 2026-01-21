@@ -450,8 +450,8 @@ inline double MainSequence::CalculateAgeAfterMassLoss() const {
  * !*!*!*!*! ZAMS attribute warning *!*!*!*!*!
  * !*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!
  * 
- * This function relies on the values of the ZAMS mass and ZAMS radius of the star,
- * and should not be used if the ZAMS mass or the ZAMS radius is not known.
+ * This function ostensibly relies on the values of the ZAMS mass of the star,
+ * and should not be used if the ZAMS mass is not known.
  * 
  * 
  * double CalculateLuminosityAtZAMS(const double p_MZAMS, const DBL_VECTOR& p_LCoeffs) const
@@ -460,7 +460,7 @@ inline double MainSequence::CalculateAgeAfterMassLoss() const {
  * @param       p_LCoeffs                       Tout luminosity coefficients
  * @return                                      ZAMS luminosity (Lsol)
  */
- double MainSequence::CalculateLuminosityAtZAMS(const double p_MZAMS, const DBL_VECTOR& p_LCoeffs) const {
+ double MainSequence::CalculateLuminosityAtZAMS(const double p_MZAMS, const DBL_VECTOR& p_LCoeffs) const {  // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< lcoeffs????????????????????
 
     double luminosity;
 
@@ -558,8 +558,8 @@ double MainSequence::CalculateRadiusAtPhaseEnd(const EVOLUTION_MODE p_Mode, cons
  * !*!*!*!*! ZAMS attribute warning *!*!*!*!*!
  * !*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!
  * 
- * This function relies on the value of the ZAMS mass of the star, and should not be used
- * if the ZAMS mass is not known.
+ * This function ostensibly relies on the value of the ZAMS mass of the star,
+ * and should not be used if the ZAMS mass is not known.
  * 
  * 
  * double CalculateCNOprocessedCoreMassAtZAMS_Shikauchi2024(const double p_MZAMS) const
@@ -608,7 +608,18 @@ COMPAS_PURE inline double MainSequence::CalculateCNOprocessedCoreMass_Brcek2025(
  *
  */
 GNU_CONST inline double MainSequence::CalculateCoreMassAtTAMS_Hurely2000(const double p_Mass) const {
-    return HG::CalculateCoreMass_Hurley2000_Unconstrained_Static(const double p_Mass, 0.0);
+    
+    // We need TAMS core mass, which is just the core mass at the start of the HG phase.
+    // Since we are on the main sequence here, we can clone this object as an HG object
+    // and, as long as it is initialised (to correctly set Tau to 0.0 on the HG phase),
+    // we can  query the cloned object for its core mass.
+    //
+    // The clone should not evolve, and so should not log anything, but to be sure the
+    // clone does not participate in logging, we set its persistence to EPHEMERAL.
+
+    std::unique_ptr<BaseStar> clone = CloneAs(STELLAR_TYPE::HG, OBJECT_PERSISTENCE::EPHEMERAL);
+
+    return clone->CalculateCoreMass();
 }
 
 

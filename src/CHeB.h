@@ -456,7 +456,7 @@ GNU_CONST inline double CHeB::CalculateMinLuminosity_Hurley2000_Static(
  * @param       p_CoreMass                      Core mass of the star (Msol)
  * @param       p_tHeI                          Time to helium ignition (per Hurley timescales) (Myr)
  * @param       p_tHe                           Time to helium burning (per Hurley timescales) (Myr)
- * @return                                      Remant core luminosity (Lsol)
+ * @return                                      Remnant core luminosity (Lsol)
  */
 GNU_CONST inline double CHeB::CalculateRemnantLuminosity_Hurley2000(const double p_Age, const double p_CoreMass, const double p_tHeI, const double p_tHe) const {
     return HeMS::CalculateLuminosityOnPhase_Static(p_CoreMass, CalculateTau_Hurley2000(p_Age, p_tHeI, p_tHe)); /// <<<<<<<<<<<<<<<<<<<<<<<<<< ?????????????????????????????

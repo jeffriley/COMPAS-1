@@ -107,7 +107,7 @@ operator ~(Enum rhs) {
 // put these somewhere appropriate <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
  
-typedef std::tuple<double, MASS_LOSS_TYPE> MASS_LOSS_T;
+
 
 
 
@@ -718,6 +718,8 @@ const COMPASUnorderedMap<MASS_LOSS_TYPE, std::string> MASS_LOSS_TYPE_LABEL = {
     { MASS_LOSS_TYPE::WR,   "WR" }
 };
 
+typedef std::tuple<double, MASS_LOSS_TYPE> MASS_LOSS_T; //////////////////// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< document?
+
 // mass ratio distributions
 enum class MASS_RATIO_DISTRIBUTION: int { FLAT, DUQUENNOYMAYOR1991, SANA2012 };
 const COMPASUnorderedMap<MASS_RATIO_DISTRIBUTION, std::string> MASS_RATIO_DISTRIBUTION_LABEL = {
@@ -1315,8 +1317,8 @@ typedef struct ConstituentSNDetails {                           // Holds attribu
 
 typedef struct MTEvent {                           // Details of a mass transfer event
   
-    STELLAR_TYPE donor;                 // Stellar type of the donor star
-    STELLAR_TYPE accretor;              // Stellar type of the accretor star
+    STELLAR_TYPE donorST;                 // Stellar type of the donor star
+    STELLAR_TYPE accretorST;              // Stellar type of the accretor star
     MT_CASE      MTcase;                // MT_CASE for this evene
 
 } MTEventT;

@@ -349,8 +349,8 @@ double BaseStar::CalculateBindingEnergy(const double p_Radius, const double p_Co
  * !*!*!*!*! ZAMS attribute warning *!*!*!*!*!
  * !*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!
  * 
- * This function relies on the values of the ZAMS mass and ZAMS radius of the star,
- * and should not be used if the ZAMS mass or the ZAMS radius is not known.
+ * This function ostensibly relies on the value of the ZAMS mass of the star,
+ * and should not be used if the ZAMS mass is not known.
  * 
  * *Caveat*: we call this function after a MS merger to determine the luminosity of the
  * merger product - there we reset the effective intial mass of the merger product to
@@ -436,44 +436,44 @@ MASS_LOSS_T BaseStar::CalculateMassLossRate() const {
     // All were originally ZAMS mass
     // We can easily get ZAMS mass if it exists (i.e. we started on MS), but we need to manage if it doesn't
 
-    const double mass               = Mass();                 // current mass of the star
-    const double mStart             = m_StateHistory.StartState().Mass();                   // mass of the star at the start of the simulation
-    const double radius             = Radius();               // current radius of the star
-    const double luminosity         = Luminosity();           // current luminosity of the star
-    const double temperature        = Temperature();          // current temperature of the star
-    const double perturbationMu     = PerturbationMu();       // current small envelope perturbation parameter
-    const double HeAbundanceSurface = HeAbundanceSurface();   // He abundance on the surface of the star
+    const double mass               = Mass();                               // current mass of the star
+    const double mStart             = m_StateHistory.StartState().Mass();   // mass of the star at the start of the simulation
+    const double radius             = Radius();                             // current radius of the star
+    const double luminosity         = Luminosity();                         // current luminosity of the star
+    const double temperature        = Temperature();                        // current temperature of the star
+    const double perturbationMu     = PerturbationMu();                     // current small envelope perturbation parameter
+    const double HeAbundanceSurface = HeAbundanceSurface();                 // He abundance on the surface of the star
 
     double dMdt;
     MASS_LOSS_TYPE dominantMLtype;
 
-    switch (OPTIONS->MassLossPrescription()) {                                              // which mass loss prescription?
+    switch (OPTIONS->MassLossPrescription()) {                              // which mass loss prescription?
 
-        case MASS_LOSS_PRESCRIPTION::BELCZYNSKI2010:                                        // BELCZYNSKI2010
+        case MASS_LOSS_PRESCRIPTION::BELCZYNSKI2010:                        // BELCZYNSKI2010
             std::tie(dMdt, dominantMLtype) = CalculateMLrate_Belczynski2010(mass, radius, luminosity, temperature, perturbationMu, HeAbundanceSurface);
             break;
 
-        case MASS_LOSS_PRESCRIPTION::HURLEY:                                                // HURLEY
+        case MASS_LOSS_PRESCRIPTION::HURLEY:                                // HURLEY
             std::tie(dMdt, dominantMLtype) = CalculateMLrate_Hurley2000(mass, radius, luminosity, perturbationMu);
 
             double dMdtLBV;
             MASS_LOSS_TYPE dominantMLtypeLBV;
             std::tie(dMdtLBV, dominantMLtypeLBV) = CalculateMLrateLBV(radius, luminosity, LBV_MASS_LOSS_PRESCRIPTION::HURLEY_ADD);
 
-            if (dMdtLBV > dMdt) dominantMLtype = dominantMLtypeLBV;                         // dominant ML type
-            dMdt += dMdtLBV;                                                                // sum rates
+            if (dMdtLBV > dMdt) dominantMLtype = dominantMLtypeLBV;         // dominant ML type
+            dMdt += dMdtLBV;                                                // sum rates
             break;
 
-        case MASS_LOSS_PRESCRIPTION::MERRITT2025:                                           // MERRITT2025
+        case MASS_LOSS_PRESCRIPTION::MERRITT2025:                           // MERRITT2025
             std::tie(dMdt, dominantMLtype) = CalculateMLrate_Merritt2025(mass, radius, luminosity, temperature, perturbationMu, mStart, HeAbundanceSurface);
             break;
 
-        case MASS_LOSS_PRESCRIPTION::ZERO:                                                  // ZERO
-            dMdt = 0.0;                                                                     // no mass loss
+        case MASS_LOSS_PRESCRIPTION::ZERO:                                  // ZERO
+            dMdt = 0.0;                                                     // no mass loss
             dominantMLtype = MASS_LOSS_TYPE::NONE;
             break;
 
-        default:                                                                            // unknown prescription
+        default:                                                            // unknown prescription
             // the only way this can happen is if someone added a MASS_LOSS_PRESCRIPTION/ and it isn't
             // accounted for in this code.  We should not default here, with or without a warning.
             // We are here because the user chose a prescription this code doesn't account for, and that
@@ -482,7 +482,7 @@ MASS_LOSS_T BaseStar::CalculateMassLossRate() const {
             // The correct fix for this is to add code for the missing prescription or, if the missing
             // prescription is superfluous, remove it from the option.
 
-            THROW_ERROR(ERROR::UNKNOWN_MASS_LOSS_PRESCRIPTION);                             // throw error
+            THROW_ERROR(ERROR::UNKNOWN_MASS_LOSS_PRESCRIPTION);             // throw error
     }
 
     // apply overall wind mass loss multiplier and clamp winds to [0.0, MAXIMUM_WIND_MASS_LOSS_RATE]
@@ -651,7 +651,7 @@ COMPAS_PURE MASS_LOSS_T BaseStar::CalculateMLrateOB(const double p_Mass, const d
 COMPAS_PURE MASS_LOSS_T BaseStar::CalculateMLrateOB_Bjorklund2022(const double p_Mass, const double p_Luminosity, const double p_Temperature) const {
 
     const double gamma   = (p_Luminosity * LSOLW) / CalculateEddingtonLuminosity(p_Mass, 0.1);  // Bjorklund et al. 2022, para 3, assumes He abundance = 0.1
-    const double logZ    = log10(GLOBALS->Metallicity() / 0.014);                      // Bjorklund et al. 2022 uses 0.014
+    const double logZ    = log10(GLOBALS->Metallicity() / 0.014);                               // Bjorklund et al. 2022 uses 0.014
     const double logL    = log10(p_Luminosity / 1.0E6);
     const double logTeff = log10(p_Temperature * TSOL / 45000.0);           
     const double logMeff = log10(p_Mass * (1.0 - gamma) / 45.0);
@@ -1130,7 +1130,7 @@ COMPAS_PURE MASS_LOSS_T BaseStar::CalculateMLrate_Belczynski2010(
         dMdt += dMdtOther;                                                          // sum rates
     }
 
-    // Note: BSE and StarTrack have some multiplier they apply here
+    // Note: BSE and StarTrack have a multiplier they apply here
     return std::make_tuple(dMdt, dominantMLtype);
 }
 
@@ -1486,8 +1486,8 @@ STELLAR_TYPE BaseStar::ResolveMassLossHurley(const double p_dt) {
  * !*!*!*!*! ZAMS attribute warning *!*!*!*!*!
  * !*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!
  * 
- * This function relies on the value of the ZAMS mass of the star, and should not be used
- * if the ZAMS mass is not known.
+ * This function ostensibly relies on the value of the ZAMS mass of the star,
+ * and should not be used if the ZAMS mass is not known.
  * 
  * 
  * double CalculateRadiusAtZAMS_Tout1996(const double p_MZAMS)
@@ -1661,8 +1661,8 @@ COMPAS_PURE double BaseStar::CalculateRotationalVelocityOStar_Ramirez2013() cons
  * !*!*!*!*! ZAMS attribute warning *!*!*!*!*!
  * !*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!
  * 
- * This function relies on the value of the ZAMS mass of the star, and should not be used
- * if the ZAMS mass is not known.
+ * This function ostensibly relies on the value of the ZAMS mass of the star,
+ * and should not be used if the ZAMS mass is not known.
  * 
  *
  * double CalculateRotationalVelocityAtZAMS(double p_MZAMS) const
@@ -1738,8 +1738,8 @@ COMPAS_PURE double BaseStar::CalculateRotationalVelocityAtZAMS(const double p_MZ
  * !*!*!*!*! ZAMS attribute warning *!*!*!*!*!
  * !*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!
  * 
- * This function relies on the values of the ZAMS mass and ZAMS radius of the star,
- * and should not be used if the ZAMS mass or the ZAMS radius is not known.
+ * This function ostensibly relies on the values of the ZAMS mass and ZAMS radius of
+ * the star, and should not be used if the ZAMS mass or the ZAMS radius is not known.
  * 
  * 
  * double CalculateAngularFrequencyAtZAMS(const double p_MZAMS, const double p_RZAMS) const
@@ -1785,8 +1785,8 @@ COMPAS_PURE double BaseStar::CalculateRotationalVelocityAtZAMS(const double p_MZ
  * !*!*!*!*! ZAMS attribute warning *!*!*!*!*!
  * !*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!
  * 
- * This function relies on the values of the ZAMS mass and ZAMS radius of the star,
- * and should not be used if the ZAMS mass or the ZAMS radius is not known.
+ * This function ostensibly relies on the values of the ZAMS mass and ZAMS radius of
+ * the star, and should not be used if the ZAMS mass or the ZAMS radius is not known.
  * 
  * 
  * double CalculateAngularFrequencyAtZAMS_Hurley2000(const double p_MZAMS, const double p_RZAMS)
@@ -1816,8 +1816,8 @@ COMPAS_PURE double BaseStar::CalculateAngularFrequencyAtZAMS_Hurley2000(const do
  * !*!*!*!*! ZAMS attribute warning *!*!*!*!*!
  * !*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!
  * 
- * This function relies on the values of the ZAMS mass and ZAMS radius of the star,
- * and should not be used if the ZAMS mass or the ZAMS radius is not known.
+ * This function ostensibly relies on the value of the ZAMS mass of the star,
+ * and should not be used if the ZAMS mass is not known.
  * 
  *
  * static double CalculateAngularFrequencyCHE_Static(const double p_MZAMS)
@@ -2548,25 +2548,6 @@ StarState BaseStar::AdvanceOneTimestep(const double p_dt, const StarState& p_Sta
 
     // masses
 
-    // effective initial mass
-    //
-    // The effective initial mass of the star is the variable M0 in Hurley et al. 2000.  M0 is introduced in
-    // section 7 of Hurley et al. 2000 and is described there as the "initial mass". M0 is the phase-specific
-    // initial mass - i.e., it is the initial mass for the current evolutionary phase of the star, but can 
-    // track Mt (mass at time t), depending upon the phase, so (as stated in Hurley et al. 2000), it is really
-    // the "effective initial mass".
-    //
-    // The effective initial mass in Hurley et al. 2000 is relavant to MS, HG, and HeMS stars only.
-    //
-    // Since M0, or the effective initial mass, is a Hurley construct, we only calculate it here if the evolution
-    // mode is a Hurley evolution mode, and we only provide the Hurley method for calculating it.  If the addition
-    // of other evolution modes require a similar "effective intial mass" construct, we can add functionality later
-    // to calculate M0 as required for different modes of evolution.
-    //  
-    if (OPTIONS->Mode() == EVOLUTION_MODE::SSE_HURLEY || OPTIONS->Mode() == EVOLUTION_MODE::BSE_HURLEY) {   // Hurley evolution mode?
-                                                                                                            // yes
-        interimState.SetEffectiveInitialMass(CalculateEffectiveInitialMass_Hurley2000());                   // update interim state  <<<<<<<<<< DONE >>>>>>>>>> 
-    }
 
     // calculate mass loss for dt, clamped to [0.0, photon tiring limit]
     //
@@ -2586,6 +2567,28 @@ StarState BaseStar::AdvanceOneTimestep(const double p_dt, const StarState& p_Sta
 
     interimState.SetMass(mass + deltaMass);                                     // update interim state
 
+    // effective initial mass
+    //
+    // The effective initial mass of the star is the variable M0 in Hurley et al. 2000.  M0 is introduced in
+    // section 7 of Hurley et al. 2000 and is described there as the "initial mass". M0 is the phase-specific
+    // initial mass - i.e., it is the initial mass for the current evolutionary phase of the star, but can 
+    // track Mt (mass at time t), depending upon the phase, so (as stated in Hurley et al. 2000), it is really
+    // the "effective initial mass".
+    //
+    // The effective initial mass in Hurley et al. 2000 is relavant to MS, HG, and HeMS stars only.
+    //
+    // Since M0, or the effective initial mass, is a Hurley construct, we only calculate it here if the evolution
+    // mode is a Hurley evolution mode, and we only provide the Hurley method for calculating it.  If the addition
+    // of other evolution modes require a similar "effective intial mass" construct, we can add functionality later
+    // to calculate M0 as required for different modes of evolution.
+    //
+    if (OPTIONS->Mode() == EVOLUTION_MODE::SSE_HURLEY || OPTIONS->Mode() == EVOLUTION_MODE::BSE_HURLEY) {   // Hurley evolution mode?
+                                                                                                            // yes
+        // initialise effective initial mass to calculated mass - stellar type functions
+        // sill only recalculate it if necessary
+        interimState.SetEffectiveInitialMass(interimState.Mass());                                          // initialise
+        interimState.SetEffectiveInitialMass(CalculateEffectiveInitialMass_Hurley2000());                   // update interim state  <<<<<<<<<< DONE >>>>>>>>>> 
+    }
 
     UpdateMainSequenceCoreMass(p_dt, -m_Mdot);                                      // update core mass, relevant for MS stars
     double coreMass   = CalculateCoreMass();  /// <<<< BRCEK IN HERE  MSCoreMass??????

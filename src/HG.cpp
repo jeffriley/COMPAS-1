@@ -51,8 +51,8 @@
  * !*!*!*!*! ZAMS attribute warning *!*!*!*!*!
  * !*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!
  * 
- * This function relies on the value of the ZAMS radius of the star, and should not be used
- * if the ZAMS radius is not known.
+ * This function ostensibly relies on the value of the ZAMS radius of the star,
+ * and should not be used if the ZAMS radius is not known.
  * 
  *
  * double CalculateRadiusOnPhase_Hurley2000(const double      p_Mass,

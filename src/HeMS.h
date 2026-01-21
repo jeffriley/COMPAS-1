@@ -629,8 +629,8 @@ GNU_CONST static inline double HeMS::CalculateRadius_Hurley2000_Static(const dou
  *                                                   DOUBLE         mass loss rate (Msol yr^-1)
  *                                                   MASS_LOSS_TYPE dominant mass loss type (will be MASS_LOSS_TYPE::WR)
  */
-static GNU_CONST inline MASS_LOSS_T HeMS::CalculateMLrate_Belczynski2010_Static(const double p_Luminosity) {
-    return BaseStar::CalculateMLrateWR_ZDependent_Static(ßp_Luminosity, 0.0);
+GNU_CONST static inline MASS_LOSS_T HeMS::CalculateMLrate_Belczynski2010_Static(const double p_Luminosity) {
+    return BaseStar::CalculateMLrateWR_ZDependent_Static(p_Luminosity, 0.0);
 }
 
 
@@ -644,16 +644,15 @@ static GNU_CONST inline MASS_LOSS_T HeMS::CalculateMLrate_Belczynski2010_Static(
  * (See https://ui.adsabs.harvard.edu/abs/2017A%26A...607L...8V/abstract)
  * 
  * 
- * static MASS_LOSS_T CalculateMLrate_Vink2017_Static(const double, p_Luminosity, const double p_ZetaAnders)
+ * static MASS_LOSS_T CalculateMLrate_Vink2017_Static(const double p_Luminosity)
  *
  * @param       p_Luminosity                    Luminosity of the star (Lsol)
- * @param       p_ZetaAnders                    Anders zeta value (log10(Z / ZSOL_ANDERS))
  * @return                                      Tuple containing:
  *                                                   DOUBLE         Mass loss rate (Msol yr^-1)
  *                                                   MASS_LOSS_TYPE dominant mass loss type (will be MASS_LOSS_TYPE::WR)
  */
-static GNU_CONST inline MASS_LOSS_T HeMS::CalculateMLrate_Vink2017_Static(const double, p_Luminosity, const double p_ZetaAnders) {
-    return std::make_tuple(PPOW(10.0, -13.3 + 1.36 * log10(p_Luminosity) + 0.61 * p_ZetaAnders), MASS_LOSS_TYPE:WR);
+COMPAS_PURE static inline MASS_LOSS_T HeMS::CalculateMLrate_Vink2017_Static(const double p_Luminosity) {
+    return std::make_tuple(PPOW(10.0, -13.3 + 1.36 * log10(p_Luminosity) + 0.61 * GLOBALS->ZetaAnders()), MASS_LOSS_TYPE:WR);
 }
 
 
@@ -670,23 +669,22 @@ static GNU_CONST inline MASS_LOSS_T HeMS::CalculateMLrate_Vink2017_Static(const 
  * The C4 (X_He) term is = 0 and is omitted.
  *  
  * 
- * static MASS_LOSS_T CalculateMLrateWR_Shenar2019_Static(const double p_Luminosity, const double p_Temperature, const double p_SigmaHurley)
+ * static MASS_LOSS_T CalculateMLrateWR_Shenar2019_Static(const double p_Luminosity, const double p_Temperature)
  *
  * @param       p_Luminosity                    Luminosity of the star (Lsol)
  * @param       p_Temperature                   Temperature of the star (Tsol)
- * @param       p_SigmaHurley                   Sigma from Hurley et al. 2000 p24, sigma = log10(Z)
  * @return                                      Tuple containing:
  *                                                   DOUBLE         WR mass loss rate (Msol yr^-1)
  *                                                   MASS_LOSS_TYPE dominant mass loss type (will be MASS_LOSS_TYPE::WR)
  */
-static GNU_CONST inline MASS_LOSS_T HeMS::CalculateMLrateWR_Shenar2019_Static(const double p_Luminosity, const double p_Temperature, const double p_SigmaHurley) {
+COMPAS_PURE static inline MASS_LOSS_T HeMS::CalculateMLrateWR_Shenar2019_Static(const double p_Luminosity, const double p_Temperature) {
 
     constexpr double C1 = -7.99;
     constexpr double C2 =  0.97;
     constexpr double C3 = -0.07;
     constexpr double C5 =  0.89;
 
-    return std::make_tuple(PPOW(10.0, C1 + (C2 * log10(p_Luminosity)) + (C3 * log10(p_Temperature * TSOL)) + (C5 * p_SigmaHurley)), MASS_LOSS_TYPE::WR);
+    return std::make_tuple(PPOW(10.0, C1 + (C2 * log10(p_Luminosity)) + (C3 * log10(p_Temperature * TSOL)) + (C5 * GLOBALS->SigmaHurley())), MASS_LOSS_TYPE::WR);
 }
 
 

@@ -65,8 +65,8 @@ COMPAS_PURE double MainSequence::CalculateLuminosityAtPhaseEnd_Hurley2000(const 
  * !*!*!*!*! ZAMS attribute warning *!*!*!*!*!
  * !*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!
  * 
- * This function relies on the value of the ZAMS mass, and the ZAMS luminosity of the star,
- * and should not be used if the ZAMS mass or the ZAMS luminosity is not known.
+ * This function ostensibly relies on the value of the ZAMS mass and the ZAMS luminosity of
+ * the star, and should not be used if the ZAMS mass or the ZAMS luminosity is not known.
  * 
  *
  * double CalculateLuminosity_Brcek2025(
@@ -203,8 +203,8 @@ double MainSequence::CalculateLuminosity() const {
  * !*!*!*!*! ZAMS attribute warning *!*!*!*!*!
  * !*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!
  * 
- * This function relies on the value of the ZAMS luminosity of the star, and
- * should not be used if the ZAMS luminosity is not known.
+ * This function ostensibly relies on the value of the ZAMS luminosity of the star,
+ * and should not be used if the ZAMS luminosity is not known.
  * 
  *
  * double CalculateLuminosity_Hurley2000(
@@ -361,8 +361,8 @@ COMPAS_PURE double MainSequence::CalculateLuminosity_Shikauchi2024(const double 
  * !*!*!*!*! ZAMS attribute warning *!*!*!*!*!
  * !*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!
  * 
- * This function relies on the value of the ZAMS radius of the star, and should not be
- * used if the ZAMS radius is not known.
+ * This function ostensibly relies on the value of the ZAMS radius of the star,
+ * and should not be used if the ZAMS radius is not known.
  * 
  *
  * static double CalculateRadiusAtPhaseEnd_Hurley2000_Static(const double p_Mass)
@@ -518,8 +518,8 @@ double MainSequence::CalculateRadiusTransitionToHG(const double p_Mass, const do
  * !*!*!*!*! ZAMS attribute warning *!*!*!*!*!
  * !*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!
  * 
- * This function relies on the value of the ZAMS radius of the star, and should not be
- * used if the ZAMS radius is not known.
+ * This function ostensibly relies on the value of the ZAMS radius of the star,
+ * and should not be used if the ZAMS radius is not known.
  * 
  * 
  * double CalculateRadius_Hurley2000(const double p_Mass, const double p_Tau, const double p_RZAMS, const double p_tBGB) const
@@ -802,8 +802,8 @@ double MainSequence::CalculateRadiusOnPhase() const {
  * !*!*!*!*! ZAMS attribute warning *!*!*!*!*!
  * !*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!
  * 
- * This function relies on the value of the ZAMS radius of the star, and should not be
- * used if the ZAMS radius is not known.
+ * This function ostensibly relies on the value of the ZAMS radius of the star,
+ * and should not be used if the ZAMS radius is not known.
  * 
  *
  * double CalculateRadiusMStoHG(const double p_Mass, const double p_Tau)
@@ -866,24 +866,28 @@ double MainSequence::CalculateConvectiveEnvelopeRadialExtent_Hurley2002() const 
  *
  * @return                                      Radial extent of the star's convective core in Rsol
  */
-double MainSequence::CalculateConvectiveCoreRadius() const {
-    if(utils::Compare(m_Mass, 1.25) < 0) return 0.0;                                            // low-mass star with a radiative core
-       
-    double convectiveCoreRadiusZAMS = m_Mass * (0.06 + 0.05 * exp(-m_Mass / 61.57));
+double MainSequence::CalculateConvectiveCoreRadius(const double p_Mass, const double p_Tau) const {
+
+    double radius = 0.0;                                                                            // default return value
+
+    if (p_Mass >= 1.25) {                                                                           // star has convective core?
+                                                                                                    // yes
+        double ZAMSconvectiveCoreRadius = p_Mass * (0.06 + 0.05 * exp(-p_Mass / 61.57));
     
-    // We need TAMSCoreRadius, which is just the core radius at the start of the HG phase.
-    // Since we are on the main sequence here, we can clone this object as an HG object
-    // and, as long as it is initialised (to correctly set Tau to 0.0 on the HG phase),
-    // we can query the cloned object for its core mass.
-    //
-    // The clone should not evolve, and so should not log anything, but to be sure the
-    // clone does not participate in logging, we set its persistence to EPHEMERAL.
+        // We need TAMS core radius, which is just the core radius at the start of the HG phase.
+        // Since we are on the main sequence here, we can clone this object as an HG object and,
+        // as long as it is initialised (to correctly set Tau to 0.0 on the HG phase), we can 
+        // query the cloned object for its core radius.
+        //
+        // The clone should not evolve, and so should not log anything, but to be sure the
+        // clone does not participate in logging, we set its persistence to EPHEMERAL.
 
-    BaseStar* clone = CloneAs(STELLAR_TYPE::HG, OBJECT_PERSISTENCE::EPHEMERAL);
-    double TAMSCoreRadius = clone->CalculateRemnantRadius();                                    // get core radius from clone
-    delete clone; clone = nullptr;                                                              // return the memory allocated for the clone
+        std::unique_ptr<BaseStar> clone = CloneAs(STELLAR_TYPE::HG, OBJECT_PERSISTENCE::EPHEMERAL);
 
-    return (convectiveCoreRadiusZAMS - m_Tau * (convectiveCoreRadiusZAMS - TAMSCoreRadius));
+        radius = ZAMSconvectiveCoreRadius - p_Tau * (ZAMSconvectiveCoreRadius - clone->CalculateRemnantRadius());
+    }
+
+    return radius;
 }
 
 
@@ -895,19 +899,26 @@ double MainSequence::CalculateConvectiveCoreRadius() const {
 
 
 /*
- * Calculate the mass of the convective core
+ * CalculateCoreMass_Shikauchi2024
  *
- * Based on Shikauchi, Hirai, Mandel (2024), core mass shrinks to 60% of initial value over the course of the MS
+ * @brief
+ * Calculate the mass of the convective core, per Shikauchi, Hirai, Mandel, 2024
+ * (see https://arxiv.org/abs/2409.00460)
+ * 
+ * Core mass shrinks to 60% of initial value over the course of the MS
  *
  *
- * double CalculateConvectiveCoreMass() const
+ * double CalculateCoreMass_Shikauchi2024(const double p_Tau) const
+ * 
+ * @param       p_Tau                           Phase-relative age of the star [0, 1]
  *
- * @return                                      Mass of convective core in Msol
+ * @return                                      Mass of convective core (Msol)
  */
-double MainSequence::CalculateConvectiveCoreMass() const {
-    double finalConvectiveCoreMass   = CalculateTAMSCoreMass();                 // core mass at TAMS
-    double initialConvectiveCoreMass = finalConvectiveCoreMass / 0.6;
-    return (initialConvectiveCoreMass - m_Tau * (initialConvectiveCoreMass - finalConvectiveCoreMass));
+double MainSequence::CalculateCoreMass_Shikauchi2024(const double p_Tau) const {
+    const double finalConvectiveCoreMass   = CalculateTAMSCoreMass();   // core mass at TAMS
+    const double initialConvectiveCoreMass = finalConvectiveCoreMass / 0.6;
+
+    return (initialConvectiveCoreMass - p_Tau * (initialConvectiveCoreMass - finalConvectiveCoreMass));
 }
 
 
@@ -959,7 +970,7 @@ GNU_CONST DBL_DBL MainSequence::CalculateConvectiveEnvelopeMass_Hurley2000(const
  * ////////////////////////////////
  * 
  *
- * GNU_PURE double CalculateCoreMass_Brcek(const double p_dt, const double p_dMdt) const
+ * double CalculateCoreMass_Brcek(const double p_dt, const double p_dMdt) const
  *
  * @param       p_Mass              Current mass of star (Msol)
  * @param       p_dt                Time step (Myr)
@@ -1143,7 +1154,7 @@ COMPAS_PURE double MainSequence::CalculateCoreMass_Brcek2025(
  * !*!*!*!*! ZAMS attribute warning *!*!*!*!*!
  * !*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!
  * 
- * This function relies on the value of the ZAMS mass of the star,
+ * This function ostensibly relies on the value of the ZAMS mass of the star,
  * and should not be used if the ZAMS mass is not known.
  * 
  *
@@ -1193,6 +1204,18 @@ void MainSequence::CalculateCoreMass(
 
         case MS_CORE_MASS_PRESCRIPTION::HURLEY:                                 // HURLEY
             coreMass = 0.0;                                                     // no MS core in Hurley et al. 2000
+            break;
+        
+        case MS_CORE_MASS_PRESCRIPTION::MANDEL:                                 // MANDEL
+            // calculate MS core mass per Brcek et al. 2025, following Shikauchi et al. 2024
+            // account for rejuvenation if core grows
+            if (p_MZAMS >= BRCEK_LOWER_MASS_LIMIT) {                            // in BRCEK regime?
+                                                                                // yes
+                if (p_HeAbundanceCore < (1.0 - GLOBALS->Metallicity())) {       // in MS hook?
+                                                                                // no - proceed
+                    coreMass = CalculateCoreMass_Brcek2025(p_Mass, p_Luminosity, p_CoreMass, p_HeAbundanceCore, p_dt, p_dMdt);
+                }
+            }
             break;
         
         default:                                                                // unknown prescription
