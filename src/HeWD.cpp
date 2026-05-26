@@ -13,13 +13,13 @@
  * https://ui.adsabs.harvard.edu/abs/2008ApJS..174..223B/abstract
  *
  *
- * DBL_DBL CalculateMassAcceptanceRate(const double p_DonorMassRate, const bool p_IsHeRich)
+ * Dbl_DblT CalculateMassAcceptanceRate(const double p_DonorMassRate, const bool p_IsHeRich)
  *
  * @param   [IN]    p_DonorMassRate             Mass transfer rate of the donor
  * @param   [IN]    p_IsHeRich                  Material is He-rich or not
  * @return                                      Tuple containing the Maximum Mass Acceptance Rate (Msun/yr) and Retention Efficiency Parameter
  */
-DBL_DBL HeWD::CalculateMassAcceptanceRate(const double p_DonorMassRate, const bool p_IsHeRich) {
+Dbl_DblT HeWD::CalculateMassAcceptanceRate(const double p_DonorMassRate, const bool p_IsHeRich) {
 
     m_AccretionRegime       = DetermineAccretionRegime(p_DonorMassRate, p_IsHeRich);                                    // Check if accretion leads to stage switch for WDs and returns retention efficiency as well.
                                                                                

@@ -2,9 +2,9 @@
 #define __FGB_h__
 
 #include "constants.h"
-#include "typedefs.h"
-#include "profiling.h"
-#include "utils.h"
+//// #include "typedefs.h"   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//// #include "profiling.h"   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//// #include "utils.h"   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 #include "HG.h"
 
@@ -38,13 +38,7 @@ protected:
 ///// ON PHASE FUNCTIONS   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 inline double CalculateCoreMass_Hurley2000() const override { 
-    return CalculateCoreMass_Hurley2000(
-        m_StateHistory.CurrentState.MassEffective(),
-        m_StateHistory.CurrentState.Age(),
-        m_StateHistory.CurrentState.Tau(),
-        m_StateHistory.CurrentState.GBparams(),
-        m_StateHistory.CurrentState.TimeScales()
-    );
+    return CalculateCoreMass_Hurley2000(MassEffective(), Age(), Tau(), GBparams(), TimeScales());
 }
 COMPAS_PURE double CalculateCoreMass_Hurley2000(
     const double      p_Mass,
@@ -56,7 +50,7 @@ COMPAS_PURE double CalculateCoreMass_Hurley2000(
 
 
 inline double CalculateLuminosity_Hurley2000() const override { 
-    return CalculateLuminosity_Hurley2000(m_StateHistory.CurrentState.Age(), m_StateHistory.CurrentState.GBparams(), m_StateHistory.CurrentState.TimeScales());
+    return CalculateLuminosity_Hurley2000(Age(), GBparams(), TimeScales());
 }
 GNU_CONST inline double CalculateLuminosity_Hurley2000(const double p_Age, const DBL_VECTOR& p_GBparams, const DBL_VECTOR& p_tScales) const;
 
@@ -111,7 +105,7 @@ inline double CalculateHeCoreMassAtPhaseEnd() const override { return CalculateC
 
 
 
-    double          ChooseTimestep(const double p_Time) const;
+GNU_CONST double ChooseTimestep_Hurley2000(const double p_Age, const DBL_VECTOR& p_tScales) const override;
 
 
 GNU_CONST inline ENVELOPE DetermineEnvelopeType() const override { return ENVELOPE::CONVECTIVE; } // Always CONVECTIVE for FGB stars
@@ -144,11 +138,16 @@ GNU_CONST inline ENVELOPE DetermineEnvelopeType() const override { return ENVELO
 
 //// inline candidates <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
+///////////////////////////////////////////////////////////////////////////////////////
+//                                                                                   //
+//                         INLINE CANDIDATE IMPLEMENTATIONS                          //
+//                                                                                   //
+///////////////////////////////////////////////////////////////////////////////////////
 
 
 ///////////////////////////////////////////////////////////////////////////////////////
 //                                                                                   //
-//                             LIFETIME / AGE FUNCTIONS                              //
+//                    AGE / LIFETIME / TAU / TIMESCALES / TIMESTEP                   //
 //                                                                                   //
 ///////////////////////////////////////////////////////////////////////////////////////
 
@@ -173,6 +172,29 @@ GNU_CONST inline double FGB::CalculateTau_Hurley2000(const double p_Age, const d
 }
 
 
+/*
+ * ChooseTimestep_Hurley2000
+ *
+ * @brief
+ * Choose timestep for evolution
+ * See the discussion in Hurley et al. 2000, p21
+ * The returned value will be clamped to minimum NUCLEAR_MINIMUM_TIMESTEP
+ *
+ *
+ * double ChooseTimestep_Hurley2000(const double p_Age, const DBL_VECTOR& p_tScales)
+ *
+ * @param       p_Age                           Age of the star (Myr)
+ * @param       p_tScales                       Phase timescales (Myr)
+ * @return                                      Suggested timestep (Myr)
+ */
+GNU_CONST inline double FGB::ChooseTimestep_Hurley2000(const double p_Age, const DBL_VECTOR& p_tScales) const {
+
+    const double dtk = 0.02 * ((p_Age <= p_tScales[HURLEY_TS::MX_FGB] ? p_tScales[HURLEY_TS::INF1_FGB] : p_tScales[HURLEY_TS::INF2_FGB]) - p_Age); // stellar type specific dt
+    const double dte = p_tScales[HURLEY_TS::HEI] - p_Age;           // time to end of phase (change of stellar type)
+
+    return std::max(std::min(dtk, dte), NUCLEAR_MINIMUM_TIMESTEP);  // clamp to minimum NUCLEAR_MINIMUM_TIMESTEP
+}
+
 
 ///////////////////////////////////////////////////////////////////////////////////////
 //                                                                                   //
@@ -196,20 +218,20 @@ GNU_CONST inline double FGB::CalculateTau_Hurley2000(const double p_Age, const d
  * @return                                      FGB luminosity (Lsol)
  */
 GNU_CONST inline double FGB::CalculateLuminosity_Hurley2000(const double p_Age, const DBL_VECTOR& p_GBparams, const DBL_VECTOR& p_tScales) const {
-// macros for convenience and readability - undefined at end of function
-#define GBparams(x) p_GBparams[static_cast<int>(HURLEY_GBP:::x)]
-#define tScales(x) p_tScales[static_cast<int>(TIMESCALE::x)]
+
+    const double AH = p_GBparams[HURLEY_GBP::AH];
+    const double B  = p_GBparams[HURLEY_GBP::B];
+    const double D  = p_GBparams[HURLEY_GBP::D];
+    const double p  = p_GBparams[HURLEY_GBP::P];
+    const double q  = p_GBparams[HURLEY_GBP::Q];
 
     // Calculate the core mass according to Hurley et al. 2000, eq 39, regardless
     // of whether it is the correct expression to use given the star's mass
-    double McGB = p_Age < tScales(tMx_FGB) <= 0
-                    ? PPOW(((GBparams(p) - 1.0) * GBparams(AH) * GBparams(D) * (tScales(tinf1_FGB) - p_Age)), (1.0 / (1.0 - GBparams(p))))
-                    : PPOW(((GBparams(q) - 1.0) * GBparams(AH) * GBparams(B) * (tScales(tinf2_FGB) - p_Age)), (1.0 / (1.0 - GBparams(q))));
+    double McGB = p_Age < p_tScales[HURLEY_TS::MX_FGB] <= 0
+                    ? PPOW(((p - 1.0) * AH * D * (p_tScales[HURLEY_TS::INF1_FGB] - p_Age)), (1.0 / (1.0 - p)))
+                    : PPOW(((q - 1.0) * AH * B * (p_tScales[HURLEY_TS::INF2_FGB] - p_Age)), (1.0 / (1.0 - q)));
 
     return std::min((B * PPOW(McGB, q)), (D * PPOW(McGB, p))); // Hurley at al. 2000, eq 37
-
-#undef tScales
-#undef GBparams
 }
 
 

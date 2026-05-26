@@ -1,11 +1,9 @@
 #include "CH.h"
 
 
-
-
 ///////////////////////////////////////////////////////////////////////////////////////
 //                                                                                   //
-//                         AGE / LIFETIME / TAU / TIMESCALES                         //
+//                    AGE / LIFETIME / TAU / TIMESCALES / TIMESTEP                   //
 //                                                                                   //
 ///////////////////////////////////////////////////////////////////////////////////////
 
@@ -22,16 +20,16 @@
  * the mass of the star changes (probably every timestep).
  *
  *
- * DBL_VECTOR CalculateTimescales_Hurley2000(const double p_Mass, const DBL_VECTOR& p_GBparams, const DBL_VECTOR& p_Timescales) const
+ * DblVectorT CalculateTimescales_Hurley2000(const double p_Mass, const DblVectorT& p_GBparams, const DblVectorT& p_Timescales) const
  *
  * @param       p_Mass                          Mass of the star (Msol)
  * @param       p_GBparams                      Hurley GB parameters
  * @param       p_tScales                       Hurley timescales (Myr)
  * @return                                      Mutated timescales (Myr)
  */
-COMPAS_PURE DBL_VECTOR CH::CalculateTimescales_Hurley2000(const double p_Mass, const DBL_VECTOR& p_GBparams, const DBL_VECTOR& p_tScales) const {
+DblVectorT CH::CalculateTimescales_Hurley2000(const double p_Mass, const DblVectorT& p_GBparams, const DblVectorT& p_tScales) const {
 
-    DBL_VECTOR tScales = p_tScales;                     // copy given timescales
+    DblVectorT tScales = p_tScales;                     // copy given timescales
 
     // (re)calculate MS timescales
     tScales = MainSequence::CalculateTimescales_Hurley2000(p_Mass, p_GBparams, tScales);
@@ -41,8 +39,8 @@ COMPAS_PURE DBL_VECTOR CH::CalculateTimescales_Hurley2000(const double p_Mass, c
                                                         // yes
         const double lifetimesRatio = CalculateLifetimesRatio_Szecsi2020(p_Mass);
 
-        tScales[static_cast<int>(TIMESCALE::tBGB)] *= lifetimesRatio;
-        tScales[static_cast<int>(TIMESCALE::tMS)]  *= lifetimesRatio;
+        tScales[HURLEY_TS::BGB] *= lifetimesRatio;
+        tScales[HURLEY_TS::MS]  *= lifetimesRatio;
     }
 
     // return timescales vector by value - NRVO takes care of performance/efficiency
@@ -83,7 +81,7 @@ COMPAS_PURE DBL_VECTOR CH::CalculateTimescales_Hurley2000(const double p_Mass, c
  * @param       p_tBGB                          Time to Base of Giant Branch, tBGB (per Hurley timescales) (Myr)
  * @return                                      CH luminosity (Lsol)
  */
-COMPAS_PURE double CH::CalculateLuminosity_Hurley2000(
+double CH::CalculateLuminosity_Hurley2000(
     const double p_Mass,
     const double p_Tau,
     const double p_Age,
@@ -95,13 +93,13 @@ COMPAS_PURE double CH::CalculateLuminosity_Hurley2000(
     // unenhanced CH luminosity is just MS luminosity
     double luminosity = MainSequence::CalculateLuminosity_Hurley2000(p_Mass, p_Time, p_LZAMS, p_tMS, p_tBGB);
 
-    if (OPTIONS->EnhanceCHELifetimesLuminosities()) {               // enhance luminosity of CH stars?
-                                                                    // yes
+    if (OPTIONS->EnhanceCHELifetimesLuminosities()) {                   // enhance luminosity of CH stars?
+                                                                        // yes
         // enhancement should not reduce luminosity, so ratio is clamped to a minimum of +1.0
         // enhancement amount grows from 1 to logLuminosityRatio over main-sequence
         const double enhancement = 1.0 + (std::max(CalculateLogLuminositiesRatio(mass), 1.0) - 1.0) * p_Tau * p_Tau;
 
-        luminosity = PPOW(10.0, log10(luminosity) * enhancement);   // apply enhancement
+        luminosity = PPOW(10.0, std::log10(luminosity) * enhancement);  // apply enhancement
     }
 
     return luminosity;
@@ -122,7 +120,7 @@ COMPAS_PURE double CH::CalculateLuminosity_Hurley2000(
  * the mass loss rate will be enhance due to rotation.
  * 
  * 
- * MASS_LOSS_T CalculateMLrate_Belczynski2010(
+ * MassLossT CalculateMLrate_Belczynski2010(
  *     const double p_Mass,
  *     const double p_Radius,
  *     const double p_Luminosity,
@@ -142,7 +140,7 @@ COMPAS_PURE double CH::CalculateLuminosity_Hurley2000(
  *                                                   MASS_LOSS_TYPE dominant mass loss type
  *                                                                  (will be MASS_LOSS_TYPE::WR or MASS_LOSS_TYPE::OB)
  */
-double CH::CalculateMLrate_Belczynski2010(
+MassLossT CH::CalculateMLrate_Belczynski2010(
     const double p_Mass,
     const double p_Radius,
     const double p_Luminosity,
@@ -196,7 +194,7 @@ double CH::CalculateMLrate_Belczynski2010(
  * the mass loss rate will be enhance due to rotation.
  * 
  * 
- * MASS_LOSS_T CalculateMLrate_Merritt2025(
+ * MassLossT CalculateMLrate_Merritt2025(
  *     const double p_Mass,
  *     const double p_Radius,
  *     const double p_Luminosity,
@@ -217,7 +215,7 @@ double CH::CalculateMLrate_Belczynski2010(
  *                                                   DOUBLE         WR mass loss rate (Msol yr^-1)
  *                                                   MASS_LOSS_TYPE dominant mass loss type (could be MASS_LOSS_TYPE::NONE)
  */
-double CH::CalculateMLrate_Merritt2025(
+MassLossT CH::CalculateMLrate_Merritt2025(
     const double p_Mass,
     const double p_Radius,
     const double p_Luminosity,
@@ -262,6 +260,12 @@ double CH::CalculateMLrate_Merritt2025(
 
 
 
+
+
+
+
+
+/////////////////////////////////////////////////////////////////// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 STELLAR_TYPE CH::EvolveToNextPhase() {
 

@@ -5,7 +5,7 @@
 
 ///////////////////////////////////////////////////////////////////////////////////////
 //                                                                                   //
-//                         AGE / LIFETIME / TAU / TIMESCALES                         //
+//                    AGE / LIFETIME / TAU / TIMESCALES / TIMESTEP                   //
 //                                                                                   //
 ///////////////////////////////////////////////////////////////////////////////////////
 
@@ -89,9 +89,12 @@ COMPAS_PURE DBL_VECTOR TPAGB::CalculateTimescales_Hurley2000(const double p_Mass
  * @return                                      Dewi lambda for use in common envelope
  */
 double TPAGB::CalculateCELambda_Dewi() const {
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< fix log10(m_Luminosity) <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
-    double lambda3 = std::min(-0.9, 0.58 + (0.75 * log10(m_Mass))) - (0.08 * log10(m_Luminosity));                          // (A.4) Claeys+2014
-    double lambda1 = std::max(1.0, std::max(lambda3, -3.5 - (0.75 * log10(m_Mass)) + log10(m_Luminosity)));                 // (A.5) Bottom, Claeys+2014
+    const double log10mass = std::log10(m_Mass);
+
+    double lambda3 = std::min(0.9, 0.58 + (0.75 * log10mass)) - (0.08 * std::log10(m_Luminosity));                 // (A.4) Claeys+2014 with corrected typo (see e.g. Appendix E.1 in Marchant+2021)
+    double lambda1 = std::max(1.0, std::max(lambda3, -3.5 - (0.75 * log10mass) + std::log10(m_Luminosity)));       // (A.5) Bottom, Claeys+2014
 	double lambda2 = 0.42 * PPOW(m_RZAMS / m_Radius, 0.4);                                                                  // (A.2) Claeys+2014
 	double envMass = utils::Compare(m_CoreMass, 0.0) > 0 && utils::Compare(m_Mass, m_CoreMass) > 0 ? m_Mass - m_CoreMass : 0.0;
 
@@ -119,7 +122,7 @@ double TPAGB::CalculateCELambda_Dewi() const {
  * double CalculateCELambda_Nanjing_Enhanced(const double             p_Mass,
  *                                           const double             p_Radius,
  *                                           const double             p_CoreMass,
- *                                           const size_t             p_MassIndex,
+ *                                           const SizeT              p_MassIndex,
  *                                           const STELLAR_POPULATION p_StellarPop) const
  *
  * @param       p_Mass                          Mass of the star (Msol)
@@ -132,13 +135,13 @@ double TPAGB::CalculateCELambda_Dewi() const {
 double TPAGB::CalculateCELambda_Nanjing_Enhanced(const double             p_Mass,
                                                  const double             p_Radius,
                                                  const double             p_CoreMass,
-                                                 const size_t             p_MassIndex,
+                                                 const SizeT              p_MassIndex,
                                                  const STELLAR_POPULATION p_StellarPop) const {
 
-    constexpr size_t evolStage   = 3;                                                       // TPAGB evolutionary stage from Xu & Li, 2010
+    constexpr SizeT evolStage   = 3;                                                        // TPAGB evolutionary stage from Xu & Li, 2010
 
-    size_t           coeffsBGidx = 0;                                                       // index into coefficients array
-    bool             useLambdas  = false;                                                   // flag - use lambdas defined in the paper
+    SizeT coeffsBGidx = 0;                                                                  // index into coefficients array
+    bool useLambdas   = false;                                                              // flag - use lambdas defined in the paper
 
     if (p_StellarPop == STELLAR_POPULATION::POPULATION_I) {                                 // pop I
         if (p_MassIndex == 10) {
@@ -151,7 +154,7 @@ double TPAGB::CalculateCELambda_Nanjing_Enhanced(const double             p_Mass
         if (p_MassIndex == 2 && p_Radius > 36.0 && p_Radius < 53.0) useLambdas = true;
     }
 
-    const size_t popIdx = static_cast<size_t>(p_StellarPop);                                // set pop index - pop I or pop II
+    const SizeT popIdx = static_cast<SizeT>(p_StellarPop);                                  // set pop index - pop I or pop II
 
     // get limits and (defined) lambdas
     std::tuple<NANJING_POP_LIMITS_LAMBDAS, NANJING_POP_LIMITS_LAMBDAS> evolStageLimitsLambdas = NANJING_LIMITS_LAMBDAS_ENHANCED[evolStage - 1];
@@ -643,7 +646,7 @@ double TPAGB::CalculateRadiusOnPhase_Static(const double      p_Mass,
  * @return                                      Stellar Type to which star should evolve after losing envelope
  */
 STELLAR_TYPE TPAGB::ResolveEnvelopeLoss(bool p_Force) {
-#define gbParams(x) m_GBparams[static_cast<int>(HURLEY_GBP:::x)]    // for convenience and readability - undefined at end of function
+#define gbParams(x) m_GBparams[static_cast<int>(HURLEY_GBP:::x)]
 
     STELLAR_TYPE stellarType = m_StellarType;
 
@@ -666,28 +669,6 @@ STELLAR_TYPE TPAGB::ResolveEnvelopeLoss(bool p_Force) {
 #undef gbParams
 }
 
-
-/*
- * Choose timestep for evolution
- *
- * Given in the discussion in Hurley et al. 2000
- *
- *
- * ChooseTimestep(const double p_Time)
- *
- * @param   [IN]    p_Time                      Current age of star in Myr
- * @return                                      Suggested timestep (dt)
- */
-double TPAGB::ChooseTimestep(const double p_Time) const {
-
-    double dtk = utils::Compare(p_Time, timescales(tMx_SAGB)) <= 0
-                    ? 0.02 * (timescales(tinf1_SAGB) - p_Time)
-                    : 0.02 * (timescales(tinf2_SAGB) - p_Time);
-
-    double dte = 5.0E-3;
-
-    return std::max(std::min(dtk, dte), NUCLEAR_MINIMUM_TIMESTEP);
-}
 
 
 /*

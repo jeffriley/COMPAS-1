@@ -19,8 +19,6 @@ class MainSequence: virtual public BaseStar {
             
     private:
 
-        std::optional<double> m_HeAbundanceCore;       
-        std::optional<double> m_HeAbundanceSurface;
 
     public:
             
@@ -56,80 +54,35 @@ public:
 
 protected:
     
-    // member variables
-    double          m_HeliumAbundanceOutsideCore      = m_InitialHeliumAbundance;                                                                                       // Helium abundance just outside the core, used for rejuvenation calculations
 
 
-    // static member functions - alphabetically
+    
 
 
+    ////////////////////////////////////////
+    //   AGE, LIFETIME, TAU, TIMESCALES   //
+    ////////////////////////////////////////
+
+    COMPAS_PURE inline double CalculatePhaseLifetime_Hurley2000(const double p_Mass, const double p_tBGB) const;
+
+    inline double CalculateTau_Hurley2000() const override { return CalculateTau_Hurley2000(Age(), m_InterimState.Timescale(TIMESCALE::tMS)); }
+    GNU_CONST double CalculateTau_Hurley2000(const double p_Age, const double p_tMS) const;
+
+    inline DblVectorT CalculateTimescales_Hurley2000() const override { return CalculateTimescales_Hurley2000(Mass0(), m_InterimState.TimeScales()); }
+    COMPAS_PURE inline DblVectorT CalculateTimescales_Hurley2000(const double p_Mass, const DblVectorT& p_tScales) const;
 
 
-    // member functions - alphabetically
-
-        
     ////////////////////////////////////////
     //   LUMINOSITY                       //
     ////////////////////////////////////////
 
+    // LZAMS() will exist for MS  <<<<<<<<<<<<<<<<< CHECK IF CALLED FROM OTHER STELLAR TYPES!!!!! <<<<<<<<<<<<<<<<<<<<<<<<<<<
+    inline double CalculateLuminosity_Hurley2000() const override { return CalculateLuminosity_Hurley2000(Mass(), Age(), LZAMS(), m_InterimState.Timescale(TIMESCALE::tMS), m_InterimState.Timescale(TIMESCALE::tBGB)); }
+    COMPAS_PURE double CalculateLuminosity_Hurley2000(const double p_Mass, const double p_Age, const double p_LZAMS, const double p_tMS, const double p_tBGB) const;
 
-    
-    ////////////////////////////////////////
-    //   RADIUS                           //
-    ////////////////////////////////////////
+GNU_CONST double CalculateLuminosityAtPhaseEnd_Hurley(const double p_Mass, const DBL_VECTOR& p_aN) const;
 
-    inline double CalculateRadius_Hurley2000() const override { return CalculateRadius_Hurley2000(Mass(), Tau(), RZAMS(), Timescale(TIMESCALE::tBGB)); } // RZAMS() will exist for MS - if called with MS having existed, will fail
-
-    COMPAS_PURE double CalculateRadius_Hurley2000(const double p_Mass, const double p_Tau, const double p_RZAMS, const double p_tBGB) const;
-
-    inline double CalculateRadiusAtPhaseEnd_Hurley2000() const override { return CalculateRadiusAtPhaseEnd_Hurley2000_Static(Mass(), RZAMS()); } // RZAMS()will exist for MS - if called with MS having existed, will fail
-
-    COMPAS_PURE static double CalculateRadiusAtPhaseEnd_Hurley2000_Static(const double p_Mass, const double p_RZAMS);
-
-
-
-
-
-
-
-
-
-///// ON PHASE FUNCTIONS   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-
-GNU_CONST inline double CalculateCOCoreMass() const override { return 0.0; } // McCO = 0.0 for MS stars
-
-GNU_CONST inline double CalculateHeCoreMass() const { return 0.0; } // McHe = 0.0 for MS stars
-
-inline double CalculateLuminosity_Hurley2000() const override { return CalculateLuminosity_Hurley2000(Mass(), Age(), LZAMS(), Timescale(TIMESCALE::tMS), Timescale(TIMESCALE::tBGB)); } // LZAMS() will exist for MS  <<<<<<<<<<<<<<<<< CHECK IF CALLED FROM OTHER STELLAR TYPES!!!!! <<<<<<<<<<<<<<<<<<<<<<<<<<<
-
-COMPAS_PURE double CalculateLuminosity_Hurley2000(const double p_Mass, const double p_Age, const double p_LZAMS, const double p_tMS, const double p_tBGB) const;
-
-
-
-
-
-inline DBL_VECTOR CalculateTimescales_Hurley2000() const override { return CalculateTimescales_Hurley2000(Mass0(), TimeScales()); }
-
-GNU_CONST inline DBL_VECTOR HeMS::CalculateTimescales_Hurley2000(const double p_Mass, const DBL_VECTOR& p_tScales) const;
-
-
-
-
-
-inline DBL_DBL CalculateConvectiveEnvelopeMass() const override { return CalculateConvectiveEnvelopeMass_Hurley2000(Mass(), Tau()); }
-
-GNU_CONST DBL_DBL CalculateConvectiveEnvelopeMass_Hurley2000(const double p_Mass, const double p_Tau) const;
-
-
-
-
-    // luminosity
-
-
-
-    GNU_CONST double CalculateLuminosityAtPhaseEnd_Hurley(const double p_Mass, const DBL_VECTOR& p_aN) const;
-
-    GNU_CONST double CalculateLuminosity_Brcek(const double      p_Mass, 
+GNU_CONST double CalculateLuminosity_Brcek(const double      p_Mass, 
                                                const double      p_Tau,
                                                const double      p_MZAMS,
                                                const double      p_LZAMS,
@@ -139,32 +92,64 @@ GNU_CONST DBL_DBL CalculateConvectiveEnvelopeMass_Hurley2000(const double p_Mass
                                                const DBL_VECTOR& p_ShikauchiLCoeffs) const;
 
 
-    GNU_CONST double CalculateLuminosity_Shikauchi(const double p_CoreMass, const double p_HeAbundanceCore, const DBL_VECTOR& p_ShikauchiLCoeffs) const;
+GNU_CONST double CalculateLuminosity_Shikauchi(const double p_CoreMass, const double p_HeAbundanceCore, const DBL_VECTOR& p_ShikauchiLCoeffs) const;
+
+        
+    ////////////////////////////////////////
+    //   MASS                             //
+    ////////////////////////////////////////
+
+    // MZAMS() will exist for MS if we started evolving on the MS, otherwise will fail
+
+    // Here we use the mass loss rate from the interim state
+    inline double CalculateCoreMass() const override { return CalculateCoreMass(Mass(), Luminosity(), MZAMS(), CoreMass(), HeAbundanceCore(), dt(), m_InterinState.dMdt()); }
 
 
+GNU_CONST inline double CalculateCOCoreMass() const override { return 0.0; } // McCO = 0.0 for MS stars
 
-    // radius
+GNU_CONST inline double CalculateHeCoreMass() const { return 0.0; } // McHe = 0.0 for MS stars
 
-
+inline Dbl_DblT CalculateConvectiveEnvelopeMass() const override { return CalculateConvectiveEnvelopeMass(Mass(), Tau()); }
+GNU_CONST inline Dbl_DblT CalculateConvectiveEnvelopeMass(const double p_Mass, const double p_Tau) const override { return CalculateConvectiveEnvelopeMass_Hurley2000(p_Mass, p_Tau); }
+GNU_CONST Dbl_DblT CalculateConvectiveEnvelopeMass_Hurley2000(const double p_Mass, const double p_Tau) const;
 
 inline double CalculateEffectiveInitialMass_Hurley2000() const override { return Mass(); } // per Hurley et al. 2000, section 7.1
 
 
+Dbl_DblT         CalculateConvectiveEnvelopeMass() const;
+
+double          CalculateConvectiveCoreMass() const;
 
 
-    double          CalculateConvectiveCoreMass() const;
     
+    ////////////////////////////////////////
+    //   RADIUS                           //
+    ////////////////////////////////////////
+
+    // RZAMS() will exist for MS if we started evolving on the MS, otherwise will fail
+
+                inline double CalculateRadius_Hurley2000() const override { return CalculateRadius_Hurley2000(Mass(), Tau(), RZAMS(), Timescale(TIMESCALE::tBGB)); }
+    COMPAS_PURE        double CalculateRadius_Hurley2000(const double p_Mass, const double p_Tau, const double p_RZAMS, const double p_tBGB) const;
+
+
+                inline double CalculateRadiusAtPhaseEnd_Hurley2000() const override { return CalculateRadiusAtPhaseEnd_Hurley2000_Static(Mass(), RZAMS()); }
+    COMPAS_PURE static double CalculateRadiusAtPhaseEnd_Hurley2000_Static(const double p_Mass, const double p_RZAMS) const;
+
+
+
 double          CalculateConvectiveCoreRadius() const;
 
 
-    DBL_DBL         CalculateConvectiveEnvelopeMass() const;
-    double          CalculateBetaL(const double p_Mass) const;
-    double          CalculateBetaR(const double p_Mass) const;
-
-    double          CalculateDeltaR(const double p_Mass) const;
 
 
-    double          CalculateGamma(const double p_Mass) const;
+
+
+
+    
+
+
+
+
 
 
 
@@ -210,11 +195,9 @@ inline double CalculateHeAbundanceSurfaceOnPhase(const double p_Tau) const overr
     
 
 
-COMPAS_PURE inline double CalculatePhaseLifetime_Hurley2000(const double p_Mass, const double p_TBGB) const;
 
 
-inline double CalculateTau_Hurley2000() const override { return CalculateTau_Hurley2000(Age(), Timescale(TIMESCALE::tMS)); }
-GNU_CONST double CalculateTau_Hurley2000(const double p_Age, const double p_tMS) const;
+
 
     double          CalculateLuminosityAtPhaseEnd() const                                   { return CalculateLuminosityAtPhaseEnd(m_Mass0); }                      // Use class member variables
 
@@ -231,7 +214,7 @@ GNU_CONST double CalculateTau_Hurley2000(const double p_Age, const double p_tMS)
 
     double          CalculateLuminosityShikauchi(const double p_CoreMass, const double p_HeliumAbundanceCore) const;
     double          CalculateLuminosityTransitionToHG(const double p_Mass, const double p_Age, double const p_LZAMS) const;
-    DBL_DBL         CalculateMainSequenceCoreMassBrcek(const double p_Dt, const double p_MassLossRate);
+    Dbl_DblT         CalculateMainSequenceCoreMassBrcek(const double p_Dt, const double p_MassLossRate);
 
 
 COMPAS_PURE double CalculateCNOprocessedCoreMassAtZAMS_Shikauchi2024(const double p_MZAMS) const;
@@ -244,25 +227,11 @@ COMPAS_PURE double CalculateCNOprocessedCoreMass_Brcek2025(const double p_Mass, 
 GNU_CONST inline double CalculateHurleyPerturbationMu() const { return 5.0; } // Hurley et al. 2000, eqs 97 & 98
 
 
-    double          CalculateConvectiveEnvelopeRadialExtent() const;
+    double CalculateConvectiveEnvelopeRadialExtent() const override { return CalculateConvectiveEnvelopeRadialExtent_Hurley2002(Mass(), Radius()); }
+    COMPAS_PURE double CalculateConvectiveEnvelopeRadialExtent_Hurley2002(const double p_Mass, const double p_Radius) const override;
 
-    double          CalculateRadiusOnMassChange(double p_dM)                                { return CalculateRadiusOnPhase(m_Mass + p_dM, m_Tau, CalculateRadiusAtZAMS(m_Mass + p_dM)); }
+    double          CalculateRadiusOnMassChange(double p_dM)                                { return CalculateRadius(m_Mass + p_dM, m_Tau, CalculateRadiusAtZAMS(m_Mass + p_dM)); }
     
-
-    double          CalculateRadiusAtPhaseEnd(const double p_Mass, const double p_RZAMS) const;
-    double          CalculateRadiusAtPhaseEnd() const                                       { return CalculateRadiusAtPhaseEnd(m_Mass, m_RZAMS); }                  // Use class member variables
-
-
-//    double CalculateRadiusOnPhase_Hurley(const double p_Mass, const double p_Tau, const double p_RZAMS) const override;
-    double CalculateRadiusOnPhase_Hurley() const override;
-
-
-
-    double          CalculateRadiusOnPhase(const double p_Mass, const double p_Tau, const double p_RZAMS) const;
-    double          CalculateRadiusOnPhase() const override;
-
-
-    double          CalculateRadiusOnPhase(const double p_Mass, const double p_Luminosity) const { return Radius(); }                                               // Not a meaningful function for MS stars
     double          CalculateRadiusTransitionToHG(const double p_Mass, const double p_Tau, const double p_RZAMS) const;
      
 
@@ -273,7 +242,11 @@ GNU_CONST inline double CalculateHurleyPerturbationMu() const { return 5.0; } //
     double          CalculateZetaAdiabatic_ByEnvelopeType(ZETA_PRESCRIPTION p_ZetaPrescription)  { return OPTIONS->ZetaMainSequence(); }
 
     double          CalculateZetaEquilibrium();
-    double          ChooseTimestep(const double p_Time) const;
+
+
+    GNU_CONST double ChooseTimestep_Hurley2000(const double p_Age, const DBL_VECTOR& p_tScales) const override;
+
+
     STELLAR_TYPE    EvolveToNextPhase()                                                     { return STELLAR_TYPE::HERTZSPRUNG_GAP; }
 
 
@@ -294,6 +267,7 @@ double CalculateCriticalMassRatio_Ge2020_Interpolate(const double p_Mass, const 
 
     bool            ShouldEvolveOnPhase() const                                             { return (m_Age < m_Timescales[static_cast<int>(TIMESCALE::tMS)]); }    // Evolve on MS phase if age in MS timescale
     
+
 GNU_CONST double CalculateCoreMassAtTAMS_Hurely2000() const;
 
 
@@ -304,8 +278,6 @@ GNU_CONST double CalculateCoreMassAtTAMS_Hurely2000() const;
 
 double CalculateAgeAfterMassLoss() const override;
 GNU_CONST double CalculateAgeAfterMassLoss_Hurley(const double p_Mass, const double p_Age, const DBL_VECTOR& p_tScales, const DBL_VECTOR& p_aN) const
-
-GNU_CONST DBL_VECTOR CH::CalculateTimescales_Hurley(const double p_Mass, const DBL_VECTOR& p_tScales, const DBL_VECTOR& p_aN) const;
 
 
     void            UpdateMainSequenceCoreMass(const double p_Dt, const double p_MassLossRate);
@@ -324,7 +296,7 @@ GNU_CONST DBL_VECTOR CH::CalculateTimescales_Hurley(const double p_Mass, const D
 
 ///////////////////////////////////////////////////////////////////////////////////////
 //                                                                                   //
-//                         AGE / LIFETIME / TAU / TIMESCALES                         //
+//                    AGE / LIFETIME / TAU / TIMESCALES / TIMESTEP                   //
 //                                                                                   //
 ///////////////////////////////////////////////////////////////////////////////////////
 
@@ -342,10 +314,10 @@ GNU_CONST DBL_VECTOR CH::CalculateTimescales_Hurley(const double p_Mass, const D
  * @param       p_tBGB                          Time to Base of Giant Branch, tBGB (per Hurley timescales) (Myr)
  * @return                                      MS lifetime, tMS (Myr)
  */
-COMPAS_PURE inline double MainSequence::CalculatePhaseLifetime_Hurley2000(const double p_Mass, const double p_TBGB) const {
+inline double MainSequence::CalculatePhaseLifetime_Hurley2000(const double p_Mass, const double p_tBGB) const {
 
     const DBL_VECTOR a = GLOBALS->HurleyAcoefficients(); // get Hurley a coefficients
-    const double tHook = std::max(0.5, (1.0 - (0.01 * std::max((p_aN[6] / PPOW(p_Mass, a[7])), (a[8] + (a[9] / PPOW(p_Mass, a[10]))))))) * p_tBGB;
+    const double tHook = std::max(0.5, (1.0 - (0.01 * std::max((a[6] / PPOW(p_Mass, a[7])), (a[8] + (a[9] / PPOW(p_Mass, a[10]))))))) * p_tBGB;
 
     return std::max(tHook, (std::max(0.95, std::min((0.95 - (0.03 * (GLOBALS->ZetaHurley() + 0.30103))), 0.99)) * p_tBGB));
 }
@@ -365,8 +337,37 @@ COMPAS_PURE inline double MainSequence::CalculatePhaseLifetime_Hurley2000(const 
  * @param       p_tMS                           MS lifetime, tMS (per Hurley timescales) (Myr)
  * @return                                      MS-relative age, [0, 1]
  */
-GNU_CONST inline double MainSequence::CalculateTau_Hurley2000(const double p_Age, const double p_tMS) const {
+inline double MainSequence::CalculateTau_Hurley2000(const double p_Age, const double p_tMS) const {
     return std::max(0.0, std::min(1.0, p_Age / p_tMS));
+}
+
+
+/*
+ * CalculateTimescales_Hurley2000
+ *
+ * @brief
+ * (Re)calculate timescales given the mass of the star, per Hurley at al. 2000.
+ * 
+ * Since timescales depend on a star's mass, they need to be calculated whenever
+ * the mass of the star changes (probably every timestep).
+ *
+ *
+ * DblVectorT CalculateTimescales_Hurley2000(const double p_Mass, const DblVectorT& p_tScales) const
+ *
+ * @param       p_Mass                          Mass of the star (Msol)
+ * @param       p_tScales                       Hurley timescales (Myr)
+ * @return                                      Mutated timescales (Myr)
+ */
+inline DblVectorT MainSequence::CalculateTimescales_Hurley2000(const double p_Mass, const DblVectorT& p_tScales) const {
+
+    DblVectorT tScales = p_tScales; // copy given timescales
+
+    // (re)calculate tBGB and tMS
+    tScales[HURLEY_TS::BGB] = utils::CalculateLifetimeToBGB_Hurley2000(p_Mass);
+    tScales[HURLEY_TS::MS]  = CalculatePhaseLifetime_Hurley2000(p_Mass, tScales[HURLEY_TS::BGB]);
+
+    // return timescales vector by value - NRVO takes care of performance/efficiency
+    return tScales;
 }
 
 
@@ -384,9 +385,10 @@ GNU_CONST inline double MainSequence::CalculateTau_Hurley2000(const double p_Age
  * @param       p_tMS                           MS lifetime, tMS (per Hurley timescales) (Myr)
  * @return                                      Age of the star after mass loss (Myr)
  */
-GNU_CONST inline double MainSequence::CalculateAgeAfterMassLoss_Hurley2000(const double p_Mass, const double p_Age, const double p_tMS) const {
-                    // FIX THIS AFTER TALKING TO ILYA <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-    return p_Age * CalculatePhaseLifetime_Hurley2000(p_Mass, BaseStar::CalculateLifetimeToBGB_Hurley2000_Static(p_Mass)) / p_tMS;
+inline double MainSequence::CalculateAgeAfterMassLoss_Hurley2000(const double p_Mass, const double p_Age, const double p_tMS) const {
+    // We call utils::CalculateLifetimeToBGB_Hurley2000() here rather than use timescales
+    // because p_Mass may not be the same mass used to calculate timescales[HURLEY_TS::BGB]
+    return p_Age * CalculatePhaseLifetime_Hurley2000(p_Mass, utils::CalculateLifetimeToBGB_Hurley2000(p_Mass)) / p_tMS;
 }
 
 
@@ -427,6 +429,37 @@ inline double MainSequence::CalculateAgeAfterMassLoss() const {
     return age;
 }
 
+
+/*
+ * ChooseTimestep_Hurley2000
+ *
+ * @brief
+ * Choose timestep for evolution
+ * See the discussion in Hurley et al. 2000, p21
+ * The returned value will be clamped to minimum NUCLEAR_MINIMUM_TIMESTEP
+ *
+ *
+ * double ChooseTimestep_Hurley2000(const double p_Age, const DBL_VECTOR& p_tScales)
+ *
+ * @param       p_Age                           Age of the star (Myr)
+ * @param       p_tScales                       Phase timescales (Myr)
+ * @return                                      Suggested timestep (Myr)
+ */
+GNU_CONST inline double MainSequence::ChooseTimestep_Hurley2000(const double p_Age, const DBL_VECTOR& p_tScales) const {
+#define tScales(x) p_tScales[static_cast<int>(TIMESCALE::x)]
+
+          double dtk = 1.0E-2 * tScales(tMS);                       // stellar type specific dt (Hurley sse uses 0.05)
+    const double dte = tScales(tMS) - p_Age;                        // time to end of phase (change of stellar type)
+
+    // check that dtk is short enough to resolve the hook at the
+    // end of the MS for HM stars? (JAR: why not check for HM star?)
+    // if not, go an order-of-magnitude shorter
+    if (dte < dtk) dtk /= 10.0;
+
+    return std::max(std::min(dtk, dte), NUCLEAR_MINIMUM_TIMESTEP);  // clamp to minimum NUCLEAR_MINIMUM_TIMESTEP
+
+#undef tScales
+}
 
 
 
@@ -488,59 +521,6 @@ inline double MainSequence::CalculateAgeAfterMassLoss() const {
 
 ///////////////////////////////////////////////////////////////////////////////////////
 //                                                                                   //
-//                                      RADIUS                                       //
-//                                                                                   //
-///////////////////////////////////////////////////////////////////////////////////////
-
-
-
-/*
- * CalculateRadiusAtPhaseEnd
- *
- * @brief
- * Calculate radius at the end of the Main Sequence (TAMS).
- * Uses the method appropriate for the evolution method and as specified by program options.
- * 
- * 
- * double CalculateRadiusAtPhaseEnd(const double p_Mass, const double p_RZAMS, const DBL_VECTOR& p_aN) const
- *
- * @param       p_Mode                          Evolution mode
- * @param       p_Mass                          Mass of the star (Msol)
- * @param       p_RZAMS                         ZAMS radius of the star (Rsol)
- * @param       p_aN                            Hurley a(n) coefficients
- * @return                                      TAMS radius (Rsol)
- */
-double MainSequence::CalculateRadiusAtPhaseEnd(const EVOLUTION_MODE p_Mode, const double p_Mass, const double p_RZAMS, const DBL_VECTOR& p_aN) const {
-
-    double radius;
-
-    Switch (p_Mode) {                                                                                           // which evolution mode?
-
-        EVOLUTION_MODE::SSE_HURLEY:                                                                             // HURLEY SSE
-        EVOLUTION_MODE::BSE_HURLEY:                                                                             // HURLEY BSE
-            radius = CalculateRadiusAtPhaseEnd_Hurley(p_Mass, p_RZAMS, p_aN);
-            break;
-
-        default:                                                                                                // unknown mode
-            // the only way this can happen is if someone added an EVOLUTION_MODE
-            // and it isn't accounted for in this code.  We should not default here, with or without a warning.
-            // We are here because the user chose a mode this code doesn't account for, and that should
-            // be flagged as an error and result in termination of the evolution of the star or binary.
-            // The correct fix for this is to add code for the missing mode or, if the missing mode is
-            // superfluous, remove it from the option.
-
-            THROW_ERROR(ERROR::UNKNOWN_EVOLUTION_MODE);                                                         // throw error
-    }
-
-    return radius;
-}
-
-
-
-
-
-///////////////////////////////////////////////////////////////////////////////////////
-//                                                                                   //
 //                                       MASS                                        //
 //                                                                                   //
 ///////////////////////////////////////////////////////////////////////////////////////
@@ -568,7 +548,7 @@ double MainSequence::CalculateRadiusAtPhaseEnd(const EVOLUTION_MODE p_Mode, cons
  * @return                                      ZAMS CNO-processed core mass (Msol)
  */
 COMPAS_PURE inline double MainSequence::CalculateCNOprocessedCoreMassAtZAMS_Shikauchi2024(const double p_MZAMS) const {
-    DBL_VECTOR fCoeffs = GLOBALS->ShikauskifMixCoefficients(); // get Shikauchi fMix coefficients from GLOBALS
+    DblVectorT fCoeffs = GLOBALS->ShikauskifMixCoefficients(); // Get Shikauchi fMix coefficients from GLOBALS
     return p_MZAMS * (fCoeffs[0] + fCoeffs[1] * std::exp(-p_MZAMS / fCoeffs[2]));
 }
 
@@ -588,8 +568,8 @@ COMPAS_PURE inline double MainSequence::CalculateCNOprocessedCoreMassAtZAMS_Shik
  * @return                                      CNO-processed core mass (Msol)
  */
 COMPAS_PURE inline double MainSequence::CalculateCNOprocessedCoreMass_Brcek2025(const double p_Mass, const double p_HeAbundanceCore) const {
-    DBL_VECTOR fCoeffs = BRCEK_FMIX_COEFFICIENTS; // get Brcek fMix coefficients from constants.h
-    const double mh    = p_Mass * PPOW(10.0, p_HeAbundanceCore * (p_HeAbundanceCore + 2.0) / 4.0);
+    DbVectorT fCoeffs = BRCEK_FMIX_COEFFICIENTS; // Get Brcek fMix coefficients from constants.h
+    const double mh   = p_Mass * PPOW(10.0, p_HeAbundanceCore * (p_HeAbundanceCore + 2.0) / 4.0);
     return p_Mass * (fCoeffs[0] + fCoeffs[1] * std::exp(-mh / fCoeffs[2])) * PPOW(1.0 - fCoeffs[4] / mh, fCoeffs[3]);
 }
 
@@ -601,7 +581,7 @@ COMPAS_PURE inline double MainSequence::CalculateCNOprocessedCoreMass_Brcek2025(
  * Calculate the (expected) core mass at terminal age main sequence, per Hurley et al. 2000.
  * We do this by calculating the core mass at the start of the HG phase.
  *
- * static double calculate CalculateCoreMassAtTAMS_Hurely2000() const
+ * double calculate CalculateCoreMassAtTAMS_Hurely2000() const
  *
  * @param       p_Mass                          Mass of the star (Msol)
  * @return                                      TAMS core mass (Msol)
@@ -621,6 +601,13 @@ GNU_CONST inline double MainSequence::CalculateCoreMassAtTAMS_Hurely2000(const d
 
     return clone->CalculateCoreMass();
 }
+
+
+///////////////////////////////////////////////////////////////////////////////////////
+//                                                                                   //
+//                                      RADIUS                                       //
+//                                                                                   //
+///////////////////////////////////////////////////////////////////////////////////////
 
 
 #endif // __MainSequence_h__

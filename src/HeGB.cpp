@@ -3,7 +3,7 @@
 
 ///////////////////////////////////////////////////////////////////////////////////////
 //                                                                                   //
-//                         AGE / LIFETIME / TAU / TIMESCALES                         //
+//                    AGE / LIFETIME / TAU / TIMESCALES / TIMESTEP                   //
 //                                                                                   //
 ///////////////////////////////////////////////////////////////////////////////////////
 
@@ -25,7 +25,7 @@
  * @return                                      HeGB age (Myr)
  */
 GNU_CONST double HeGB::CalculateAge_Static(const double p_Mass, const double p_CoreMass, const double p_tHeMS, const DBL_VECTOR& p_GBparams) {
-#define GBparams(x) p_GBparams[static_cast<int>(HURLEY_GBP:::x)] // for convenience and readability - undefined at end of function
+#define GBparams(x) p_GBparams[static_cast<int>(HURLEY_GBP:::x)]
 
     double age;
 
@@ -76,7 +76,7 @@ GNU_CONST double HeGB::CalculateAge_Static(const double p_Mass, const double p_C
  * @return                                      HeGB core mass (Msol)
  */
 GNU_CONST double HeGB::CalculateCoreMass_Hurley2000_Static(const double p_Mass, const double p_Age, const DBL_VECTOR& p_GBparams, const double p_tHeMS) {
-#define GBparams(x) p_GBparams[static_cast<int>(HURLEY_GBP:::x)] // for convenience and readability - undefined at end of function
+#define GBparams(x) p_GBparams[static_cast<int>(HURLEY_GBP:::x)]
 
     double coreMass;
 
@@ -121,11 +121,11 @@ GNU_CONST double HeGB::CalculateCoreMass_Hurley2000_Static(const double p_Mass, 
  *
  * 
  * May need to change this according to section 2.1.2 of http://iopscience.iop.org/article/10.1086/340304/pdf 
- * which talks about updated helium star evolution
- * Or replace with helium star tracks from binary_c
- * Especially important for low mass helium stars, BNS progenitors
- * This paper suggest mass below which envelope is convective is Mconv = 4.5 Msol, they leave it as an uncertain
- * Rapid expansion given by the second term in eq 86
+ * which talks about updated helium star evolution.
+ * Or replace with helium star tracks from binary_c.
+ * Especially important for low mass helium stars, BNS progenitors.
+ * This paper suggest mass below which envelope is convective is Mconv = 4.5 Msol, they leave it as an uncertain.
+ * Rapid expansion given by the second term in eq 86.
  *
  *
  * static double CalculateRadius_Hurley2000_Static(const double p_Mass, const double p_Luminosity)
@@ -136,7 +136,7 @@ GNU_CONST double HeGB::CalculateCoreMass_Hurley2000_Static(const double p_Mass, 
  */
 GNU_CONST double HeGB::CalculateRadius_Hurley2000_Static(const double p_Mass, const double p_Luminosity) {
 
-    // sanity check for mass and luminosity - just return 0.0 if mass or luminosity <= 0
+    // Sanity check for mass and luminosity - just return 0.0 if mass or luminosity <= 0
     if (p_Mass <= 0.0 || p_Luminosity <= 0.0) return 0.0;
 
     const double rZHe = HeMS::CalculateRadiusAtZAHeMS_Hurley2000_Static(p_Mass);
@@ -147,7 +147,7 @@ GNU_CONST double HeGB::CalculateRadius_Hurley2000_Static(const double p_Mass, co
 
     const double lamda = 500.0 * (2.0 + (m_2_5 * m_2_5)) / m2_5;
 
-    const double r1 = rZHe * PPOW((p_Luminosity / lTHe), 0.2) + (0.02 * (exp(p_Luminosity / lamda) - exp(lTHe / lamda)));
+    const double r1 = rZHe * PPOW((p_Luminosity / lTHe), 0.2) + (0.02 * (std::exp(p_Luminosity / lamda) - std::exp(lTHe / lamda)));
     const double r2 = CalculateRadius_Hurley2000_HeHayashi_Static(p_Luminosity);
 
     return std::min(r1, r2);

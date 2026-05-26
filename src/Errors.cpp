@@ -162,7 +162,7 @@ bool Errors::ShowIt(const std::string  p_Prefix,
 
     bool print = false;                                                                                                                         // default - don't print
 
-    COMPASUnorderedMap<
+    std::unordered_map<
         ERROR,                                                                                                                                  // error id
         std::tuple<                                                                                                                             // details for error id
             ERROR_SCOPE,                                                                                                                        //    scope
@@ -179,7 +179,7 @@ bool Errors::ShowIt(const std::string  p_Prefix,
 
 	iter = m_ErrorCatalog.find(p_Error);                                                                                                        // look for error in dynamic catalog
 	if (iter == m_ErrorCatalog.end()) {                                                                                                         // found?
-        COMPASUnorderedMap<ERROR, std::tuple<ERROR_SCOPE, std::string>>::const_iterator staticIter;
+        std::unordered_map<ERROR, std::tuple<ERROR_SCOPE, std::string>>::const_iterator staticIter;
         staticIter = ERROR_CATALOG.find(p_Error);                                                                                               // look for error in static catalog
         if (staticIter != ERROR_CATALOG.end()) {                                                                                                // found
             m_ErrorCatalog[p_Error] = { std::get<0>(staticIter->second), false, {}, {}, {}, {}, {}, {}, std::get<1>(staticIter->second) };      // yes - put new entry in dynamic catalog

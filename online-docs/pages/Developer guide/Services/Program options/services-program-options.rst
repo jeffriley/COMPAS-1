@@ -54,7 +54,7 @@ To add a new program option, take the following steps (these are duplicated at t
 
 8. Add any sanity checks: constraint/range/dependency checks etc. for the new option, and any affected existing options, to ``Options::OptionValues::CheckAndSetOptions()`` in ``Options.cpp``.  It is also here you can set any final values that, perhaps due to dependencies on options that had not yet been parsed, could not be set directly by ``Boost`` when the options were parsed (also see ``SetCalculatedOptionDefaults()``; viz. ``m_KickPhi1`` etc.).
 
-9. If the option is a string option with multiple-choices - in that the user can select from a list of possible values recorded in ``typedefs.h`` or ``LogTypedefs.h`` in an ``ENUM CLASS`` and corresponding ``COMPASUnorderedMap`` labels map - then add the option to the function ``AllowedOptionValues()`` here so that we can easily extract the allowed values for that option.
+9. If the option is a string option with multiple-choices - in that the user can select from a list of possible values recorded in ``typedefs.h`` or ``LogTypedefs.h`` in an ``ENUM CLASS`` and corresponding ``std::unordered_map`` labels map - then add the option to the function ``AllowedOptionValues()`` here so that we can easily extract the allowed values for that option.
 
 10. Add the new option to one or more of the following vectors in ``Options.h``, as required:
 
@@ -73,7 +73,7 @@ To add a new program option, take the following steps (these are duplicated at t
 11. Add the new option to the following structures in ``LogTypedefs.h`` (only required if the option is required to be available for printing in the logfiles):
 
        - enum class PROGRAM_OPTION
-       - const COMPASUnorderedMap<PROGRAM_OPTION, std::string> PROGRAM_OPTION_LABEL
+       - const std::unordered_map<PROGRAM_OPTION, std::string> PROGRAM_OPTION_LABEL
        - const std::map<PROGRAM_OPTION, PROPERTY_DETAILS> PROGRAM_OPTION_DETAIL
 
 12. Add the new option to ``Options::OptionValue()`` - this enables selection of the option value for printing in the output (log) files.  Only required if the option is required to be available for printing in the logfiles.

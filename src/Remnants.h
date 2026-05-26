@@ -38,36 +38,28 @@ protected:
 
 ///// ON PHASE FUNCTIONS   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
-DBL_VECTOR CalculateTimescales_Hurley2000() const override {
-    return TPAGB::CalculateTimescales_Hurley2000(
-        m_StateHistory.CurrentState.MassEffectiveInitial(),
-        m_StateHistory.CurrentState.GBparams(),
-        m_StateHistory.CurrentState.TimeScales()
-    );
-}
+DBL_VECTOR CalculateTimescales_Hurley2000() const override { return TPAGB::CalculateTimescales_Hurley2000(MassEffectiveInitial(), m_InterimState.GBparams(), m_InterimState.TimeScales()); }
 
-inline DBL_VECTOR CalculateGBparams_Hurley2000(const double p_Mass, const DBL_VECTOR& p_GBparams) const override {
-    return m_StateHistory.CurrentState.GBparams(); // gb params not used beyond helium stars
-}
+inline DBL_VECTOR CalculateGBparams_Hurley2000() const override { return m_InterimState.GBparams(); } // gb params not used beyond helium stars
 
 
-inline double CalculateCOCoreMass() const override { return m_StateHistory.CurrentState.Mass(); } // McCO = M for remnants
+inline double CalculateCOCoreMass() const override { return Mass(); } // McCO = M for remnants
 
-inline double CalculateHeCoreMass() const override { return m_StateHistory.CurrentState.Mass(); } // McHe = M for remnants
+inline double CalculateHeCoreMass() const override { return Mass(); } // McHe = M for remnants
 
     double          CalculateConvectiveCoreRadius() const                                                       { return m_Radius; }                                                    // All core
 
-inline DBL_DBL CalculateConvectiveEnvelopeMass() const override { return std::tuple<double, double> (0.0, 0.0); } // no envelope for remnants
+inline Dbl_DblT CalculateConvectiveEnvelopeMass() const override { return std::make_tuple(0.0, 0.0); } // No envelope for remnants
 
     double          CalculateCoreMassOnPhase() const                                                            { return m_Mass; }                                                      // Return m_Mass
 
 
-GNU_CONST inline DBL_DBL CalculateRemnantMass(const double p_COCoreMass) { return CalculateRemnantMass_Static(const double p_COCoreMass); }
-GNU_CONST static DBL_DBL CalculateRemnantMass_Static(const double p_COCoreMass);
-GNU_CONST static DBL_DBL CalculateRemnantMass_Hurley2000_Static(const double p_COCoreMass);
+GNU_CONST inline Dbl_DblT CalculateRemnantMass(const double p_COCoreMass) { return CalculateRemnantMass_Static(const double p_COCoreMass); }
+GNU_CONST static Dbl_DblT CalculateRemnantMass_Static(const double p_COCoreMass);
+GNU_CONST static Dbl_DblT CalculateRemnantMass_Hurley2000_Static(const double p_COCoreMass);
 
 
-inline double CalculateRemnantRadius() const override { return m_StateHistory.CurrentState.Radius(); }
+inline double CalculateRemnantRadius() const override { return Radius(); }
 
 
 GNU_CONST inline double CalculateHAbundanceCore(const double p_Tau) const override       { return 0.0; }; // No hydrogen in the core for remnants
@@ -91,7 +83,7 @@ GNU_CONST inline double CalculateHeAbundanceSurface(const double p_Tau) const ov
 inline double CalculateHurleyPerturbationMu() const { return m_Mu; }
 
 
-GNU_CONST double CalculateConvectiveEnvelopeRadialExtent() const { return 0.0; } // WD stars don't have a convective envelope
+GNU_CONST double CalculateConvectiveEnvelopeRadialExtent() const override { return 0.0; } // WD stars don't have a convective envelope
 
 
 
@@ -100,15 +92,18 @@ GNU_CONST double CalculateConvectiveEnvelopeRadialExtent() const { return 0.0; }
 
 inline double CalculateTimescale_Thermal() const override { return CalculateTimescale_Dynamical(); }
 
-inline double CalculateMLrateThermal() const override{ return BaseStar::CalculateMLrateThermal(); } // Set thermal mass gain rate to be effectively infinite, using dynamical timescale (in practice, will be Eddington limited), avoid division by zero
+inline double CalculateMLRateThermal() const override{ return BaseStar::CalculateMLRateThermal(); } // Set thermal mass gain rate to be effectively infinite, using dynamical timescale (in practice, will be Eddington limited), avoid division by zero
 
 
 
-    double          ChooseTimestep(const double p_Time) const;
+    GNU_CONST double ChooseTimestep_Hurley2000(const double p_Age, const DBL_VECTOR& p_tScales) const override;
+
     
 GNU_CONST inline ENVELOPE DetermineEnvelopeType() const override { return ENVELOPE::REMNANT; } // Always REMNANT for remnants
 
 
+virtual double CalculateEddingtonCriticalRate() { return CalculateEddingtonCriticalRate(Radius()); }
+virtual double CalculateEddingtonCriticalRate(const double p_Radius) const { return 2.08E-3 / 1.7 * p_Radius * MYR_TO_YEAR * OPTIONS->EddingtonAccretionFactor() ; } // Hurley+, 2002, Eq. (67)
 
 
 
@@ -116,9 +111,9 @@ GNU_CONST inline ENVELOPE DetermineEnvelopeType() const override { return ENVELO
 
 ///// PHASE END, ETC.      <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
-inline double CalculateCOCoreMassAtPhaseEnd() const override { return m_StateHistory.CurrentState.Mass(); } // McCO = M for remnants
+inline double CalculateCOCoreMassAtPhaseEnd() const override { return Mass(); } // McCO = M for remnants
 
-inline double CalculateHeCoreMassAtPhaseEnd() const override { return m_StateHistory.CurrentState.Mass(); } // McHe = M for remnants
+inline double CalculateHeCoreMassAtPhaseEnd() const override { return Mass(); } // McHe = M for remnants
 
 
 
@@ -165,6 +160,33 @@ inline double CalculateHeCoreMassAtPhaseEnd() const override { return m_StateHis
 /// inline candidates <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 
+
+/*
+ * ChooseTimestep_Hurley2000
+ *
+ * @brief
+ * Choose timestep for evolution
+ * See the discussion in Hurley et al. 2000, p21
+ * The returned value will be clamped to minimum NUCLEAR_MINIMUM_TIMESTEP
+ *
+ *
+ * double ChooseTimestep_Hurley2000(const double p_Age, const DBL_VECTOR& p_tScales)
+ *
+ * @param       p_Age                           Age of the star (Myr)
+ * @param       p_tScales                       Phase timescales (Myr) (not used here)
+ * @return                                      Suggested timestep (Myr)
+ */
+GNU_CONST inline double Remnants::ChooseTimestep_Hurley2000(const double p_Age, [[maybe_unused]] const DBL_VECTOR& p_tScales) const {
+
+    double dtk = std::min(std::max(1.0, p_Age), 500.0); // modfied from Hurley
+                                                                                    
+    // time to end of phase (change of stellar type, dte) not used here - how to calculate?
+    // clamp to minimum NUCLEAR_MINIMUM_TIMESTEP
+    return std::max(dtk, NUCLEAR_MINIMUM_TIMESTEP);
+}
+
+
+
 /*
  * CalculateRemnantMass_Hurley2000_Static
  *
@@ -175,14 +197,14 @@ inline double CalculateHeCoreMassAtPhaseEnd() const override { return m_StateHis
  * but is ambiguous about the BH mass in this case - we assume here that it's just the CO core.
  *
  * 
- * static DBL_DBL CalculateRemnantMass_Hurley2000_Static(const double p_COCoreMass)
+ * static Dbl_DblT CalculateRemnantMass_Hurley2000_Static(const double p_COCoreMass)
  *
  * @param       p_COCoreMass                    Pre-SN Carbon Oxygen (CO) core mass of the star (Msol)
  * @return                                      Tuple containing:
  *                                                   DOUBLE Remnant mass (Msol)
  *                                                   DOUBLE Fraction of mass falling back onto compact object [0.0, 1.0]
  */
-GNU_CONST static inline double Remnants::CalculateRemnantMass_Hurley2000_Static(const double p_COCoreMass) {
+GNU_CONST static inline Dbl_DblT Remnants::CalculateRemnantMass_Hurley2000_Static(const double p_COCoreMass) {
     return std::make_tuple((p_COCoreMass > 7.0 ? p_COCoreMass : 1.17 + (0.09 * p_COCoreMass)), 0.0); // fallback fraction not defined by Hurley
 }
 
@@ -196,14 +218,14 @@ GNU_CONST static inline double Remnants::CalculateRemnantMass_Hurley2000_Static(
  * Calls relevant remnant mass function based on the evolutionary mode given in program options.
  * 
  * 
- * static DBL_DBL CalculateRemnantMass_Static(const double p_COCoreMass)
+ * static Dbl_DblT CalculateRemnantMass_Static(const double p_COCoreMass)
  *
  * @param       p_COCoreMass                    Pre-SN Carbon Oxygen (CO) core mass of the star (Msol)
  * @return                                      Tuple containing:
  *                                                   DOUBLE Remnant mass (Msol)
  *                                                   DOUBLE Fraction of mass falling back onto compact object [0.0, 1.0]
  */
-GNU_CONST static inline DBL_DBL Remnants::CalculateRemnantMass_Static(const double p_COCoreMass) {
+GNU_CONST static inline Dbl_DblT Remnants::CalculateRemnantMass_Static(const double p_COCoreMass) {
 
     double mass;
     double fallbackFraction;
@@ -262,16 +284,16 @@ protected:
     double          CalculateCELambda_Dewi() const                                                                 { return BaseStar::CalculateCELambda_Dewi(); }
     double          CalculateLambdaNanjingStarTrack(const double p_Mass) const      { return BaseStar::CalculateLambdaNanjingStarTrack(0.0, 0.0); }
 
-    DBL_DBL         CalculateMassAcceptanceRate(const double p_DonorMassRate,
+    Dbl_DblT         CalculateMassAcceptanceRate(const double p_DonorMassRate,
                                                 const double p_AccretorMassRate);
-    DBL_DBL         CalculateMassAcceptanceRate(const double p_DonorMassRate,
+    Dbl_DblT         CalculateMassAcceptanceRate(const double p_DonorMassRate,
                                                 const double p_AccretorMassRate,
                                                 const bool   p_IsHeRich)                                        { return CalculateMassAcceptanceRate(p_DonorMassRate, p_AccretorMassRate); } // Ignore the He content for non-WDs
 
 
                                                 
-    DBL_DBL_DBL_DBL CalculateImKnmDynamical(const double p_Omega, const double p_SemiMajorAxis, const double p_M2) const   { return std::make_tuple(0.0, 0.0, 0.0, 0.0); }              // Default is no tidal response
-    DBL_DBL_DBL_DBL CalculateImKnmEquilibrium(const double p_Omega, const double p_SemiMajorAxis, const double p_M2) const { return std::make_tuple(0.0, 0.0, 0.0, 0.0); }              // Default is no tidal response
+    Dbl_Dbl_Dbl_DblT CalculateImKnmDynamical(const double p_Omega, const double p_SemiMajorAxis, const double p_M2) const   { return std::make_tuple(0.0, 0.0, 0.0, 0.0); }              // Default is no tidal response
+    Dbl_Dbl_Dbl_DblT CalculateImKnmEquilibrium(const double p_Omega, const double p_SemiMajorAxis, const double p_M2) const { return std::make_tuple(0.0, 0.0, 0.0, 0.0); }              // Default is no tidal response
 
 
 double CalculateCriticalMassRatio(const double p_Mass,

@@ -33,29 +33,84 @@ private:
 
 protected:
 
+
+
+
+    // Non-virtual functions - by function, then alphabetical
+
+    ////////////////////////////////////////
+    //   NON-VIRTUAL FUNCTIONS            //
+    ////////////////////////////////////////
+
+    // Should not be overridden (declared separately) by derived classes.
+    // While it is legal in C++ to declare the same (non-virtual) function in multiple classes,
+    // (aka "shadowing", or "hiding"), we discourage it.  Non-virtual functions are statically
+    // linked, and as such, especially with indirection, may not produce expected results.
+
+
+    ////////////////////////////////////////
+    //   ABUNDANCE                        //
+    ////////////////////////////////////////
+
+    COMPAS_PURE double CalculateHAbundanceCore(const double p_Tau) const override;
+    COMPAS_PURE inline double CalculateHAbundanceSurface(const double p_Tau) const { return CalculateHAbundanceCore(p_Tau); }   // Homogeneous, so same
+    COMPAS_PURE double CalculateHeAbundanceCore(const double p_Tau) const override;
+    COMPAS_PURE inline double CalculateHeAbundanceSurface(const double p_Tau) const { return CalculateHeAbundanceCore(p_Tau); } // Homogeneous, so same
+
+
+    ////////////////////////////////////////
+    //   AGE, LIFETIME, TAU, TIMESCALES   //
+    ////////////////////////////////////////
+
+    COMPAS_PURE double CalculateAgeAfterMassLoss_Hurley2000(const double p_Mass, const double p_Age, const double p_tMS, const bool p_EnhanceLifetime) const override;
+    GNU_CONST   double CalculateLifetimesRatio_Szecsi2020(const double p_Mass) const;
+
+    inline DblVectorT CalculateTimescales_Hurley2000() const override {
+        return CalculateTimescales_Hurley2000(MassEffectiveInitial(), m_InterimState.GBparams(), m_InterimState.TimeScales());
+    }
+    COMPAS_PURE DblVectorT CalculateTimescales_Hurley2000(const double p_Mass, const DblVectorT& p_GBparams, const DblVectorT& p_tScales) const;
+
+
+
+
+    ////////////////////////////////////////
+    //   LUMINOSITY                       //
+    ////////////////////////////////////////
+
+
+
+
+
+
+
+    ////////////////////////////////////////
+    //   MASS                             //
+    ////////////////////////////////////////
+
+
+
+
+
+
+
+    ////////////////////////////////////////
+    //   MASS LOSS                        //
+    ////////////////////////////////////////
+
+
+
+
+    ////////////////////////////////////////
+    //   RADIUS                           //
+    ////////////////////////////////////////
+
+
+
+
+
     // member functions
 
 
-///// ON PHASE FUNCTIONS   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-
-    // abundances
-    COMPAS_PURE double CalculateHAbundanceCore(const double p_Tau) const override;
-    COMPAS_PURE double CalculateHAbundanceSurface(const double p_Tau) const override;
-    COMPAS_PURE double CalculateHeAbundanceCore(const double p_Tau) const override;
-    COMPAS_PURE double CalculateHeAbundanceSurface(const double p_Tau) const override;
-
-
-    // age, lifetime, tau, timescales
-
-    COMPAS_PURE double CalculateAgeAfterMassLoss_Hurley2000(const double p_Mass, const double p_Age, const double p_tMS, const bool p_EnhanceLifetime) const override;
-
-    GNU_CONST double CalculateLifetimesRatio_Szecsi2020(const double p_Mass) const;
-
-    inline DBL_VECTOR CalculateTimescales_Hurley2000() const override {
-        return CalculateTimescales_Hurley2000(m_StateHistory.CurrentState.MassEffectiveInitial(), m_StateHistory.CurrentState.GBparams(), m_StateHistory.CurrentState.TimeScales());
-    }
-
-    COMPAS_PURE DBL_VECTOR CalculateTimescales_Hurley2000(const double p_Mass, const DBL_VECTOR& p_GBparams, const DBL_VECTOR& p_tScales) const;
 
 
     // luminosity
@@ -63,16 +118,9 @@ protected:
     GNU_CONST double CalculateLogLuminositiesRatio(const double p_Mass) const;
 
     inline double CalculateLuminosity_Hurley2000() const override {
-        return CalculateLuminosity_Hurley2000(
-            m_StateHistory.CurrentState.Mass(),
-            m_StateHistory.CurrentState.Tau(),
-            m_StateHistory.CurrentState.Age(),
-            m_StateHistory.ZAMSState.Luminosity(), // will exist for MS  <<<<<<<<<<<<<<<<< CHECK IF CALLED FROM OTHER STELLAR TYPES!!!!! <<<<<<<<<<<<<<<<<<<<<<<<<<<
-            m_StateHistory.CurrentState.Timescales(static_cast<int>(tMS)),
-            m_StateHistory.CurrentState.Timescales(static_cast<int>(tBGB))
-        );
+         // m_StateHistory.ZAMSState.Luminosity() will exist for MS  <<<<<<<<<<<<<<<<< CHECK IF CALLED FROM OTHER STELLAR TYPES!!!!! <<<<<<<<<<<<<<<<<<<<<<<<<<<
+        return CalculateLuminosity_Hurley2000(Mass(), Tau(), Age(), m_StateHistory.ZAMSState.Luminosity(), m_InterimState.Timescales(HURLEY_TS::MS), m_InterimState.Timescales(HURLEY_TS::BGB));
     }
-
     COMPAS_PURE double CalculateLuminosity_Hurley2000(
         const double p_Mass,
         const double p_Tau,
@@ -82,59 +130,12 @@ protected:
         const double p_tBGB
     ) const;
 
-
-    // radius
-    inline double CalculateRadius() const override { return m_StateHistory.ZAMSState().Radius(); }              // CH radius is fixed throughout lifetime
-    inline double CalculateRadiusAtPhaseEnd() const override { return m_StateHistory.ZAMSState().Radius(); }    // CH radius is fixed throughout lifetime 
+    inline double CalculateLuminosityAtPhaseEnd() const override { return CalculateLuminosityAtPhaseEnd(Mass0()); }                                                          // Use class member variables
+    GNU_PURE double CalculateLuminosityAtPhaseEnd(const double p_Mass) const;
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-///// PHASE END, ETC.      <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-
-
-
-
-
-
-
-
-    // Lifetime
-    double          CalculateLogLifetimeRatio(const double p_Mass) const;
-    double          CalculateLifetimeRatio(const double p_Mass) const;
-
-    // Luminosity
-    double          CalculateLogLuminosityRatio(const double p_Mass, const double p_Tau) const;
-
-    double          CalculateLuminosityAtPhaseEnd(const double p_Mass) const;
-    double          CalculateLuminosityAtPhaseEnd() const               { return CalculateLuminosityAtPhaseEnd(m_Mass0); }                                                          // Use class member variables
-
-
-double CalculateLuminosityOnPhase() const; // Uses globals and state variables
-double CalculateLuminosityOnPhase(
-    m_StateHistory.CurrentState().Mass(),
-    m_StateHistory.ZAMSState().Luminosity(),
-    m_StateHistory.Timescales(),
-    m_StateHistory.CurrentState().Time(),
-    GLOBALS->Metallicity(),
-    GLOBALS->HurleyACoefficients(),
-    GLOBALS->HurleyLuminosityConstants()
-);
-
-    
-    // Mass loss rate
-    COMPAS_PURE MASS_LOSS_T CalculateMLrate_Belczynski2010(
+    // mass loss rate
+    COMPAS_PURE MassLossT CalculateMLrate_Belczynski2010(
         const double p_Mass,
         const double p_Radius,
         const double p_Luminosity,
@@ -143,7 +144,7 @@ double CalculateLuminosityOnPhase(
         const double p_HeAbundanceSurface
     ) const override;
 
-    COMPAS_PURE MASS_LOSS_T CH::CalculateMLrate_Merritt2025(
+    COMPAS_PURE MassLossT CH::CalculateMLrate_Merritt2025(
         const double p_Mass,
         const double p_Radius,
         const double p_Luminosity,
@@ -154,39 +155,20 @@ double CalculateLuminosityOnPhase(
     ) const override;
 
 
-    ////double          CalculateMassLossRateBelczynski2010()               { return BaseStar::CalculateMassLossRateBelczynski2010() * CalculateMassLossRateEnhancementRotation(); }
-    ////double          CalculateMassLossRateMerritt2025()                  { return BaseStar::CalculateMassLossRateBelczynski2010() * CalculateMassLossRateEnhancementRotation(); }
+    // radius
+    inline double CalculateRadius() const override { return ZAMSState.Radius(); }           // CH radius is fixed throughout lifetime
+    inline double CalculateRadiusAtPhaseEnd() const override { return CalculateRadius(); }  // CH radius is fixed throughout lifetime 
 
 
-    double          CalculateMassLossRateWeightOB(const double p_HeliumAbundanceSurface);
+//    STELLAR_TYPE    EvolveToNextPhase();
 
-    
-// Radius
-                                                     // Same as on phase
-
-
-
-
-
-
-
-    STELLAR_TYPE    EvolveToNextPhase();
-
-    bool            ShouldEvolveOnPhase() const                         { return m_Age < m_Timescales[static_cast<int>(TIMESCALE::tMS)] && (OPTIONS->OptimisticCHE() || Omega() >= m_OmegaCHE); } // Evolve on CHE phase if age in MS timescale and spinning at least as fast as CHE threshold
-
-
-
-
-
-
-
-
-
-
-
-    void            UpdateMainSequenceCoreMass(const double p_Dt, const double p_TotalMassLossRate)    { };                                                                         // Do not use core mass calculations during CHE phase
+//    bool            ShouldEvolveOnPhase() const                         { return m_Age < m_Timescales[static_cast<int>(TIMESCALE::tMS)] && (OPTIONS->OptimisticCHE() || Omega() >= m_OmegaCHE); } // Evolve on CHE phase if age in MS timescale and spinning at least as fast as CHE threshold
 
 };
+
+
+
+
 
 
 
@@ -222,27 +204,8 @@ double CalculateLuminosityOnPhase(
  * @param       p_Tau                           Phase-relative age of the star [0, 1]
  * @return                                      Hydrogen abundance in the core of the star
  */
-COMPAS_PURE inline double CH::CalculateHAbundanceCore(const double p_Tau) const {
+inline double CH::CalculateHAbundanceCore(const double p_Tau) const {
     return GLOBALS->ZAMSHAbundance() * (1.0 - p_Tau);
-}
-
-
-/*
- * CalculateHAbundanceSurface
- *
- * @brief
- * Calculate the hydrogen abundance at the surface of a CH star, given the phase-relative age
- * of the star.  Since the star is chemically homogeneous, the core and the surface have the
- * same abundances.
- * 
- *
- * double CalculateHAbundanceSurface(const double p_Tau) const
- * 
- * @param       p_Tau                           Phase-relative age of the star [0, 1]
- * @return                                      Hydrogen abundance at the surface of the star
- */
-COMPAS_PURE inline double CH::CalculateHAbundanceSurface(const double p_Tau) const {
-    return CalculateHAbundanceCore(p_Tau);
 }
 
 
@@ -262,33 +225,14 @@ COMPAS_PURE inline double CH::CalculateHAbundanceSurface(const double p_Tau) con
  * @param       p_Tau                           Phase-relative age of the star [0, 1]
  * @return                                      Helium abundance in the core of the star
  */
-COMPAS_PURE inline double CH::CalculateHeAbundanceCore(const double p_Tau) const {
+inline double CH::CalculateHeAbundanceCore(const double p_Tau) const {
     return ((1.0 - GLOBALS->Metallicity() - GLOBALS->ZAMSHeAbundance()) * p_Tau) + GLOBALS->ZAMSHeAbundance();
-}
-
-
-/*
- * CalculateHeAbundanceSurface
- *
- * @brief
- * Calculate the helium abundance at the surface of a CH star, given the phase-relative age
- * of the star.  Since the star is checmically homogeneous, the core and the surface have the
- * same abundances.
- * 
- * 
- * double CalculateHeAbundanceSurface(const double p_Tau) const
- * 
- * @param       p_Tau                           Phase-relative age of the star [0, 1]
- * @return                                      Helium abundance at the surface of the star
- */
-COMPAS_PURE inline double CH::CalculateHeAbundanceSurface(const double p_Tau) const {
-    return CalculateHeAbundanceCore(p_Tau);
 }
 
 
 ///////////////////////////////////////////////////////////////////////////////////////
 //                                                                                   //
-//                         AGE / LIFETIME / TAU / TIMESCALES                         //
+//                    AGE / LIFETIME / TAU / TIMESCALES / TIMESTEP                   //
 //                                                                                   //
 ///////////////////////////////////////////////////////////////////////////////////////
 
@@ -312,13 +256,12 @@ COMPAS_PURE inline double CH::CalculateHeAbundanceSurface(const double p_Tau) co
  *                                              (value of option `--enhance-CHE-lifetimes-luminosities`)
  * @return                                      Age of the star after mass loss (Myr)
  */
-COMPAS_PURE inline double CH::CalculateAgeAfterMassLoss_Hurley2000(const double p_Mass, const double p_Age, const double p_tMS, const bool p_EnhanceLifetime) const {
+inline double CH::CalculateAgeAfterMassLoss_Hurley2000(const double p_Mass, const double p_Age, const double p_tMS, const bool p_EnhanceLifetime) const {
+    // We call utils::CalculateLifetimeToBGB_Hurley2000() here rather than use timescales
+    // because p_Mass may not be the same mass used to calculate timescales[HURLEY_TS::BGB]
+    const double age = p_Age * MainSequence::CalculatePhaseLifetime_Hurley2000(p_Mass, utils::CalculateLifetimeToBGB_Hurley2000(p_Mass)) / p_tMS;   
 
-    // JR FIX THIS AFTER TALKING TO ILYA <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-                                                        // why not timescales tBGB ???????????????????? <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-    const double age = p_Age * MainSequence::CalculatePhaseLifetime_Hurley2000(p_Mass, BaseStar::CalculateLifetimeToBGB_Hurley2000_Static(p_Mass)) / p_tMS;   
-
-    return p_EnhanceLifetime ? age *= CalculateLifetimesRatio_Szecsi2020(p_Mass) : age; // enhance lifetime of star if required
+    return p_EnhanceLifetime ? age * CalculateLifetimesRatio_Szecsi2020(p_Mass) : age; // enhance lifetime of star if required
 }
 
 
@@ -338,7 +281,7 @@ COMPAS_PURE inline double CH::CalculateAgeAfterMassLoss_Hurley2000(const double 
  */
 GNU_CONST inline double CH::CalculateLifetimesRatio_Szecsi2020(const double p_Mass) const {
 
-    const double x  = log10(p_Mass);
+    const double x  = std::log10(p_Mass);
     const double x2 = x * x;
 
     return PPOW(10.0, -0.15929168474199387 + (1.050069750483549 * x) + (-0.8233601359988406 * x2) + (0.17772610259473764 * x * x2));
@@ -397,8 +340,8 @@ GNU_CONST inline double CalculateMLrateRotationEnhancement_Langer1998() const {
  */
 GNU_CONST inline double CH::CalculateMLfractionOB(const double p_HeAbundanceSurface) const {
 
-    constexpr double limOB = 0.55;                                          // per Yoon et al. 2006
-    constexpr double limWR = 0.70;                                          // per Yoon et al. 2006
+    constexpr double limOB = 0.55;  // per Yoon et al. 2006
+    constexpr double limWR = 0.70;  // per Yoon et al. 2006
 
     return std::min(1.0, std::max (0.0, (limWR - p_HeAbundanceSurface) / (limWR - limOB)));
 }
@@ -427,7 +370,7 @@ GNU_CONST inline double CH::CalculateMLfractionOB(const double p_HeAbundanceSurf
  */
 GNU_CONST inline double CH::CalculateLogLuminositiesRatio(const double p_Mass) const {
          
-    const double x  = log10(p_Mass);
+    const double x  = std::log10(p_Mass);
     const double x2 = x * x;
 
     return 1.8261540986808193 + (-1.1636822407341694  * x) + (0.5876329884434304  * x2) + (-0.10236336828026288 * x * x2);
@@ -447,7 +390,7 @@ GNU_CONST inline double CH::CalculateLogLuminositiesRatio(const double p_Mass) c
  * @param       p_Mass                          Mass of the star (Msol)
  * @return                                      TAMS CH luminosity (Lsol)
  */
-inline double CH::CalculateLuminosityAtPhaseEnd(const double p_Mass) const {
+GNU_PURE inline double CH::CalculateLuminosityAtPhaseEnd(const double p_Mass) const {
 
     // unenhanced CH luminosity at the end of the MS is just MS luminosity at the end of the MS
     const double luminosity = MainSequence::CalculateLuminosityAtPhaseEnd(p_Mass);
@@ -456,12 +399,10 @@ inline double CH::CalculateLuminosityAtPhaseEnd(const double p_Mass) const {
                                                                             // yes
         // apply enhancement, which at TAMS is just the ratio log(L_CH) / log(L_MS)
         // enhancement should not reduce luminosity, so ratio is clamped to a minimum of +1.0
-        luminosity = PPOW(10.0, log10(luminosity) * std::max(CalculateLogLuminositiesRatio(p_Mass), 1.0));
+        luminosity = PPOW(10.0, std::log10(luminosity) * std::max(CalculateLogLuminositiesRatio(p_Mass), 1.0));
     }
 
     return luminosity;
 }
-
-
 
 #endif // __CH_h__

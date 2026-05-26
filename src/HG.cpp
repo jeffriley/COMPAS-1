@@ -51,8 +51,13 @@
  * !*!*!*!*! ZAMS attribute warning *!*!*!*!*!
  * !*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!
  * 
- * This function ostensibly relies on the value of the ZAMS radius of the star,
- * and should not be used if the ZAMS radius is not known.
+ * This function nominally relies on the ZAMS values of one or more attributes of the star,
+ * and should not be used if the ZAMS values are required but are not known.
+ * 
+ * The function *could* be called with something other than ZAMS values as parameters - it
+ * is up to the caller what values are actually passed. In such cases the ZAMS warning does
+ * not apply.  This function exists in the main code rather than in the GLOBALS module in
+ * recognition of the usefulness of such cases.
  * 
  *
  * double CalculateRadiusOnPhase_Hurley2000(const double      p_Mass,
@@ -98,7 +103,7 @@ double HG::CalculateRadiusOnPhase_Hurley2000(const double      p_Mass,
 
 
     const double rTAMS = MainSequence::CalculateRadiusAtPhaseEnd(p_Mass, p_RZAMS);
-    const double rGB   = GiantBranch::CalculateRadiusOnPhase_Static(p_Mass, p_Luminosity, p_bN);
+    const double rGB   = GiantBranch::CalculateRadius_Hurley2000(p_Mass, p_Luminosity);
 
     double rx = rGB;                                                                                                   // rx in Hurley SSE Fortran code
 
@@ -119,7 +124,7 @@ double HG::CalculateRadiusOnPhase_Hurley2000(const double      p_Mass,
         rx = std::min(rMinHe, ry);
         
         if (p_Mass < HIGH_MASS_THRESHOLD) {
-            rx = rMinHe * PPOW(rGB / rMinHe, log10(p_Mass / HIGH_MASS_THRESHOLD) / log10(p_MFGB / HIGH_MASS_THRESHOLD));
+            rx = rMinHe * PPOW(rGB / rMinHe, std::log10(p_Mass / HIGH_MASS_THRESHOLD) / std::log10(p_MFGB / HIGH_MASS_THRESHOLD));
         }
 
         // this piece of code resets rx if the blue loop is relatively short
@@ -185,7 +190,7 @@ double HG::CalculateRadiusOnPhase_Hurley2000(const double      p_Mass,
  * @param       p_Temperature                   Temperature of the star (Tsol)
  * @return                                      Envelope type (ENVELOPE::{RADIATIVE, CONVECTIVE, REMNANT})
  */
-COMPAS_PURE ENVELOPE HG::DetermineEnvelopeType(const double p_Mass, const double p_Temperature, const double p_CoreMass) const {
+ENVELOPE HG::DetermineEnvelopeType(const double p_Mass, const double p_Temperature, const double p_CoreMass) const {
  
     ENVELOPE envType;
     
@@ -227,25 +232,6 @@ COMPAS_PURE ENVELOPE HG::DetermineEnvelopeType(const double p_Mass, const double
     return envType;
 }
 
-
-/*
- * Choose timestep for evolution
- *
- * Given in the discussion in Hurley et al. 2000
- *
- *
- * ChooseTimestep(const double p_Time)
- *
- * @param   [IN]    p_Time                      Current age of star in Myr
- * @return                                      Suggested timestep (dt)
- */
-double HG::ChooseTimestep(const double p_Time) const {
-
-    double dtk = 0.05 * (timescales(tBGB) - timescales(tMS));
-    double dte = timescales(tBGB) - p_Time;    
-
-    return std::max(std::min(dtk, dte), NUCLEAR_MINIMUM_TIMESTEP);
-}
 
 
 /*
@@ -360,7 +346,7 @@ STELLAR_TYPE HG::EvolveToNextPhase() {
  */
 double HG::CalculateCELambda_Dewi() const {
 
-	double lambda1 = std::min(0.80, (3.0 / (2.4 + PPOW(m_Mass,-3.0 / 2.0))) - (0.15 * log10(m_Luminosity)));                // (A.3) Claeys+2014
+	double lambda1 = std::min(0.80, (3.0 / (2.4 + PPOW(m_Mass,-3.0 / 2.0))) - (0.15 * std::log10(m_Luminosity)));           // (A.3) Claeys+2014
 	double lambda2 = 0.42 * PPOW(m_RZAMS / m_Radius, 0.4);                                                                  // (A.2) Claeys+2014
 	double envMass = utils::Compare(m_CoreMass, 0.0) > 0 && utils::Compare(m_Mass, m_CoreMass) > 0 ? m_Mass - m_CoreMass : 0.0;
 
@@ -420,11 +406,11 @@ double HG::CalculateLambdaLoveridge(const double p_EnvMass, const bool p_IsMassL
                       double cutOff   = 0.0;
                       int    exponent = 0;
             for (auto const& aCoefficient: LOVERIDGE_LM1_LM2_CUTOFFS[lMetallicity]) {
-                cutOff += aCoefficient * utils::intPow(log10(m_Mass + deltaM), exponent++);
+                cutOff += aCoefficient * utils::intPow(std::log10(m_Mass + deltaM), exponent++);
             }
 
             // set evolutionary stage based on cutoff
-            lGroup = utils::Compare(log10(m_Radius), cutOff) > 0 ? LOVERIDGE_GROUP::LMR2 : LOVERIDGE_GROUP::LMR1;
+            lGroup = utils::Compare(std::log10(m_Radius), cutOff) > 0 ? LOVERIDGE_GROUP::LMR2 : LOVERIDGE_GROUP::LMR1;
         }
     }
 
@@ -432,7 +418,7 @@ double HG::CalculateLambdaLoveridge(const double p_EnvMass, const bool p_IsMassL
     constexpr double deltaR           = 1.0E-5;
               double logBindingEnergy = 0.0;
     for (auto const& lCoefficients: LOVERIDGE_COEFFICIENTS[lMetallicity][static_cast<int>(lGroup)]) {
-        logBindingEnergy += lCoefficients.alpha_mr * utils::intPow(log10(m_Mass), lCoefficients.m) * utils::intPow(log10(m_Radius + deltaR), lCoefficients.r);
+        logBindingEnergy += lCoefficients.alpha_mr * utils::intPow(std::log10(m_Mass), lCoefficients.m) * utils::intPow(std::log10(m_Radius + deltaR), lCoefficients.r);
     }
 
     double MZAMS_Mass = (m_MZAMS - m_Mass) / m_MZAMS;                                       // should m_ZAMS really be m_Mass0 (i.e., account for change in effective mass through mass loss in winds, MS mass transfer?)
@@ -462,7 +448,7 @@ double HG::CalculateLambdaLoveridge(const double p_EnvMass, const bool p_IsMassL
  * double CalculateCELambda_Nanjing_Enhanced(const double             p_Mass,
  *                                           const double             p_Radius,
  *                                           const double             p_CoreMass,
- *                                           const size_t             p_MassIndex,
+ *                                           const SizeT              p_MassIndex,
  *                                           const STELLAR_POPULATION p_StellarPop) const
  *
  * @param       p_Mass                          Mass of the star (Msol)
@@ -475,15 +461,15 @@ double HG::CalculateLambdaLoveridge(const double p_EnvMass, const bool p_IsMassL
 double HG::CalculateCELambda_Nanjing_Enhanced(const double             p_Mass,
                                               const double             p_Radius,
                                               const double             p_CoreMass,
-                                              const size_t             p_MassIndex,
+                                              const SizeT              p_MassIndex,
                                               const STELLAR_POPULATION p_StellarPop) const {
 
-    constexpr size_t evolStage = 1;                                                         // HG evolutionary stage from Xu & Li, 2010
+    constexpr SizeT evolStage = 1;                                                          // HG evolutionary stage from Xu & Li, 2010
 
-    size_t coeffsBGidx = 0;                                                                 // index into coefficients vector
-    bool   useLambdas  = false;                                                             // flag - use lambdas defined in the paper
+    SizeT coeffsBGidx = 0;                                                                  // Index into coefficients vector
+    bool  useLambdas  = false;                                                              // Flag - use lambdas defined in the paper
 
-    if (p_StellarPop == STELLAR_POPULATION::POPULATION_I) {                                 // pop I
+    if (p_StellarPop == STELLAR_POPULATION::POPULATION_I) {                                 // Pop I
              if (p_MassIndex ==  1 && p_Radius >   8.5 && p_Radius <  60.0) useLambdas = true;
         else if (p_MassIndex == 11 && p_Radius > 190.0 && p_Radius < 600.0) useLambdas = true;   
         else if (p_MassIndex == 12 && p_Radius > 120.0 && p_Radius < 170.0) useLambdas = true;   
@@ -493,52 +479,52 @@ double HG::CalculateCELambda_Nanjing_Enhanced(const double             p_Mass,
             else                                            coeffsBGidx = 2;
         }
     }
-    else {                                                                                  // pop II
+    else {                                                                                  // Pop II
         if (p_MassIndex ==  1 && p_Radius >  22.0 && p_Radius <  87.0) useLambdas = true;
     }
 
-    // get limits and (defined) lambdas
+    // Get limits and (defined) lambdas
     std::tuple<NANJING_POP_LIMITS_LAMBDAS, NANJING_POP_LIMITS_LAMBDAS> evolStageLimitsLambdas = NANJING_LIMITS_LAMBDAS_ENHANCED[evolStage - 1];
-    NANJING_POP_LIMITS_LAMBDAS                                         popLimitsLambdas       = p_StellarPop == STELLAR_POPULATION::POPULATION_I ? std::get<0>(evolStageValues) : std::get<1>(evolStageValues);
-    std::tuple<NANJING_LIMITS_ENHANCED, NANJING_LAMBDAS>               limitsLambdas          = popValues[p_MassIndex];
+    NANJING_POP_LIMITS_LAMBDAS popLimitsLambdas = p_StellarPop == STELLAR_POPULATION::POPULATION_I ? std::get<0>(evolStageValues) : std::get<1>(evolStageValues);
+    std::tuple<NANJING_LIMITS_ENHANCED, NANJING_LAMBDAS> limitsLambdas = popValues[p_MassIndex];
 
-    std::tuple<double, double, double> maxBGR = std::get<0>(limitsLambdas)[0];              // {maxB, maxG, maxR}
+    Dbl_Dbl_DblT maxBGR = std::get<0>(limitsLambdas)[0];                                    // {maxB, maxG, maxR}
 
     double lambdaB;
     double lambdaG;
-    if (useLambdas) {                                                                       // use lambdas defined in the paper?
-                                                                                            // yes
-        NANJING_LAMBDAS lambdaBG = std::get<1>(limitsLambdas)[0];                           // defined {lambdaB, lambdaG}
+    if (useLambdas) {                                                                       // Use lambdas defined in the paper?
+                                                                                            // Yes
+        NANJING_LAMBDAS lambdaBG = std::get<1>(limitsLambdas)[0];                           // Defined {lambdaB, lambdaG}
 
         lambdaB = std::get<0>(lambdaBG);
         lambdaG = std::get<1>(lambdaBG);
     }
-    else {                                                                                  // no - calculate lambdas (per paper)
+    else {                                                                                  // No - calculate lambdas (per paper)
 
-        // get B & G coefficients vector
+        // Get B & G coefficients vector
         std::tuple<NANJING_POP_COEFFICIENTS, NANJING_POP_COEFFICIENTS> evolStageCoeffs = NANJING_COEFFICIENTS[evolStage - 1];
-        NANJING_POP_COEFFICIENTS                                       popCoeffs       = p_StellarPop == STELLAR_POPULATION::POPULATION_I ? std::get<0>(evolStageCoeffs) : std::get<1>(evolStageCoeffs);
-        std::tuple<DBL_VECTOR, DBL_VECTOR>                             BGcoeffs        = popCoeffs[p_MassIndex][coeffsBGidx];
+        NANJING_POP_COEFFICIENTS popCoeffs = p_StellarPop == STELLAR_POPULATION::POPULATION_I ? std::get<0>(evolStageCoeffs) : std::get<1>(evolStageCoeffs);
+        std::tuple<DblVectorT, DblVectorT> BGcoeffs = popCoeffs[p_MassIndex][coeffsBGidx];
 
-        DBL_VECTOR Bcoeffs = std::get<0>(BGcoeffs);
-        DBL_VECTOR Gcoeffs = std::get<1>(BGcoeffs);
+        DblvectorT Bcoeffs = std::get<0>(BGcoeffs);
+        DblvectorT Gcoeffs = std::get<1>(BGcoeffs);
         
-        double Rin = std::min(p_Radius, std::get<2>(maxBGR));                               // clamp to maximum allowed radius (maxR) to prevent exceeding domain of the polynomial fits
+        const double Rin = std::min(p_Radius, std::get<2>(maxBGR));                               // Clamp to maximum allowed radius (maxR) to prevent exceeding domain of the polynomial fits
 
         if (p_StellarPop == STELLAR_POPULATION::POPULATION_I && p_MassIndex == 0 && Rin > 2.7) {
             lambdaB = 2.33 - (Rin * 9.18E-03);
             lambdaG = 1.12 - (Rin * 4.59E-03);
         }
         else if (p_StellarPop == STELLAR_POPULATION::POPULATION_I && p_MassIndex == 13) {
-            lambdaB = 1.2 * exp(-Rin / 90.0);
-            lambdaG = 0.55 * exp(-Rin / 160.0);
+            lambdaB = 1.2 * std::exp(-Rin / 90.0);
+            lambdaG = 0.55 * std::exp(-Rin / 160.0);
         }
         else if (p_StellarPop == STELLAR_POPULATION::POPULATION_II && p_MassIndex == 0 && Rin > 12.0) {
-            lambdaB = 1.8 * exp(-Rin / 80.0);
-            lambdaG = exp(-Rin / 45.0);
+            lambdaB = 1.8 * std::exp(-Rin / 80.0);
+            lambdaG = std::exp(-Rin / 45.0);
         }
         else if (p_StellarPop == STELLAR_POPULATION::POPULATION_II && p_MassIndex == 9) {
-            const double tmp = exp(-Rin / 35.0);
+            const double tmp = std::exp(-Rin / 35.0);
             lambdaB = 1.75 * tmp;
             lambdaG = 0.9 * tmp;
         }
@@ -561,8 +547,8 @@ double HG::CalculateCELambda_Nanjing_Enhanced(const double             p_Mass,
     }
 
     // Limit lambda to some 'reasonable' range
-    lambdaG = std::min(std::max(0.05, lambdaG), std::min(1.0, std::get<1>(maxBGR)));        // clamp lambda G to [0.05, min(1, maxG)]
-    lambdaB = std::max(std::min(lambdaB, std::get<0>(maxBGR)), std::max(0.05, lambdaG));    // clamp lambda B to [max(0.05, lambdaG), maxB]
+    lambdaG = std::min(std::max(0.05, lambdaG), std::min(1.0, std::get<1>(maxBGR)));        // Clamp lambda G to [0.05, min(1, maxG)]
+    lambdaB = std::max(std::min(lambdaB, std::get<0>(maxBGR)), std::max(0.05, lambdaG));    // Clamp lambda B to [max(0.05, lambdaG), maxB]
 
     // Calculate lambda as some combination of lambdaB and lambdaG by
     // lambda = alpha_th • lambdaB + (1-alpha_th) • lambdaG
@@ -590,18 +576,18 @@ double HG::CalculateCELambda_Nanjing_Enhanced(const double             p_Mass,
  */
 double HG::CalculateLambdaNanjingStarTrack(const double p_Mass, const double p_Radius, const double p_CoreMass) const {
 
-    constexpr size_t evolStage = 1;                                                         // HG evolutionary stage from Xu & Li, 2010
+    constexpr SizeT evolStage = 1;                                                         // HG evolutionary stage from Xu & Li, 2010
                                            
-    size_t coeffsBGidx = 0;                                                                 // index into coefficients vector
-    size_t limitBGRidx = 0;                                                                 // index into limits vector
-    size_t lambdaBGidx = -1;                                                                // index into lambdas vector: -ve indicates calculate lambdas
+    SizeT coeffsBGidx = 0;                                                                 // Index into coefficients vector
+    SizeT limitBGRidx = 0;                                                                 // Index into limits vector
+    SizeT lambdaBGidx = -1;                                                                // Index into lambdas vector: -ve indicates calculate lambdas
 
     // determine mass index based on p_Mass
     auto it = std::upper_bound(NANJING_MASSES_MIDPOINTS.begin(), NANJING_MASSES_MIDPOINTS.end(), p_Mass);
-    const size_t massIndex = it != arr.end() ? std::distance(NANJING_MASSES_MIDPOINTS.begin(), it) : NANJING_MASSES_MIDPOINTS.size();
+    const SizeT massIndex = it != arr.end() ? std::distance(NANJING_MASSES_MIDPOINTS.begin(), it) : NANJING_MASSES_MIDPOINTS.size();
 
-    if (GLOBALS->Metallicity() > LAMBDA_NANJING_ZLIMIT_STARTRACK) {                // Z > LAMBDA_NANJING_ZLIMIT_STARTRACK?
-                                                                                            // yes
+    if (GLOBALS->Metallicity() > LAMBDA_NANJING_ZLIMIT_STARTRACK) {                         // Z > LAMBDA_NANJING_ZLIMIT_STARTRACK?
+                                                                                            // Yes
              if (massIndex == 0 && p_Radius > 200.0) lambdaBGidx = 0;
         else if (massIndex == 1 && p_Radius > 340.0) lambdaBGidx = 0;
         else if (massIndex == 2) {
@@ -637,7 +623,7 @@ double HG::CalculateLambdaNanjingStarTrack(const double p_Mass, const double p_R
         }
         else if (massIndex == 13 && p_Radius > 1200.0) lambdaBGidx = 0;
     }
-    else {                                                                                  // no - Z <= LAMBDA_NANJING_ZLIMIT_STARTRACK
+    else {                                                                                  // No - Z <= LAMBDA_NANJING_ZLIMIT_STARTRACK
              if (massIndex == 0 && p_Radius > 160.0) lambdaBGidx = 0;
         else if (massIndex == 1) {
                  if (p_Radius > 350.0)                   lambdaBGidx = 0;
@@ -658,46 +644,46 @@ double HG::CalculateLambdaNanjingStarTrack(const double p_Mass, const double p_R
     }
 
     // get limits and (defined) lambdas
-    NANJING_Z_LIMITS_LAMBDAS                              ZlimitsLambdas = GLOBALS->Metallicity() < LAMBDA_NANJING_ZLIMIT ? std::get<0>(NANJING_LIMITS_LAMBDAS_STARTRACK) : std::get<1>(NANJING_LIMITS_LAMBDAS_STARTRACK);
-    std::tuple<NANJING_LIMITS_STARTRACK, NANJING_LAMBDAS> limitsLambdas  = ZlimitsLambdas[p_MassIndex];
+    NANJING_Z_LIMITS_LAMBDAS ZlimitsLambdas = GLOBALS->Metallicity() < LAMBDA_NANJING_ZLIMIT ? std::get<0>(NANJING_LIMITS_LAMBDAS_STARTRACK) : std::get<1>(NANJING_LIMITS_LAMBDAS_STARTRACK);
+    std::tuple<NANJING_LIMITS_STARTRACK, NANJING_LAMBDAS> limitsLambdas = ZlimitsLambdas[p_MassIndex];
 
-    std::tuple<double, double> maxBG = std::get<0>(limitsLambdas)[limitBGidx];              // {maxB, maxG}
+    Dbl_DblT maxBG = std::get<0>(limitsLambdas)[limitBGidx];                                // {maxB, maxG}
 
     double lambdaB;
     double lambdaG;
-    if (useLambdas) {                                                                       // use lambdas defined by StarTrack?
-                                                                                            // yes
-        std::tuple<double, double> lambdaBG = std::get<1>(limitsLambdas)[lambdaBGidx];      // defined {lambdaB, lambdaG}
+    if (useLambdas) {                                                                       // Use lambdas defined by StarTrack?
+                                                                                            // Yes
+        Dbl_DblT lambdaBG = std::get<1>(limitsLambdas)[lambdaBGidx];                        // Defined {lambdaB, lambdaG}
 
         lambdaB = std::get<0>(lambdaBG);
         lambdaG = std::get<1>(lambdaBG);
     }
-    else {                                                                                  // no - calculate lambdas (per StarTrack)
+    else {                                                                                  // No - calculate lambdas (per StarTrack)
 
-        // get B & G coefficients vector
+        // Get B & G coefficients vector
         std::tuple<NANJING_POP_COEFFICIENTS, NANJING_POP_COEFFICIENTS> evolStageCoeffs = NANJING_COEFFICIENTS[evolStage - 1];
-        NANJING_POP_COEFFICIENTS                                       ZCoeffs         = GLOBALS->Metallicity() < LAMBDA_NANJING_ZLIMIT ? std::get<0>(evolStageCoeffs) : std::get<1>(evolStageCoeffs);
-        std::tuple<DBL_VECTOR, DBL_VECTOR>                             BGcoeffs        = ZCoeffs[p_MassIndex][coeffsBGidx];
+        NANJING_POP_COEFFICIENTS ZCoeffs = GLOBALS->Metallicity() < LAMBDA_NANJING_ZLIMIT ? std::get<0>(evolStageCoeffs) : std::get<1>(evolStageCoeffs);
+        std::tuple<DblVectorT, DblVectorT> BGcoeffs = ZCoeffs[p_MassIndex][coeffsBGidx];
 
-        DBL_VECTOR Bcoeffs = std::get<0>(BGcoeffs);
-        DBL_VECTOR Gcoeffs = std::get<1>(BGcoeffs);
+        DblVectorT Bcoeffs = std::get<0>(BGcoeffs);
+        DblvectorT Gcoeffs = std::get<1>(BGcoeffs);
         
-        double Rin = p_Radius;
+        const double Rin = p_Radius;
 
         if (GLOBALS->Metallicity() < LAMBDA_NANJING_ZLIMIT && p_MassIndex == 0 && p_Radius > 2.7) {
             lambdaB = 2.33 - (Rin * 9.18E-03);
             lambdaG = 1.12 - (Rin * 4.59E-03);
         }
         else if (GLOBALS->Metallicity() < LAMBDA_NANJING_ZLIMIT && p_MassIndex == 13) {
-            lambdaB = 1.2 * exp(-Rin / 90.0);
-            lambdaG = 0.55 * exp(-Rin / 160.0);
+            lambdaB = 1.2 * std::exp(-Rin / 90.0);
+            lambdaG = 0.55 * std::exp(-Rin / 160.0);
         }
         else if (GLOBALS->Metallicity() >= LAMBDA_NANJING_ZLIMIT && p_MassIndex == 0 && p_Radius > 12.0) {
-            lambdaB = 1.8 * exp(-Rin / 80.0);
-            lambdaG = exp(-Rin / 45.0);
+            lambdaB = 1.8 * std::exp(-Rin / 80.0);
+            lambdaG = std::exp(-Rin / 45.0);
         }
         else if (GLOBALS->Metallicity() >= LAMBDA_NANJING_ZLIMITI && p_MassIndex == 9) {
-            const double tmp = exp(-Rin / 35.0);
+            const double tmp = std::exp(-Rin / 35.0);
             lambdaB = 1.75 * tmp;
             lambdaG = 0.9 * tmp;
         }
@@ -720,8 +706,8 @@ double HG::CalculateLambdaNanjingStarTrack(const double p_Mass, const double p_R
     }
 
     // Limit lambda to some 'reasonable' range
-    lambdaG = std::min(std::max(0.05, lambdaG), std::min(1.0, std::get<1>(maxBGR)));        // clamp lambda G to [0.05, min(1, maxG)]
-    lambdaB = std::max(std::min(lambdaB, std::get<0>(maxBGR)), std::max(0.05, lambdaG));    // clamp lambda B to [max(0.05, lambdaG), maxB]
+    lambdaG = std::min(std::max(0.05, lambdaG), std::min(1.0, std::get<1>(maxBGR)));        // Clamp lambda G to [0.05, min(1, maxG)]
+    lambdaB = std::max(std::min(lambdaB, std::get<0>(maxBGR)), std::max(0.05, lambdaG));    // Clamp lambda B to [max(0.05, lambdaG), maxB]
 
     // Calculate lambda as some combination of lambdaB and lambdaG by
     // lambda = alpha_th • lambdaB + (1-alpha_th) • lambdaG

@@ -31,7 +31,7 @@ Vector3d::Vector3d(const DBL_VECTOR p_Vec) {
 
     m_ObjectId = globalObjectId++; 
     
-    size_t numValuesSupplied = p_Vec.size();
+    SizeT numValuesSupplied = p_Vec.size();
 
     THROW_ERROR_IF(numValuesSupplied != 3, ERROR::EXPECTED_3D_VECTOR);  // this is a coding error
 
@@ -92,8 +92,8 @@ Vector3d Vector3d::ChangeBasis(const double p_ThetaE, const double p_PhiE, const
     Vector3d newVector = Vector3d(0,0,0);   // output
 
     // Apply rotation
-    for (size_t row = 0; row < 3; row++) {
-        for (size_t col = 0; col < 3; col++) {
+    for (SizeT row = 0; row < 3; row++) {
+        for (SizeT col = 0; col < 3; col++) {
             newVector[row] += oldVector[col] * rotationMatrix[row][col];
         }
     }
@@ -122,12 +122,12 @@ Vector3d Vector3d::MatrixMult(const std::vector<DBL_VECTOR>& p_Matrix, const Vec
 
     Vector3d result = Vector3d(0.0, 0.0, 0.0);
 
-    size_t numRowsSupplied = p_Matrix.size();
+    SizeT numRowsSupplied = p_Matrix.size();
     THROW_ERROR_IF(numRowsSupplied != 3, ERROR::EXPECTED_3D_VECTOR);        // this is a code defect
-    for (size_t row = 0; row < numRowsSupplied; row++) {
-        size_t numColsSupplied = p_Matrix[row].size();
+    for (SizeT row = 0; row < numRowsSupplied; row++) {
+        SizeT numColsSupplied = p_Matrix[row].size();
         THROW_ERROR_IF(numColsSupplied != 3, ERROR::EXPECTED_3D_VECTOR);    // this is a code defect
-        for (size_t col = 0; col < numColsSupplied; col++) {
+        for (SizeT col = 0; col < numColsSupplied; col++) {
             result[row] += p_Matrix[row][col] * p_Vec[col];
         }
     }

@@ -6,7 +6,7 @@
 
 ///////////////////////////////////////////////////////////////////////////////////////
 //                                                                                   //
-//                         AGE / LIFETIME / TAU / TIMESCALES                         //
+//                    AGE / LIFETIME / TAU / TIMESCALES / TIMESTEP                   //
 //                                                                                   //
 ///////////////////////////////////////////////////////////////////////////////////////
 
@@ -162,26 +162,7 @@ COMPAS_PURE ENVELOPE HeHG::DetermineEnvelopeType(const double p_Mass, const doub
 
 
 
-/*
- * Choose timestep for evolution
- *
- * Follows the Discussion in Hurley et al. 2000
- *
- *
- * ChooseTimestep(const double p_Time)
- *
- * @param   [IN]    p_Time                      Current age of star in Myr
- * @return                                      Suggested timestep (dt)
- */
-double HeHG::ChooseTimestep(const double p_Time) const {
 
-    // Implementation of timestep recommendation from Section 8 of Hurley et al., 2000
-    double dt = utils::Compare(p_Time, timescales(tx_HeGB)) > 0
-                    ? 0.02 * (timescales(tinf2_HeGB) - p_Time)
-                    : 0.02 * (timescales(tinf1_HeGB) - p_Time);
-
-    return std::max(dt, NUCLEAR_MINIMUM_TIMESTEP);
-}
 
 
 /*

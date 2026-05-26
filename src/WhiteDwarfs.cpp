@@ -22,7 +22,7 @@ double WhiteDwarfs::CalculateEtaH(const double p_MassTransferRate) {
 
     double etaH = 0.0;                                      // default return value
 
-    double logMassTransferRate = log10(p_MassTransferRate / MYR_TO_YEAR);
+    double logMassTransferRate = std::log10(p_MassTransferRate / MYR_TO_YEAR);
     double m_Mass_2            = m_Mass * m_Mass;
 
     // The following coefficients come from quadratic fits to Nomoto+ 2007 results (table 5) in Mass vs log10 Mdot space, to cover the low-mass end.
@@ -61,7 +61,7 @@ double WhiteDwarfs::CalculateEtaHe(const double p_MassTransferRate) {
 
     double etaHe = 1.0;                                     // default return value - so we can have double detonations
     
-    double logMassTransferRate = log10(p_MassTransferRate / MYR_TO_YEAR);
+    double logMassTransferRate = std::log10(p_MassTransferRate / MYR_TO_YEAR);
 
     // The following coefficients in massTransfer limits come from table A1 in Piersanti+ 2014.
     double logMdotUppHe = WD_LOG_MT_LIMIT_PIERSANTI_RG_SS_0 + WD_LOG_MT_LIMIT_PIERSANTI_RG_SS_1 * m_Mass;
@@ -122,25 +122,6 @@ double WhiteDwarfs::CalculateEtaPTY(const double p_MassTransferRate) {
 }
 
 
-/*
- * CalculateLuminosityOnPhase_Hurley2000_Static
- *
- * @brief
- * Calculate the luminosity of a White Dwarf as it cools, per Hurley et al. 2000, eq 90
- *
- *
- * double CalculateLuminosityOnPhase_Hurley2000_Static(const double p_Mass, const double p_Time, const double p_BaryonNumbe)
- *
- * @param       p_Mass                          Mass of the star (Msol)
- * @param       p_Time                          Time since White Dwarf formation (Myr) <<<<<<<<<<<<<<<<<<< is that right?  or time since birth?????
- * @param       p_BaryonNumber                  Baryon number - differs per White Dwarf type (HeWD, COWD, ONeWD).
- *                                              See `WD_Baryon_Number` in constants.h
- * @return                                      Luminosity of the White Dwarf (Lsol)
- */
-double WhiteDwarfs::CalculateLuminosityOnPhase_Hurley2000_Static(const double p_Mass, const double p_Time, const double p_BaryonNumber) {
-    return (635.0 * p_Mass * PPOW(GLOBALS->Metallicity(), 0.4)) / PPOW(p_BaryonNumber * (p_Time + 0.1), 1.4);
-}
-
 
 /* Calculate:
  *
@@ -154,13 +135,13 @@ double WhiteDwarfs::CalculateLuminosityOnPhase_Hurley2000_Static(const double p_
  * https://ui.adsabs.harvard.edu/abs/2014A%26A...563A..83C/abstract 
  *
  *
- * DBL_DBL CalculateMassAcceptanceRate(const double p_DonorMassRate, const bool p_IsHeRich)
+ * Dbl_DblT CalculateMassAcceptanceRate(const double p_DonorMassRate, const bool p_IsHeRich)
  *
  * @param   [IN]    p_DonorMassRate             Mass transfer rate from the donor
  * @param   [IN]    p_IsHeRich                  Material is He-rich or not
  * @return                                      Tuple containing the Maximum Mass Acceptance Rate (Msun/yr) and Retention Efficiency Parameter
  */
-DBL_DBL WhiteDwarfs::CalculateMassAcceptanceRate(const double p_DonorMassRate, const bool p_IsHeRich) {
+Dbl_DblT WhiteDwarfs::CalculateMassAcceptanceRate(const double p_DonorMassRate, const bool p_IsHeRich) {
 
     m_AccretionRegime = DetermineAccretionRegime(p_DonorMassRate, p_IsHeRich); 
                                                                                
@@ -243,7 +224,7 @@ GNU_CONST double WhiteDwarfs::CalculateRadius_Marsh2004_Static(const double p_Ma
  */
 ACCRETION_REGIME WhiteDwarfs::DetermineAccretionRegime(const double p_DonorMassLossRate, const bool p_HeRich) {
 
-    double logMdot          = log10(p_DonorMassLossRate / MYR_TO_YEAR);                                                     // logarithm of the accreted mass (M_sun/yr)
+    double logMdot          = std::log10(p_DonorMassLossRate / MYR_TO_YEAR);                                                // logarithm of the accreted mass (M_sun/yr)
     ACCRETION_REGIME regime = ACCRETION_REGIME::ZERO;
 
     if (p_HeRich) {

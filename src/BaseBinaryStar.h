@@ -186,12 +186,12 @@ public:
     bool                HasStarsTouching() const                    { return (utils::Compare(m_SemiMajorAxis, 0.0) > 0) && (m_SemiMajorAxis <= RSOL_TO_AU * (m_Star1->Radius() + m_Star2->Radius())); }
     bool                HasTwoOf(STELLAR_TYPE_LIST p_List) const;
     bool                ImmediateRLOFPostCEE() const                { return m_RLOFDetails.immediateRLOFPostCEE; }
-    DBL_DBL_DBL_DBL     ImKnm1_tidal() const                        { return m_Star1->CalculateImKnmTidal(OrbitalAngularVelocity(), m_SemiMajorAxis, m_Star2->Mass()); }
-    DBL_DBL_DBL_DBL     ImKnm2_tidal() const                        { return m_Star2->CalculateImKnmTidal(OrbitalAngularVelocity(), m_SemiMajorAxis, m_Star1->Mass());}
-    DBL_DBL_DBL_DBL     ImKnm1_tidal_eq() const                     { return m_Star1->CalculateImKnmEquilibrium(OrbitalAngularVelocity(), m_SemiMajorAxis, m_Star2->Mass()); }
-    DBL_DBL_DBL_DBL     ImKnm2_tidal_eq() const                     { return m_Star2->CalculateImKnmEquilibrium(OrbitalAngularVelocity(), m_SemiMajorAxis, m_Star1->Mass()); }
-    DBL_DBL_DBL_DBL     ImKnm1_tidal_dyn() const                    { return m_Star1->CalculateImKnmDynamical(OrbitalAngularVelocity(), m_SemiMajorAxis, m_Star2->Mass()); }
-    DBL_DBL_DBL_DBL     ImKnm2_tidal_dyn() const                    { return m_Star2->CalculateImKnmDynamical(OrbitalAngularVelocity(), m_SemiMajorAxis, m_Star1->Mass()); }
+    Dbl_Dbl_Dbl_DblT    ImKnm1_tidal() const                        { return m_Star1->CalculateImKnmTidal(OrbitalAngularVelocity(), m_SemiMajorAxis, m_Star2->Mass()); }
+    Dbl_Dbl_Dbl_DblT    ImKnm2_tidal() const                        { return m_Star2->CalculateImKnmTidal(OrbitalAngularVelocity(), m_SemiMajorAxis, m_Star1->Mass());}
+    Dbl_Dbl_Dbl_DblT    ImKnm1_tidal_eq() const                     { return m_Star1->CalculateImKnmEquilibrium(OrbitalAngularVelocity(), m_SemiMajorAxis, m_Star2->Mass()); }
+    Dbl_Dbl_Dbl_DblT    ImKnm2_tidal_eq() const                     { return m_Star2->CalculateImKnmEquilibrium(OrbitalAngularVelocity(), m_SemiMajorAxis, m_Star1->Mass()); }
+    Dbl_Dbl_Dbl_DblT    ImKnm1_tidal_dyn() const                    { return m_Star1->CalculateImKnmDynamical(OrbitalAngularVelocity(), m_SemiMajorAxis, m_Star2->Mass()); }
+    Dbl_Dbl_Dbl_DblT    ImKnm2_tidal_dyn() const                    { return m_Star2->CalculateImKnmDynamical(OrbitalAngularVelocity(), m_SemiMajorAxis, m_Star1->Mass()); }
     STELLAR_TYPE        InitialStellarType1() const                 { return m_Star1->InitialStellarType(); }
     STELLAR_TYPE        InitialStellarType2() const                 { return m_Star2->InitialStellarType(); }
     bool                IsHMXRBinary() const;
@@ -437,16 +437,16 @@ private:
 
     double  CalculateAngularMomentum() const                                    { return CalculateAngularMomentum(m_SemiMajorAxis, m_Eccentricity, m_Star1->Mass(), m_Star2->Mass(), m_Star1->Omega(), m_Star2->Omega(), m_Star1->CalculateMomentOfInertiaAU(), m_Star2->CalculateMomentOfInertiaAU()); }
 
-    DBL_DBL CalculateGravitationalRadiation();
+    Dbl_DblT CalculateGravitationalRadiation();
     void    EmitGravitationalWave(const double p_Dt);
 
     double  ChooseTimestep(const double p_Factor = 1.0);
 
     void    CalculateEnergyAndAngularMomentum();
 
-    double  CalculateDEccentricityTidalDt(const DBL_DBL_DBL_DBL p_ImKnm, const BinaryConstituentStar* p_Star);
-    double  CalculateDOmegaTidalDt(const DBL_DBL_DBL_DBL p_ImKnm, const BinaryConstituentStar* p_Star);
-    double  CalculateDSemiMajorAxisTidalDt(const DBL_DBL_DBL_DBL p_ImKnm, const BinaryConstituentStar* p_Star);
+    double  CalculateDEccentricityTidalDt(const Dbl_Dbl_Dbl_DblT p_ImKnm, const BinaryConstituentStar* p_Star);
+    double  CalculateDOmegaTidalDt(const Dbl_Dbl_Dbl_DblT p_ImKnm, const BinaryConstituentStar* p_Star);
+    double  CalculateDSemiMajorAxisTidalDt(const Dbl_Dbl_Dbl_DblT p_ImKnm, const BinaryConstituentStar* p_Star);
     
     static double CalculateGammaAngularMomentumLoss_Static(const double p_DonorMass, const double p_AccretorMass, const bool p_IsAccretorDegenerate, const bool p_IsCommonEnvelope);
     double  CalculateGammaAngularMomentumLoss(const double p_DonorMass, const double p_AccretorMass) { return CalculateGammaAngularMomentumLoss_Static(p_DonorMass, p_AccretorMass, m_Accretor->IsDegenerate(), false); }

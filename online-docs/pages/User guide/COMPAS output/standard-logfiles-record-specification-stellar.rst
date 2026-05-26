@@ -2404,7 +2404,7 @@ are shown below::
     };
 
 
-    const COMPASUnorderedMap<SN_EVENT, std::string> SN_EVENT_LABEL = {
+    const std::unordered_map<SN_EVENT, std::string> SN_EVENT_LABEL = {
         { SN EVENT::NONE,         "No Supernova" },
         { SN EVENT::CCSN,         "Core Collapse Supernova" },
         { SN EVENT::ECSN,         "Electron Capture Supernova" },

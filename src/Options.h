@@ -71,7 +71,7 @@ const std::string NOT_PROVIDED_STR(1, static_cast<char>(NOT_PROVIDED_CHAR));
 //    2. if 'fallback' is 'true':
 //           the value specified on the commandline if the user did not specify the 
 //           option on the grid line (regardless of whether they specified the option
-//           on the commandline).  In this case, if the user did not speify a value on
+//           on the commandline).  In this case, if the user did not specify a value on
 //           the commandline, the commandline value is set according to the default
 //           behaviour for the option, and the grid line value is set from that.  Note
 //           that for options whose default behaviours is to draw a random number, this
@@ -223,7 +223,6 @@ private:
     //       deprecation date.  Datestring format is yyyymmdd (e.g.20251107 indicates November 07, 2025).
 
     std::vector<std::tuple<std::string, std::string, bool, std::string>> deprecatedOptionStrings = {
-        { "retain-core-mass-during-caseA-mass-transfer",           "",                                                  false, "20250116" },
         { "minimum-secondary-mass",                                "minimum-sampled-secondary-mass",                    false, "20250808" },
         { "initial-mass-max",                                      "initial-mass-function-max",                         false, "20250808" },
         { "initial-mass-min",                                      "initial-mass-function-min",                         false, "20250808" },
@@ -234,28 +233,27 @@ private:
         { "scale-mass-loss-with-surface-helium-abundance",         "scale-CHE-mass-loss-with-surface-helium-abundance", false, "20251209" }
     };
 
+    // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< JR FIX THIS - what's with "tue" for use-mass-loss below?  I did it for a reason.....
     std::vector<std::tuple<std::string, std::string, std::string, bool, std::string>> deprecatedOptionValues = {
-	    { "pulsar-birth-spin-period-distribution",     "ZERO",        "NOSPIN",      false, "20250303" },
-        { "tides-prescription",                        "KAPIL2024",   "KAPIL2025",   false, "20250525" },
-        { "mass-loss-prescription",                    "MERRITT2024", "MERRITT2025", false, "20250717" },
-        { "use-mass-loss",                             "TRUE",        "MERRITT2025", true,  "20250809" },
-        { "use-mass-loss",                             "ON",          "MERRITT2025", true,  "20250809" },
-        { "use-mass-loss",                             "YES",         "MERRITT2025", true,  "20250809" },
-        { "use-mass-loss",                             "1",           "MERRITT2025", true,  "20250809" },
-        { "use-mass-loss",                             "FALSE",       "ZERO",        true,  "20250809" },
-        { "use-mass-loss",                             "OFF",         "ZERO",        true,  "20250809" },
-        { "use-mass-loss",                             "NO",          "ZERO",        true,  "20250809" },
-        { "use-mass-loss",                             "0",           "ZERO",        true,  "20250809" },
-        { "main-sequence-core-mass-prescription",      "ZERO",        "HURLEY",      false, "20251024" }
+        { "mass-loss-prescription",               "MERRITT2024", "MERRITT2025", false, "20250717" },
+        { "use-mass-loss",                        "TRUE",        "", true,  "20250809" },
+        { "use-mass-loss",                        "ON",          "", true,  "20250809" },
+        { "use-mass-loss",                        "YES",         "", true,  "20250809" },
+        { "use-mass-loss",                        "1",           "", true,  "20250809" },
+        { "use-mass-loss",                        "FALSE",       "ZERO",        true,  "20250809" },
+        { "use-mass-loss",                        "OFF",         "ZERO",        true,  "20250809" },
+        { "use-mass-loss",                        "NO",          "ZERO",        true,  "20250809" },
+        { "use-mass-loss",                        "0",           "ZERO",        true,  "20250809" },
+        { "main-sequence-core-mass-prescription", "ZERO",        "HURLEY",      false, "20251024" },
+        { "tides-prescription",                   "KAPIL2025",   "KAPIL2026",   false, "20260130" },
+        { "eccentricity-distribution",            "GELLER_2013", "GELLER2013",  false, "20260701" }
     };
 
     // the following vector is used to replace deprecated options in the logfile-definitions file
     std::vector<std::tuple<std::string, std::string, bool, std::string>> deprecatedOptionProperties = {
-        { "black_hole_kicks", "black_hole_kicks_mode",      false, "20241030" },
-        { "lbv_prescription", "LBV_mass_loss_prescription", false, "20241030" },
-        { "initial_mass",     "mass",                       false, "20250825" },
-        { "initial_mass_1",   "mass_1",                     false, "20250825" },
-        { "initial_mass_2",   "mass_2",                     false, "20250825" }
+        { "initial_mass",   "mass",   false, "20250825" },
+        { "initial_mass_1", "mass_1", false, "20250825" },
+        { "initial_mass_2", "mass_2", false, "20250825" }
     };
 
 
@@ -1313,7 +1311,7 @@ public:
 
     typedef std::tuple<TYPENAME, bool, std::string, std::string> ATTR;                  // <dataType, defaulted, typeStr, valueStr>
 
-    typedef STR_STR_STR_STR OPTIONSTR;                                                  // option strings for specified options: <asEntered, asEnteredDownshifted, longName, shortName>
+    typedef Str_Str_Str_StrT OPTIONSTR;                                                    // option strings for specified options: <asEntered, asEnteredDownshifted, longName, shortName>
 
     // we have two structs:
     //    one for the commandline (program-level) options, and 
@@ -1752,12 +1750,12 @@ public:
 
     void                                        ShowHelp()                                                              { PrintOptionHelp(!m_CmdLine.optionValues.m_ShortHelp); }
 
-    double                                      SN_MeanAnomaly1() const                                                 { return OPT_VALUE("kick-mean-anomaly-1", m_KickMeanAnomaly1, true); }
-    double                                      SN_MeanAnomaly2() const                                                 { return OPT_VALUE("kick-mean-anomaly-2", m_KickMeanAnomaly2, true); }
-    double                                      SN_Phi1() const                                                         { return OPT_VALUE("kick-phi-1", m_KickPhi1, true); }
-    double                                      SN_Phi2() const                                                         { return OPT_VALUE("kick-phi-2", m_KickPhi2, true); }
-    double                                      SN_Theta1() const                                                       { return OPT_VALUE("kick-theta-1", m_KickTheta1, true); }
-    double                                      SN_Theta2() const                                                       { return OPT_VALUE("kick-theta-2", m_KickTheta2, true); }
+    double                                      SN_MeanAnomaly1() const                                                 { return OPT_VALUE("kick-mean-anomaly-1", m_KickMeanAnomaly1, false); }
+    double                                      SN_MeanAnomaly2() const                                                 { return OPT_VALUE("kick-mean-anomaly-2", m_KickMeanAnomaly2, false); }
+    double                                      SN_Phi1() const                                                         { return OPT_VALUE("kick-phi-1", m_KickPhi1, false); }
+    double                                      SN_Phi2() const                                                         { return OPT_VALUE("kick-phi-2", m_KickPhi2, false); }
+    double                                      SN_Theta1() const                                                       { return OPT_VALUE("kick-theta-1", m_KickTheta1, false); }
+    double                                      SN_Theta2() const                                                       { return OPT_VALUE("kick-theta-2", m_KickTheta2, false); }
 
     STARTING_STELLAR_TYPE                       StellarType() const                                                     { return OPT_VALUE("stellar-type", m_StellarType.type, true); }
     STARTING_STELLAR_TYPE                       StellarType1() const                                                    { return OPT_VALUE("stellar-type-1", m_StellarType1.type, true); }

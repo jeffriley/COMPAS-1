@@ -210,9 +210,9 @@ std::tuple<int, int> EvolveSingleStars() {
 
     // generate and evolve stars
 
-    Star*  star      = nullptr;
-    bool   usingGrid = !OPTIONS->GridFilename().empty();                                                                    // using grid file?
-    size_t index     = 0;                                                                                                   // which star
+    Star* star      = nullptr;
+    bool  usingGrid = !OPTIONS->GridFilename().empty();                                                                     // using grid file?
+    SizeT index     = 0;                                                                                                    // which star
 
     // The options specified by the user at the commandline are set to their initial values.
     // OPTIONS->AdvanceCmdLineOptionValues(), called at the end of the loop, advances the
@@ -395,6 +395,8 @@ std::tuple<int, int> EvolveSingleStars() {
                         kickParameters.magnitudeSpecified       = OPTIONS->OptionSpecified("kick-magnitude");
                         kickParameters.magnitude                = OPTIONS->KickMagnitude();
                        
+                        GLOBALS->Initialise(OPTIONS->EvolutionMode(), metallicity);                                         // Initialise global variables
+
                         // create the star
                         delete star; star = nullptr;                                                                        // so we don't leak...
                         star = OPTIONS->OptionSpecified("rotational-frequency")                                             // user specified rotational frequency?

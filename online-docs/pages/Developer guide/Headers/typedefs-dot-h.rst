@@ -15,15 +15,13 @@ For example, the Common_Envelope Accretion Prescriptions are declared in ``typed
 
     enum class CE_ACCRETION_PRESCRIPTION: int { ZERO, CONSTANT, UNIFORM, MACLEOD, CHEVALIER };
 
-    const COMPASUnorderedMap<CE_ACCRETION_PRESCRIPTION, std::string> CE_ACCRETION_PRESCRIPTION_LABEL = {
+    const std::unordered_map<CE_ACCRETION_PRESCRIPTION, std::string> CE_ACCRETION_PRESCRIPTION_LABEL = {
         { CE_ACCRETION_PRESCRIPTION::ZERO,      "ZERO" },
         { CE_ACCRETION_PRESCRIPTION::CONSTANT,  "CONSTANT" },
         { CE_ACCRETION_PRESCRIPTION::UNIFORM,   "UNIFORM" },
         { CE_ACCRETION_PRESCRIPTION::MACLEOD,   "MACLEOD" },
         { CE_ACCRETION_PRESCRIPTION::CHEVALIER, "CHEVALIER" }
     };
-
-Refer to ``EnumHash.h`` for the definition of the type alias ``COMPASUnorderedMap``.
 
 Note that the values allowed for variables of type ``CE_ACCRETION_PRESCRIPTION`` are limited to ``ZERO``, ``CONSTANT``, ``UNIFORM``, and
 ``MACLEOD`` – anything else will cause a compilation error.

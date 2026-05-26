@@ -154,18 +154,18 @@ private:
     // there are 2 objectId vectors (non-stellar and stellar object), and similarly 2 funcName vectors
     // it's a bit of a hack, but splitting them out allows me to clean out the stellar vectors after each
     // star/binary is evolved, so the catalog isn't bloated by details for deleted objects
-    COMPASUnorderedMap<
+    std::unordered_map<
         ERROR,                              // error id
         std::tuple<                         // details for error id
             ERROR_SCOPE,                    //    scope
             bool,                           //    flag indicating if already printed
             std::vector<OBJECT_TYPE>,       //    object type
-            ST_VECTOR,                      //    stellar type
+            STvectorT,                      //    stellar type
             std::vector<OBJECT_ID>,         //    vector of non-stellar (main, utils, etc) object ids
             std::vector<OBJECT_ID>,         //    vector of stellar ids
-            std::vector<std::string>,       //    vector of function names for non-stellar object ids
-            std::vector<std::string>,       //    vector of function names for stellar ids
-            std::string                     //    error text
+            StrVectorT,                     //    vector of function names for non-stellar object ids
+            StrVectorT,                     //    vector of function names for stellar ids
+            StrT                            //    error text
         >
     > m_ErrorCatalog = {};
 
@@ -177,9 +177,9 @@ public:
     static Errors* Instance();
 
 
-    bool ShowIt(const std::string  p_Prefix,
+    bool ShowIt(const StrT         p_Prefix,
                 const ERROR        p_Error,
-                const std::string  p_QualifyingStr = "",
+                const StrT         p_QualifyingStr = "",
                 const OBJECT_ID    p_ObjectId      = 0,
                 const OBJECT_TYPE  p_ObjectType    = OBJECT_TYPE::NONE,
                 const STELLAR_TYPE p_StellarType   = STELLAR_TYPE::NONE,
@@ -187,7 +187,7 @@ public:
 
     void Clean();
 
-    size_t CatalogSize() { return m_ErrorCatalog.size(); }
+    SizeT CatalogSize() { return m_ErrorCatalog.size(); }
 };
 
 #endif // __Errors_h_

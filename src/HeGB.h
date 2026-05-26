@@ -31,19 +31,11 @@ public:
 
     GNU_CONST static double CalculateCoreMass_Hurley2000_Static(const double p_Mass, const double p_Age, const DBL_VECTOR& p_GBparams, const double p_tHeMS);
 
-    inline double CalculateLuminosity_Hurley2000() const override {
-        return CalculateLuminosity_Hurley2000_Static(
-            m_StateHistory.CurrentState.CoreMass(),
-            m_StateHistory.CurrentState.GBparams(static_cast<int>(HURLEY_GBP::B)),
-            m_StateHistory.CurrentState.GBparams(static_cast<int>(HURLEY_GBP::D))
-        );
-    }
+    inline double CalculateLuminosity_Hurley2000() const override { return CalculateLuminosity_Hurley2000_Static(CoreMass(), GBparams(static_cast<int>(HURLEY_GBP::B)), GBparams(static_cast<int>(HURLEY_GBP::D))); }
 
     GNU_CONST static double CalculateLuminosity_Hurley2000_Static(const double p_CoreMass, const double p_GBparamB, const double p_GBparamD);
 
-    inline double CalculateRadius_Hurley2000() const override {
-        return CalculateRadius_Hurley2000_Static(m_StateHistory.CurrentState.Mass(), m_StateHistory.CurrentState.Luminosity());
-    }
+    inline double CalculateRadius_Hurley2000() const override { return CalculateRadius_Hurley2000_Static(Mass(), Luminosity()); }
 
     GNU_CONST static double CalculateRadius_Hurley2000_HeHayashi_Static(const double p_Luminosity);
 
@@ -57,7 +49,7 @@ private:
     void Initialise(const STELLAR_TYPE p_PreviousStellarType) {
         CalculateTimescales();                                                                                                                                          // Initialise timescales
         if (p_PreviousStellarType != STELLAR_TYPE::NAKED_HELIUM_STAR_HERTZSPRUNG_GAP)                                                                                   // If not evolving from HeHG...
-            m_Age = CalculateAgeOnPhase_Static(m_Mass, m_COCoreMass, m_Timescales[static_cast<int>(TIMESCALE::tHeMS)], m_GBparams);                                 // ... Set age appropriately
+            m_Age = CalculateAgeOnPhase_Static(m_Mass, m_COCoreMass, Timescales[static_cast<int>(TIMESCALE::tHeMS)], GBparams());   // <<<<<<<<<<<<<<<<<<<<<<                              // ... Set age appropriately
         EvolveOnPhase(0.0);
     }           
 };

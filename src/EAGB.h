@@ -24,11 +24,7 @@ public:
     }
 
 
-    // member functions
-    static double   CalculateRadiusOnPhase_Static(const double      p_Mass,
-                                                  const double      p_Luminosity,
-                                                  const double      p_MHeF,
-                                                  const DBL_VECTOR &p_BnCoefficients);
+
 
 
 protected:
@@ -50,37 +46,32 @@ protected:
 ///// ON PHASE FUNCTIONS   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 
-DBL_VECTOR CalculateTimescales_Hurley2000() const override {
-    return CalculateTimescales_Hurley2000(
-        m_StateHistory.CurrentState.MassEffectiveInitial(),
-        m_StateHistory.CurrentState.GBparams(),
-        m_StateHistory.CurrentState.TimeScales()
-    );
-}
+DBL_VECTOR CalculateTimescales_Hurley2000() const override { return CalculateTimescales_Hurley2000(MassEffectiveInitial(), m_InterimState.GBparams(), m_InterimState.TimeScales()); }
 COMPAS_PURE DBL_VECTOR CalculateTimescales_Hurley2000(const double p_Mass, const DBL_VECTOR& p_GBparams, const DBL_VECTOR& p_tScales) const;
 
 
 
-inline double CalculateCOCoreMass_Hurley2000() const override {
-    return CalculateCOCoreMass_Hurley2000(
-        m_StateHistory.CurrentState.Age(),
-        m_StateHistory.CurrentState.GBparams(),
-        m_StateHistory.CurrentState.Timescales()
-    );
-}
+inline double CalculateCOCoreMass_Hurley2000() const override { return CalculateCOCoreMass_Hurley2000(Age(), m_InterimState.GBparams(), m_InterimState.Timescales()); }
 GNU_CONST double CalculateCOCoreMass_Hurley2000(const double p_Age, const DBL_VECTOR& p_GBparams, const DBL_VECTOR& p_tScales) const;
 
-inline double CalculateHeCoreMass() const override { return m_StateHistory.CurrentState.HeCoreMass(); } // McHe is constant for EAGB stars
+inline double CalculateHeCoreMass() const override { return HeCoreMass(); } // McHe is constant for EAGB stars
 
 
 
 inline double CalculateLuminosity_Hurley2000() const override {
     // use Hurley core mass - luminosity relationship, per Hurley et al. eq 37
-    return CalculateLuminosityGivenCoreMass_Hurley2000(m_StateHistory.CurrentState.CoreMass(), m_StateHistory.CurrentState.GBparams());
+    return CalculateLuminosityGivenCoreMass_Hurley2000(CoreMass(), GBparams());
 }
 
-COMPAS_PURE static double CalculateRadiusOnPhase_Hurley2000_Static(const double p_Mass, const double p_Luminosity) const;
-GNU_CONST inline double EAGB::CalculateRemnantRadius_Hurley2000(const double p_HeCoreMass) const;
+
+
+
+    ////////////////////////////////////////
+    //   RADIUS                           //
+    ////////////////////////////////////////
+
+    COMPAS_PURE static double CalculateRadius_Hurley2000_Static(const double p_Mass, const double p_Luminosity);
+GNU_CONST   inline double EAGB::CalculateRemnantRadius_Hurley2000(const double p_HeCoreMass) const;
 
 
 GNU_CONST inline double CalculateTau_Hurley2000() const override { return 0.0; }; // Tau (relative age) is not used for EAGB stars in Hurley et al. 2000, so we return 0.0
@@ -90,17 +81,15 @@ GNU_CONST inline double CalculateTau_Hurley2000() const override { return 0.0; }
 
 ///// PHASE END, ETC.      <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
-GNU_CONST inline double CalculateCOCoreMassAtPhaseEnd_Hurley2000() const override {
-    return m_StateHistory.CurrentState.GBparams(McDU); }    // McCO = McDU at phase end for EAGB stars, per Hurley et al. 2000, section 5.4
-}
+GNU_CONST inline double CalculateCOCoreMassAtPhaseEnd_Hurley2000() const override { return CurrentState.GBparams(McDU); }    // McCO = McDU at phase end for EAGB stars, per Hurley et al. 2000, section 5.4
 
-inline double CalculateHeCoreMassAtPhaseEnd() const override { return m_StateHistory.CurrentState.HeCoreMass(); } // McHe is constant for EAGB stars
+inline double CalculateHeCoreMassAtPhaseEnd() const override { return HeCoreMass(); } // McHe is constant for EAGB stars
 
 
-    double          CalculateCoreMassAtPhaseEnd() const                                             { return m_GBparams[static_cast<int>(HURLEY_GBP:::McDU)]; }                 // Mc(EAGB) = McDU at phase end (Hurley et al. 2000, section 5.4)
-    double          CalculateCoreMassOnPhase() const                                                { return m_GBparams[static_cast<int>(HURLEY_GBP:::McBAGB)]; }               // Mc(EAGB) = McHe(EAGB) = McBAGB on phase (Hurley et al. 2000, section 5.4)
+    double          CalculateCoreMassAtPhaseEnd() const                                             { GBparams[static_cast<int>(HURLEY_GBP:::McDU)]; }                 // Mc(EAGB) = McDU at phase end (Hurley et al. 2000, section 5.4)
+    double          CalculateCoreMassOnPhase() const                                                { GBparams[static_cast<int>(HURLEY_GBP:::McBAGB)]; }               // Mc(EAGB) = McHe(EAGB) = McBAGB on phase (Hurley et al. 2000, section 5.4)
 
-    double          CalculateInitialSupernovaMass() const                                           { return m_GBparams[static_cast<int>(HURLEY_GBP:::McBAGB)]; }               // For EAGB & TPAGB we use the mass at Base Asymptotic Giant Branch to determine SN type
+    double          CalculateInitialSupernovaMass() const                                           { GBparams[static_cast<int>(HURLEY_GBP:::McBAGB)]; }               // For EAGB & TPAGB we use the mass at Base Asymptotic Giant Branch to determine SN type
 
     double          CalculateLambdaNanjingStarTrack(const double p_Mass) const;
     double          CalculateLambdaNanjingEnhanced(const int p_MassIndex, const STELLAR_POPULATION p_StellarPop) const;
@@ -132,7 +121,7 @@ inline double CalculateHeCoreMassAtPhaseEnd() const override { return m_StateHis
 
 
 
-    double          ChooseTimestep(const double p_Time) const;
+GNU_CONST double ChooseTimestep_Hurley2000(const double p_Age, const DBL_VECTOR& p_tScales) const override;
 
 
 GNU_CONST inline ENVELOPE DetermineEnvelopeType() const override { return ENVELOPE::CONVECTIVE; } // Always CONVECTIVE for EAGB stars
@@ -157,10 +146,16 @@ GNU_CONST inline ENVELOPE DetermineEnvelopeType() const override { return ENVELO
 
 ///////////// inline candidates <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
+///////////////////////////////////////////////////////////////////////////////////////
+//                                                                                   //
+//                         INLINE CANDIDATE IMPLEMENTATIONS                          //
+//                                                                                   //
+///////////////////////////////////////////////////////////////////////////////////////
+
 
 ///////////////////////////////////////////////////////////////////////////////////////
 //                                                                                   //
-//                         AGE / LIFETIME / TAU / TIMESCALES                         //
+//                    AGE / LIFETIME / TAU / TIMESCALES / TIMESTEP                   //
 //                                                                                   //
 ///////////////////////////////////////////////////////////////////////////////////////
 
@@ -183,7 +178,7 @@ GNU_CONST inline ENVELOPE DetermineEnvelopeType() const override { return ENVELO
  * @return                                      Lifetime to second dredge up (tDU) (Myr)
  */
 double EAGB::CalculateLifetimeTo2ndDU_Hurley2000(const DBL_VECTOR& p_GBparams, const double p_Tinf1_FAGB, const double p_Tinf2_FAGB) const {
-#define GBparams(x) p_GBparams[static_cast<int>(HURLEY_GBP:::x)] // for convenience and readability - undefined at end of function
+#define GBparams(x) p_GBparams[static_cast<int>(HURLEY_GBP:::x)]
 
     const double lDU = CalculateLuminosityGivenCoreMass_Hurley2000(GBparams(McDU), p_GBparams);
     const double p1  = GBparams(p) - 1.0;
@@ -194,6 +189,34 @@ double EAGB::CalculateLifetimeTo2ndDU_Hurley2000(const DBL_VECTOR& p_GBparams, c
             : p_Tinf2_FAGB - (1.0 / (q1 * GBparams(AHe) * GBparams(B))) * PPOW((GBparams(B) / lDU), (q1 / GBparams(q)));
 
 #undef GBparams
+}
+
+
+/*
+ * ChooseTimestep_Hurley2000
+ *
+ * @brief
+ * Choose timestep for evolution
+ * See the discussion in Hurley et al. 2000, p21
+ * The returned value will be clamped to minimum NUCLEAR_MINIMUM_TIMESTEP
+ *
+ *
+ * double ChooseTimestep_Hurley2000(const double p_Age, const DBL_VECTOR& p_tScales)
+ *
+ * @param       p_Age                           Age of the star (Myr)
+ * @param       p_tScales                       Phase timescales (Myr)
+ * @return                                      Suggested timestep (Myr)
+ */
+GNU_CONST inline double EAGB::ChooseTimestep_Hurley2000(const double p_Age, const DBL_VECTOR& p_tScales) const {
+#define tScales(x) p_tScales[static_cast<int>(TIMESCALE::x)]
+
+    const double dtk = 0.02 * ((p_Age <= tScales(tMx_FAGB) ? tScales(tinf1_FAGB) : tScales(tinf2_FAGB)) - p_Age);   // stellar type specific dt
+
+    // time to end of phase (change of stellar type, dte) not used here - how to calculate?
+    // clamp to minimum NUCLEAR_MINIMUM_TIMESTEP
+    return std::max(dtk, NUCLEAR_MINIMUM_TIMESTEP);
+
+#undef tScales
 }
 
 

@@ -15,7 +15,7 @@
  * @param       p_Temperature                   Temperature of the star (Tsol)
  * @return                                      Envelope type (ENVELOPE::{RADIATIVE, CONVECTIVE, REMNANT})
  */
-COMPAS_PURE ENVELOPE MS_gt_07::DetermineEnvelopeType(const double p_Mass, const double p_Temperature, const double p_CoreMass) const {
+ENVELOPE MS_gt_07::DetermineEnvelopeType(const double p_Mass, const double p_Temperature, const double p_CoreMass) const {
     
     ENVELOPE envType;
     

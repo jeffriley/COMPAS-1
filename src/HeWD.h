@@ -74,9 +74,9 @@ COMPAS_PURE inline double CalculateHeAbundanceSurface(const double p_Tau) const 
     double          CalculateLuminosityOnPhase(const double p_Mass, const double p_Time) const { return CalculateLuminosityOnPhase_Static(p_Mass, p_Time); }
     double          CalculateLuminosityOnPhase() const                                                      { return CalculateLuminosityOnPhase_Static(m_Mass, m_Age, m_Metallicity); }     // Use class member variables
 
-    DBL_DBL         CalculateMassAcceptanceRate(const double p_DonorMassRate,
+    Dbl_DblT        CalculateMassAcceptanceRate(const double p_DonorMassRate,
                                                 const bool   p_IsHeRich);  
-    DBL_DBL         CalculateMassAcceptanceRate(const double p_DonorMassRate,
+    Dbl_DblT        CalculateMassAcceptanceRate(const double p_DonorMassRate,
                                                 const double p_AccretorMassRate,
                                                 const bool   p_IsHeRich)                                    { return CalculateMassAcceptanceRate(p_DonorMassRate, p_IsHeRich); }            // Ignore the input accretion rate for WDs
 

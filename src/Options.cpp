@@ -59,7 +59,7 @@
 /*                                                                                        */
 /* 9. If the option is a string option with multiple choices - in that the user can       */
 /*    select from a list of possible values recorded in typedefs.h or LogTypedefs.h in    */
-/*    an ENUM CLASS and corresponding COMPASUnorderedMap labels map - then add the option */
+/*    an ENUM CLASS and corresponding std::unordered_map labels map - then add the option */
 /*    to the function AllowedOptionValues() here so that we can easily extract the        */
 /*    allowed values for that option.                                                     */
 /*                                                                                        */
@@ -83,7 +83,7 @@
 /*     the option is required to be available for printing in the logfiles):              */
 /*                                                                                        */
 /*        - enum class PROGRAM_OPTION                                                     */
-/*        - const COMPASUnorderedMap<PROGRAM_OPTION, std::string> PROGRAM_OPTION_LABEL    */
+/*        - const std::unordered_map<PROGRAM_OPTION, std::string> PROGRAM_OPTION_LABEL    */
 /*        - const std::map<PROGRAM_OPTION, PROPERTY_DETAILS> PROGRAM_OPTION_DETAIL        */
 /*                                                                                        */
 /* 12. Add the new option to Options::OptionValue() - this enables selection of the       */
@@ -2200,7 +2200,7 @@ bool Options::AddOptions(OptionValues *p_Options, po::options_description *p_Opt
  *                                              If no error occurred the return string will be the empty string 
  */
 std::string Options::OptionValues::SetCalculatedOptionDefaults(const BOOST_MAP p_UpdateMap) {
-#define DEFAULTED(opt) m_VM[opt].defaulted()    // for convenience and readability - undefined at end of function
+#define DEFAULTED(opt) m_VM[opt].defaulted()
 
     std::string errStr = "";                                        // error string
 
@@ -2344,7 +2344,7 @@ std::string Options::OptionValues::SetCalculatedOptionDefaults(const BOOST_MAP p
  *                                              If no error occurred the return string will be the empty string 
  */
 std::string Options::OptionValues::CheckAndSetOptions() {
-#define DEFAULTED(opt) m_VM[opt].defaulted()    // for convenience and readability - undefined at end of function
+#define DEFAULTED(opt) m_VM[opt].defaulted()
 
     std::string errStr = "";                                                                                                        // error string
 
@@ -2817,7 +2817,7 @@ void Options::BuildDefaultsMap(po::options_description *p_OptionsDescription) {
  * Get allowed values for a specified option
  *
  * This function pertains to string options with multiple-choices - in that the user can select from
- * a list of possible values recorded in constants.h in an ENUM CLASS and corresponding COMPASUnorderedMap
+ * a list of possible values recorded in constants.h in an ENUM CLASS and corresponding std::unordered_map
  * labels map.
  * 
  * 
@@ -2828,7 +2828,7 @@ void Options::BuildDefaultsMap(po::options_description *p_OptionsDescription) {
  * @return                                      Vector containing allowed option value strings
  */
 STR_VECTOR Options::AllowedOptionValues(const std::string p_OptionString) {
-#define POPULATE_RET(mapname) for (auto& it: mapname) ret.push_back("'" + it.second + "'")  // for convenience and readability - undefined at end of function
+#define POPULATE_RET(mapname) for (auto& it: mapname) ret.push_back("'" + it.second + "'")
 
     STR_VECTOR ret;                         // initially empty
 
@@ -2900,7 +2900,7 @@ STR_VECTOR Options::AllowedOptionValues(const std::string p_OptionString) {
  * 
  *         "Options: ['TXT','TSV','CSV','HDF5','NONE']"
  * 
- * The allowed values are listed in the order they are stored in the COMPASUnorderedMap in constants.h.
+ * The allowed values are listed in the order they are stored in the std::unordered_map in constants.h.
  * We could instead list them in alphabetical order, but the assumption is that the order in constants.h
  * was deliberate, so we'll maintain it - if that's not true then we could just sort alphabetically here.
  * 

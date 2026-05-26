@@ -24,18 +24,26 @@ public:
     // member functions
 
 
+    ////////////////////////////////////////
+    //   LUMINOSITY                       //
+    ////////////////////////////////////////
 
-GNU_CONST static double CalculateLuminosityOnPhase_Hurley2000_Static(const double p_Mass, const double p_Time, const double p_BaryonNumber);
+
+    COMPAS_PURE static double CalculateLuminosity_Hurley2000_Static(const double p_Mass, const double p_Age);
 
 
 
 
-inline double CalculateRadius_Hurley2000() const override { 
-    return CalculateRadius_Hurley2000_Static(m_StateHistory.CurrentState.Mass());
-}
-GNU_CONST static inline double CalculateRadius_Hurley2000_Static(const double p_Mass) { 
-    return CalculateRadius_Marsh2004_Static(p_Mass);
-}
+    ////////////////////////////////////////
+    //   RADIUS                           //
+    ////////////////////////////////////////
+
+
+
+
+
+inline double CalculateRadius_Hurley2000() const override { return CalculateRadius_Hurley2000_Static(Mass()); }
+GNU_CONST static inline double CalculateRadius_Hurley2000_Static(const double p_Mass) { return CalculateRadius_Marsh2004_Static(p_Mass); }
 GNU_CONST static double CalculateRadius_Marsh2004_Static(const double p_Mass);
 
 
@@ -92,9 +100,9 @@ double CalculateCriticalMassRatio_Hurley2002() const { return HURLEY_HJELLMING_W
 ///// ON PHASE FUNCTIONS   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<        
 
 
-inline double CalculateCOCoreMass() const override { return m_StateHistory.CurrentState.COCoreMass(); } // McCO constant for WDs
+inline double CalculateCOCoreMass() const override { return COCoreMass(); } // McCO constant for WDs
 
-inline double CalculateHeCoreMass() const override { return m_StateHistory.CurrentState.HeCoreMass(); } // McHe constant for WDs
+inline double CalculateHeCoreMass() const override { return HeCoreMass(); } // McHe constant for WDs
 
 
             
@@ -134,9 +142,9 @@ GNU_CONST inline ENVELOPE DetermineEnvelopeType() const override { return ENVELO
 ///// PHASE END, ETC.      <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 
-inline double CalculateCOCoreMassAtPhaseEnd() const override { return m_StateHistory.CurrentState.COCoreMass(); } // McCO constant for WDs
+inline double CalculateCOCoreMassAtPhaseEnd() const override { return COCoreMass(); } // McCO constant for WDs
 
-inline double CalculateCOCoreMassAtPhaseEnd() const override { return m_StateHistory.CurrentState.HeCoreMass(); } // McHe constant for WDs
+inline double CalculateCOCoreMassAtPhaseEnd() const override { return HeCoreMass(); } // McHe constant for WDs
 
 
 
@@ -157,10 +165,37 @@ inline double CalculateCOCoreMassAtPhaseEnd() const override { return m_StateHis
 
 ///////////////////////////////////////////////////////////////////////////////////////
 //                                                                                   //
-//                                 RADIUS FUNCTIONS                                  //
+//                                      RADIUS                                       //
 //                                                                                   //
 ///////////////////////////////////////////////////////////////////////////////////////
 
+
+
+
+
+///////////////////////////////////////////////////////////////////////////////////////
+//                                                                                   //
+//                                    LUMINOSITY                                     //
+//                                                                                   //
+///////////////////////////////////////////////////////////////////////////////////////
+
+
+/*
+ * CalculateLuminosity_Hurley2000_Static
+ *
+ * @brief
+ * Calculate the luminosity of a White Dwarf as it cools, per Hurley et al. 2000, eq 90
+ *
+ *
+ * double CalculateLuminosity_Hurley2000_Static(const double p_Mass, const double p_Age)
+ *
+ * @param       p_Mass                          Mass of the star (Msol)
+ * @param       p_Time                          Age since White Dwarf formation (Myr)
+ * @return                                      Luminosity of the White Dwarf (Lsol)
+ */
+inline double WhiteDwarfs::CalculateLuminosity_Hurley2000_Static(const double p_Mass, const double p_Age) {
+    return (635.0 * p_Mass * PPOW(GLOBALS->Metallicity(), 0.4)) / PPOW(WD_Baryon_Number.at(STELLAR_TYPE::HELIUM_WHITE_DWARF) * (p_Age + 0.1), 1.4);
+}
 
 
 
@@ -181,11 +216,8 @@ protected:
             ACCRETION_REGIME WhiteDwarfAccretionRegime() const                                                  { return m_AccretionRegime; }
     
 
-            DBL_DBL          CalculateMassAcceptanceRate(const double p_DonorMassRate,
-                                                         const bool   p_IsHeRich);          
-            DBL_DBL          CalculateMassAcceptanceRate(const double p_DonorMassRate,
-                                                         const double p_AccretorMassRate,
-                                                         const bool   p_IsHeRich)                               { return CalculateMassAcceptanceRate(p_DonorMassRate, p_IsHeRich); }
+            Dbl_DblT CalculateMassAcceptanceRate(const double p_DonorMassRate, const bool p_IsHeRich);          
+            Dbl_DblT CalculateMassAcceptanceRate(const double p_DonorMassRate, const double p_AccretorMassRate, const bool p_IsHeRich) { return CalculateMassAcceptanceRate(p_DonorMassRate, p_IsHeRich); }
 
 
 

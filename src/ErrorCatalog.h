@@ -107,7 +107,9 @@ enum class ERROR: int {
     NO_LAMBDA_DEWI,                                                 // Dewi lambda calculation not supported for stellar type
     NO_LAMBDA_NANJING,                                              // Nanjing lambda calculation not supported for stellar type
     NO_REAL_ROOTS,                                                  // equation has no real roots
+    NO_STATE,                                                       // no state (e.g. ZAMS state, or PREVIOUS state does not exist)
     NO_TIMESTEPS_READ,                                              // no user timesteps read
+    NO_VALUE,                                                       // no value (e.g. std::optional<> variable has no value assigned)
     NOT_INITIALISED,                                                // object not initialised
     OPTION_NOT_SUPPORTED_IN_GRID_FILE,                              // option not supported in grid file
     OUT_OF_BOUNDS,                                                  // value out of bounds
@@ -215,7 +217,7 @@ enum class ERROR: int {
 // unordered_map - key is integer message number (from enum class ERROR above)
 // listed alphabetically
 
-const COMPASUnorderedMap<ERROR, std::tuple<ERROR_SCOPE, std::string>> ERROR_CATALOG = {
+const std::unordered_map<ERROR, std::tuple<ERROR_SCOPE, std::string>> ERROR_CATALOG = {
     { ERROR::ADDED_EXCESS_AM_TO_STARS,                              { ERROR_SCOPE::ALWAYS,              "Attempted to add more angular momentum to stars than was available in the binary" }},
     { ERROR::AMBIGUOUS_REMNANT_MASS_PRESCRIPTION,                   { ERROR_SCOPE::ALWAYS,              "Insufficient information to prescribe remnant mass" }},
     { ERROR::ARGUMENT_RANGE_PARMS_EXPECTED_FP,                      { ERROR_SCOPE::ALWAYS,              "Expected a floating point number for range start and increment for option" }},
@@ -284,7 +286,9 @@ const COMPASUnorderedMap<ERROR, std::tuple<ERROR_SCOPE, std::string>> ERROR_CATA
     { ERROR::NO_LAMBDA_DEWI,                                        { ERROR_SCOPE::ALWAYS,              "Dewi lambda calculation not supported for stellar type" }},
     { ERROR::NO_LAMBDA_NANJING,                                     { ERROR_SCOPE::ALWAYS,              "Nanjing lambda calculation not supported for stellar type" }},
     { ERROR::NO_REAL_ROOTS,                                         { ERROR_SCOPE::ALWAYS,              "No real roots" }},
+    { ERROR::NO_STATE,                                              { ERROR_SCAPE::ALWAYS,              "State does not exist" }},
     { ERROR::NO_TIMESTEPS_READ,                                     { ERROR_SCOPE::ALWAYS,              "No user timesteps read" }},
+    { ERROR::NO_VALUE,                                              { ERROR_SCAPE::ALWAYS,              "No value assigned" }},
     { ERROR::NONE,                                                  { ERROR_SCOPE::NEVER,               "No error" }},
     { ERROR::NOT_INITIALISED,                                       { ERROR_SCOPE::ALWAYS,              "Object not initialised" }},
     { ERROR::OPTION_NOT_SUPPORTED_IN_GRID_FILE,                     { ERROR_SCOPE::ALWAYS,              "Option not supported in grid file" }},

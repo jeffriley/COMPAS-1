@@ -1144,8 +1144,8 @@ namespace utils {
                 break;
 
             case METALLICITY_DISTRIBUTION::LOGUNIFORM: {                                                // LOGUNIFORM - sample Z uniformly in the log
-                double logMin = log10(p_Min);
-                double logMax = log10(p_Max);
+                double logMin = std::log10(p_Min);
+                double logMax = std::log10(p_Max);
                 metallicity = PPOW(10, (logMin + ((logMax - logMin) * RAND->Random())));
             } break;
 

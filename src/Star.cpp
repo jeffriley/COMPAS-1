@@ -25,8 +25,8 @@ Star::Star(const unsigned long int     p_RandomSeed,
            const KickParameters        p_KickParameters,
            const double                p_RotationalFrequency) {
 
-    m_ObjectId          = globalObjectId++;                                                                     // set object id
-    m_ObjectPersistence = OBJECT_PERSISTENCE::PERMANENT;                                                        // set object persistence
+    m_ObjectId          = globalObjectId++;                                                                     // Set object id
+    m_ObjectPersistence = OBJECT_PERSISTENCE::PERMANENT;                                                        // Set object persistence
 
     // We need to convert the starting stellar type passed in to an actual stellar type
     // so we can construct a star of that type.  For most stellar types the mapping from
@@ -35,48 +35,48 @@ Star::Star(const unsigned long int     p_RandomSeed,
     // depending upon the ZAMS mass of the star - CH (Chemically Homeogeneous) is handled
     // later.
 
-    STELLAR_TYPE startingStellarType = static_cast<STELLAR_TYPE>(static_cast<int>(p_StartingStellarType));      // fix up starting stellar type
+    STELLAR_TYPE startingStellarType = static_cast<STELLAR_TYPE>(static_cast<int>(p_StartingStellarType));      // Fix up starting stellar type
 
-    if (utils::IsOneOf(startingStellarType, MAIN_SEQUENCE)) {                                                   // starting stellar type MS (won't be CH here)?
-                                                                                                                // yes
-        // set main sequence type based on starting mass
+    if (utils::IsOneOf(startingStellarType, MAIN_SEQUENCE)) {                                                   // Starting stellar type MS (won't be CH here)?
+                                                                                                                // Yes
+        // Set main sequence type based on starting mass
         startingStellarType = p_Mass <= 0.7 ? STELLAR_TYPE::MS_LTE_07 : STELLAR_TYPE::MS_GT_07;
     }
 
-    // determine ZAMS angular freuqnecy
-    double angularFrequency;
-    if (p_RotationalFrequency < 0.0) {                                                                          // rotational frequency supplied?
-        const double rZAMS = MainSequence::CalculateRadiusAtZAMS(p_Mass, GLOBALS->ToutRadiusCoefficients());    // no
-        angularFrequency   = MainSequence::CalculateAngularFrequencyAtZAMS(p_Mass, rZAMS);                      // calculate ZAMS omega
+    // Determine ZAMS angular freuqnecy
+    double omega;
+    if (p_RotationalFrequency < 0.0) {                                                                          // Rotational frequency supplied?
+        const double rZAMS = MainSequence::CalculateRadiusAtZAMS(p_Mass, GLOBALS->ToutRadiusCoefficients());    // No
+        omega = CalculateZAMSOmega(p_Mass, rZAMS);                                                              // Calculate ZAMS omega
     }
-    else {                                                                                                      // yes - rotational frequency supplied
-        angularFrequency   = SECONDS_IN_YEAR * _2_PI * p_RotationalFrequency;                                   // calculate ZAMS omega
+    else {                                                                                                      // Yes - rotational frequency supplied
+        omega = SECONDS_IN_YEAR * _2_PI * p_RotationalFrequency;                                                // Calculate ZAMS omega
     }
 
-    // construct a BaseStar object
-    m_Star = new BaseStar(p_RandomSeed, p_Metallicity, p_Mass, p_KickParameters, angularFrequency);             // create underlying BaseStar object
-    (void)SwitchTo(startingStellarType, true, true);                                                            // switch to correct starting stellar type
+    // Construct a BaseStar object
+    m_Star = new BaseStar(p_RandomSeed, p_Metallicity, p_Mass, p_KickParameters, angularFrequency);             // Create underlying BaseStar object
+    (void)SwitchTo(startingStellarType, true, true);                                                            // Switch to correct starting stellar type
 
-    // if starting stellar type was MS, check now for CH
-    if (utils::IsOneOf(startingStellarType, MAIN_SEQUENCE)) {                                                   // starting stellar type MS (won't be CH here)?
+    // If starting stellar type was MS, check now for CH
+    if (utils::IsOneOf(startingStellarType, MAIN_SEQUENCE)) {                                                   // Starting stellar type MS (won't be CH here)?
         // We now have a MS object upon which we can call functions necessary to check whether
         // we should switch to CH.
         //
         // If CHE is enabled and the ZAMS angular frequency of the star is greater than the
         // threshold for CHE to occur, we will switch the stellar type to CH, otherwise we leave
         // it at MS_LTE_07 or MS_GT_07.
-        if (OPTIONS->CHEMode() != CHE_MODE::NONE) {                                                             // yes - CHE enabled?
-                                                                                                                // yes           
-            if (angularFrequency >= MainSequence::CalculateCHEAngularFrequency(p_Mass, p_Metallicity)) {        // rotating fast enough to be CH?
-                startingStellarType = STELLAR_TYPE::CHEMICALLY_HOMOGENEOUS;                                     // yes - set starting stellar type to CH
+        if (OPTIONS->CHEMode() != CHE_MODE::NONE) {                                                             // Yes - CHE enabled?
+                                                                                                                // Yes           
+            if (angularFrequency >= MainSequence::CalculateCHEAngularFrequency(p_Mass, p_Metallicity)) {        // Rotating fast enough to be CH?
+                startingStellarType = STELLAR_TYPE::CHEMICALLY_HOMOGENEOUS;                                     // Yes - set starting stellar type to CH
             }
         }
     }
 
-    // switch stellar type to CH if necessary
+    // Switch stellar type to CH if necessary
     if (startingStellarType == STELLAR_TYPE::CHEMICALLY_HOMOGENEOUS) (void)SwitchTo(startingStellarType, true, true);
 
-    // thresholds flags for system snapshot output file
+    // Thresholds flags for system snapshot output file
     if (OPTIONS->SystemSnapshotAgeThresholds().size()  > 0) m_SystemSnapshotAgeFlags.assign(OPTIONS->SystemSnapshotAgeThresholds().size(), -1.0);
     if (OPTIONS->SystemSnapshotTimeThresholds().size() > 0) m_SystemSnapshotTimeFlags.assign(OPTIONS->SystemSnapshotTimeThresholds().size(), false);
 }
@@ -759,7 +759,7 @@ if (OPTIONS->DebugLevel() > 0) std::cout << "Star::Evolve(@3), m_Star->Dt() = " 
                 //        star oscillates around the threshold)
                 //    (b) we will print multiple records for exceeding the age threshold if the constituent stars exceed the age threshold
                 //        at different timesteps (likely)
-                for (size_t threshold = 0; threshold < OPTIONS->SystemSnapshotAgeThresholds().size(); threshold++) {// for each system detailed output age threshold
+                for (SizeT threshold = 0; threshold < OPTIONS->SystemSnapshotAgeThresholds().size(); threshold++) { // for each system detailed output age threshold
 
                     double thresholdValue = OPTIONS->SystemSnapshotAgeThresholds(threshold);                        // this threshold value
       
@@ -775,7 +775,7 @@ if (OPTIONS->DebugLevel() > 0) std::cout << "Star::Evolve(@3), m_Star->Dt() = " 
 
                 // time threshold
                 // we print a record at the first timestep that the simulation time exceeds the time threshold
-                for (size_t threshold = 0; threshold < OPTIONS->SystemSnapshotTimeThresholds().size(); threshold++) { // for each system snapshott time threshold
+                for (SizeT threshold = 0; threshold < OPTIONS->SystemSnapshotTimeThresholds().size(); threshold++) { // for each system snapshott time threshold
                     if (!m_SystemSnapshotTimeFlags[threshold] && m_Star->Time() >= OPTIONS->SystemSnapshotTimeThresholds(threshold)) { // need to action?
                         m_SystemSnapshotTimeFlags[threshold] = true;                                                // yes, flag action taken
                         printSystemSnapshotRec               = true;                                                // flag need to print (log) system snapshot record

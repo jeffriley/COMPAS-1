@@ -12,13 +12,13 @@
 
 // logfile file types
 enum class LOGFILETYPE: int { HDF5, CSV, TSV, TXT };                        // need this declared here so can declare the constant...
-const COMPASUnorderedMap<LOGFILETYPE, std::string> LOGFILETYPELabel = {     // file types
+const std::unordered_map<LOGFILETYPE, std::string> LOGFILETYPELabel = {     // file types
     { LOGFILETYPE::HDF5, "HDF5" },
     { LOGFILETYPE::CSV,  "CSV" },
     { LOGFILETYPE::TSV,  "TSV" },
     { LOGFILETYPE::TXT,  "TXT" }
 };
-const COMPASUnorderedMap<LOGFILETYPE, std::string> LOGFILETYPEFileExt = {   // file extensions
+const std::unordered_map<LOGFILETYPE, std::string> LOGFILETYPEFileExt = {   // file extensions
     { LOGFILETYPE::HDF5, "h5" },
     { LOGFILETYPE::CSV,  "csv" },
     { LOGFILETYPE::TSV,  "tsv" },
@@ -57,7 +57,7 @@ enum class TYPENAME: int {
 };
 // labels (long and short) for typenames
 // unordered_map - key is integer typename (from enum class TYPENAME above)
-const COMPASUnorderedMap<TYPENAME, STR_STR> TYPENAME_LABEL = {
+const std::unordered_map<TYPENAME, Str_StrT> TYPENAME_LABEL = {
     { TYPENAME::NONE,             { "NONE",                   "NONE"           }},
     { TYPENAME::BOOL,             { "BOOL",                   "BOOL"           }},
     { TYPENAME::SHORTINT,         { "SHORT INT",              "INT"            }},
@@ -172,7 +172,7 @@ enum class STRING_QUALIFIER: int { NONE, FIXED_LENGTH, VARIABLE_LENGTH };
     ECCENTRIC_ANOMALY,                               \
     ENV_MASS,                                        \
     ERROR,                                           \
-    EVOL_STATUS,                                     \
+    EVOLUTION_STATUS,                                \
     EXPERIENCED_AIC,                                 \
     EXPERIENCED_CCSN,                                \
     EXPERIENCED_HeSD,                                \
@@ -294,7 +294,7 @@ enum class STAR_PROPERTY: int { STAR_PROPERTIES };
 //
 // Properties only need to be here if they are required to be available for printing in the logfiles.
 // All keys present here should also be in the STAR_PROPERTIES #define and ANY_STAR_PROPERTY_DETAIL
-const COMPASUnorderedMap<STAR_PROPERTY, std::string> STAR_PROPERTY_LABEL = {
+const std::unordered_map<STAR_PROPERTY, std::string> STAR_PROPERTY_LABEL = {
     { STAR_PROPERTY::NONE,                                            "NONE" },
     { STAR_PROPERTY::AGE,                                             "AGE" },
     { STAR_PROPERTY::ANGULAR_MOMENTUM,                                "ANGULAR_MOMENTUM" },
@@ -324,7 +324,7 @@ const COMPASUnorderedMap<STAR_PROPERTY, std::string> STAR_PROPERTY_LABEL = {
     { STAR_PROPERTY::ECCENTRIC_ANOMALY,                               "ECCENTRIC_ANOMALY" },
     { STAR_PROPERTY::ENV_MASS,                                        "ENV_MASS" },
     { STAR_PROPERTY::ERROR,                                           "ERROR" },
-    { STAR_PROPERTY::EVOL_STATUS,                                     "EVOL_STATUS" },
+    { STAR_PROPERTY::EVOLUTION_STATUS,                                     "EVOLUTION_STATUS" },
     { STAR_PROPERTY::EXPERIENCED_AIC,                                 "EXPERIENCED_AIC" },
     { STAR_PROPERTY::EXPERIENCED_CCSN,                                "EXPERIENCED_CCSN" },
     { STAR_PROPERTY::EXPERIENCED_HeSD,                                "EXPERIENCED_HeSD" },
@@ -489,7 +489,7 @@ enum class BINARY_PROPERTY: int {
     ECCENTRICITY_PRE_SUPERNOVA,
     ECCENTRICITY_PRE_COMMON_ENVELOPE,
     ERROR,
-    EVOL_STATUS,
+    EVOLUTION_STATUS,
     ID,
     IMMEDIATE_RLOF_POST_COMMON_ENVELOPE,
     MASS_1_POST_COMMON_ENVELOPE,
@@ -632,7 +632,7 @@ enum class BINARY_PROPERTY: int {
 // Property names only need to be here if they are required to be available for 
 // printing in the logfiles - all keys present here should also be in BINARY_PROPERTY
 // and BINARY_PROPERTY_DETAIL
-const COMPASUnorderedMap<BINARY_PROPERTY, std::string> BINARY_PROPERTY_LABEL = {
+const std::unordered_map<BINARY_PROPERTY, std::string> BINARY_PROPERTY_LABEL = {
     { BINARY_PROPERTY::NONE,                                               "NONE" },
     { BINARY_PROPERTY::CIRCULARIZATION_TIMESCALE,                          "CIRCULARIZATION_TIMESCALE" },
     { BINARY_PROPERTY::COMMON_ENVELOPE_AT_LEAST_ONCE,                      "COMMON_ENVELOPE_AT_LEAST_ONCE" },
@@ -647,7 +647,7 @@ const COMPASUnorderedMap<BINARY_PROPERTY, std::string> BINARY_PROPERTY_LABEL = {
     { BINARY_PROPERTY::ECCENTRICITY_PRE_SUPERNOVA,                         "ECCENTRICITY_PRE_SUPERNOVA" },
     { BINARY_PROPERTY::ECCENTRICITY_PRE_COMMON_ENVELOPE,                   "ECCENTRICITY_PRE_COMMON_ENVELOPE" },
     { BINARY_PROPERTY::ERROR,                                              "ERROR" },
-    { BINARY_PROPERTY::EVOL_STATUS,                                        "EVOL_STATUS" },
+    { BINARY_PROPERTY::EVOLUTION_STATUS,                                        "EVOLUTION_STATUS" },
     { BINARY_PROPERTY::ID,                                                 "ID" },
     { BINARY_PROPERTY::IMMEDIATE_RLOF_POST_COMMON_ENVELOPE,                "IMMEDIATE_RLOF_POST_COMMON_ENVELOPE" },
     { BINARY_PROPERTY::MASS_1_POST_COMMON_ENVELOPE,                        "MASS_1_POST_COMMON_ENVELOPE" },
@@ -1028,7 +1028,7 @@ enum class PROGRAM_OPTION: int {
 // Options only need to be here if they are required to be
 // available for printing in the logfiles - all keys present here
 // should also be in PROGRAM_OPTION_DETAIL ( except PROGRAM_OPTION::NOTES)
-const COMPASUnorderedMap<PROGRAM_OPTION, std::string> PROGRAM_OPTION_LABEL = {
+const std::unordered_map<PROGRAM_OPTION, std::string> PROGRAM_OPTION_LABEL = {
 
     { PROGRAM_OPTION::NONE,                                             "NONE" },
 
@@ -1263,7 +1263,9 @@ typedef boost::variant<STAR_1_PROPERTY, STAR_2_PROPERTY, SUPERNOVA_PROPERTY, COM
 typedef boost::variant<STAR_1_PROPERTY, STAR_2_PROPERTY, SUPERNOVA_PROPERTY, COMPANION_PROPERTY,                BINARY_PROPERTY                > T_ANY_BINARY_PROPERTY;
 
 
-typedef std::vector<T_ANY_PROPERTY> ANY_PROPERTY_VECTOR;
+using _ANY_PROPERTY_VEC_  = std::vector<T_ANY_PROPERTY>;
+using _TYPENAME_VEC_      = std::vector<TYPENAME>;
+using _STR_QUALIFIER_VEC_ = std::vector<STRING_QUALIFIER>;
 
 
 class VariantPropertyType: public boost::static_visitor<ANY_PROPERTY_TYPE> {
@@ -1280,7 +1282,7 @@ public:
 
 // Property types
 enum class PROPERTY_TYPE: int { NONE, STAR_PROPERTY, STAR_1_PROPERTY, STAR_2_PROPERTY, SUPERNOVA_PROPERTY, COMPANION_PROPERTY, ANY_STAR_PROPERTY, BINARY_PROPERTY, PROGRAM_OPTION };
-const COMPASUnorderedMap<PROPERTY_TYPE, std::string> PROPERTY_TYPE_LABEL = {
+const std::unordered_map<PROPERTY_TYPE, std::string> PROPERTY_TYPE_LABEL = {
     { PROPERTY_TYPE::NONE,               "" },
     { PROPERTY_TYPE::STAR_PROPERTY,      "STAR_PROPERTY" },
     { PROPERTY_TYPE::STAR_1_PROPERTY,    "STAR_1_PROPERTY" },
@@ -1345,7 +1347,7 @@ const std::map<ANY_STAR_PROPERTY, PROPERTY_DETAILS> ANY_STAR_PROPERTY_DETAIL = {
     { ANY_STAR_PROPERTY::ECCENTRIC_ANOMALY,                                 { TYPENAME::DOUBLE,           "Eccentric_Anomaly",               "-",                24, 15}},
     { ANY_STAR_PROPERTY::ENV_MASS,                                          { TYPENAME::DOUBLE,           "Mass_Env",                        "Msol",             24, 15}},
     { ANY_STAR_PROPERTY::ERROR,                                             { TYPENAME::ERROR,            "Error",                           "-",                 4, 1 }},
-    { ANY_STAR_PROPERTY::EVOL_STATUS,                                       { TYPENAME::EVOLUTION_STATUS, "Evolution_Status",                "-",                 4, 1 }},
+    { ANY_STAR_PROPERTY::EVOLUTION_STATUS,                                       { TYPENAME::EVOLUTION_STATUS, "Evolution_Status",                "-",                 4, 1 }},
     { ANY_STAR_PROPERTY::EXPERIENCED_AIC,                                   { TYPENAME::BOOL,             "Experienced_AIC",                 "Event",             0, 0 }},
     { ANY_STAR_PROPERTY::EXPERIENCED_CCSN,                                  { TYPENAME::BOOL,             "Experienced_CCSN",                "Event",             0, 0 }},
     { ANY_STAR_PROPERTY::EXPERIENCED_HeSD,                                  { TYPENAME::BOOL,             "Experienced_HeSD",                "Event",             0, 0 }},
@@ -1475,7 +1477,7 @@ const std::map<BINARY_PROPERTY, PROPERTY_DETAILS> BINARY_PROPERTY_DETAIL = {
     { BINARY_PROPERTY::ECCENTRICITY_PRE_SUPERNOVA,                          { TYPENAME::DOUBLE,           "Eccentricity<SN",           "-",                24, 15}},
     { BINARY_PROPERTY::ECCENTRICITY_PRE_COMMON_ENVELOPE,                    { TYPENAME::DOUBLE,           "Eccentricity<CE",           "-",                24, 15}},
     { BINARY_PROPERTY::ERROR,                                               { TYPENAME::ERROR,            "Error",                     "-",                 4, 1 }},
-    { BINARY_PROPERTY::EVOL_STATUS,                                         { TYPENAME::EVOLUTION_STATUS, "Evolution_Status",          "-",                 4, 1 }},
+    { BINARY_PROPERTY::EVOLUTION_STATUS,                                         { TYPENAME::EVOLUTION_STATUS, "Evolution_Status",          "-",                 4, 1 }},
     { BINARY_PROPERTY::ID,                                                  { TYPENAME::OBJECT_ID,        "ID",                        "-",                12, 1 }},
     { BINARY_PROPERTY::IMMEDIATE_RLOF_POST_COMMON_ENVELOPE,                 { TYPENAME::BOOL,             "Immediate_RLOF>CE",         "Event",             0, 0 }},
     { BINARY_PROPERTY::MASS_1_POST_COMMON_ENVELOPE,                         { TYPENAME::DOUBLE,           "Mass(1)>CE",                "Msol",             24, 15}},
@@ -1972,7 +1974,7 @@ enum class RUN_DETAILS_COLUMNS: int { COMPAS_VERSION,
                                       ACTUAL_RANDOM_SEED,
                                       SENTINEL };
 
-const COMPASUnorderedMap<RUN_DETAILS_COLUMNS, std::tuple<std::string, TYPENAME, std::size_t>> RUN_DETAILS_DETAIL = {
+const std::unordered_map<RUN_DETAILS_COLUMNS, std::tuple<StrT, TYPENAME, SizeT>> RUN_DETAILS_DETAIL = {
     { RUN_DETAILS_COLUMNS::COMPAS_VERSION,      { "COMPAS-Version",                TYPENAME::STRING,    8 }},
     { RUN_DETAILS_COLUMNS::RUN_START,           { "Run-Start",                     TYPENAME::STRING,   24 }},
     { RUN_DETAILS_COLUMNS::RUN_END,             { "Run-End",                       TYPENAME::STRING,   24 }},
@@ -2356,7 +2358,7 @@ const ANY_PROPERTY_VECTOR BSE_SYSTEM_PARAMETERS_REC = {
     STAR_2_PROPERTY::STELLAR_TYPE,
     STAR_1_PROPERTY::CHEMICALLY_HOMOGENEOUS_MAIN_SEQUENCE,
     STAR_2_PROPERTY::CHEMICALLY_HOMOGENEOUS_MAIN_SEQUENCE,
-    BINARY_PROPERTY::EVOL_STATUS,
+    BINARY_PROPERTY::EVOLUTION_STATUS,
     BINARY_PROPERTY::ERROR,
     PROGRAM_OPTION::NOTES
 };
@@ -2548,7 +2550,7 @@ const ANY_PROPERTY_VECTOR SSE_SYSTEM_PARAMETERS_REC = {
     STAR_PROPERTY::SUPERNOVA_KICK_MAGNITUDE_RANDOM_NUMBER,
     STAR_PROPERTY::MASS,
     STAR_PROPERTY::CHEMICALLY_HOMOGENEOUS_MAIN_SEQUENCE,
-    STAR_PROPERTY::EVOL_STATUS,
+    STAR_PROPERTY::EVOLUTION_STATUS,
     STAR_PROPERTY::ERROR,
     PROGRAM_OPTION::KICK_MAGNITUDE_DISTRIBUTION_SIGMA_CCSN_NS,
     PROGRAM_OPTION::KICK_MAGNITUDE_DISTRIBUTION_SIGMA_CCSN_BH,

@@ -208,17 +208,17 @@ inline double CalculateCriticalMassRatio_Hurley2002() const                    {
                                     return m_Star->CalculateConvectiveEnvelopeBindingEnergy(p_TotalMass, p_Radius, p_ConvectiveEnvelopeMass, p_Lambda);
                                 }
 
-    inline double               CalculateConvectiveEnvelopeLambdaPicker(const DBL_DBL p_convectiveEnvelopeMass) const               { return m_Star->CalculateConvectiveEnvelopeLambdaPicker(p_convectiveEnvelopeMass); }
+    inline double               CalculateConvectiveEnvelopeLambda_Picker2024(const Dbl_DblT p_convectiveEnvelopeMass) const               { return m_Star->CalculateConvectiveEnvelopeLambda_Picker2024(p_convectiveEnvelopeMass); }
     
-    inline DBL_DBL              CalculateConvectiveEnvelopeMass()                                                                   { return m_Star->CalculateConvectiveEnvelopeMass(); }
+    inline Dbl_DblT             CalculateConvectiveEnvelopeMass()                                                                   { return m_Star->CalculateConvectiveEnvelopeMass(); }
     
     inline double               CalculateEddyTurnoverTimescale()                                                                    { return m_Star->CalculateEddyTurnoverTimescale(); }
     
-    inline DBL_DBL_DBL_DBL      CalculateImKnmDynamical(const double p_Omega, const double p_SemiMajorAxis, const double p_M2)      { return m_Star->CalculateImKnmDynamical(p_Omega, p_SemiMajorAxis, p_M2); }
-    inline DBL_DBL_DBL_DBL      CalculateImKnmEquilibrium(const double p_Omega, const double p_SemiMajorAxis, const double p_M2)    { return m_Star->CalculateImKnmEquilibrium(p_Omega, p_SemiMajorAxis, p_M2); }
-    inline DBL_DBL_DBL_DBL      CalculateImKnmTidal(const double p_Omega, const double p_SemiMajorAxis, const double p_M2)          { return m_Star->CalculateImKnmTidal(p_Omega, p_SemiMajorAxis, p_M2); }
+    inline Dbl_Dbl_Dbl_DblT     CalculateImKnmDynamical(const double p_Omega, const double p_SemiMajorAxis, const double p_M2)      { return m_Star->CalculateImKnmDynamical(p_Omega, p_SemiMajorAxis, p_M2); }
+    inline Dbl_Dbl_Dbl_DblT     CalculateImKnmEquilibrium(const double p_Omega, const double p_SemiMajorAxis, const double p_M2)    { return m_Star->CalculateImKnmEquilibrium(p_Omega, p_SemiMajorAxis, p_M2); }
+    inline Dbl_Dbl_Dbl_DblT     CalculateImKnmTidal(const double p_Omega, const double p_SemiMajorAxis, const double p_M2)          { return m_Star->CalculateImKnmTidal(p_Omega, p_SemiMajorAxis, p_M2); }
 
-    inline DBL_DBL              CalculateMassAcceptanceRate(const double p_DonorMassRate, const double p_AccretorMassRate, const bool p_IsHeRich) {
+    inline Dbl_DblT             CalculateMassAcceptanceRate(const double p_DonorMassRate, const double p_AccretorMassRate, const bool p_IsHeRich) {
                                     return m_Star->CalculateMassAcceptanceRate(p_DonorMassRate, p_AccretorMassRate, p_IsHeRich);
                                 }
 
@@ -246,7 +246,7 @@ inline double CalculateCriticalMassRatio_Hurley2002() const                    {
     inline double               CalculateThermalMassAcceptanceRate(const double p_Radius)                                           { return m_Star->CalculateThermalMassAcceptanceRate(p_Radius); }
     inline double               CalculateThermalMassAcceptanceRate()                                                                { return m_Star->CalculateThermalMassAcceptanceRate(); }
 
-    inline double               CalculateMLrateThermal() const                                                                { return m_Star->CalculateMLrateThermal(); }
+    inline double               CalculateMLRateThermal() const                                                                { return m_Star->CalculateMLRateThermal(); }
 
     inline double               CalculateTimescale_Thermal(const double p_Mass, const double p_Radius, const double p_CoreMass) const { return m_Star->CalculateTimescale_Thermal(p_Radius); }
 

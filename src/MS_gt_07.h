@@ -44,7 +44,7 @@ private:
             m_InitialMainSequenceCoreMass = CalculateCNOprocessedCoreMassAtZAMS_Shikauchi2024(m_MZAMS);
             m_MainSequenceCoreMass        = m_InitialMainSequenceCoreMass;
             m_Luminosity                  = MainSequence::CalculateLuminosityOnPhase(m_Age, m_Mass0, BaseStar::CalculateLuminosityAtZAMS(m_Mass0));
-            m_Radius                      = MainSequence::CalculateRadiusOnPhase(m_Mass, m_Tau, m_RZAMS0);
+            m_Radius                      = MainSequence::CalculateRadius();
             m_Temperature                 = BaseStar::CalculateTemperatureOnPhase(m_Luminosity, m_Radius);
         }
     }

@@ -374,37 +374,37 @@ using std::string;
  * it using the format string constructed here specifically for the underlying primitive type.
  *
  */
-class FormatVariantValue: public boost::static_visitor<string> {
+class FormatVariantValue: public boost::static_visitor<StrT> {
 public:
-    string operator()(const bool                   v, const string fmtStr) const {
-                                                      string fmt = OPTIONS->PrintBoolAsString() ? "%5s" : "%1s";
-                                                      string vS  = OPTIONS->PrintBoolAsString() ? (v ? "TRUE " : "FALSE") : (v ? "1" : "0");
-                                                      return utils::vFormat(fmt.c_str(), vS.c_str());
-                                                   }
-    string operator()(const int                    v, const string fmtStr) const { string fmt = fmtStr; fmt = "%"  + fmt + "d"; return utils::vFormat(fmt.c_str(), v); }
-    string operator()(const short int              v, const string fmtStr) const { string fmt = fmtStr; fmt = "%"  + fmt + "d"; return utils::vFormat(fmt.c_str(), v); }
-    string operator()(const long int               v, const string fmtStr) const { string fmt = fmtStr; fmt = "%"  + fmt + "d"; return utils::vFormat(fmt.c_str(), v); }
-    string operator()(const long long int          v, const string fmtStr) const { string fmt = fmtStr; fmt = "%"  + fmt + "d"; return utils::vFormat(fmt.c_str(), v); }
-    string operator()(const unsigned int           v, const string fmtStr) const { string fmt = fmtStr; fmt = "%"  + fmt + "u"; return utils::vFormat(fmt.c_str(), v); }
-    string operator()(const unsigned short int     v, const string fmtStr) const { string fmt = fmtStr; fmt = "%"  + fmt + "u"; return utils::vFormat(fmt.c_str(), v); }
-    string operator()(const unsigned long int      v, const string fmtStr) const { string fmt = fmtStr; fmt = "%"  + fmt + "u"; return utils::vFormat(fmt.c_str(), v); } // also handles OBJECT_ID (typedef)
-    string operator()(const unsigned long long int v, const string fmtStr) const { string fmt = fmtStr; fmt = "%"  + fmt + "u"; return utils::vFormat(fmt.c_str(), v); }
-    string operator()(const float                  v, const string fmtStr) const { string fmt = fmtStr; fmt = "%"  + fmt + "f"; return utils::vFormat(fmt.c_str(), v); }
-    string operator()(const double                 v, const string fmtStr) const { string fmt = fmtStr; fmt = "%"  + fmt + "f"; return utils::vFormat(fmt.c_str(), v); }
-    string operator()(const long double            v, const string fmtStr) const { string fmt = fmtStr; fmt = "%"  + fmt + "f"; return utils::vFormat(fmt.c_str(), v); }
-    string operator()(const string                 v, const string fmtStr) const { string fmt = fmtStr; fmt = "%-" + fmt + "s"; return utils::vFormat(fmt.c_str(), v.c_str()); }
-    string operator()(const ERROR                  v, const string fmtStr) const { string fmt = fmtStr; fmt = "%"  + fmt + "d"; return utils::vFormat(fmt.c_str(), static_cast<int>(v)); }
-    string operator()(const STELLAR_TYPE           v, const string fmtStr) const { string fmt = fmtStr; fmt = "%"  + fmt + "d"; return utils::vFormat(fmt.c_str(), static_cast<int>(v)); }
-    string operator()(const MT_CASE                v, const string fmtStr) const { string fmt = fmtStr; fmt = "%"  + fmt + "d"; return utils::vFormat(fmt.c_str(), static_cast<int>(v)); }
-    string operator()(const MT_TRACKING            v, const string fmtStr) const { string fmt = fmtStr; fmt = "%"  + fmt + "d"; return utils::vFormat(fmt.c_str(), static_cast<int>(v)); }
-    string operator()(const MT_TIMESCALE           v, const string fmtStr) const { string fmt = fmtStr; fmt = "%"  + fmt + "d"; return utils::vFormat(fmt.c_str(), static_cast<int>(v)); }
-    string operator()(const SN_EVENT               v, const string fmtStr) const { string fmt = fmtStr; fmt = "%"  + fmt + "d"; return utils::vFormat(fmt.c_str(), static_cast<int>(v)); }
-    string operator()(const SN_STATE               v, const string fmtStr) const { string fmt = fmtStr; fmt = "%"  + fmt + "d"; return utils::vFormat(fmt.c_str(), static_cast<int>(v)); }
-    string operator()(const EVOLUTION_STATUS       v, const string fmtStr) const { string fmt = fmtStr; fmt = "%"  + fmt + "d"; return utils::vFormat(fmt.c_str(), static_cast<int>(v)); }
-    string operator()(const STR_VECTOR             v, const string fmtStr) const { string fmt = fmtStr; fmt = "%-" + fmt + "s"; return utils::vFormat(fmt.c_str(), v[0].c_str()); }
-    string operator()(const STR_VECTOR             v, const string fmtStr, const size_t idx) const { string fmt = fmtStr; fmt = "%-" + fmt + "s"; return utils::vFormat(fmt.c_str(), v[idx].c_str()); }
-    string operator()(const DBL_VECTOR             v, const string fmtStr) const { string fmt = fmtStr; fmt = "%"  + fmt + "f"; return utils::vFormat(fmt.c_str(), v[0]); }
-    string operator()(const DBL_VECTOR             v, const string fmtStr, const size_t idx) const { string fmt = fmtStr; fmt = "%"  + fmt + "f"; return utils::vFormat(fmt.c_str(), v[idx]); }
+    StrT operator()(const bool             v, const StrT fmtStr) const {
+                                                StrT fmt = OPTIONS->PrintBoolAsString() ? "%5s" : "%1s";
+                                                StrT vS  = OPTIONS->PrintBoolAsString() ? (v ? "TRUE " : "FALSE") : (v ? "1" : "0");
+                                                return utils::vFormat(fmt.c_str(), vS.c_str());
+                                              }
+    StrT operator()(const int              v, const StrT fmtStr) const { StrT fmt = fmtStr; fmt = "%"  + fmt + "d"; return utils::vFormat(fmt.c_str(), v); }
+    StrT operator()(const ShortT           v, const StrT fmtStr) const { StrT fmt = fmtStr; fmt = "%"  + fmt + "d"; return utils::vFormat(fmt.c_str(), v); }
+    StrT operator()(const LongT            v, const StrT fmtStr) const { StrT fmt = fmtStr; fmt = "%"  + fmt + "d"; return utils::vFormat(fmt.c_str(), v); }
+    StrT operator()(const Long_LongT       v, const StrT fmtStr) const { StrT fmt = fmtStr; fmt = "%"  + fmt + "d"; return utils::vFormat(fmt.c_str(), v); }
+    StrT operator()(const UIntT            v, const StrT fmtStr) const { StrT fmt = fmtStr; fmt = "%"  + fmt + "u"; return utils::vFormat(fmt.c_str(), v); }
+    StrT operator()(const UShortT          v, const StrT fmtStr) const { StrT fmt = fmtStr; fmt = "%"  + fmt + "u"; return utils::vFormat(fmt.c_str(), v); }
+    StrT operator()(const ULongT           v, const StrT fmtStr) const { StrT fmt = fmtStr; fmt = "%"  + fmt + "u"; return utils::vFormat(fmt.c_str(), v); } // also handles OBJECT_ID (typedef)
+    StrT operator()(const ULong_LongT      v, const StrT fmtStr) const { StrT fmt = fmtStr; fmt = "%"  + fmt + "u"; return utils::vFormat(fmt.c_str(), v); }
+    StrT operator()(const float            v, const StrT fmtStr) const { StrT fmt = fmtStr; fmt = "%"  + fmt + "f"; return utils::vFormat(fmt.c_str(), v); }
+    StrT operator()(const double           v, const StrT fmtStr) const { StrT fmt = fmtStr; fmt = "%"  + fmt + "f"; return utils::vFormat(fmt.c_str(), v); }
+    StrT operator()(const LongDblT         v, const StrT fmtStr) const { StrT fmt = fmtStr; fmt = "%"  + fmt + "f"; return utils::vFormat(fmt.c_str(), v); }
+    StrT operator()(const StrT             v, const StrT fmtStr) const { StrT fmt = fmtStr; fmt = "%-" + fmt + "s"; return utils::vFormat(fmt.c_str(), v.c_str()); }
+    StrT operator()(const ERROR            v, const StrT fmtStr) const { StrT fmt = fmtStr; fmt = "%"  + fmt + "d"; return utils::vFormat(fmt.c_str(), static_cast<int>(v)); }
+    StrT operator()(const STELLAR_TYPE     v, const StrT fmtStr) const { StrT fmt = fmtStr; fmt = "%"  + fmt + "d"; return utils::vFormat(fmt.c_str(), static_cast<int>(v)); }
+    StrT operator()(const MT_CASE          v, const StrT fmtStr) const { StrT fmt = fmtStr; fmt = "%"  + fmt + "d"; return utils::vFormat(fmt.c_str(), static_cast<int>(v)); }
+    StrT operator()(const MT_TRACKING      v, const StrT fmtStr) const { StrT fmt = fmtStr; fmt = "%"  + fmt + "d"; return utils::vFormat(fmt.c_str(), static_cast<int>(v)); }
+    StrT operator()(const MT_TIMESCALE     v, const StrT fmtStr) const { StrT fmt = fmtStr; fmt = "%"  + fmt + "d"; return utils::vFormat(fmt.c_str(), static_cast<int>(v)); }
+    StrT operator()(const SN_EVENT         v, const StrT fmtStr) const { StrT fmt = fmtStr; fmt = "%"  + fmt + "d"; return utils::vFormat(fmt.c_str(), static_cast<int>(v)); }
+    StrT operator()(const SN_STATE         v, const StrT fmtStr) const { StrT fmt = fmtStr; fmt = "%"  + fmt + "d"; return utils::vFormat(fmt.c_str(), static_cast<int>(v)); }
+    StrT operator()(const EVOLUTION_STATUS v, const StrT fmtStr) const { StrT fmt = fmtStr; fmt = "%"  + fmt + "d"; return utils::vFormat(fmt.c_str(), static_cast<int>(v)); }
+    StrT operator()(const StrVectorT       v, const StrT fmtStr) const { StrT fmt = fmtStr; fmt = "%-" + fmt + "s"; return utils::vFormat(fmt.c_str(), v[0].c_str()); }
+    StrT operator()(const StrVectorT       v, const StrT fmtStr, const SizeT idx) const { StrT fmt = fmtStr; fmt = "%-" + fmt + "s"; return utils::vFormat(fmt.c_str(), v[idx].c_str()); }
+    StrT operator()(const DblVectorT       v, const StrT fmtStr) const { StrT fmt = fmtStr; fmt = "%"  + fmt + "f"; return utils::vFormat(fmt.c_str(), v[0]); }
+    StrT operator()(const DblvectorT       v, const StrT fmtStr, const SizeT idx) const { StrT fmt = fmtStr; fmt = "%"  + fmt + "f"; return utils::vFormat(fmt.c_str(), v[idx]); }
 };
 
 
@@ -419,37 +419,37 @@ public:
  * it using a type-based default format specification.
  *
  */
-class FormatVariantValueDefault: public boost::static_visitor<string> {
+class FormatVariantValueDefault: public boost::static_visitor<StrT> {
 public:
-    string operator()(const bool                   v) const {
-                                                      string fmt = OPTIONS->PrintBoolAsString() ? "%5s" : "%1s";
-                                                      string vS  = OPTIONS->PrintBoolAsString() ? (v ? "TRUE " : "FALSE") : (v ? "1" : "0");
-                                                      return utils::vFormat(fmt.c_str(), vS.c_str());
-                                                   }
-    string operator()(const int                    v) const { string fmt = "%14.1d"; return utils::vFormat(fmt.c_str(), v); }
-    string operator()(const short int              v) const { string fmt = "%14.1d"; return utils::vFormat(fmt.c_str(), v); }
-    string operator()(const long int               v) const { string fmt = "%14.1d"; return utils::vFormat(fmt.c_str(), v); }
-    string operator()(const long long int          v) const { string fmt = "%28.1d"; return utils::vFormat(fmt.c_str(), v); }
-    string operator()(const unsigned int           v) const { string fmt = "%14.1u"; return utils::vFormat(fmt.c_str(), v); }
-    string operator()(const unsigned short int     v) const { string fmt = "%14.1u"; return utils::vFormat(fmt.c_str(), v); }
-    string operator()(const unsigned long int      v) const { string fmt = "%14.1u"; return utils::vFormat(fmt.c_str(), v); } // also handles OBJECT_ID (typedef)
-    string operator()(const unsigned long long int v) const { string fmt = "%28.1u"; return utils::vFormat(fmt.c_str(), v); }
-    string operator()(const float                  v) const { string fmt = "%16.8e"; return utils::vFormat(fmt.c_str(), v); }
-    string operator()(const double                 v) const { string fmt = "%16.8e"; return utils::vFormat(fmt.c_str(), v); }
-    string operator()(const long double            v) const { string fmt = "%16.8e"; return utils::vFormat(fmt.c_str(), v); }
-    string operator()(const string                 v) const { string fmt = "%-30s";  return utils::vFormat(fmt.c_str(), v.c_str()); }
-    string operator()(const ERROR                  v) const { string fmt = "%14.1d"; return utils::vFormat(fmt.c_str(), static_cast<int>(v)); }
-    string operator()(const STELLAR_TYPE           v) const { string fmt = "%14.1d"; return utils::vFormat(fmt.c_str(), static_cast<int>(v)); }
-    string operator()(const MT_CASE                v) const { string fmt = "%14.1d"; return utils::vFormat(fmt.c_str(), static_cast<int>(v)); }
-    string operator()(const MT_TRACKING            v) const { string fmt = "%14.1d"; return utils::vFormat(fmt.c_str(), static_cast<int>(v)); }
-    string operator()(const MT_TIMESCALE           v) const { string fmt = "%14.1d"; return utils::vFormat(fmt.c_str(), static_cast<int>(v)); }
-    string operator()(const SN_EVENT               v) const { string fmt = "%14.1d"; return utils::vFormat(fmt.c_str(), static_cast<int>(v)); }
-    string operator()(const SN_STATE               v) const { string fmt = "%14.1d"; return utils::vFormat(fmt.c_str(), static_cast<int>(v)); }
-    string operator()(const EVOLUTION_STATUS       v) const { string fmt = "%14.1d"; return utils::vFormat(fmt.c_str(), static_cast<int>(v)); }
-    string operator()(const STR_VECTOR             v) const { string fmt = "%-30s"; return utils::vFormat(fmt.c_str(), v[0].c_str()); }
-    string operator()(const STR_VECTOR             v, const size_t idx) const { string fmt ="%-30s"; return utils::vFormat(fmt.c_str(), v[idx].c_str()); }
-    string operator()(const DBL_VECTOR             v) const { string fmt = "%16.8e"; return utils::vFormat(fmt.c_str(), v[0]); }
-    string operator()(const DBL_VECTOR             v, const size_t idx) const { string fmt = "%16.8e"; return utils::vFormat(fmt.c_str(), v[idx]); }
+    StrT operator()(const bool             v) const {
+                                                StrT fmt = OPTIONS->PrintBoolAsString() ? "%5s" : "%1s";
+                                                StrT vS  = OPTIONS->PrintBoolAsString() ? (v ? "TRUE " : "FALSE") : (v ? "1" : "0");
+                                                return utils::vFormat(fmt.c_str(), vS.c_str());
+                                              }
+    StrT operator()(const int              v) const { StrT fmt = "%14.1d"; return utils::vFormat(fmt.c_str(), v); }
+    StrT operator()(const ShortT           v) const { StrT fmt = "%14.1d"; return utils::vFormat(fmt.c_str(), v); }
+    StrT operator()(const LongT            v) const { StrT fmt = "%14.1d"; return utils::vFormat(fmt.c_str(), v); }
+    StrT operator()(const Long_LongT       v) const { StrT fmt = "%28.1d"; return utils::vFormat(fmt.c_str(), v); }
+    StrT operator()(const UIntT            v) const { StrT fmt = "%14.1u"; return utils::vFormat(fmt.c_str(), v); }
+    StrT operator()(const UShortT          v) const { StrT fmt = "%14.1u"; return utils::vFormat(fmt.c_str(), v); }
+    StrT operator()(const ULongT           v) const { StrT fmt = "%14.1u"; return utils::vFormat(fmt.c_str(), v); } // also handles OBJECT_ID (typedef)
+    StrT operator()(const ULong_LongT      v) const { StrT fmt = "%28.1u"; return utils::vFormat(fmt.c_str(), v); }
+    StrT operator()(const float            v) const { StrT fmt = "%16.8e"; return utils::vFormat(fmt.c_str(), v); }
+    StrT operator()(const double           v) const { StrT fmt = "%16.8e"; return utils::vFormat(fmt.c_str(), v); }
+    StrT operator()(const LongDblT         v) const { StrT fmt = "%16.8e"; return utils::vFormat(fmt.c_str(), v); }
+    StrT operator()(const StrT             v) const { StrT fmt = "%-30s";  return utils::vFormat(fmt.c_str(), v.c_str()); }
+    StrT operator()(const ERROR            v) const { StrT fmt = "%14.1d"; return utils::vFormat(fmt.c_str(), static_cast<int>(v)); }
+    StrT operator()(const STELLAR_TYPE     v) const { StrT fmt = "%14.1d"; return utils::vFormat(fmt.c_str(), static_cast<int>(v)); }
+    StrT operator()(const MT_CASE          v) const { StrT fmt = "%14.1d"; return utils::vFormat(fmt.c_str(), static_cast<int>(v)); }
+    StrT operator()(const MT_TRACKING      v) const { StrT fmt = "%14.1d"; return utils::vFormat(fmt.c_str(), static_cast<int>(v)); }
+    StrT operator()(const MT_TIMESCALE     v) const { StrT fmt = "%14.1d"; return utils::vFormat(fmt.c_str(), static_cast<int>(v)); }
+    StrT operator()(const SN_EVENT         v) const { StrT fmt = "%14.1d"; return utils::vFormat(fmt.c_str(), static_cast<int>(v)); }
+    StrT operator()(const SN_STATE         v) const { StrT fmt = "%14.1d"; return utils::vFormat(fmt.c_str(), static_cast<int>(v)); }
+    StrT operator()(const EVOLUTION_STATUS v) const { StrT fmt = "%14.1d"; return utils::vFormat(fmt.c_str(), static_cast<int>(v)); }
+    StrT operator()(const StrVectorT       v) const { StrT fmt = "%-30s"; return utils::vFormat(fmt.c_str(), v[0].c_str()); }
+    StrT operator()(const StrVectorT       v, const SizeT idx) const { StrT fmt ="%-30s"; return utils::vFormat(fmt.c_str(), v[idx].c_str()); }
+    StrT operator()(const DblVectorT       v) const { StrT fmt = "%16.8e"; return utils::vFormat(fmt.c_str(), v[0]); }
+    StrT operator()(const DblvectorT       v, const SizeT idx) const { StrT fmt = "%16.8e"; return utils::vFormat(fmt.c_str(), v[idx]); }
 };
 
 
@@ -497,21 +497,21 @@ private:
     // member variables
     bool                        m_Enabled;                                          // is logging enabled?
 
-    string                      m_HDF5ContainerName;                                // HDF5 container name
+    StrT                        m_HDF5ContainerName;                                // HDF5 container name
     hid_t                       m_HDF5ContainerId;                                  // HDF5 container id
     hid_t                       m_HDF5DetailedId;                                   // HDF5 detailed output id
 
-    string                      m_LogBasePathString;                                // base path string for log files
-    STR_VECTOR                  m_LogPathsCreated;                                  // vector of directories created for logging (may be empty if pre-existing)
-    string                      m_LogContainerName;                                 // container (directory) name for log files
-    string                      m_LogNamePrefix;                                    // prefix for log files
+    StrT                        m_LogBasePathString;                                // base path string for log files
+    StrVectorT                  m_LogPathsCreated;                                  // vector of directories created for logging (may be empty if pre-existing)
+    StrT                        m_LogContainerName;                                 // container (directory) name for log files
+    StrT                        m_LogNamePrefix;                                    // prefix for log files
 
     LOGFILETYPE                 m_LogfileType;                                      // logfile type
     int                         m_LogLevel;                                         // log level
-    std::vector <string>        m_LogClasses;                                       // log classes
+    StrVectorT                  m_LogClasses;                                       // log classes
 
     int                         m_DbgLevel;                                         // debug level
-    std::vector <string>        m_DbgClasses;                                       // debug classes
+    StrvectorT                  m_DbgClasses;                                       // debug classes
 
     bool                        m_DbgToLogfile;                                     // log debug records to log file?
     int                         m_DbgLogfileId;                                     // log file id of file to which debug statements should be written
@@ -526,8 +526,8 @@ private:
         hid_t   fileId;                                                             //    - file id
         hid_t   groupId;                                                            //    - group id
 
-        size_t  chunkSize;                                                          //    - chunk size
-        size_t  IOBufSize;                                                          //    - IO buffer size
+        SizeT  chunkSize;                                                           //    - chunk size
+        SizeT  IOBufSize;                                                           //    - IO buffer size
 
         struct h5DataSetsT {                                                        // attributes of HDF5 datasets
             hid_t                  dataSetId;                                       //    - HDF5 dataset id
@@ -557,7 +557,7 @@ private:
 
     h5AttrT m_Run_Details_H5_File;                                                  // HDF5 attributes for run details in HDF5 container
 
-    COMPASUnorderedMap<LOGFILE, LogfileDetailsT> m_OpenStandardLogFileIds;          // currently open standard logfiles: id, filename, property details, field format strings
+    std::unordered_map<LOGFILE, LogfileDetailsT> m_OpenStandardLogFileIds;          // currently open standard logfiles: id, filename, property details, field format strings
 
     // logfile record specifications
     // BSE
@@ -594,23 +594,23 @@ private:
     // has the right defaults when processing any log definitions file.
 
     // BSE
-    BOOL_VECTOR m_BSE_CEE_Notes          = BOOL_VECTOR(OPTIONS->NotesHdrs().size(), false);
-    BOOL_VECTOR m_BSE_DCO_Notes          = BOOL_VECTOR(OPTIONS->NotesHdrs().size(), false);
-    BOOL_VECTOR m_BSE_Detailed_Notes     = BOOL_VECTOR(OPTIONS->NotesHdrs().size(), false);
-    BOOL_VECTOR m_BSE_Pulsars_Notes      = BOOL_VECTOR(OPTIONS->NotesHdrs().size(), false);
-    BOOL_VECTOR m_BSE_RLOF_Notes         = BOOL_VECTOR(OPTIONS->NotesHdrs().size(), false);
-    BOOL_VECTOR m_BSE_SNE_Notes          = BOOL_VECTOR(OPTIONS->NotesHdrs().size(), false);
-    BOOL_VECTOR m_BSE_Switch_Notes       = BOOL_VECTOR(OPTIONS->NotesHdrs().size(), false);
-    BOOL_VECTOR m_BSE_SysParms_Notes     = BOOL_VECTOR(OPTIONS->NotesHdrs().size(), false);
-    BOOL_VECTOR m_BSE_Sys_Snapshot_Notes = BOOL_VECTOR(OPTIONS->NotesHdrs().size(), false);
+    BoolVectorT m_BSE_CEE_Notes          = BoolVectorT(OPTIONS->NotesHdrs().size(), false);
+    BoolVectorT m_BSE_DCO_Notes          = BoolVectorT(OPTIONS->NotesHdrs().size(), false);
+    BoolVectorT m_BSE_Detailed_Notes     = BoolVectorT(OPTIONS->NotesHdrs().size(), false);
+    BoolVectorT m_BSE_Pulsars_Notes      = BoolVectorT(OPTIONS->NotesHdrs().size(), false);
+    BoolVectorT m_BSE_RLOF_Notes         = BoolVectorT(OPTIONS->NotesHdrs().size(), false);
+    BoolVectorT m_BSE_SNE_Notes          = BoolVectorT(OPTIONS->NotesHdrs().size(), false);
+    BoolVectorT m_BSE_Switch_Notes       = BoolVectorT(OPTIONS->NotesHdrs().size(), false);
+    BoolVectorT m_BSE_SysParms_Notes     = BoolVectorT(OPTIONS->NotesHdrs().size(), false);
+    BoolVectorT m_BSE_Sys_Snapshot_Notes = BoolVectorT(OPTIONS->NotesHdrs().size(), false);
 
     // SSE
-    BOOL_VECTOR m_SSE_Detailed_Notes     = BOOL_VECTOR(OPTIONS->NotesHdrs().size(), false);
-    BOOL_VECTOR m_SSE_Pulsars_Notes      = BOOL_VECTOR(OPTIONS->NotesHdrs().size(), false);
-    BOOL_VECTOR m_SSE_SNE_Notes          = BOOL_VECTOR(OPTIONS->NotesHdrs().size(), false);
-    BOOL_VECTOR m_SSE_Switch_Notes       = BOOL_VECTOR(OPTIONS->NotesHdrs().size(), false);
-    BOOL_VECTOR m_SSE_SysParms_Notes     = BOOL_VECTOR(OPTIONS->NotesHdrs().size(), false);
-    BOOL_VECTOR m_SSE_Sys_Snapshot_Notes = BOOL_VECTOR(OPTIONS->NotesHdrs().size(), false);
+    BoolVectorT m_SSE_Detailed_Notes     = BoolVectorT(OPTIONS->NotesHdrs().size(), false);
+    BoolVectorT m_SSE_Pulsars_Notes      = BoolVectorT(OPTIONS->NotesHdrs().size(), false);
+    BoolVectorT m_SSE_SNE_Notes          = BoolVectorT(OPTIONS->NotesHdrs().size(), false);
+    BoolVectorT m_SSE_Switch_Notes       = BoolVectorT(OPTIONS->NotesHdrs().size(), false);
+    BoolVectorT m_SSE_SysParms_Notes     = BoolVectorT(OPTIONS->NotesHdrs().size(), false);
+    BoolVectorT m_SSE_Sys_Snapshot_Notes = BoolVectorT(OPTIONS->NotesHdrs().size(), false);
 
     // the following block of variables support the BSE Switch Log file
     
@@ -673,7 +673,7 @@ private:
     void Say_(const string p_SayStr);
     bool Write_(const int p_LogfileId, const string p_LogStr);
     bool Write_(const int p_LogfileId, const COMPAS_VARIABLE_VECTOR p_LogRecordValues, const bool p_Flush = false);
-    bool WriteHDF5_(h5AttrT& p_H5file, const string p_H5filename, const size_t p_DataSetIdx);
+    bool WriteHDF5_(h5AttrT& p_H5file, const string p_H5filename, const SizeT p_DataSetIdx);
     bool Flush_(const int p_LogfileId) { return Write_(p_LogfileId, {}, true); }
     bool Put_(const int p_LogfileId, const string p_LogStr, const string p_Label = "");
     bool Put_(const int p_LogfileId, const COMPAS_VARIABLE_VECTOR p_LogRecordValues);
@@ -682,15 +682,15 @@ private:
 
     PROPERTY_DETAILS StellarPropertyDetails(const ANY_STAR_PROPERTY p_Property);
     PROPERTY_DETAILS BinaryPropertyDetails(const BINARY_PROPERTY p_Property);
-    PROPERTY_DETAILS ProgramOptionDetails(const PROGRAM_OPTION p_Property, const size_t p_Idx = 0);
-    STR_STR_STR_STR  FormatFieldHeaders(const PROPERTY_DETAILS p_Details, string p_HeaderSuffix = "");
+    PROPERTY_DETAILS ProgramOptionDetails(const PROGRAM_OPTION p_Property, const SizeT p_Idx = 0);
+    Str_Str_Str_StrT FormatFieldHeaders(const PROPERTY_DETAILS p_Details, string p_HeaderSuffix = "");
     LogfileDetailsT  StandardLogFileDetails(const LOGFILE p_Logfile, const string p_FileSuffix = "");
 
     std::tuple<bool, LOGFILE> GetLogfileDescriptorKey(const string p_Value);
     std::tuple<bool, LOGFILE> GetStandardLogfileKey(const int p_FileId);
 
     bool  OpenHDF5RunDetailsFile(const string p_Filename = RUN_DETAILS_FILE_NAME);
-    hid_t CreateHDF5Dataset(const string p_Filename, const hid_t p_GroupId, const string p_DatasetName, const hid_t p_H5DataType, const string p_UnitsStr, const size_t p_HDF5ChunkSize);
+    hid_t CreateHDF5Dataset(const string p_Filename, const hid_t p_GroupId, const string p_DatasetName, const hid_t p_H5DataType, const string p_UnitsStr, const SizeT p_HDF5ChunkSize);
     hid_t GetHDF5DataType(const TYPENAME p_COMPASdatatype, const int p_FieldWidth, const STRING_QUALIFIER p_StringQualifier = STRING_QUALIFIER::FIXED_LENGTH);
 
     bool NotesPropertyPresent(const ANY_PROPERTY_VECTOR p_RecordProperties) { return std::find(p_RecordProperties.begin(), p_RecordProperties.end(), T_ANY_PROPERTY(PROGRAM_OPTION::NOTES)) != p_RecordProperties.end(); }
@@ -714,15 +714,15 @@ private:
      * 
      *
      * template <class T1, typename T2>
-     * std::tuple<std::string, COMPAS_VARIABLE_VECTOR> GetLogStandardRecord(const LOGFILE             p_LogFile,
-     *                                                                      const LOGRECORDTYPE       p_RecordType,
-     *                                                                      const T1* const           p_Star,
-     *                                                                      const ANY_PROPERTY_VECTOR p_RecordProperties,
-     *                                                                      const STR_VECTOR          p_FmtVector,
-     *                                                                      const BOOL_VECTOR         p_Annotations,
-     *                                                                      const bool                p_UseSpecifiedValue,
-     *                                                                      const ANY_STAR_PROPERTY   p_SpecifiedProperty,
-     *                                                                      const T2                  p_SpecifiedPropertyValue)
+     * std::tuple<StrT, COMPAS_VARIABLE_VECTOR> GetLogStandardRecord(const LOGFILE             p_LogFile,
+     *                                                               const LOGRECORDTYPE       p_RecordType,
+     *                                                               const T1* const           p_Star,
+     *                                                               const ANY_PROPERTY_VECTOR p_RecordProperties,
+     *                                                               const StrVectorT          p_FmtVector,
+     *                                                               const BoolvectorT         p_Annotations,
+     *                                                               const bool                p_UseSpecifiedValue,
+     *                                                               const ANY_STAR_PROPERTY   p_SpecifiedProperty,
+     *                                                               const T2                  p_SpecifiedPropertyValue)
      *
      * @param   [IN]    p_LogFile                   The logfile for which the record should be constructed
      * @param   [IN]    p_RecordType                The logfile record type
@@ -740,15 +740,15 @@ private:
      *                                                  - Vector of property values - empty vector if an error occurred
      */
     template <class T1, typename T2>
-    std::tuple<std::string, COMPAS_VARIABLE_VECTOR> GetLogStandardRecord(const LOGFILE             p_LogFile,
-                                                                         const LOGRECORDTYPE       p_RecordType,
-                                                                         const T1* const           p_Star,
-                                                                         const ANY_PROPERTY_VECTOR p_RecordProperties,
-                                                                         const STR_VECTOR          p_FmtVector,
-                                                                         const BOOL_VECTOR         p_Annotations,
-                                                                         const bool                p_UseSpecifiedValue,
-                                                                         const ANY_STAR_PROPERTY   p_SpecifiedProperty,
-                                                                         const T2                  p_SpecifiedPropertyValue) {
+    std::tuple<StrT, COMPAS_VARIABLE_VECTOR> GetLogStandardRecord(const LOGFILE             p_LogFile,
+                                                                  const LOGRECORDTYPE       p_RecordType,
+                                                                  const T1* const           p_Star,
+                                                                  const ANY_PROPERTY_VECTOR p_RecordProperties,
+                                                                  const StrVectorT          p_FmtVector,
+                                                                  const BoolvectorT         p_Annotations,
+                                                                  const bool                p_UseSpecifiedValue,
+                                                                  const ANY_STAR_PROPERTY   p_SpecifiedProperty,
+                                                                  const T2                  p_SpecifiedPropertyValue) {
 
         bool ok = true;                                                                                                         // initially
 
@@ -756,11 +756,11 @@ private:
 
         // construct log record from current data
 
-        string logRecord = "";                                                                                                  // for CSV, TSV, TXT files: the record to be written to the log file
+        StrT logRecord = "";                                                                                                    // for CSV, TSV, TXT files: the record to be written to the log file
         COMPAS_VARIABLE_VECTOR logRecordValues = {};                                                                            // for HDF5 files: vector of values to be written
                                                              
         // set delimiter based on logfile type
-        string delimiter = "";                                                                                                  // default
+        StrT delimiter = "";                                                                                                    // default
         switch (OPTIONS->LogfileType()) {
             case LOGFILETYPE::HDF5: delimiter = ""; break;                                                                      // HDF5
             case LOGFILETYPE::CSV : delimiter = DELIMITERValue.at(DELIMITER::COMMA); break;                                     // CSV
@@ -773,7 +773,7 @@ private:
         //    - format for printing for CSV, TSV and TXT files
         //    - record for HDF5 files
         COMPAS_VARIABLE value;                                                                                                  // property value
-        string          valueStr;                                                                                               // string for formatted value
+        StrT            valueStr;                                                                                               // string for formatted value
 
         int index = 0;
         for (auto &property : p_RecordProperties) {                                                                             // for each property to be included in the log record
@@ -791,7 +791,7 @@ private:
                 PROGRAM_OPTION thisProperty = boost::get<PROGRAM_OPTION>(property);                                             // get property
                 if (thisProperty == PROGRAM_OPTION::NOTES) {                                                                    // PROGRAM_OPTION::NOTES?
                                                                                                                                 // yes
-                    for (size_t idx = 0; idx < p_Annotations.size(); idx ++) {                                                  // for each user-specified annotation
+                    for (SizeT idx = 0; idx < p_Annotations.size(); idx ++) {                                                   // for each user-specified annotation
                         if (p_Annotations[idx]) {                                                                               // include it?
                             value = boost::variant<string>(OPTIONS->Notes(idx));                                                // yes - get value
 
@@ -882,7 +882,7 @@ private:
             // this way users can't add or remove them at runtime via the logfile-definitions
             // option.
 
-            string fmtStr = "%4.1d";                                                                                            // format - all integers here
+            StrT fmtStr = "%4.1d";                                                                                              // format - all integers here
 
             if (p_LogFile == LOGFILE::BSE_SWITCH_LOG) {
                 int starSwitching = m_PrimarySwitching ? 1 : 2;                                                                 // primary (1) or secondary (2)
@@ -956,12 +956,12 @@ private:
      * 
      */
     template <class T>
-    std::tuple<string, COMPAS_VARIABLE_VECTOR> GetLogStandardRecord(const LOGFILE             p_LogFile,
-                                                                    const LOGRECORDTYPE       p_RecordType,
-                                                                    const T* const            p_Star,
-                                                                    const ANY_PROPERTY_VECTOR p_RecordProperties,
-                                                                    const STR_VECTOR          p_FmtVector,
-                                                                    const BOOL_VECTOR         p_Annotations) {
+    std::tuple<StrT, COMPAS_VARIABLE_VECTOR> GetLogStandardRecord(const LOGFILE             p_LogFile,
+                                                                  const LOGRECORDTYPE       p_RecordType,
+                                                                  const T* const            p_Star,
+                                                                  const ANY_PROPERTY_VECTOR p_RecordProperties,
+                                                                  const StrVectorT          p_FmtVector,
+                                                                  const BoolVectorT         p_Annotations) {
 
         return GetLogStandardRecord(p_LogFile, 
                                     p_RecordType,
@@ -995,12 +995,12 @@ private:
      * 
      *
      * template <class T>
-     * bool LogStandardRecord(const string        p_LogClass,
+     * bool LogStandardRecord(const StrT          p_LogClass,
      *                        const int           p_LogLevel,
      *                        const LOGFILE       p_LogFile,
      *                        const LOGRECORDTYPE p_RecordType,
      *                        const T* const      p_Star,
-     *                        const string        p_FileSuffix = "")
+     *                        const StrT          p_FileSuffix = "")
      *
      * @param   [IN]    p_LogClass                  Class to determine if record should be written
      * @param   [IN]    p_RecordType                The logfile record type
@@ -1011,12 +1011,12 @@ private:
      * @return                                      Boolean status (true = success, false = failure)
      */
     template <class T>
-    bool LogStandardRecord(const string        p_LogClass,
+    bool LogStandardRecord(const StrT          p_LogClass,
                            const int           p_LogLevel,
                            const LOGFILE       p_LogFile,
                            const LOGRECORDTYPE p_RecordType,
                            const T* const      p_Star,
-                           const string        p_FileSuffix = "") {
+                           const StrT          p_FileSuffix = "") {
 
         bool ok = true;                                                                                                     // initially
 
@@ -1026,7 +1026,7 @@ private:
         if (fileDetails.id >= 0) {                                                                                          // file open?
             if (((1 << (p_RecordType - 1)) & fileDetails.recordTypes) > 0) {                                                // yes - record type enabled?
                                                                                                                             // yes - proceed
-                string logRecordString;                                                                                     // for CSV, TSV, TXT files: the record to be written to the log file
+                StrT logRecordString;                                                                                       // for CSV, TSV, TXT files: the record to be written to the log file
                 COMPAS_VARIABLE_VECTOR logRecordValues;                                                                     // for HDF5 files: vector of values to be written
 
                 // construct the record - gets both string and vector of values
@@ -1058,13 +1058,13 @@ private:
      * @param   [IN]    p_LogRecordString           The previously constructed string to be written to the file
      */
     template <class T>
-    bool LogStandardRecord(const string        p_LogClass,
+    bool LogStandardRecord(const StrT          p_LogClass,
                            const int           p_LogLevel,
                            const LOGFILE       p_LogFile,
                            const LOGRECORDTYPE p_RecordType,
                            const T* const      p_Star,
-                           const string        p_FileSuffix,
-                           const string        p_LogRecordString) {
+                           const StrT          p_FileSuffix,
+                           const StrT          p_LogRecordString) {
 
         bool ok = true;                                                                                                     // initially
 
@@ -1092,12 +1092,12 @@ private:
      * @param   [IN]    p_LogRecordValues           The previously constructed string to be written to the file
      */
     template <class T>
-    bool LogStandardRecord(const string                 p_LogClass,
+    bool LogStandardRecord(const StrT                   p_LogClass,
                            const int                    p_LogLevel,
                            const LOGFILE                p_LogFile,
                            const LOGRECORDTYPE          p_RecordType,
                            const T* const               p_Star,
-                           const string                 p_FileSuffix,
+                           const StrT                   p_FileSuffix,
                            const COMPAS_VARIABLE_VECTOR p_LogRecordValues) {
 
         bool ok = true;                                                                                                     // initially
@@ -1146,38 +1146,38 @@ public:
 
 
     // member functions
-    void   Start(const string      p_LogBasePath,
-                 const string      p_LogContainerName,
-                 const string      p_LogNamePrefix,
+    void   Start(const StrT        p_LogBasePath,
+                 const StrT        p_LogContainerName,
+                 const StrT        p_LogNamePrefix,
                  const int         p_LogLevel,
-                 const STR_VECTOR  p_LogClasses,
+                 const StrVectorT  p_LogClasses,
                  const int         p_DbgLevel,
-                 const STR_VECTOR  p_DbgClasses,
+                 const StrVectorT  p_DbgClasses,
                  const bool        p_DbgToFile,
                  const bool        p_ErrorsToFile,
                  const LOGFILETYPE p_LogfileType);
 
-    void   Stop(std::tuple<int, int> p_ObjectStats = std::make_tuple(0, 0));
+    void   Stop(Int_IntT p_ObjectStats = std::make_tuple(0, 0));
 
     bool   Enabled() const { return m_Enabled; }
 
-    int    Open(const string p_LogFileName, const bool p_Append, const bool p_TimeStamp, const bool p_Label, const LOGFILE p_StandardLogfile = LOGFILE::NONE);
+    int    Open(const StrT p_LogFileName, const bool p_Append, const bool p_TimeStamp, const bool p_Label, const LOGFILE p_StandardLogfile = LOGFILE::NONE);
     bool   Close(const int p_LogfileId);
 
-    bool   Write(const int p_LogfileId, const string p_LogClass, const int p_LogLevel, const string p_LogStr);
-    bool   Write(const int p_LogfileId, const string p_LogClass, const int p_LogLevel, const COMPAS_VARIABLE_VECTOR p_LogRecordValues, const bool p_Flush = false);
+    bool   Write(const int p_LogfileId, const StrT p_LogClass, const int p_LogLevel, const StrT p_LogStr);
+    bool   Write(const int p_LogfileId, const StrT p_LogClass, const int p_LogLevel, const COMPAS_VARIABLE_VECTOR p_LogRecordValues, const bool p_Flush = false);
     
-    bool   Put(const int p_LogfileId, const string p_LogClass, const int p_LogLevel, const string p_LogStr);
-    bool   Put(const int p_LogfileId, const string p_LogClass, const int p_LogLevel, const COMPAS_VARIABLE_VECTOR p_LogRecordValues);
+    bool   Put(const int p_LogfileId, const StrT p_LogClass, const int p_LogLevel, const StrT p_LogStr);
+    bool   Put(const int p_LogfileId, const StrT p_LogClass, const int p_LogLevel, const COMPAS_VARIABLE_VECTOR p_LogRecordValues);
 
-    bool   Debug(const string p_DbgClass, const int p_DbgLevel, const string p_DbgStr);
-    bool   DebugWait(const string p_DbgClass, const int p_DbgLevel, const string p_DbgStr);
+    bool   Debug(const StrT p_DbgClass, const int p_DbgLevel, const StrT p_DbgStr);
+    bool   DebugWait(const StrT p_DbgClass, const int p_DbgLevel, const StrT p_DbgStr);
 
-    bool   Error(const string p_ErrStr);
+    bool   Error(const StrT p_ErrStr);
 
-    void   Squawk(const string squawkStr);
+    void   Squawk(const StrT squawkStr);
 
-    void   Say(const string p_SayClass, const int p_SayLevel, const string p_SayStr);
+    void   Say(const StrT p_SayClass, const int p_SayLevel, const StrT p_SayStr);
 
     // SetSwitchParameters is called by Star::SwitchTo to set the parameters 
     // to be written to the Switch Log file
@@ -1202,11 +1202,11 @@ public:
     bool CloseStandardFile(const LOGFILE p_LogFile, const bool p_Erase = true);
     bool CloseAllStandardFiles();
 
-    std::tuple<ANY_PROPERTY_VECTOR, STR_VECTOR, BOOL_VECTOR> GetStandardLogFileRecordDetails(const LOGFILE p_Logfile);
+    std::tuple<ANY_PROPERTY_VECTOR, StrVectorT, BolvectorT> GetStandardLogFileRecordDetails(const LOGFILE p_Logfile);
 
     template <class T>
     bool LogBSEDetailedOutput(const T* const p_Binary, 
-                              const long int p_Id,
+                              const LongT p_Id,
                               const BSE_DETAILED_RECORD_TYPE p_RecordType)          { return LogStandardRecord(std::get<2>(LOGFILE_DESCRIPTOR.at(LOGFILE::BSE_DETAILED_OUTPUT)), 0, LOGFILE::BSE_DETAILED_OUTPUT, static_cast<LOGRECORDTYPE>(p_RecordType), p_Binary, "_" + std::to_string(abs(p_Id))); }
 
     template <class T>
@@ -1230,7 +1230,7 @@ public:
 
     template <class T>
     bool LogBSESystemSnapshotLog(const T* const p_Binary, 
-                                    const BSE_SYSTEM_SNAPSHOT_RECORD_TYPE p_RecordType) { return LogStandardRecord(std::get<2>(LOGFILE_DESCRIPTOR.at(LOGFILE::BSE_SYSTEM_SNAPSHOT_LOG)), 0, LOGFILE::BSE_SYSTEM_SNAPSHOT_LOG, static_cast<LOGRECORDTYPE>(p_RecordType), p_Binary); }
+                                 const BSE_SYSTEM_SNAPSHOT_RECORD_TYPE p_RecordType)    { return LogStandardRecord(std::get<2>(LOGFILE_DESCRIPTOR.at(LOGFILE::BSE_SYSTEM_SNAPSHOT_LOG)), 0, LOGFILE::BSE_SYSTEM_SNAPSHOT_LOG, static_cast<LOGRECORDTYPE>(p_RecordType), p_Binary); }
                             
     template <class T>
     bool LogCommonEnvelope(const T* const p_Binary,

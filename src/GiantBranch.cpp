@@ -156,7 +156,7 @@ void GiantBranch::CalculateGBparams_Static(const double      p_Mass,
                                            const DBL_VECTOR &p_An, 
                                            const DBL_VECTOR &p_Bn, 
                                                  DBL_VECTOR &p_GBparams) const {
-#define p_GBparams(x) p_GBparams[static_cast<int>(HURLEY_GBP:::x)]    // for convenience and readability - undefined at end of function
+#define p_GBparams(x) p_GBparams[static_cast<int>(HURLEY_GBP:::x)]
 
     p_GBparams(AH)     = CalculateHRateConstant_Hurley2000_Static(p_Mass);
     p_GBparams(AHHe)   = HHE_RATE_CONSTANT_HURLEY2000;
@@ -182,104 +182,6 @@ void GiantBranch::CalculateGBparams_Static(const double      p_Mass,
 
 
 
-/*
- * CalculateCoreMass_Luminosity_D_Hurley2000
- *
- * @brief
- * Calculate the Core mass - Luminosity relation parameter D, per Hurley et al. 2000, eqs 31 - 38
- *
- *
- * double CalculateCoreMass_Luminosity_D_Hurley2000(onst double p_Mass, const double p_ZetaHurley = 0.0, const double p_MHeF = 0.0) const 
- *
- * @param       p_Mass                          Mass of the star (Msol)
- * @param       p_ZetaHurley                    Hurley zeta value (log10(Z / ZSOL_HURLEY))
- * @param       p_MHeF                          Maximum initial mass at Helium Flash (Hurley masscutoffs[MHeF]) (Msol)
- * @return                                      Core mass - Luminosity relation parameter D
- */
-double GiantBranch::CalculateCoreMass_Luminosity_D_Hurley2000(const double p_Mass, const double p_ZetaHurley = 0.0, const double p_MHeF = 0.0) const {
-
-    const double D0 = 5.37 + (0.135 * p_ZetaHurley);
-    const double D1 = (0.975 * D0) - (0.18 * p_Mass);
-
-    double logD = D0;                                           // default value
-
-    if (p_Mass > p_MHeF) {
-        if (p_Mass >= 2.5) {
-            logD = std::max(std::max(-1.0, D1), (0.5 * D0) - (0.06 * p_Mass));
-        }
-        else {                                                  // Linear interpolation between end points
-            const double gradient  = (D0 - D1) / (p_MHeF - 2.5);
-            const double intercept = D0 - (p_MHeF * gradient);
-            logD = (gradient * p_Mass) + intercept;
-        }
-    }
-
-    return PPOW(10.0, logD);
-}
-
-
-/*
- * CalculateCoreMass_Luminosity_p_Hurley2000
- *
- * @brief
- * Calculate the Core mass - Luminosity relation parameter, p, per Hurley et al. 2000, eqs 31 - 38
- *
- *
- * double CalculateCoreMass_Luminosity_p_Hurley2000(const double p_Mass, const double p_MHeF) const
- *
- * @param       p_Mass                          Mass of the star (Msol)
- * @param       p_MHeF                          Maximum initial mass at Helium Flash (Hurley masscutoffs[MHeF]) (Msol)
- * @return                                      Core mass - Luminosity relation parameter, p
- */
-double GiantBranch::CalculateCoreMass_Luminosity_p_Hurley2000(const double p_Mass, const double p_MHeF) const {
-
-    double p = 6.0;                                             // default value
-
-    if (p_Mass > p_MHeF) {
-        if (p_Mass >= 2.5) {
-            p = 5.0;
-        }
-        else {                                                  // linear interpolation between end points
-            const double gradient  = 1.0 / (p_MHeF - 2.5);      // will be negative
-            const double intercept = 5.0 - (2.5 * gradient);
-            p = (gradient * p_Mass) + intercept;
-        }
-    }
-
-    return p;
-}
-
-
-/*
- * CalculateCoreMass_Luminosity_q_Hurley2000
- *
- * @brief
- * Calculate the Core mass - Luminosity relation parameter, q, per Hurley et al. 2000, eqs 31 - 38
- *
- *
- * double CalculateCoreMass_Luminosity_q_Hurley2000(const double p_Mass, const double p_MHeF) const
- *
- * @param       p_Mass                          Mass of the star (Msol)
- * @param       p_MHeF                          Maximum initial mass at Helium Flash (Hurley masscutoffs[MHeF]) (Msol)
- * @return                                      Core mass - Luminosity relation parameter q
- */
-double GiantBranch::CalculateCoreMass_Luminosity_q_Hurley2000(const double p_Mass, const double p_MHeF) const {
-
-    double q = 3.0;                                             // default value
-
-    if (p_Mass > p_MHeF) {
-        if (p_Mass >= 2.5) {
-            q = 2.0;
-        }
-        else {                                                  // linear interpolation between end points
-            double gradient  = 1.0 / (p_MHeF - 2.5);
-            double intercept = 2.0 - (2.5 * gradient);
-            q = (gradient * p_Mass) + intercept;
-        }
-    }
-
-    return q;
-}
 
 
 
@@ -330,6 +232,41 @@ void GiantBranch::PerturbLuminosityAndRadius() { }
 
 
 
+///////////////////////////////////////////////////////////////////////////////////////
+//                                                                                   //
+//                                     ENVELOPE                                      //
+//                                                                                   //
+///////////////////////////////////////////////////////////////////////////////////////
+
+
+/*
+ * CalculateConvectiveEnvelopeRadialExtent_Hurley2002
+ *
+ * @brief
+ * Calculate the radial extent of the convective outer envelope,
+ * per Hurley et al. 2002
+ *
+ * Implementation is a combination of:
+ * 
+ *    Hurley et al. 2000, end of sec 7.2, and
+ *    Hurley et al. 2002, sec 2.3, particularly subsec 2.3.1, eqs 39-40
+ *
+ *
+ * double CalculateConvectiveEnvelopeRadialExtent_Hurley2002(const double p_Radius) const
+ *
+ * @param       p_Radius                        Radius of the star (Rsol)
+ * @return                                      Radial extent of the convective outer envelope (Rsol)
+ */
+double GiantBranch::CalculateConvectiveEnvelopeRadialExtent_Hurley2002(const double p_Radius) const {
+
+    double envMass;
+    double envZAMSMass;
+    std::tie(envMass, envZAMSMass) = CalculateConvectiveEnvelopeMass();
+    
+    return envMass <= 0.0 || envZAMSMass <= 0.0 ? 0.0 : std::sqrt(envMass / envZAMSMass) * (p_Radius - CalculateConvectiveCoreRadius());          
+}
+
+
 
 ///////////////////////////////////////////////////////////////////////////////////////
 //                                                                                   //
@@ -348,120 +285,8 @@ void GiantBranch::PerturbLuminosityAndRadius() { }
 ///////////////////////////////////////////////////////////////////////////////////////
 
 
-/*
- * CalculateConvectiveEnvelopeRadialExtent_Hurley2002
- *
- * @brief
- * Calculate the radial extent of the convective outer envelope,
- * per Hurley et al. 2002
- *
- * Implementation is a combination of:
- * 
- *    Hurley et al. 2000, end of sec 7.2, and
- *    Hurley et al. 2002, sec 2.3, particularly subsec 2.3.1, eqs 39-40
- *
- *
- * double CalculateConvectiveEnvelopeRadialExtent_Hurley2002() const
- *
- * @param       p_Radius                        Radius of the star (Rsol)
- * @return                                      Radial extent of the convective outer envelope (Rsol)
- */
-double GiantBranch::CalculateConvectiveEnvelopeRadialExtent_Hurley2002(const double p_Radius) const {
-
-    double envMass;
-    double envZAMSMass;
-    std::tie(envMass, envZAMSMass) = CalculateConvectiveEnvelopeMass();
-    
-    return envMass <= 0.0 || envZAMSMass <= 0.0 ? 0.0 : std::sqrt(envMass / envZAMSMass) * (p_Radius - CalculateConvectiveCoreRadius());          
-}
 
 
-/*
- * CalculateRadiusAtHeIgnition_Hurley2000
- *
- * @brief
- * Calculate radius at Helium Ignition, per Hurley et al. 2000, eq 50
- *
- *
- * double CalculateRadiusAtHeIgnition_Hurley2000(
- *     const double p_Mass,
- *     const double p_CoreMass,
- *     const double p_MHeF,
- *     const double p_MFGB,
- *     const double p_MinLuminosity
- * ) const
- *
- * @param       p_Mass                          Mass of the star (Msol)
- * @param       p_CoreMass                      Core mass of the star (Msol)
- * @param       p_MHeF                          Maximum initial mass at Helium Flash (Hurley masscutoffs[MHeF]) (Msol)
- * @param       p_MFGB                          Maximum initial mass at helium ignition on the FGB (Hurley masscutoffs[MFGB]) (Msol)
- * @param       p_MinLuminosity                 Minimum luminosity on phase (Lsol)
- * @param       p_Alpha1                        Hurley alpha1 constant
- * @param       p_bN                            Hurley b(n) coefficients
- * @return                                      Radius at Helium Ignition (Rsol)
- */
-double GiantBranch::CalculateRadiusAtHeIgnition_Hurley2000(
-    const double p_Mass,
-    const double p_CoreMass,
-    const double p_MHeF,
-    const double p_MFGB,
-    const double p_MinLuminosity
-) const {
-
-    double radius;
-
-    const double lHeI = CalculateLuminosityAtHeI_Hurley2000_Static(p_Mass);
-
-    if (p_Mass <= p_MFGB) {
-        radius = CalculateRadiusOnPhase(p_Mass, lHeI);
-    }
-    else if (p_Mass >= std::max(p_MFGB, HIGH_MASS_THRESHOLD)) {
-        const double rmHe = CHeB::CalculateMinimumRadiusOnPhase_Static(p_Mass, p_CoreMass, p_Alpha1, p_MHeF, p_MFGB, p_MinLuminosity);
-        radius = std::min(rmHe, EAGB::CalculateRadiusOnPhase_Static(p_Mass, lHeI, p_MHeF));
-    }
-    else {
-        const double rmHe = CHeB::CalculateMinimumRadiusOnPhase_Static(p_Mass, p_CoreMass, p_Alpha1, p_MHeF, p_MFGB, p_MinLuminosity);
-        radius = rmHe * PPOW((CalculateRadiusOnPhase(p_Mass, lHeI); / rmHe), log10(p_Mass / HIGH_MASS_THRESHOLD) / log10(p_MFGB / HIGH_MASS_THRESHOLD));
-    }
-
-    return radius;
-}
-
-
-/*
- * CalculateRadiusOnZAHB_Hurley2000_Static
- *
- * @brief
- * Calculate radius on the Zero Age Horizontal Branch, per Hurley et al. 2000, eq 54
- *
- *
- * static double CalculateRadiusOnZAHB_Hurley2000_Static(const double      p_Mass,
- *                                                       const double      p_CoreMass,
- *                                                       const double      p_MHeF,
- *                                                       const double      p_MinLuminosity,
- *                                                       const double      p_Alpha1,
- *                                                       const DBL_VECTOR& p_bN)
- *
- * @param       p_Mass                          Mass of the star (Msol)
- * @param       p_CoreMass                      Core mass of the star (Msol)
- * @param       p_MHeF                          Maximum initial mass at Helium Flash (Hurley masscutoffs[MHeF]) (Msol)
- * @param   [IN]    p_MinLuminosity  Minimum luminosity on phase (only required for CHeB stars) - calculated once per star <<<<<<<<<<<<<<<<<<<<<<<<<<< ???????????????
- * @param       p_MinLuminosity                 Minimum luminosity on phase (Lsol)
- * @param       p_Alpha1                        Hurley alpha1 constant
- * @param       p_bN                            Hurley b(n) coefficients
- * @return                                      Radius on the Zero Age Horizontal Branch (Rsol)
- */
-double GiantBranch::CalculateRadiusOnZAHB_Hurley2000_Static(const double      p_Mass,
-                                                            const double      p_CoreMass,
-                                                            const double      p_MHeF) {
-
-    const double rZHe  = HeMS::CalculateRadiusAtZAHeMS_Hurley2000_Static(p_CoreMass);
-    const double lZAHB = CalculateLuminosityOnZAHB_Hurley2000_Static(p_Mass, p_CoreMass);
-    const double rGB   = CalculateRadiusOnPhase_Hurley2000_Static(p_Mass, lZAHB, p_bN);
-    const double f     = ((1.0 + p_bN[21]) * PPOW((p_Mass - p_CoreMass) / (p_MHeF - p_CoreMass), p_bN[22])) / (1.0 + p_bN[21] * PPOW(mu, p_bN[23]));
-
-    return ((1.0 - f)) * rZHe + (f * rGB);
-}
 
 
 ///////////////////////////////////////////////////////////////////////////////////////
@@ -471,88 +296,10 @@ double GiantBranch::CalculateRadiusOnZAHB_Hurley2000_Static(const double      p_
 ///////////////////////////////////////////////////////////////////////////////////////
 
 
-/*
- * CalculateCoreMassAtBGB_Hurley2000
- *
- * @brief
- * Calculate core mass at the Base of the Giant Branch, per Hurley et al. 2000, eq 44
- *
- * For large enough M, we have McBGB ~ 0.098 * Mass^1.35
- *
- *
- * double CalculateCoreMassAtBGB_Hurley2000(const double p_Mass, const double p_McBAGB) const
- *
- * @param       p_Mass                          Mass of the star (Msol)
- * @param       p_McBAGB                        BAGB core mass (Msol)
- * @return                                      BGB core mass (Msol)
- */
-COMPAS_PURE double GiantBranch::CalculateCoreMassAtBGB_Hurley2000(const double p_Mass, const double p_McBAGB) const {
-
-    double McBGB = 0.0;     // default value for McBGB (see comment below)
-
-    const double mHeF = GLOBALS-HurelyMassCutoffs(static_cast<int>(MHeF));
-
-    // no McBGB for stars with mass below the helium flash threshold
-    // See Hurley at al. 2000, text immediately prior to eq 44
-    if (p_Mass >= mHeF) { 
-        const double luminosity = GiantBranch::CalculateLuminosityAtBGB_Hurley2000(mHeF);
-        const double Mc_MHeF    = BaseStar::CalculateCoreMass_Hurley2000_Static(luminosity, p_GBparams);
-        const double c          = utils::IntPow(Mc_MHeF, 4) - MC_L_C1 * PPOW(mHeF, MC_L_C2);
-    
-        McBGB = std::min(0.95 * p_GBparams(McBAGB), std::sqrt(std::sqrt(c + MC_L_C1 * PPOW(p_Mass, MC_L_C2))));
-    }
-
-    return McBGB;
-}
 
 
 
-/*
- * CalculateCoreMassAtHeI_Hurley2000
- *
- * @brief
- * Calculate core mass at Helium Ignition (HeI), per:
- * 
- *    - Hurley et al. 2000, eq 37 for low mass stars (p_Mass < p_MHef, see p_MHeF below)
- *    - Hurley et al. 2000, eq 44 otherwise, replacing Mc(LBGB(MHeF)) with Mc(LHeI(MHeF)),
- *                                           per Hurley et al. 2000 end of section 5.3
- *
- *
- * double CalculateCoreMassAtHeI_Hurley2000(const double      p_Mass,
- *                                          const DBL_VECTOR& p_GBparams,
- *                                          const double      p_MHef,
- *                                          const double      p_Alpha1,
- *                                          const DBL_VECTOR& p_bN) const
- *
- * @param       p_Mass                          Mass of the star (Msol)
- * @param       p_GBparams                      Hurley GB parameters
- * @param       p_MHef                          Maximum initial mass at Helium Flash (Hurley masscutoffs[MHeF]) (Msol)
- * @param       p_Alpha1                        Hurley alpha1 constant
- * @param       p_bN                            Hurley b(n) coefficients
- * @return                                      Core mass at HeI (Msol)
- */
-double GiantBranch::CalculateCoreMassAtHeI_Hurley2000(const double      p_Mass,
-                                                      const DBL_VECTOR& p_GBparams,
-                                                      const double      p_MHef,
-                                                      const double      p_Alpha1,
-                                                      const DBL_VECTOR& p_bN) const {
-    double coreMass;
 
-    if (p_Mass < p_MHef) {
-        const double luminosity = CalculateLuminosityAtHeI_Hurley2000_Static(p_Mass);
-        coreMass = BaseStar::CalculateCoreMass_Hurley2000_Static(luminosity, p_GBparams);
-    }
-    else {
-        const double lMHeF   = CalculateLuminosityAtHeI_Hurley2000_Static(p_MHef);
-        const double Mc_MHeF = BaseStar::CalculateCoreMass_Hurley2000_Static(lMHeF, p_GBparams);
-        const double McBAGB  = CalculateCoreMassAtBAGB_Hurley2000(p_Mass, p_bN);
-        const double c       = (utils::intPow(Mc_MHeF, 4)) - (MC_L_C1 * PPOW(p_MHef, MC_L_C2));
-
-        coreMass = std::min((0.95 * McBAGB), std::sqrt(std::sqrt(c + (MC_L_C1 * PPOW(p_Mass, MC_L_C2))))); // sqrt() is much faster than PPOW()
-    }
-
-    return coreMass;
-}
 
 
 
@@ -593,32 +340,6 @@ double GiantBranch::CalculateMassLossRateHurley() {
 ///////////////////////////////////////////////////////////////////////////////////////
 
 
-/*
- * CalculateLifetimeToHeI_Hurley2000
- *
- * @brief
- * Calculate the time to Helium ignition tHeI, per Hurley et al. 2000, eq 43
- *
- *
- * double CalculateLifetimeToHeI_Hurley2000(const double p_Mass, const double p_Tinf1_FGB, const double p_Tinf2_FGB)
- *
- *
- * @param   [IN]    p_Mass                      Mass in Msol
- * @param   [IN]    p_Tinf1_FGB                 tinf1_FGB (Timescales[TIMESCALE::tinf1_FGB]) - First Giant Branch tinf1
- * @param   [IN]    p_Tinf2_FGB                 tinf2_FGB (Timescales[TIMESCALE::tinf2_FGB]) - First Giant Branch tinf2
- * @return                                      Lifetime to He ignition (tHeI)
- */
-double GiantBranch::CalculateLifetimeToHeI_Hurley2000(const double p_Mass, const double p_Tinf1_FGB, const double p_Tinf2_FGB) {
-
-    double LHeI = CalculateLuminosityAtHeI_Hurley2000_Static(p_Mass);
-    double p1   = gbParams(p) - 1.0;
-    double q1   = gbParams(q) - 1.0;
-
-    return LHeI <= gbParams(Lx)
-            ? p_Tinf1_FGB - (1.0 / (p1 * gbParams(AH) * gbParams(D))) * PPOW((gbParams(D) / LHeI), (p1 / gbParams(p)))
-            : p_Tinf2_FGB - (1.0 / (q1 * gbParams(AH) * gbParams(B))) * PPOW((gbParams(B) / LHeI), (q1 / gbParams(q)));
-}
-
 
 
 
@@ -642,11 +363,11 @@ double GiantBranch::CalculateLifetimeToHeI_Hurley2000(const double p_Mass, const
  * Function provides for standard and alternative fits (single stars) from Schneider et al. 2020.
  * 
  *
- * DBL_DBL CalculateRemnantMass_Schneider2020(const double p_Mass,
- *                                            const double p_COCoreMass,
- *                                            const double p_HeCoreMassPreSN,
- *                                            const double p_MaxNSMass,
- *                                            const REMNANT_MASS_PRESCRIPTION p_RemnantMassPrescription) const
+ * Dbl_DblT CalculateRemnantMass_Schneider2020(const double p_Mass,
+ *                                             const double p_COCoreMass,
+ *                                             const double p_HeCoreMassPreSN,
+ *                                             const double p_MaxNSMass,
+ *                                             const REMNANT_MASS_PRESCRIPTION p_RemnantMassPrescription) const
  *
  * @param       p_Mass                          Mass of the star (Msol)
  * @param       p_COCoreMass                    CO core mass of the star (Msol)
@@ -657,27 +378,27 @@ double GiantBranch::CalculateLifetimeToHeI_Hurley2000(const double p_Mass, const
  *                                                   DOUBLE Remnant mass (Msol)
  *                                                   DOUBLE Fraction of mass falling back onto compact object [0.0, 1.0]
  */
-DBL_DBL GiantBranch::CalculateRemnantMass_Schneider2020(const double                    p_Mass,
-                                                        const double                    p_COCoreMass,
-                                                        const double                    p_HeCoreMassPreSN,
-                                                        const double                    p_MaxNSMass,
-                                                        const REMNANT_MASS_PRESCRIPTION p_RemnantMassPrescription) const {
+Dbl_DblT GiantBranch::CalculateRemnantMass_Schneider2020(const double                    p_Mass,
+                                                         const double                    p_COCoreMass,
+                                                         const double                    p_HeCoreMassPreSN,
+                                                         const double                    p_MaxNSMass,
+                                                         const REMNANT_MASS_PRESCRIPTION p_RemnantMassPrescription) const {
     double logRemnantMass;
     switch (p_RemnantMassPrescription) {                                // which REMNANT_MASS_PRESCRIPTION?
 
         REMNANT_MASS_PRESCRIPTION::SCHNEIDER2020:                       // SCHNEIDER2020 standard prescription
 
-                 if (p_COCoreMass <  6.357) { logRemnantMass = log10(0.03357 * p_COCoreMass + 1.31780); }
+                 if (p_COCoreMass <  6.357) { logRemnantMass = std::log10(0.03357 * p_COCoreMass + 1.31780); }
             else if (p_COCoreMass <  7.311) { logRemnantMass = -0.02466 * p_COCoreMass + 1.28070; }
-            else if (p_COCoreMass < 12.925) { logRemnantMass = log10(0.03357 * p_COCoreMass + 1.31780); }
+            else if (p_COCoreMass < 12.925) { logRemnantMass = std::log10(0.03357 * p_COCoreMass + 1.31780); }
             else                            { logRemnantMass = 0.01940 * p_COCoreMass + 0.98462; }
             break;
 
         REMNANT_MASS_PRESCRIPTION::SCHNEIDER2020ALT:                    // SCHNEIDER2020 alternative prescription
 
-                 if (p_COCoreMass <  6.357) { logRemnantMass = log10(0.04199 * p_COCoreMass + 1.28128); }
+                 if (p_COCoreMass <  6.357) { logRemnantMass = std::log10(0.04199 * p_COCoreMass + 1.28128); }
             else if (p_COCoreMass <  7.311) { logRemnantMass = -0.02466 * p_COCoreMass + 1.28070; }
-            else if (p_COCoreMass < 12.925) { logRemnantMass = log10(0.04701 * (p_COCoreMass * p_COCoreMass) - 0.91403 * p_COCoreMass + 5.93380); }
+            else if (p_COCoreMass < 12.925) { logRemnantMass = std::log10(0.04701 * (p_COCoreMass * p_COCoreMass) - 0.91403 * p_COCoreMass + 5.93380); }
             else                            { logRemnantMass = 0.01940*p_COCoreMass + 0.98462; }
             break;
 
@@ -704,7 +425,7 @@ DBL_DBL GiantBranch::CalculateRemnantMass_Schneider2020(const double            
 
 
 /*
- * CalculateRemnantMass_Maltsev2025  *** JR: should we rename this? *Ilya*
+ * CalculateRemnantMass_Maltsev2025
  *
  * @brief
  * Calculate remnant mass for isolated single stars, per Maltsev et al. 2025.
@@ -726,67 +447,63 @@ DBL_DBL GiantBranch::CalculateRemnantMass_Schneider2020(const double            
  *                                                   DOUBLE Remnant mass (Msol)
  *                                                   DOUBLE Fraction of mass falling back onto compact object [0.0, 1.0]
  */
-double GiantBranch::CalculateRemnantMass_Maltsev2025(const double       p_COCoreMass,
-                                                     const double       p_HeCoreMass,
-                                                     const double       p_ZetaAsplund, 
-                                                     const double       p_MaltsevFallbackFraction, //OPTIONS->MaltsevFallbackFraction()  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-                                                     const MALTSEV_MODE p_MaltsevMode) const { // OPTIONS->MaltsevMode() <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+double GiantBranch::CalculateRemnantMass_Maltsev2025(const double p_COCoreMass, const double p_HeCoreMass) const {
     double fallbackFraction;
     double remnantMass;
 
-    if (p_COCoreMass < MALTSEV2025_MMIN) {                                              // CO core mass < Maltsev lower threshold?
-                                                                                        // yes - NS formation regardless of metallicity
+    if (p_COCoreMass < MALTSEV2025_MMIN) {                                                      // CO core mass < Maltsev lower threshold?
+                                                                                                // Yes - NS formation regardless of metallicity
         fallbackFraction = 0.0;
-        remnantMass = NEUTRON_STAR_MASS;
+        remnantMass      = NEUTRON_STAR_MASS;
     }
-    else if (p_COCoreMass > MALTSEV2025_MMAX) {                                         // no - CO core mass > Maltsev upper threshold?
-                                                                                        // yes - BH formation regardless of metallicity
+    else if (p_COCoreMass > MALTSEV2025_MMAX) {                                                 // No - CO core mass > Maltsev upper threshold?
+                                                                                                // Yes - BH formation regardless of metallicity
         fallbackFraction = 1.0;
-        remnantMass = p_HeCoreMass;
+        remnantMass      = p_HeCoreMass;
     }
-    else {                                                                              // no - calculate remnant mass
+    else {                                                                                      // No - calculate remnant mass
 
         double Zbound;                                                                      
-        switch (p_MaltsevMode) {                                                        // which Maltsev mode?                                                                                 
+        switch (OPTIONS->MaltsevMode()) {                                                       // Which Maltsev mode?                                                                                 
 
-            case MALTSEV_MODE::OPTIMISTIC:                                              // OPTIMISTIC               
-                Zbound = p_ZetaAsplund;                                                 // Asplund zeta (log10(Z / ZSOL_ASPLUND))
+            case MALTSEV_MODE::OPTIMISTIC:                                                      // OPTIMISTIC               
+                Zbound = GLOBALS->ZetaAsplund();                                                // Asplund zeta (log10(Z / ZSOL_ASPLUND))
                 break;
 
-            case MALTSEV_MODE::BALANCED:                                                // BALANCED                        
-                Zbound = std::min(std::max(p_ZetaAsplund, -1.6989700043360185), 0.0);   // Asplund zeta clamped to [log10(1/50), log10(1)]
+            case MALTSEV_MODE::BALANCED:                                                        // BALANCED                        
+                Zbound = std::min(std::max(GLOBALS->ZetaAsplund(), -1.6989700043360185), 0.0);  // Asplund zeta clamped to [log10(1/50), log10(1)]
                 break;
 
-            case MALTSEV_MODE::PESSIMISTIC:                                             // Pessimistic                          
-                Zbound = std::min(std::max(p_ZetaAsplund, -1.0), 0.0);                  // Asplund zeta clamped to [log10(1/10), log10(1)]
+            case MALTSEV_MODE::PESSIMISTIC:                                                     // Pessimistic                          
+                Zbound = std::min(std::max(GLOBALS->ZetaAsplund(), -1.0), 0.0);                 // Asplund zeta clamped to [log10(1/10), log10(1)]
                 break;
 
-            default:                                                                    // unexpected mode
-                // the only way this can happen is if the MALTSEV_MODE passed to this function
+            default:                                                                            // Unexpected mode
+                // The only way this can happen is if the MALTSEV_MODE passed to this function
                 // isn't accounted for in this code.  We should not default here, with or without a warning.
                 // We are here because the code passed a mode that this function doesn't account for, and
                 // that should be flagged as an error and result in termination of the evolution of the star
                 // or binary.
                 // The correct fix for this is to add code to this function for the missing mode, or fix the
                 // calling code to pass a mode that is handled by this function.
-                THROW_ERROR(ERROR::UNEXPECTED_MALTSEV_MODE);                            // throw error
+                THROW_ERROR(ERROR::UNEXPECTED_MALTSEV_MODE);                                    // Throw error
         }
   
         const double M1 = MALTSEV2025_M1S + (MALTSEV2025_M1S - MALTSEV2025_M1SZ01) * Zbound;
         const double M2 = MALTSEV2025_M2S + (MALTSEV2025_M2S - MALTSEV2025_M2SZ01) * Zbound;
         const double M3 = MALTSEV2025_M3S + (MALTSEV2025_M3S - MALTSEV2025_M3SZ01) * Zbound;
 
-        if (p_COCoreMass >= M3 || (p_COCoreMass >= M1 && p_COCoreMass <= M2) ) {        // complete fallback into BH
+        if (p_COCoreMass >= M3 || (p_COCoreMass >= M1 && p_COCoreMass <= M2) ) {                // Complete fallback into BH
             fallbackFraction = 1.0;
-            remnantMass = p_HeCoreMass;
+            remnantMass      = p_HeCoreMass;
         }
-        else if (p_COCoreMass > M2 && p_COCoreMass < M3 && RAND->Random(0, 1) <= 0.1) { // partial fallback - BH formation
-            fallbackFraction = p_MaltsevFallbackFraction;
-            remnantMass = (p_HeCoreMass - NEUTRON_STAR_MASS) * fallbackFraction + NEUTRON_STAR_MASS;
+        else if (p_COCoreMass > M2 && p_COCoreMass < M3 && RAND->Random(0, 1) <= 0.1) {         // Partial fallback - BH formation
+            fallbackFraction = OPTIONS->MaltsevFallbackFraction();
+            remnantMass      = (p_HeCoreMass - NEUTRON_STAR_MASS) * fallbackFraction + NEUTRON_STAR_MASS;
         }
-        else {                                                                          // no fallback - NS formation
+        else {                                                                                  // No fallback - NS formation
             fallbackFraction = 0.0;
-            remnantMass = NEUTRON_STAR_MASS;
+            remnantMass      = NEUTRON_STAR_MASS;
         }
     }
 
@@ -802,7 +519,7 @@ double GiantBranch::CalculateRemnantMass_Maltsev2025(const double       p_COCore
  * Calculate remnant mass, per Mandel & Mueller 2020
  *
  *
- * DBL_DBL CalculateRemnantMass_MullerMandel2020 (const double p_COCoreMass, const double p_HeCoreMass)
+ * Dbl_DblT CalculateRemnantMass_MullerMandel2020 (const double p_COCoreMass, const double p_HeCoreMass)
  *
  * @param       p_COCoreMass                    CO core mass of the star (Msol)
  * @param       p_HeCoreMass                    He core mass of the star (Msol)
@@ -810,7 +527,7 @@ double GiantBranch::CalculateRemnantMass_Maltsev2025(const double       p_COCore
  *                                                   DOUBLE Remnant mass (Msol)
  *                                                   DOUBLE Fraction of mass falling back onto compact object [0.0, 1.0]
  */
-DBL_DBL GiantBranch::CalculateRemnantMass_MullerMandel2020(const double p_COCoreMass, const double p_HeCoreMass) {
+Dbl_DblT GiantBranch::CalculateRemnantMass_MullerMandel2020(const double p_COCoreMass, const double p_HeCoreMass) {
 
     double remnantMass       = 0.0;   
     double pBH               = 0.0;
@@ -856,116 +573,46 @@ DBL_DBL GiantBranch::CalculateRemnantMass_MullerMandel2020(const double p_COCore
  */
 double GiantBranch::CalculateRemnantNSMassMullerMandel(const double p_COCoreMass, const double p_HeCoreMass) {
 
-    double remnantMass      = 0.0;
-    std::size_t iterations  = 0;
+    double remnantMass = 0.0;
+    SizeT  iterations  = 0;
 
     if (utils::Compare(p_COCoreMass, MULLERMANDEL_M1) < 0) {
         while (iterations++ < MULLERMANDEL_REMNANT_MASS_MAX_ITERATIONS            &&
                (utils::Compare(remnantMass, MULLERMANDEL_MINNS) < 0                ||
                 utils::Compare(remnantMass, OPTIONS->MaximumNeutronStarMass()) > 0 ||
-                utils::Compare(remnantMass, p_HeCoreMass) > 0)) {
+                utils::Compare(remnantMass, p_COCoreMass) > 0)) {
             remnantMass = MULLERMANDEL_MU1 + RAND->RandomGaussian(MULLERMANDEL_SIGMA1);
         }
-        if (iterations >= MULLERMANDEL_REMNANT_MASS_MAX_ITERATIONS) // failure to find a solution implies a narrow range; just pick a midpoint in this case
-            remnantMass = (std::min(OPTIONS->MaximumNeutronStarMass(), p_HeCoreMass) + MULLERMANDEL_MINNS) / 2.0;
+        if (iterations >= MULLERMANDEL_REMNANT_MASS_MAX_ITERATIONS)
+            // Failure to find a solution implies a narrow range; just pick a midpoint in this case
+            remnantMass = (std::min(OPTIONS->MaximumNeutronStarMass(), p_COCoreMass) + MULLERMANDEL_MINNS) / 2.0;
     }
     else if (utils::Compare(p_COCoreMass, MULLERMANDEL_M2) < 0) {
         while (iterations++ < MULLERMANDEL_REMNANT_MASS_MAX_ITERATIONS            &&
                (utils::Compare(remnantMass, MULLERMANDEL_MINNS) < 0                ||
                 utils::Compare(remnantMass, OPTIONS->MaximumNeutronStarMass()) > 0 ||
-                utils::Compare(remnantMass, p_HeCoreMass) > 0)) {
+                utils::Compare(remnantMass, p_COCoreMass) > 0)) {
             remnantMass = MULLERMANDEL_MU2A + MULLERMANDEL_MU2B / (MULLERMANDEL_M2 - MULLERMANDEL_M1) * (p_COCoreMass - MULLERMANDEL_M1) + RAND->RandomGaussian(MULLERMANDEL_SIGMA2);
         }
-        if (iterations >= MULLERMANDEL_REMNANT_MASS_MAX_ITERATIONS) // failure to find a solution implies a narrow range; just pick a midpoint in this case
-            remnantMass = (std::min(OPTIONS->MaximumNeutronStarMass(), p_HeCoreMass) + MULLERMANDEL_MINNS) / 2.0;
+        if (iterations >= MULLERMANDEL_REMNANT_MASS_MAX_ITERATIONS)
+            // Failure to find a solution implies a narrow range; just pick a midpoint in this case
+            remnantMass = (std::min(OPTIONS->MaximumNeutronStarMass(), p_COCoreMass) + MULLERMANDEL_MINNS) / 2.0;
     }
     else {
         while (iterations++ < MULLERMANDEL_REMNANT_MASS_MAX_ITERATIONS            &&
                (utils::Compare(remnantMass, MULLERMANDEL_MINNS) < 0                ||
                 utils::Compare(remnantMass, OPTIONS->MaximumNeutronStarMass()) > 0 ||
-                utils::Compare(remnantMass, p_HeCoreMass) > 0)) {
+                utils::Compare(remnantMass, p_COCoreMass) > 0)) {
             remnantMass = MULLERMANDEL_MU3A + MULLERMANDEL_MU3B / (MULLERMANDEL_M3 - MULLERMANDEL_M2) * (p_COCoreMass - MULLERMANDEL_M2) + RAND->RandomGaussian(MULLERMANDEL_SIGMA3);
         }
-        if (iterations >= MULLERMANDEL_REMNANT_MASS_MAX_ITERATIONS) // failure to find a solution implies a narrow range; just pick a midpoint in this case
-            remnantMass = (std::min(OPTIONS->MaximumNeutronStarMass(), p_HeCoreMass) + MULLERMANDEL_MINNS) / 2.0;
+        if (iterations >= MULLERMANDEL_REMNANT_MASS_MAX_ITERATIONS)
+            // Failure to find a solution implies a narrow range; just pick a midpoint in this case
+            remnantMass = (std::min(OPTIONS->MaximumNeutronStarMass(), p_COCoreMass) + MULLERMANDEL_MINNS) / 2.0;
     }
     return remnantMass;
 }
 
 
-/*
- * CalculateBHMassAfterFallback_MullerMandel2020
- *
- * @brief
- * Calculate the mass of the black hole created in a fallback supernova, per Mandel & Mueller, 2020
- * 
- * Also used by Maltsev2025
- *
- *
- * double CalculateBHMassAfterFallback_MullerMandel2020(const double p_COCoreMass, const double p_HeCoreMass) const
- *
- * @param       p_COCoreMass                    CO core mass of the star (Msol)
- * @param       p_HeCoreMass                    He core mass of the star (Msol)
- * @return                                      Remnant mass (Msol)
- */
-double GiantBranch::CalculateBHMassAfterFallback_MullerMandel2020(const double p_COCoreMass, const double p_HeCoreMass) const {
-    
-    double remnantMass;
-
-    std::size_t iterations = 0;    
-    while (iterations++ < MULLERMANDEL_REMNANT_MASS_MAX_ITERATIONS &&
-          (remnantMass < OPTIONS->MaximumNeutronStarMass() || remnantMass > p_HeCoreMass)) {
-        remnantMass = MULLERMANDEL_MUBH * p_COCoreMass + RAND->RandomGaussian(MULLERMANDEL_SIGMABH);
-    }
-    
-    if (iterations >= MULLERMANDEL_REMNANT_MASS_MAX_ITERATIONS) {   // no convergence?
-        // failure to find a solution implies a narrow range; just pick a midpoint in this case
-        remnantMass = (OPTIONS->MaximumNeutronStarMass() + p_HeCoreMass) / 2.0;
-    }
-    
-    return remnantMass;
-}
-
-
-/*
- * CalculateRemnantMass_Muller2016
- *
- * @brief
- * Calculate remnant mass, per Muller et al. 2016
- * (as presented in eq B4 of Vigna-Gomez et al. 2018 (See arXiv:1805.07974))
- *
- * 
- * DBL_DBL CalculateRemnantMass_Muller2016(const double p_Mass, const double p_COCoreMass) const
- *
- * @param       p_Mass                          Mass of the star (Msol)
- * @param       p_COCoreMass                    CO core mass of the star (Msol)
- * @return                                      Tuple containing:
- *                                                   DOUBLE Remnant mass (Msol)
- *                                                   DOUBLE Fraction of mass falling back onto compact object [0.0, 1.0]
- */
-DBL_DBL GiantBranch::CalculateRemnantMass_Muller2016(const double p_Mass, const double p_COCoreMass) const {
-
-    double	remnantMass;
-
-    if (p_COCoreMass < 1.372) {
-        // not explicitly pointed out in Appendix B of Vigna-Gomez et al. 2018, but assumed for continuity and simplicity
-        // Muller et al. 2016 didn't go as low as this in CO Core mass (see Figure A1)
-        remnantMass = 1.21;
-    }                                      
-	else if (p_COCoreMass < 1.49) remnantMass = 1.21 - (0.4  * (p_COCoreMass - 1.372));
-	else if (p_COCoreMass < 1.65) remnantMass = 1.16;
-    else if (p_COCoreMass < 2.4 ) remnantMass = 1.32 + (0.3  * (p_COCoreMass - 1.65));
-    else if (p_COCoreMass < 3.2 ) remnantMass = 1.42 + (0.7  * (p_COCoreMass - 2.4));
-    else if (p_COCoreMass < 3.6 ) remnantMass = 1.32 + (0.25 * (p_COCoreMass - 3.2));
-    else if (p_COCoreMass < 4.05) remnantMass = p_Mass * NEUTRINO_LOSS_FALLBACK_FACTOR; // going to be a Black Hole
-    else if (p_COCoreMass < 4.6 ) remnantMass = 1.5;
-    else if (p_COCoreMass < 5.7 ) remnantMass = p_Mass * NEUTRINO_LOSS_FALLBACK_FACTOR; // going to be a Black Hole
-    else if (p_COCoreMass < 6.0 ) remnantMass = 1.64 - (0.2  * (p_COCoreMass - 5.7));
-    else                          remnantMass = p_Mass * NEUTRINO_LOSS_FALLBACK_FACTOR; // Going to be a Black Hole
-
-    // fallback fraction = 0.0 - no subsequent kick adjustment by fallback fraction needed
-    return std::make_tuple(remnantMass, 0.0);
-}
 
 
 /*
@@ -1090,31 +737,29 @@ double GiantBranch::CalculateFallbackFraction_Fryer2012_Delayed(const double p_P
  * Calculate remnant mass, per Fryer et al. 2012.
  *
  *
- * DBL_DBL CalculateRemnantMass_Fryer2012(const double p_Mass, const double p_COCoreMass, const double p_NSmaxBaryonicMass, const SN_ENGINE p_SNenginePrescription) const
+ * Dbl_DblT CalculateRemnantMass_Fryer2012(const double p_Mass, const double p_COCoreMass) const
  *
  * @param       p_Mass                          Pre-SN mass of the star (Msol)
  * @param       p_COCoreMass                    Pre-SN Carbon Oxygen (CO) core mass of the star (Msol)
- * @param       p_NSmaxBaryonicMass             Maximum baryonic mass for NS maximum mass (Msol)
- * @param       p_SNenginePrescription          Fryer2012 supernova mechanism (DELAYED, RAPID)
  * @return                                      Tuple containing:
  *                                                   DOUBLE Remnant mass (Msol)
  *                                                   DOUBLE Fraction of mass falling back onto compact object [0.0, 1.0]
  */
-DBL_DBL GiantBranch::CalculateRemnantMass_Fryer2012(const double p_Mass, const double p_COCoreMass, const double p_NSmaxBaryonicMass, const SN_ENGINE p_SNenginePrescription) const {
+Dbl_DblT GiantBranch::CalculateRemnantMass_Fryer2012(const double p_Mass, const double p_COCoreMass) const {
 
     double baryonicMass;
     double fallbackFraction;
     double gravitationalMass;
     double mProto;
 
-    switch (p_SNenginePrescription) {                                       // which Fryer SN mechanism?
+    switch (OPTIONS->FryerSupernovaEngine()) {                              // which Fryer SN mechanism?
 
         case SN_ENGINE::DELAYED:                                            // DELAYED
 
             mProto            = CalculateProtoCoreMass_Fryer2012_Delayed(p_COCoreMass);
             fallbackFraction  = CalculateFallbackFraction_Fryer2012_Delayed(p_Mass, mProto, p_COCoreMass);
             baryonicMass      = CalculateBaryonicRemnantMass_Fryer2012(mProto, CalculateFallbackMass_Fryer2012(p_Mass, mProto, fallbackFraction));
-            gravitationalMass = CalculateGravitationalRemnantMass_Fryer2012(baryonicMass, p_NSmaxBaryonicMass);
+            gravitationalMass = CalculateGravitationalRemnantMass_Fryer2012(baryonicMass, GLOBALS->NSMaxBaryonicMass());
             break;
 
         case SN_ENGINE::RAPID:                                              // RAPID
@@ -1122,7 +767,7 @@ DBL_DBL GiantBranch::CalculateRemnantMass_Fryer2012(const double p_Mass, const d
             mProto            = FRYER_PROTO_CORE_MASS_RAPID;
             fallbackFraction  = CalculateFallbackFractionRapid(p_Mass, mProto, p_COCoreMass);
             baryonicMass      = CalculateBaryonicRemnantMass_Fryer2012(mProto, CalculateFallbackMass_Fryer2012(p_Mass, mProto, fallbackFraction));
-            gravitationalMass = CalculateGravitationalRemnantMass_Fryer2012(baryonicMass, p_NSmaxBaryonicMass);
+            gravitationalMass = CalculateGravitationalRemnantMass_Fryer2012(baryonicMass, GLOBALS->NSMaxBaryonicMass());
             break;
     
         default:                                                            // unexpected prescription
@@ -1147,33 +792,21 @@ DBL_DBL GiantBranch::CalculateRemnantMass_Fryer2012(const double p_Mass, const d
  * Calculate the remnant mass, per Fryer et al. 2022, eq 5.
  *
  *
- * DBL_DBL CalculateRemnantMass_Fryer2022(const double    p_Mass,
- *                                        const double    p_COCoreMass,
- *                                        const double    p_NSmaxBaryonicMass,
- *                                        const double    p_fMix,
- *                                        const double    p_mCrit
- *                                        const SN_ENGINE p_SNenginePrescription) const
+ * Dbl_DblT CalculateRemnantMass_Fryer2022(const double p_Mass, const double p_COCoreMass, const double p_fMix, const double p_mCrit) const
  *
  * @param       p_Mass                          Pre-SN mass of the star (Msol)
  * @param       p_COCoreMass                    Pre-SN Carbon Oxygen (CO) core mass of the star (Msol)
- * @param       p_NSmaxBaryonicMass             Maximum baryonic mass for NS maximum mass (Msol)
  * @param       p_fMix                          Fryer 2022 mixing growth time
  * @param       p_mCrit                         Fryer 2022 critical mass for BH formation (Msol)        
- * @param       p_SNenginePrescription          Fryer2012 supernova mechanism (DELAYED, RAPID)
  * @return                                      Tuple containing:
  *                                                   DOUBLE Remnant mass (Msol)
  *                                                   DOUBLE Fraction of mass falling back onto compact object [0.0, 1.0]
  */
-DBL_DBL GiantBranch::CalculateRemnantMass_Fryer2022(const double    p_Mass,
-                                                    const double    p_COCoreMass,
-                                                    const double    p_NSmaxBaryonicMass,
-                                                    const double    p_fMix,
-                                                    const double    p_mCrit
-                                                    const SN_ENGINE p_SNenginePrescription) const {
+Dbl_DblT GiantBranch::CalculateRemnantMass_Fryer2022(const double p_Mass, const double p_COCoreMass, const double p_fMix, const double p_mCrit) const {
 
     // calculate baryonic mass, clamped to total mass
     const double f = p_COCoreMass / p_fMix;
-    double baryonicMass = std::min(1.2 + 0.05 * p_fMix + 0.01 * f * f + exp(p_fMix * (p_COCoreMass - p_mCrit)), p_Mass);
+    double baryonicMass = std::min(1.2 + 0.05 * p_fMix + 0.01 * f * f + std::exp(p_fMix * (p_COCoreMass - p_mCrit)), p_Mass);
 
     // calculate fallback fraction and gravitational mass
     double mProto;
@@ -1181,7 +814,7 @@ DBL_DBL GiantBranch::CalculateRemnantMass_Fryer2022(const double    p_Mass,
     double fallbackFraction;
     double gravitationalMass;
 
-    switch (p_SNenginePrescription) {                                       // which Fryer SN mechanism?
+    switch (OPTIONS->FryerSupernovaEngine()) {                              // which Fryer SN mechanism?
 
         case SN_ENGINE::DELAYED:                                            // DELAYED  
 
@@ -1281,7 +914,7 @@ STELLAR_TYPE GiantBranch::ProcessCoreCollapseSN(const STELLAR_TYPE p_StellarType
 
         case REMNANT_MASS_PRESCRIPTION::MULLER2016:                                                         // Muller 2016
 
-            std::tie(mass, SNdetails.fallbackFraction) = CalculateRemnantMass_Muller2016(p_Mass, m_COCoreMass);
+            mass = CalculateRemnantMass_Muller2016(p_Mass, m_COCoreMass);
             SNdetails.fallbackFraction = 0.0;
             break;
 
@@ -1331,14 +964,14 @@ STELLAR_TYPE GiantBranch::ProcessCoreCollapseSN(const STELLAR_TYPE p_StellarType
             // default is ok here - unknown/unexpected remnant mass prescription already dealt with above
 
             if (mass > OPTIONS->MaximumNeutronStarMass()) {                                                  // collapse to BH
-                m_Luminosity  = BH::CalculateLuminosityOnPhase_Static();                                            // luminosity of BH
-                m_Radius      = BH::CalculateSchwarzschildRadius_Static(mass);                                    // Schwarzschild radius (not correct for rotating BH)
+                m_Luminosity  = BH::CalculateLuminosity_Hurley2000_Static();                                            // luminosity of BH
+                m_Radius      = BH::CalculateRadius_Hurley2000_Static(mass);                                    // Schwarzschild radius (not correct for rotating BH)
                 m_Temperature = BaseStar::CalculateTemperatureOnPhase(m_Luminosity, m_Radius);               // temperature of BH
                 SNdetails.stellarTypePostSN = STELLAR_TYPE::BLACK_HOLE;
             }
             else {                                                                                                  // collapse to NS
-                m_Luminosity  = NS::CalculateLuminosityOnPhase_Static(mass, 0.0);                                 // luminosity of NS as it cools
-                m_Radius      = NS::CalculateRadiusOnPhase_Static(mass);                                          // radius of NS
+                m_Luminosity  = NS::CalculateLuminosity_Hurley2000_Static(mass, 0.0);                                 // luminosity of NS as it cools
+                m_Radius      = NS::CalculateRadius_Hurley2000_Static(mass);                                          // radius of NS
                 m_Temperature = BaseStar::CalculateTemperatureOnPhase(m_Luminosity, m_Radius);               // temperature of NS
                 SNdetails.stellarTypePostSN = STELLAR_TYPE::NEUTRON_STAR;
             }
@@ -1473,7 +1106,7 @@ STELLAR_TYPE GiantBranch::ProcessPPISN(const STELLAR_TYPE       p_StellarType,
     SNdetails.pastEvent    = SN_EVENT::PPISN;                                           // ... will be a past event
         
         m_Luminosity  = BH::CalculateLuminosityOnPhase_Static();                                // black hole luminosity
-        m_Radius      = BH::CalculateRadiusOnPhase_Static(m_Mass);                              // Schwarzschild radius (not correct for rotating BH)
+        m_Radius      = BH::CalculateRadius_Hurley2000_Static(m_Mass);                              // Schwarzschild radius (not correct for rotating BH)
         m_Temperature = CalculateTemperatureOnPhase(m_Luminosity, m_Radius);
 
     }
@@ -1488,7 +1121,7 @@ STELLAR_TYPE GiantBranch::ProcessPPISN(const STELLAR_TYPE       p_StellarType,
         case PPI_PRESCRIPTION::FARMER:                                                      // FARMER
             // Farmer et al. 2019 (See http://dx.doi.org/10.3847/1538-4357/ab518b)
 
-            if (p_COCoreMass < FARMER_PPISN_UPP_LIM_LIN_REGIME)) {            // CO core mass < FARMER_PPISN_UPP_LIM_LIN_REGIME threshold?
+            if (p_COCoreMass < FARMER_PPISN_UPP_LIM_LIN_REGIME) {            // CO core mass < FARMER_PPISN_UPP_LIM_LIN_REGIME threshold?
                 mass = p_COCoreMass + 4.0;                                  // yes -linear relation below threshold
             }
             else if (p_COCoreMass < FARMER_PPISN_UPP_LIM_QUAD_REGIME) {     // no - CO core mass < FARMER_PPISN_UPP_LIM_QUAD_REGIME threshold?
@@ -1582,7 +1215,7 @@ STELLAR_TYPE GiantBranch::ProcessPPISN(const STELLAR_TYPE       p_StellarType,
         stellarType   = STELLAR_TYPE::BLACK_HOLE;                                               // -> black hole
         
         m_Luminosity  = BH::CalculateLuminosityOnPhase_Static();                                // black hole luminosity
-        m_Radius      = BH::CalculateRadiusOnPhase_Static(m_Mass);                              // Schwarzschild radius (not correct for rotating BH)
+        m_Radius      = BH::CalculateRadius_Hurley2000_Static(m_Mass);                              // Schwarzschild radius (not correct for rotating BH)
         m_Temperature = CalculateTemperatureOnPhase(m_Luminosity, m_Radius);
 
         m_SupernovaDetails.fallbackFraction = 1.0;                                              // fraction of mass that falls back
@@ -1619,13 +1252,13 @@ StellarSNDetailsT GiantBranch::ProcessSupernova(const bool p_AllowECSN, const St
     StellarSNDetailsT SNdetails = p_SNdetails;      // copy given supernova details
 
     // set preSN values
-    SNdetails.COCoreMassPreSN  = m_StateHistory.CurrentState.COCoreMass();
-    SNdetails.coreMassPreSN    = m_StateHistory.CurrentState.CoreMass();
+    SNdetails.COCoreMassPreSN  = COCoreMass();
+    SNdetails.coreMassPreSN    = CoreMass();
     SNdetails.coreRadiusPreSN  = CalculateConvectiveCoreRadius();
-    SNdetails.HeCoreMassPreSN  = m_StateHistory.CurrentState.HeCoreMass();
-    SNdetails.massPreSN        = m_StateHistory.CurrentState.Mass();
-    SNdetails.radiusPreSN      = m_StateHistory.CurrentState.Radius();
-    SNdetails.stellarTypePreSN = m_StateHistory.CurrentState.StellarType();
+    SNdetails.HeCoreMassPreSN  = HeCoreMass();
+    SNdetails.massPreSN        = Mass();
+    SNdetails.radiusPreSN      = Radius();
+    SNdetails.stellarTypePreSN = StellarType();
 
     SetSNHydrogenContent();
 
@@ -1679,62 +1312,7 @@ SNdetails.stellarTypePostCOFormation = stellarType;
 
 
 
-/*
- * CalculateConvectiveEnvelopeMass
- *
- * @brief
- * Calculate the mass of the convective envelope.
- * 
- * Approximates the mass of the outer convective envelope.
- * Follows the fits of Picker, Hirai, Mandel 2024 (see https://arxiv.org/pdf/2402.13180)
- * 
- * Mandel, Hirai, Picker 2024 (see https://arxiv.org/pdf/2412.10691)
- *
- *
- * DBL_DBL CalculateConvectiveEnvelopeMass(const double p_Mass, const double p_CoreMass) const
- * 
- * @param       p_Mass                          Mass of the star (Msol)
- * @param       p_MassEffectiveInitial          Effective initial mass of the star (Msol)
- * @return                                      Tuple containing:
- *                                                   GB convective envelope mass (Msol)
- *                                                   Maximum GB convective envelope mass (Msol)
- */
-COMPAS_PURE DBL_DBL GiantBranch::CalculateConvectiveEnvelopeMass(const double p_Mass, const double p_MassEffectiveInitial) const {
-    
-    // ratio of final intershell mass to final core mass - Picker at al. 2024 eq 8
-    double MiFinalMcFinal = -0.023 * GLOBALS->SigmaHurley() - 0.0023;
 
-    // We need the temperature of the star just after BAGB, which is the temperature at the
-    // start of the EAGB phase.  Since we are on the giant branch here, we can clone this
-    // object as an EAGB object and, as long as it is initialised (to the start of the phase),
-    // we can query the cloned object for its temperature.
-    //
-    // To ensure the clone does not participate in logging, we set its persistence to EPHEMERAL.
-    //
-    // Furthermore, 'this' is const in this function, so we first remove its const-ness (required
-    // to call Clone()) via the use of const_cast<>().  Since we don't know what class the
-    // underlying object is, we cast it to EAGB&.
-
-    EAGB *clone = EAGB::Clone(static_cast<EAGB&>(const_cast<GiantBranch&>(*this)), OBJECT_PERSISTENCE::EPHEMERAL);
-    clone->EvolveOneTimestep(0.0, 0.0, 0.0, true);                                                                          // otherwise, temperature not updated
-    double tMin = clone->Temperature();                                                                                     // get temperature of clone
-    delete clone; clone = nullptr;                                                                                          // return the memory allocated for the clone
-    
-    // Use Eq. 6 of Mandel et al. 2024 eq 6 rather than Picker at al. 2024 eq 6 for tOnset
-    // to avoid issues caused by differences between temperatures in MESA models (used in
-    // fits from Picker et al. 2024) and Pols models (used in Hurley SSE tracks).
-    double tOnset  = tMin / std::min(0.695 - 0.057 * GLOBALS->SigmaHurley(), 0.95);                                        // Mandel et al. 2024, eq 6
-    double McFinal = CalculateCoreMassAtBAGB_Hurley2000(p_MassEffectiveInitial);
-    double mEnvMax = std::max(p_Mass - mCoreFinal * (1.0 + MiFinalMcFinal), 0.0);                                         // Picker at al. 2024, eq 9
-
-    // Picker+ 2024 fits were only made for stars above 8.0 solar masses, with runs down to 5.0 solar masses, 
-    // so using the final core mass as an approximate threshold of validity
-    if(utils::Compare(mCoreFinal, 1.5) < 0) mEnvMax = std::max(p_Mass - mCoreFinal, 0.0);                                  // unlike massive stars, intermediate-mass stars have almost no radiative intershell at maximum convective envelope extent
-    
-    double mEnv = mConvMax / (1.0 + exp(4.6 * (tMin + tOnset - 2.0 * m_Temperature) / (tMin - tOnset)));  // Picker at al. 2024, eq 7
-    
-    return std::make_tuple(mEnv, mEnvMax);
-}
 
 
 
@@ -1788,12 +1366,12 @@ STELLAR_TYPE GiantBranch_Constituent::ResolveSupernova(pass MT history here - or
  * at a later date.
  * 
  *
- * DBL_DBL CalculateRemnantMass_Schneider2020(const double                    p_Mass,
- *                                            const double                    p_COCoreMass,
- *                                            const double                    p_HeCoreMassPreSN,
- *                                            const double                    p_MaxNSMass,
- *                                            const MT_CASE                   p_MTcase,
- *                                            const REMNANT_MASS_PRESCRIPTION p_RemnantMassPrescription) const
+ * Dbl_DblT CalculateRemnantMass_Schneider2020(const double                    p_Mass,
+ *                                             const double                    p_COCoreMass,
+ *                                             const double                    p_HeCoreMassPreSN,
+ *                                             const double                    p_MaxNSMass,
+ *                                             const MT_CASE                   p_MTcase,
+ *                                             const REMNANT_MASS_PRESCRIPTION p_RemnantMassPrescription) const
  *
  * @param       p_Mass                          Mass of the star (Msol)
  * @param       p_COCoreMass                    CO core mass of the star (Msol)
@@ -1805,12 +1383,12 @@ STELLAR_TYPE GiantBranch_Constituent::ResolveSupernova(pass MT history here - or
  *                                                   DOUBLE Remnant mass (Msol)
  *                                                   DOUBLE Fraction of mass falling back onto compact object [0.0, 1.0]
  */
-DBL_DBL GiantBranch_Constituent::CalculateRemnantMass_Schneider2020(const double                    p_Mass,
-                                                                    const double                    p_COCoreMass,
-                                                                    const double                    p_HeCoreMassPreSN,
-                                                                    const double                    p_MaxNSMass,
-                                                                    const MT_CASE                   p_MTcase,
-                                                                    const REMNANT_MASS_PRESCRIPTION p_RemnantMassPrescription) const {
+Dbl_DblT GiantBranch_Constituent::CalculateRemnantMass_Schneider2020(const double                    p_Mass,
+                                                                     const double                    p_COCoreMass,
+                                                                     const double                    p_HeCoreMassPreSN,
+                                                                     const double                    p_MaxNSMass,
+                                                                     const MT_CASE                   p_MTcase,
+                                                                     const REMNANT_MASS_PRESCRIPTION p_RemnantMassPrescription) const {
     double remnantMass;
     double fallbackFraction;
 
@@ -1829,25 +1407,25 @@ DBL_DBL GiantBranch_Constituent::CalculateRemnantMass_Schneider2020(const double
             double logRemnantMass;
             case MT_CASE::A:                                                        // case A MT
 
-                     if (p_COCoreMass <  7.064) { logRemnantMass = log10(0.02128 * p_COCoreMass + 1.35349); }
+                     if (p_COCoreMass <  7.064) { logRemnantMass = std::log10(0.02128 * p_COCoreMass + 1.35349); }
                 else if (p_COCoreMass <  8.615) { logRemnantMass = 0.03866 * p_COCoreMass + 0.64417; }
-                else if (p_COCoreMass < 15.187) { logRemnantMass = log10(0.02128 * p_COCoreMass + 1.35349); }
+                else if (p_COCoreMass < 15.187) { logRemnantMass = std::log10(0.02128 * p_COCoreMass + 1.35349); }
                 else                            { logRemnantMass = 0.02573 * p_COCoreMass + 0.79027; }
                 break;
 
             case MT_CASE::B:                                                        // case B MT
 
-                     if (p_COCoreMass <  7.548) { logRemnantMass = log10(0.01909 * p_COCoreMass + 1.34529); }
+                     if (p_COCoreMass <  7.548) { logRemnantMass = std::log10(0.01909 * p_COCoreMass + 1.34529); }
                 else if (p_COCoreMass <  8.491) { logRemnantMass = 0.03306 * p_COCoreMass + 0.68978; }
-                else if (p_COCoreMass < 15.144) { logRemnantMass = log10(0.01909 * p_COCoreMass + 1.34529); }
+                else if (p_COCoreMass < 15.144) { logRemnantMass = std::log10(0.01909 * p_COCoreMass + 1.34529); }
                 else                            { logRemnantMass = 0.02477 * p_COCoreMass + 0.80614; }
                 break;
 
             case MT_CASE::C:                                                        // case C MT
 
-                     if (p_COCoreMass <  6.357) { logRemnantMass = log10(0.03781 * p_COCoreMass + 1.36363); }
+                     if (p_COCoreMass <  6.357) { logRemnantMass = std::log10(0.03781 * p_COCoreMass + 1.36363); }
                 else if (p_COCoreMass <  7.311) { logRemnantMass = 0.05264 * p_COCoreMass + 0.58531; }
-                else if (p_COCoreMass < 14.008) { logRemnantMass = log10(0.03781 * p_COCoreMass + 1.36363); }
+                else if (p_COCoreMass < 14.008) { logRemnantMass = std::log10(0.03781 * p_COCoreMass + 1.36363); }
                 else                            { logRemnantMass = 0.01795 * p_COCoreMass + 0.98797; }
                 break;
 
@@ -1876,20 +1454,20 @@ DBL_DBL GiantBranch_Constituent::CalculateRemnantMass_Schneider2020(const double
 
 
 /*
- * CalculateRemnantMass_Maltsev2025  *** JR: should we rename this? *Ilya*
+ * CalculateRemnantMass_Maltsev2025
  *
- * Calculate remnant mass for binary stars, per Maltsev et al. 2024.
+ * Calculate remnant mass for binary stars, per Maltsev et al. 2025.
  * (See https://doi.org/10.1051/0004-6361/202554931)
  *
  * Remnant mass is based on the donor type at the first MT event.
  * 
  *
- * DBL_DBL CalculateRemnantMass_Maltsev2025(const double       p_COCoreMass,
- *                                          const double       p_HeCoreMass,
- *                                          const double       p_ZetaAsplund, 
- *                                          const double       p_MaltsevFallbackFraction,
- *                                          const MT_CASE      p_MTcase,
- *                                          const MALTSEV_MODE p_MaltsevMode) const
+ * Dbl_DblT CalculateRemnantMass_Maltsev2025(const double       p_COCoreMass,
+ *                                           const double       p_HeCoreMass,
+ *                                           const double       p_ZetaAsplund, 
+ *                                           const double       p_MaltsevFallbackFraction,
+ *                                           const MT_CASE      p_MTcase,
+ *                                           const MALTSEV_MODE p_MaltsevMode) const
  *
  * @param       p_COCoreMass                    CO core mass of the star (Msol)
  * @param       p_HeCoreMass                    He core mass of the star (Msol)
@@ -1899,12 +1477,12 @@ DBL_DBL GiantBranch_Constituent::CalculateRemnantMass_Schneider2020(const double
  * @param       p_MaltsevMode                   User-specified Maltsev mode (`--maltsev-mode`))
  * @return                                      Remnant mass in Msol
  */
-DBL_DBL GiantBranch_Constituent::CalculateRemnantMass_Maltsev2025(const double       p_COCoreMass,
-                                                                  const double       p_HeCoreMass,
-                                                                  const double       p_ZetaAsplund, 
-                                                                  const double       p_MaltsevFallbackFraction, //OPTIONS->MaltsevFallbackFraction()  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-                                                                  const MT_CASE      p_MTcase,
-                                                                  const MALTSEV_MODE p_MaltsevMode) const { // OPTIONS->MaltsevMode() <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+Dbl_DblT GiantBranch_Constituent::CalculateRemnantMass_Maltsev2025(const double       p_COCoreMass,
+                                                                   const double       p_HeCoreMass,
+                                                                   const double       p_ZetaAsplund, 
+                                                                   const double       p_MaltsevFallbackFraction, //OPTIONS->MaltsevFallbackFraction()  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+                                                                   const MT_CASE      p_MTcase,
+                                                                   const MALTSEV_MODE p_MaltsevMode) const { // OPTIONS->MaltsevMode() <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
     double fallbackFraction;
     double remnantMass;
 

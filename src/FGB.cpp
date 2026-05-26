@@ -25,13 +25,7 @@
  * Calculate core mass on the First Giant Branch, per Hurley et al. 2000, eqs 39 & 45
  *
  *
- * double CalculateCoreMass_Hurley2000(
- *     const double      p_Mass,
- *     const double      p_Age, 
- *     const double      p_Tau,
- *     const DBL_VECTOR& p_GBparams,
- *     const DBL_VECTOR& p_tScales
- * ) const
+ * double CalculateCoreMass_Hurley2000(const double p_Mass, const double p_Age, const double p_Tau, const DblVectorT& p_GBparams, const DblVectorT& p_tScales) const
  *
  * @param       p_Mass                          Mass of the star (Msol)
  * @param       p_Age                           Effective age of the star (Myr)
@@ -40,38 +34,32 @@
  * @param       p_tScales                       Hurley timescales (Myr)
  * @return                                      FGB core mass (Msol)
  */
-COMPAS_PURE double FGB::CalculateCoreMass_Hurley2000(
-    const double      p_Mass,
-    const double      p_Age,
-    const double      p_Tau,
-    const DBL_VECTOR& p_GBparams,
-    const DBL_VECTOR& p_tScales
-) const {
-
-// macros for convenience and readability - undefined at end of function
-#define GBparams(x) p_GBparams[static_cast<int>(HURLEY_GBP:::x)]
-#define tScales(x) p_tScales[static_cast<int>(TIMESCALE::x)]
+double FGB::CalculateCoreMass_Hurley2000(const double p_Mass, const double p_Age, const double p_Tau, const DblVectorT& p_GBparams, const DblVectorT& p_tScales) const {
 
     double McGB;
-    if (p_Mass < GLOBALS->HurleyMassCutoffs(static_cast<int>(HURLEY_MASS_CUTOFF::MHeF))) {
-        McGB = p_Age <= tScales(tMx_FGB)
-                ? PPOW(((GBparams(p) - 1.0) * GBparams(AH) * GBparams(D) * (tScales(tinf1_FGB) - p_Age)), (1.0 / (1.0 - GBparams(p))))
-                : PPOW(((GBparams(q) - 1.0) * GBparams(AH) * GBparams(B) * (tScales(tinf2_FGB) - p_Age)), (1.0 / (1.0 - GBparams(q))));
+    if (p_Mass < GLOBALS->HurleyMassCutoffs(static_cast<int>(HURLEY_MCO::MHeF))) {
+        const double AH = p_GBparams[HURLEY_GBP::AH];
+        const double B  = p_GBparams[HURLEY_GBP::B];
+        const double D  = p_GBparams[HURLEY_GBP::D];
+        const double p  = p_GBparams[HURLEY_GBP::P];
+        const double q  = p_GBparams[HURLEY_GBP::Q];
+
+        McGB = p_Age <= p_tScales[HURLEY_TS::MX_FGB]
+                ? PPOW(((p - 1.0) * AH * D * (p_tScales[HURLEY_TS::INF1_FGB] - p_Age)), (1.0 / (1.0 - p)))
+                : PPOW(((q - 1.0) * AH * B * (p_tScales[HURLEY_TS::INF2_FGB] - p_Age)), (1.0 / (1.0 - q)));
     }
     else {
-        McGB = GBparams(McBGB) + ((CalculateCoreMassAtHeI_Hurley2000(p_Mass) - GBparams(McBGB)) * p_Tau);
+        const double McBGB = p_GBparams[HURLEY_GBP::MCBGB];
+        McGB = McBGB + ((CalculateCoreMassAtHeI_Hurley2000(p_Mass) - McBGB) * p_Tau);
     }
 
     return McGB;
-
-#undef tScales
-#undef GBparams
 }
 
 
 ///////////////////////////////////////////////////////////////////////////////////////
 //                                                                                   //
-//                         AGE / LIFETIME / TAU / TIMESCALES                         //
+//                    AGE / LIFETIME / TAU / TIMESCALES / TIMESTEP                   //
 //                                                                                   //
 ///////////////////////////////////////////////////////////////////////////////////////
 
@@ -86,29 +74,6 @@ COMPAS_PURE double FGB::CalculateCoreMass_Hurley2000(
 //                    MISCELLANEOUS FUNCTIONS / CONTROL FUNCTIONS                    //
 //                                                                                   //
 ///////////////////////////////////////////////////////////////////////////////////////
-
-
-/*
- * Choose timestep for evolution
- *
- * Given in the discussion in Hurley et al. 2000
- *
- *
- * ChooseTimestep(const double p_Time)
- *
- * @param   [IN]    p_Time                      Current age of star in Myr
- * @return                                      Suggested timestep (dt)
- */
-double FGB::ChooseTimestep(const double p_Time) const {
-
-    double dtk = utils::Compare(p_Time, timescales(tMx_FGB)) <= 0       // ah because timescales[4,5,6] are not calculated yet   JR: todo: ?but... timescales[4] is used if this is true...? (and 5 if not) 
-            ? 0.02 * (timescales(tinf1_FGB) - p_Time)
-            : 0.02 * (timescales(tinf2_FGB) - p_Time);
-
-    double dte = timescales(tHeI) - p_Time;
-
-    return std::max(std::min(dtk, dte), NUCLEAR_MINIMUM_TIMESTEP);
-}
 
 
 /*

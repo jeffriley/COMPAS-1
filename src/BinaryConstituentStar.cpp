@@ -223,7 +223,7 @@ void BinaryConstituentStar::CalculateCommonEnvelopeValues() {
     m_CEDetails.radiativeIntershellMass = Mass() - CoreMass() - m_CEDetails.convectiveEnvelopeMass;
 
     if (OPTIONS->CommonEnvelopeFormalism() == CE_FORMALISM::TWO_STAGE) {
-        m_CEDetails.lambda = CalculateConvectiveEnvelopeLambdaPicker(std::tie(m_CEDetails.convectiveEnvelopeMass, maxConvectiveEnvelopeMass));
+        m_CEDetails.lambda = CalculateConvectiveEnvelopeLambda_Picker2024(std::tie(m_CEDetails.convectiveEnvelopeMass, maxConvectiveEnvelopeMass));
         m_CEDetails.bindingEnergy = CalculateConvectiveEnvelopeBindingEnergy(Mass(), Radius(), m_CEDetails.convectiveEnvelopeMass, m_CEDetails.lambda);
     }
 }

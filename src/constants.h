@@ -10,68 +10,94 @@
 #include <csignal>
 #include <limits>
 
-// global defines
 
+
+// Compiler version related defines
 #define UNKNOWN_COMPILER 0
 #define GCC_COMPILER     1
 #define CLANG_COMPILER   2
+#define MSC_COMPILER     3
 
 #if defined(__GNUC__) && !defined(__clang__)
     #define COMPILER_ID    GCC_COMPILER
-    #define COMILER_MAJOR  __GNUC__
+    #define COMPILER_MAJOR __GNUC__
     #define COMPILER_MINOR __GNUC_MINOR__
     #define COMPILER_PATCH __GNUC_PATCHLEVEL__
 #elif defined(__clang__)
     #define COMPILER_ID    CLANG_COMPILER
-    #define COMILER_MAJOR  __clang__
+    #define COMPILER_MAJOR __clang_major__
     #define COMPILER_MINOR __clang_minor__
     #define COMPILER_PATCH __clang_patchlevel__
+#elif defined(_MSC_VER)
+    #define COMPILER_ID    MSC_COMPILER
+    #define COMPILER_MAJOR (_MSC_FULL_VER / 10000000)
+    #define COMPILER_MINOR ((_MSC_FULL_VER % 10000000) / 100000)
+    #define COMPILER_PATCH (_MSC_FULL_VER % 100000)
 #else
     #define COMPILER_ID    UNKNOWN_COMPILER
-    #define COMILER_MAJOR  "??"
-    #define COMPILER_MINOR "??"
-    #define COMPILER_PATCH "??"
+    #define COMPILER_MAJOR (-1)
+    #define COMPILER_MINOR (-1)
+    #define COMPILER_PATCH (-1)
 #endif
 
 
-// [[gnu::pure]] and [[gnu::const]]
+// Function attributes [[gnu::pure]] and [[gnu::const]]
+// (#defined as GNU_PURE and GNU_CONST)
 //
 // gnu::pure-ness and gnu::const-ness are gnu-specific attributes that signal to
 // the compiler that the functions marked so behave in a particular way, so can
-// be treated specially by the compiler wrt optimisation.  Specifically:
+// be treated specially by the compiler wrt optimisation - they are optimisation
+// hints for the compiler.  Specifically:
 //
 // [[gnu::pure]] signals to the compiler that the function does not modify the
 // state of the program in an observable way (other than indirectly by callers
 // inspecting and acting upon the function's return value).  Functions marked
-// [[gnu-pure]] are permitted to interrogate (read) any non-volatile objects
-// (see "volatile" attribute), including global and/or static data, but they
-// must not mutate it.  The return value of a [[gnu::pure]] function must depend
-// only on its arguments and the values of any non-volatile global or static data
-// that it uses (reads).  Note that [[gnu::pure]] functions that don't return a
-// value (i.e. void function) don't make sense, and result in compilation errors.
+// [[gnu::pure]] are permitted to interrogate (read) any non-volatile objects,
+// including global and/or static data, but they must not mutate it.  The return
+// value of a [[gnu::pure]] function must depend only on its arguments and the
+// values of any non-volatile global or static data that it uses (reads).  Note
+// that [[gnu::pure]] functions that don't return a value (i.e. void function)
+// don't make sense, and result in compilation errors.
 //
 // [[gnu::const]] also signals to the compiler that the function does not modify
 // the state of the program in an observable way (other than indirectly by callers
 // inspecting and acting upon the function's return value), but is a stricter
 // version of [[gnu::pure]].  Functions marked [[gnu-const]] are not permitted to
-// interrogate (read) or mutate (write) any non-volatile objects (see "volatile"
-// attribute), including global and/or static data.  The return value of a 
-// [[gnu::const]] function must depend only on its arguments.  Note that 
-// [[gnu::const]] functions that don't return a value (i.e. void function) don't
-// make sense, and result in compilation errors.
+// interrogate (read) or mutate (write) any non-volatile objects, including global
+// and/or static data.  The return value of a [[gnu::const]] function must depend
+// only on its arguments.  Note that [[gnu::const]] functions that don't return a
+// value (i.e. void function) don't make sense, and result in compilation errors.
 //
-// Declarations in `constants.h` (and elsewhere) marked `constexpr` can be
-// evaluated at compile time, and if the declaration does not require a reference
-// to be accessed (i.e. it is not a vector or other container that requires a
-// reference to access individual elements), then the value can be inserted directly
-// into the code and does not require storage (memory), and as such can be accessed
-// (read only) by either a [[gnu-pure]] or [[gnu-cost]] function.  This also applies
-// to single values from an `enum class` (e.g. `MASS_LOSS_TYPE::OB`).
+// In the context of [[gnu::const]], "static memory" or "static data" means any
+// memory whose address is fixed at compile/link time — i.e., anything that isn't
+// a local variable on the current call stack or derived purely from the function's
+// arguments.
+//
+// "static memory" or "static data" includes:
+//
+//     Global variables (at file scope)
+//     Static local variables (inside a function)
+//     Static-duration objects (anything in .data, .bss, .rodata)
+//     Memory reachable via global pointers (extern int *val; *val)
+//
+// "static memory" or "static data" does NOT mean "memory declared with the static
+// keyword" specifically. The static keyword in C/C++ controls linkage and storage
+// duration, but here the concern is purely about storage duration (does this memory
+// outlive the function call?).
+//
+// Declarations in `constants.h` (and elsewhere) marked `constexpr` can be evaluated
+// at compile time, and if the declaration does not require a reference to be accessed
+// (i.e. it is not a vector or other container that requires a reference to access
+// individual elements), then the value can be inserted directly into the code and
+// does not require storage (memory), and as such can be accessed (read only) by either
+// a [[gnu::pure]] or [[gnu::cost]] function.  This also applies to single values from
+// an `enum class` (e.g. `MASS_LOSS_TYPE::OB`).
 //
 // Marking functions [[gnu::const]] or [[gnu::pure]] erroneoulsy can (probably will)
 // result in undefined behaviour.
 //
-// [[gnu::const]] and [[gnu::pure]] are supported by the gnu and clang compilers.
+// [[gnu::const]] and [[gnu::pure]] are supported by the gnu and clang compilers, and
+// are defined away for other compilers.
 
 #if COMPILER_ID == GCC_COMPILER || COMPILER == CLANG_COMPILER
     #define GNU_CONST [[gnu::const]]
@@ -81,32 +107,42 @@
     #define GNU_PURE
 #endif
 
+// Function attribute COMPAS_PURE
+//
+// The COMPAS_PURE attribute is similar to GNU_CONST and GNU_PURE above, but rather
+// than being a signal (or promise) to the compiler that the function behaves in a
+// paticular way, COMPAS_PURE is merely a signal (or promise) to developers (or
+// readers of the code) that the function behaves in a paticular way.  Where GNU_PURE
+// is less strict than GNU_CONST (in that functions marked GNU_PURE are permitted to
+// interrogate (read) non-volatile objects), COMPAS_PURE is less strict again than
+// GNU_PURE - functions marked COMPAS_PURE are permitted to interrogate (read) values
+// from the singleton objects "GLOBALS", and "OPTIONS", as well as non-volatile objects.
+// Read access to values in "GLOBALS" and "OPTIONS" must be via the getter functions
+// exposed by those singleton objetcs.
+//
+// The return value of a COMPAS_PURE function must depend only on its arguments and
+// the values of any non-volatile global or static data, or GLOBALS or OPTIONS value
+// that it uses (reads).  Note that COMPAS_PURE functions that don't return a value
+// (i.e. void function) don't make sense (but will not result in compilation errors).
+//
+// Marking a function COMPAS_PURE does not affect how the compiler treats the function
+// (it is defined away - see below).  COMPAS_PURE is merely a signal to the developer
+// or reader that the function is a "pure" function save for the possibility that it
+// might interrogate the GLOBALS and/or OPTIONS singleton.
+
 #define COMPAS_PURE
 
+// The COMPAS convention is to *not* add GNU_CONST, GNU_PURE, or COMPAS_PURE to any base
+// class virtual functions.  These attributes are a promise (to the compiler for GNU_CONST
+// and GNU_PURE, and to developers for COMPAS_PURE) that all future overrides will also be
+// pure or const. If a derived class implements an override that has side effects, it may
+// lead to undefined behaviour because the compiler might elide calls it assumes are
+// redundant.  Note that this is a COMPAS convention, and it is not forbidden by the C++
+// standard or compiler implementations - but if we do it, we have to be extremely
+// careful that it is dome properly - per the caveat above.  Given the environment in
+// which COMPAS is being devloped, the convention to not do it is the safest option.
 
-#define COMPASUnorderedMap std::unordered_map   // since c++17
 
-#define massCutoffs(x) m_MassCutoffs[static_cast<int>(MASS_CUTOFF::x)]
-
-#define QUANTISE_DT(dt)     (std::round(dt / TIMESTEP_QUANTUM) * TIMESTEP_QUANTUM)      // for quantising timestep
-
-#define BRCEK_MS_CORE_MASS_REGIME(x) (OPTIONS->MainSequenceCoreMassPrescription() == MS_CORE_MASS_PRESCRIPTION::BRCEK && x >= BRCEK_LOWER_MASS_LIMIT)
-
-
-// common type definitions
-// easiest way of making them available globally is to put them here
-typedef std::vector<std::string>                                        STR_VECTOR;
-typedef std::vector<double>                                             DBL_VECTOR;
-typedef std::vector<std::optional<double>>                              OPT_DBL_VECTOR;
-typedef std::vector<int>                                                INT_VECTOR;
-typedef std::vector<size_t>                                             SIZE_T_VECTOR;
-typedef std::vector<bool>                                               BOOL_VECTOR;
-typedef std::tuple <double, double>                                     DBL_DBL;
-typedef std::tuple <double, double, double>                             DBL_DBL_DBL;
-typedef std::tuple <double, double, double, double>                     DBL_DBL_DBL_DBL;
-typedef std::tuple<std::string, std::string>                            STR_STR;
-typedef std::tuple<std::string, std::string, std::string>               STR_STR_STR;
-typedef std::tuple<std::string, std::string, std::string, std::string>  STR_STR_STR_STR;
 
 
 // the defaults size of the boost list that handles variant types is 20 - so only 20 variant types are allowed
@@ -134,9 +170,11 @@ typedef std::tuple<std::string, std::string, std::string, std::string>  STR_STR_
 #include <boost/variant.hpp>
 
 
+
+
 /*
- * trick to allow SWITCH on literal strings
- * constexpr is (or can be) evaluated at compile-time, hence the ability to SWITCH using it.
+ * This implements a trick to allow SWITCH on literal strings.
+ * "constexpr" is (or can be) evaluated at compile-time, hence the ability to SWITCH using it.
  *
  * This function returns a hash value for a string - very small chance of collisions, but if a
  * collision happens the compiler will complain (because CASE values will be the same).
@@ -154,11 +192,24 @@ constexpr uint64_t _(char const* p_Str) {
 }
 
 
-// globals
-// I don't really like this, but it's the only way (until we have a globals singleton)
 
-typedef unsigned long int OBJECT_ID;
-extern OBJECT_ID globalObjectId;    // used to uniquely identify objects - used primarily for error printing
+
+#define massCutoffs(x) m_MassCutoffs[static_cast<int>(MASS_CUTOFF::x)]
+
+#define QUANTISE_DT(dt)     (std::round(dt / TIMESTEP_QUANTUM) * TIMESTEP_QUANTUM)      // for quantising timestep
+
+#define BRCEK_MS_CORE_MASS_REGIME(x) (OPTIONS->MainSequenceCoreMassPrescription() == MS_CORE_MASS_PRESCRIPTION::BRCEK && x >= BRCEK_LOWER_MASS_LIMIT)
+
+
+
+
+
+
+
+
+
+
+
 
 
 #include "typedefs.h"
@@ -187,9 +238,9 @@ constexpr double FLOAT_TOLERANCE_RELATIVE               = 1.0E-6;               
 constexpr double ROOT_ABS_TOLERANCE                     = 1.0E-6;                                                   // absolute tolerance for root finder
 constexpr double ROOT_REL_TOLERANCE                     = 1.0E-6;                                                   // relative tolerance for root finder
 
-constexpr std::size_t MAX_STACK_TRACE_SIZE              = 64;                                                       // for debugging - overkill, but just in case
+constexpr SizeT  MAX_STACK_TRACE_SIZE                   = 64;                                                       // for debugging - overkill, but just in case
 
-constexpr std::size_t DEFAULT_STATE_HISTORY_STACK_SIZE  = 0;                                                        // unbounded
+constexpr SizeT  DEFAULT_STATE_HISTORY_STACK_SIZE       = 0;                                                        // unbounded
 
 
 // initialisation constants
@@ -304,6 +355,7 @@ constexpr double MANDEL_BUTLER_CHE_MASS_BREAK           = 100.0;                
 
 constexpr double NEUTRON_STAR_MASS                      = 1.4;                                                      // Canonical NS mass in Msol
 constexpr double NEUTRON_STAR_RADIUS                    = (1.0 / 7.0) * 1.0E-4;                                     // 10km in Rsol.  Hurley et al. 2000, just after eq 93
+constexpr double ALFVEN_CONST                           = 16.2230311652007966;                                      // Alfven radius in CGS units (mu0 = 1.0): (2.0 * PI_2 / G_CGS) ^ (1.0 / 7.0)
 
 constexpr double MASSIVE_THRESHOLD                      = 8.0;                                                      // Mass (in solar masses) above which we consider stars to be "massive"
 constexpr double HIGH_MASS_THRESHOLD                    = 12.0;                                                     // Mass (in solar masses) above which Hurley considers stars to be high mass stars
@@ -337,7 +389,7 @@ constexpr double ABSOLUTE_MINIMUM_TIMESTEP              = 3.0 * TIMESTEP_QUANTUM
 constexpr double NUCLEAR_MINIMUM_TIMESTEP               = 1.0E6 * TIMESTEP_QUANTUM;                                 // Minimum time step for nuclear evolution in My (= 1 year = 31557600 seconds, given TIMESTEP_QUANTUM)
 constexpr double MAXIMUM_TIMESTEP_MULTIPLIER            = 1.0E3;                                                    // Maximum timestep multiplier
 
-constexpr unsigned int ABSOLUTE_MAXIMUM_TIMESTEPS       = 1000000;                                                  // Absolute maximum number of timesteps
+constexpr UIntT  ABSOLUTE_MAXIMUM_TIMESTEPS             = 1000000;                                                  // Absolute maximum number of timesteps
 
 constexpr int    MAX_BSE_INITIAL_CONDITIONS_ITERATIONS  = 100;                                                      // Maximum loop iterations looking for initial conditions for binary systems
 constexpr int    MAX_TIMESTEP_RETRIES                   = 30;                                                       // Maximum retries to find a good timestep for stellar evolution
@@ -385,7 +437,7 @@ constexpr int    TIDES_OMEGA_MAX_TRIES                  = 30;                   
 constexpr int    TIDES_OMEGA_MAX_ITERATIONS             = 50;                                                       // Maximum number of root finder iterations in BaseBinaryStar::OmegaAfterCircularisation()
 constexpr double TIDES_OMEGA_SEARCH_FACTOR_FRAC         = 1.0;                                                      // Search size factor (fractional part) in BaseBinaryStar::OmegaAfterCircularisation() (added to 1.0)
 constexpr double TIDES_MINIMUM_FRACTIONAL_EXTENT        = 1.0E-4;                                                   // Minimum fractional radius or mass of the stellar core or envelope, above which a given tidal dissipation mechanism is considered applicable
-constexpr double TIDES_MAXIMUM_ORBITAL_CHANGE_FRAC      = 0.01;                                                     // Maximum allowed change in orbital and spin properties due to KAPIL2025 tides in a single timestep - 1% expressed as a fraction
+constexpr double TIDES_MAXIMUM_ORBITAL_CHANGE_FRAC      = 0.01;                                                     // Maximum allowed change in orbital and spin properties due to KAPIL2026 tides in a single timestep - 1% expressed as a fraction
 constexpr double TIDES_MINIMUM_FRACTIONAL_NUCLEAR_TIME  = 0.001;                                                    // Minimum allowed timestep from tidal processes, as a fraction of the nuclear minimum time scale
 
 constexpr double FARMER_PPISN_UPP_LIM_LIN_REGIME        = 38.0;                                                     // Maximum CO core mass to result in the linear remnant mass regime of the FARMER PPISN prescription
@@ -407,11 +459,11 @@ constexpr double BRCEK_CORE_MASS_TO_MASS_RATIO_LIMIT    = 0.9;
 
 // logging constants
 
-constexpr LOGFILETYPE DEFAULT_LOGFILE_TYPE              = LOGFILETYPE::HDF5;                                        // Default logfile type
-const std::string DEFAULT_OUTPUT_CONTAINER_NAME     = "COMPAS_Output";                                          // Default name for output container (directory)
-const std::string DEFAULT_HDF5_FILE_NAME            = "COMPAS_Output";                                          // Default name for HDF5 output file
-const std::string DETAILED_OUTPUT_DIRECTORY_NAME    = "Detailed_Output";                                        // Name for detailed output directory within output container
-const std::string RUN_DETAILS_FILE_NAME             = "Run_Details";                                            // Name for run details output file within output container
+constexpr LOGFILETYPE DEFAULT_LOGFILE_TYPE    = LOGFILETYPE::HDF5;                                        // Default logfile type
+const _STR_      DEFAULT_OUTPUT_CONTAINER_NAME     = "COMPAS_Output";                                          // Default name for output container (directory)
+const _STR_      DEFAULT_HDF5_FILE_NAME            = "COMPAS_Output";                                          // Default name for HDF5 output file
+const _STR_      DETAILED_OUTPUT_DIRECTORY_NAME    = "Detailed_Output";                                        // Name for detailed output directory within output container
+const _STR_      RUN_DETAILS_FILE_NAME             = "Run_Details";                                            // Name for run details output file within output container
 
 constexpr int    HDF5_DEFAULT_CHUNK_SIZE                = 100000;                                                   // Default HDF5 chunk size (number of dataset entries)
 constexpr int    HDF5_DEFAULT_IO_BUFFER_SIZE            = 1;                                                        // Number of HDF5 chunks to buffer for IO (per open dataset)
@@ -592,12 +644,12 @@ constexpr double HURLEY_HJELLMING_WEBBINK_QCRIT_WD        = 1.59;
 
 // coefficients for the calculation of initial angular frequency for Chemically Homogeneous Evolution
 // Mandel from Butler 2018
-const DBL_VECTOR CHE_Coefficients = { 5.7914E-04, -1.9196E-06, -4.0602E-07, 1.0150E-08, -9.1792E-11, 2.9051E-13 };
+const DblVectorT CHE_Coefficients = { 5.7914E-04, -1.9196E-06, -4.0602E-07, 1.0150E-08, -9.1792E-11, 2.9051E-13 };
 
 // WD effective baryon number lookup table
 // unordered_map - key is stellar type
 // Hurley et al. 2000, just after eq 90
-const COMPASUnorderedMap<STELLAR_TYPE, double> WD_Baryon_Number = {
+const std::unordered_map<STELLAR_TYPE, double> WD_Baryon_Number = {
     {STELLAR_TYPE::HELIUM_WHITE_DWARF,         4.0},
     {STELLAR_TYPE::CARBON_OXYGEN_WHITE_DWARF, 15.0},
     {STELLAR_TYPE::OXYGEN_NEON_WHITE_DWARF,   17.0}
@@ -616,7 +668,7 @@ enum class TOUT_L_Coeff: int { ALPHA, BETA, GAMMA, DELTA, EPSILON, ZETA, ETA };
 #define c TOUT_LR_TCoeff::c
 #define d TOUT_LR_TCoeff::d
 #define e TOUT_LR_TCoeff::e
-const std::map<TOUT_L_Coeff, COMPASUnorderedMap<TOUT_LR_TCoeff, double>> TOUT_L_COEFF = {
+const std::map<TOUT_L_Coeff, std::unordered_map<TOUT_LR_TCoeff, double>> TOUT_L_COEFF = {
     {TOUT_L_Coeff::ALPHA,   {{a, 0.39704170}, {b,  -0.32913574}, {c,  0.34776688}, {d,  0.37470851}, {e, 0.09011915}}},
     {TOUT_L_Coeff::BETA,    {{a, 8.52762600}, {b, -24.41225973}, {c, 56.43597107}, {d, 37.06152575}, {e, 5.45624060}}},
     {TOUT_L_Coeff::GAMMA,   {{a, 0.00025546}, {b,  -0.00123461}, {c, -0.00023246}, {d,  0.00045519}, {e, 0.00016176}}},
@@ -641,7 +693,7 @@ enum class TOUT_R_Coeff: int { THETA, IOTA, KAPPA, LAMBDA, MU, NU, XI, OMICRON, 
 #define c TOUT_LR_TCoeff::c
 #define d TOUT_LR_TCoeff::d
 #define e TOUT_LR_TCoeff::e
-const std::map<TOUT_R_Coeff, COMPASUnorderedMap<TOUT_LR_TCoeff, double>> TOUT_R_COEFF = {
+const std::map<TOUT_R_Coeff, std::unordered_map<TOUT_LR_TCoeff, double>> TOUT_R_COEFF = {
     {TOUT_R_Coeff::THETA,   {{a,  1.71535900}, {b,  0.62246212}, {c,  -0.92557761}, {d,  -1.16996966}, {e, -0.30631491}}},
     {TOUT_R_Coeff::IOTA,    {{a,  6.59778800}, {b, -0.42450044}, {c, -12.13339427}, {d, -10.73509484}, {e, -2.51487077}}},
     {TOUT_R_Coeff::KAPPA,   {{a, 10.08855000}, {b, -7.11727086}, {c, -31.67119479}, {d, -24.24848322}, {e, -5.33608972}}},
@@ -671,7 +723,7 @@ enum class HURLEY_AB_TCoeff: int { ALPHA, BETA, GAMMA, ETA, MU };
 // Values given in table in Appendix A of Hurley et al. 2000
 // Key to map is n (A(n)).  Map element is unordered_map of term coefficient values.
 // The key is expected to start at 1 and increase monotonically by 1 - any other behaviour will cause problems in the code
-const std::map<int, COMPASUnorderedMap<HURLEY_AB_TCoeff, double>> HURLEY_A_COEFF = {
+const std::map<int, std::unordered_map<HURLEY_AB_TCoeff, double>> HURLEY_A_COEFF = {
     { 1, {{ALPHA,  1.593890E3 }, {BETA,  2.053038E3 }, {GAMMA,  1.231226E3 }, {ETA,  2.327785E2 }, {MU,  0.000000E0 }}},
     { 2, {{ALPHA,  2.706708E3 }, {BETA,  1.483131E3 }, {GAMMA,  5.772723E2 }, {ETA,  7.411230E1 }, {MU,  0.000000E0 }}},
     { 3, {{ALPHA,  1.466143E2 }, {BETA, -1.048442E2 }, {GAMMA, -6.795374E1 }, {ETA, -1.391127E1 }, {MU,  0.000000E0 }}},
@@ -767,7 +819,7 @@ const std::map<int, COMPASUnorderedMap<HURLEY_AB_TCoeff, double>> HURLEY_A_COEFF
 // Values given in table in Appendix A of Hurley et al. 2000
 // Key to map is n (B(n)).  Map element is unordered_map of term coefficient values.
 // The key is expected to start at 1 and increase monotonically by 1 - any other behaviour will cause problems in the code
-const std::map<int, COMPASUnorderedMap<HURLEY_AB_TCoeff, double>> HURLEY_B_COEFF = {
+const std::map<int, std::unordered_map<HURLEY_AB_TCoeff, double>> HURLEY_B_COEFF = {
     { 1, {{ALPHA,  3.970000E-1}, {BETA,  2.882600E-1}, {GAMMA,  5.293000E-1}, {ETA,  0.000000E0 }, {MU,  0.000000E0 }}},
     { 2, {{ALPHA,  0.000000E0 }, {BETA,  0.000000E0 }, {GAMMA,  0.000000E0 }, {ETA,  0.000000E0 }, {MU,  0.000000E0 }}},
     { 3, {{ALPHA,  0.000000E0 }, {BETA,  0.000000E0 }, {GAMMA,  0.000000E0 }, {ETA,  0.000000E0 }, {MU,  0.000000E0 }}},
@@ -902,7 +954,7 @@ const std::map<double, double> BStarRotationalVelocityCDFTable = {
 //
 // for now we choose one example EOS ARP3 from
 // Akmal et al. 1998 https://arxiv.org/abs/nucl-th/9804027
-const std::map<double, double> ARP3MassRadiusRelation = {
+const std::map<double, double> ARP3_MASS_RADIUS_RELATION = {
     {0.184 , 16.518}, {0.188 , 16.292}, {0.192 , 16.067}, {0.195 , 15.857}, {0.199 , 15.658}, {0.203 , 15.46 }, {0.207 , 15.277}, {0.212, 15.102}, {0.216, 14.933},
     {0.221 , 14.774}, {0.225 , 14.619}, {0.23  , 14.473}, {0.235 , 14.334}, {0.24  , 14.199}, {0.245 , 14.073}, {0.251 , 13.951}, {0.256, 13.834}, {0.262, 13.725},
     {0.268 , 13.618}, {0.273 , 13.52 }, {0.28  , 13.423}, {0.286 , 13.332}, {0.292 , 13.245}, {0.299 , 13.162}, {0.306 , 13.084}, {0.313, 13.009}, {0.32 , 12.94 },
@@ -4907,12 +4959,12 @@ const std::vector<std::tuple<NANJING_POP_COEFFICIENTS, NANJING_POP_COEFFICIENTS>
 //
 // Using a vector because it's faster than a map
 
-typedef std::vector<std::tuple<double, double, double>> NANJING_LIMITS_ENHANCED;                                            // tuple here is <maxB, maxG, maxR>
-typedef std::vector<std::tuple<double, double>> NANJING_LAMBDAS;                                                            // tuple here is <lambdaB, lambdaG>
-typedef std::vector<std::tuple<NANJING_LIMITS_ENHANCED, NANJING_LAMBDAS>> NANJING_POP_LIMITS_LAMBDAS;                       // tuple here is <limits, lambdas>
-const std::vector<std::tuple<NANJING_POP_LIMITS_LAMBDAS, NANJING_POP_LIMITS_LAMBDAS>> NANJING_LIMITS_LAMBDAS_ENHANCED = {   // tuple here is <POPI, POPII>
-    {                                                                                                                       // evolutionary stage 1 (HG, FGB)
-        {                                                                                                                   // pop I
+typedef std::vector<Dbl_Dbl_DblT> NANJING_LIMITS_ENHANCED;                                                                  // Tuple here is <maxB, maxG, maxR>
+typedef std::vector<Dbl_DblT> NANJING_LAMBDAS;                                                                              // Tuple here is <lambdaB, lambdaG>
+typedef std::vector<std::tuple<NANJING_LIMITS_ENHANCED, NANJING_LAMBDAS>> NANJING_POP_LIMITS_LAMBDAS;                       // Tuple here is <limits, lambdas>
+const std::vector<std::tuple<NANJING_POP_LIMITS_LAMBDAS, NANJING_POP_LIMITS_LAMBDAS>> NANJING_LIMITS_LAMBDAS_ENHANCED = {   // Tuple here is <POPI, POPII>
+    {                                                                                                                       // Evolutionary stage 1 (HG, FGB)
+        {                                                                                                                   // Pop I
             {{{2.5, 1.5, 200.0}}, {{0.0, 0.0}}},
             {{{4.0, 2.0, 340.0}}, {{0.0, 0.0}}},
             {{{2.5, 1.5, 400.0}}, {{0.0, 0.0}}},
@@ -4930,7 +4982,7 @@ const std::vector<std::tuple<NANJING_POP_LIMITS_LAMBDAS, NANJING_POP_LIMITS_LAMB
             {{{1.0, 0.5, std::numeric_limits<double>::max()}}, {{0.0, 0.0}}},
             {{{1.0, 0.5, std::numeric_limits<double>::max()}}, {{0.0, 0.0}}}
         },
-        {                                                                                                                   // pop II
+        {                                                                                                                   // Pop II
             {{{2.0, 1.5, 160.0}}, {{0.0, 0.0}}},
             {{{4.0, 2.0, 350.0}}, {{1.95, 0.85}}},
             {{{600.0, 2.0, 400.0}}, {{0.0, 0.0}}},
@@ -4949,8 +5001,8 @@ const std::vector<std::tuple<NANJING_POP_LIMITS_LAMBDAS, NANJING_POP_LIMITS_LAMB
             {{{4.0, 2.0, std::numeric_limits<double>::max()}}, {{0.0, 0.0}}}
         }
     },
-    {                                                                                                                       // evolutionary stage 2 (CHeB)
-        {                                                                                                                   // pop I
+    {                                                                                                                       // Evolutionary stage 2 (CHeB)
+        {                                                                                                                   // Pop I
             {{{2.5, 1.5, 200.0}}, {{0.0, 0.0}}},
             {{{4.0, 2.0, 340.0}}, {{3.0, 1.2}}},
             {{{2.5, 1.5, 400.0}}, {{0.0, 0.0}}},
@@ -4968,7 +5020,7 @@ const std::vector<std::tuple<NANJING_POP_LIMITS_LAMBDAS, NANJING_POP_LIMITS_LAMB
             {{{1.0, 0.5, std::numeric_limits<double>::max()}}, {{0.0, 0.0}}},
             {{{1.0, 0.5, std::numeric_limits<double>::max()}}, {{0.0, 0.0}}}
         },
-        {                                                                                                                   // pop II
+        {                                                                                                                   // Pop II
             {{{2.0, 1.5, 160.0}}, {{0.0, 0.0}}},
             {{{4.0, 2.0, 350.0}}, {{0.8, 0.35}}},
             {{{600.0, 2.0, 400.0}}, {{1.0, 1.0}}},
@@ -4987,8 +5039,8 @@ const std::vector<std::tuple<NANJING_POP_LIMITS_LAMBDAS, NANJING_POP_LIMITS_LAMB
             {{{4.0, 2.0, std::numeric_limits<double>::max()}}, {{0.0, 0.0}}}
         }
     },
-    {                                                                                                                       // evolutionary stage 3 (EAGB, TPAGB)   
-        {                                                                                                                   // pop I
+    {                                                                                                                       // Evolutionary stage 3 (EAGB, TPAGB)   
+        {                                                                                                                   // Pop I
             {{{2.5, 1.5, 200.0}}, {{0.0, 0.0}}},
             {{{4.0, 2.0, 340.0}}, {{0.0, 0.0}}},
             {{{500.0, 10.0, 400.0}}, {{0.0, 0.0}}},
@@ -5006,7 +5058,7 @@ const std::vector<std::tuple<NANJING_POP_LIMITS_LAMBDAS, NANJING_POP_LIMITS_LAMB
             {{{1.0, 0.5, std::numeric_limits<double>::max()}}, {{0.0, 0.0}}},
             {{{1.0, 0.5, std::numeric_limits<double>::max()}}, {{0.0, 0.0}}}
         },
-        {                                                                                                                   // pop II
+        {                                                                                                                   // Pop II
             {{{2.0, 1.5, 160.0}}, {{0.0, 0.0}}},
             {{{4.0, 2.0, 350.0}}, {{0.0, 0.0}}},
             {{{600.0, 2.0, 400.0}}, {{1.0, 1.0}}},
@@ -5028,7 +5080,7 @@ const std::vector<std::tuple<NANJING_POP_LIMITS_LAMBDAS, NANJING_POP_LIMITS_LAMB
 };
 
 
-// multi-dimensional vector of limits and lambda values, per Belczynski
+// Multi-dimensional vector of limits and lambda values, per Belczynski
 // (as implemented in StarTrack - courtesy Chris Belczynski), for use
 // with Xu & Li, 2010 (Nanjing - for the university)
 // (https://arxiv.org/abs/1004.4957, v1, 28Apr2010)
@@ -5059,10 +5111,10 @@ const std::vector<std::tuple<NANJING_POP_LIMITS_LAMBDAS, NANJING_POP_LIMITS_LAMB
 //
 // Using a vector because it's faster than a map
 
-typedef std::vector<std::tuple<double, double>> NANJING_LIMITS_STARTRACK;                                   // tuple here is <maxB, maxG>
+typedef std::vector<Dbl_DblT> NANJING_LIMITS_STARTRACK;                                   // Tuple here is <maxB, maxG>
 //typedef std::vector<std::tuple<double, double>> NANJING_LAMBDAS;                                                            // tuple here is <lambdaB, lambdaG>
-typedef std::vector<std::tuple<NANJING_LIMITS_STARTRACK, NANJING_LAMBDAS>> NANJING_Z_LIMITS_LAMBDAS;        // tuple here is <limits, lambdas>
-const std::tuple<NANJING_Z_LIMITS_LAMBDAS, NANJING_Z_LIMITS_LAMBDAS> NANJING_LIMITS_LAMBDAS_STARTRACK = {   // tuple here is <Z > LAMBDA_NANJING_ZLIMIT, Z <= LAMBDA_NANJING_ZLIMIT>
+typedef std::vector<std::tuple<NANJING_LIMITS_STARTRACK, NANJING_LAMBDAS>> NANJING_Z_LIMITS_LAMBDAS;        // Tuple here is <limits, lambdas>
+const std::tuple<NANJING_Z_LIMITS_LAMBDAS, NANJING_Z_LIMITS_LAMBDAS> NANJING_LIMITS_LAMBDAS_STARTRACK = {   // Tuple here is <Z > LAMBDA_NANJING_ZLIMIT, Z <= LAMBDA_NANJING_ZLIMIT>
     {                                                                                                       // Z > LAMBDA_NANJING_ZLIMIT
         {{{2.5, 1.5}}, {{0.05, 0.05}}},
 //        {{{4.0, 2.0}}, {{3.589970, 0.514132}, CHeB<{3.0, 1.2}>}}, ///////////// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<

@@ -36,8 +36,8 @@ public:
     double      zValue() const       { return m_z; }
 
     // Operator overloads
-    double   operator [] (const size_t p_i) const { return (*const_cast<Vector3d*>(this))[p_i]; }
-    double&  operator [] (const size_t p_i) {
+    double   operator [] (const SizeT p_i) const { return (*const_cast<Vector3d*>(this))[p_i]; }
+    double&  operator [] (const SizeT p_i) {
 
         THROW_ERROR_IF(p_i < 0 || p_i > 2, ERROR::INDEX_OUT_OF_RANGE);                                  // this is a code defect
         
@@ -52,26 +52,26 @@ public:
 
     Vector3d operator + (const Vector3d p_Vec) {
         Vector3d vec;
-        for (size_t i=0; i<3; i++) vec[i] = (*this)[i] + p_Vec[i];
+        for (SizeT i=0; i<3; i++) vec[i] = (*this)[i] + p_Vec[i];
         return vec;
     }
     
     Vector3d operator - (const Vector3d p_Vec) {
         Vector3d vec;
-        for (size_t i = 0; i < 3; i++) vec[i] = (*this)[i] - p_Vec[i];
+        for (SizeT i = 0; i < 3; i++) vec[i] = (*this)[i] - p_Vec[i];
         return vec;
     }
     
     Vector3d operator * (const double p_Scalar) {                                                       // for Vector3d * scalar
         Vector3d vec;
-        for (size_t i = 0; i < 3; i++) vec[i] = (*this)[i] * p_Scalar; 
+        for (SizeT i = 0; i < 3; i++) vec[i] = (*this)[i] * p_Scalar; 
         return vec;
     }
     friend Vector3d operator * (const double p_Scalar, Vector3d p_Vec) { return p_Vec * p_Scalar; };    // for scalar * Vector3d
 
     Vector3d operator / (const double p_Scalar) {                                                       // for Vector3d / scalar
         Vector3d vec;
-        for (size_t i = 0; i < 3; i++) vec[i] = (*this)[i] / p_Scalar;
+        for (SizeT i = 0; i < 3; i++) vec[i] = (*this)[i] / p_Scalar;
         return vec;
     }
 
@@ -96,7 +96,7 @@ public:
 
     static double   Dot(const Vector3d& p_Vec1, const Vector3d& p_Vec2) {
         double result = 0.0;
-        for (size_t i = 0; i < 3; i++) result += p_Vec1[i] * p_Vec2[i];
+        for (SizeT i = 0; i < 3; i++) result += p_Vec1[i] * p_Vec2[i];
         return result;
     }
 

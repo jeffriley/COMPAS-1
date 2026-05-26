@@ -1,12 +1,12 @@
 #ifndef __HG_h__
 #define __HG_h__
 
-#include "constants.h"
-#include "typedefs.h"
-#include "profiling.h"
-#include "utils.h"
-
 #include <boost/math/tools/roots.hpp>
+
+#include "constants.h"
+//// #include "typedefs.h"   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//// #include "profiling.h"   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//// #include "utils.h"   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 #include "GiantBranch.h"
 
@@ -25,13 +25,12 @@ public:
     
 private:
 
-COMPAS_PURE double CalculateCoreMassAtPhaseEnd_Hurley2000(const double p_Mass, const DBL_VECTOR& p_GBparams) const;
+COMPAS_PURE double CalculateCoreMassAtPhaseEnd_Hurley2000(const double p_Mass, const DblVectorT& p_GBparams) const;
 
-GNU_CONST double CalculateCoreMass_Hurley2000(const double p_Mass, const double p_Tau, const double p_CoreMass, const DBL_VECTOR& p_GBparams) const;
-GNU_CONST double CalculateCoreMass_Hurley2000_Unconstrained(const double p_Mass, const double p_Tau, const DBL_VECTOR& p_GBparams) const;
-GNU_CONST double CalculateEffectiveInitialMass_Hurley2000(const double p_Mass, const double p_Tau, const double p_Coremass, const DBL_VECTOR& p_GBparams, const double p_MassEffectiveInitial) const;
-GNU_CONST double CalculateRho_Hurley2000(const double p_Mass) const;
-GNU_CONST double CalculateTau_Hurley2000(const double p_Age, const double p_tMS, const double p_tBGB) const;
+COMPAS_PURE double CalculateRadiusAtPhaseEnd_Hurley2000(const double p_Mass, const double p_CoreMass, const double p_MinLuminosity) const;
+
+GNU_CONST   double CalculateCoreMass_Hurley2000_Unconstrained(const double p_Mass, const double p_Tau, const DblVectorT& p_GBparams) const;
+GNU_CONST   double CalculateRho_Hurley2000(const double p_Mass) const;
 
 
 
@@ -45,7 +44,7 @@ protected:
         CalculateGBparams();
         CalculateTimescales();
         // Initialise timescales
-        m_Age = m_Timescales[static_cast<int>(TIMESCALE::tMS)];                                                                                                                 // Set age appropriately
+        m_Age = m_Timescales[HURLEY_TS::MS];                                                                                   // Set age appropriately
         
         // update effective "initial" mass (m_Mass0) so that core mass matches main sequence core mass
         // (only relevant if MANDEL or BRCEK main sequence core mass prescription is used)
@@ -58,7 +57,7 @@ protected:
             }
             CalculateGBparams();
             CalculateTimescales();
-            m_Age = m_Timescales[static_cast<int>(TIMESCALE::tMS)];
+            m_Age = m_Timescales[HURLEY_TS::MS];
         }
         EvolveOnPhase(0.0);  // <<<<< forces calculation of attributes - we need radius for BRCEK prescription when we clone an HG star...
     }
@@ -82,9 +81,7 @@ protected:
 
     
 
-inline double CalculateLuminosity_Hurley2000() const override { 
-    return CalculateLuminosity_Hurley2000_Static(m_StateHistory.CurrentState.MassEffectiveInitial(), m_StateHistory.CurrentState.Tau());
-} 
+inline double CalculateLuminosity_Hurley2000() const override { return CalculateLuminosity_Hurley2000_Static(MassEffectiveInitial(), Tau()); } 
 COMPAS_PURE inline double CalculateLuminosity_Hurley2000_Static(const double p_Mass, const double p_Tau) const;
 
 
@@ -97,10 +94,10 @@ COMPAS_PURE inline double CalculateLuminosity_Hurley2000_Static(const double p_M
     
     // Radius
 
-GNU_CONST double CalculateRadiusOnPhase_Hurley(const double p_Mass, const double p_Tau, const double p_RZAMS, const DBL_VECTOR& p_bN) const;
+GNU_CONST double CalculateRadiusOnPhase_Hurley(const double p_Mass, const double p_Tau, const double p_RZAMS, const DblVectorT& p_bN) const;
 
     double          CalculateRadiusOnPhase(const double p_Mass, const double p_Tau, const double p_RZAMS) const;
-    double          CalculateRadiusOnPhase(const double p_Mass, const double p_Luminosity) const    { return GiantBranch::CalculateRadiusOnPhase(p_Mass, p_Luminosity); }                                // Treats HG stars as GB stars
+    double          CalculateRadiusOnPhase(const double p_Mass, const double p_Luminosity) const    { return GiantBranch::CalculateRadius_Hurley2000(p_Mass, p_Luminosity); }                                // Treats HG stars as GB stars
     
 double CalculateRadiusOnPhase() const override; { return CalculateRadiusOnPhase(m_Mass0, m_Tau, m_RZAMS0); } // Use class member variables
 
@@ -121,16 +118,20 @@ double CalculateRadiusOnPhase() const override; { return CalculateRadiusOnPhase(
 
 ///// ON PHASE FUNCTIONS   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
-
 inline double CalculateCoreMass_Hurley2000() const override { return CalculateCoreMass_Hurley2000(Mass(), Tau(), CoreMass()); } //// <<<< GBPARAMS!!!!!
+GNU_CONST double CalculateCoreMass_Hurley2000(const double p_Mass, const double p_Tau, const double p_CoreMass, const DblVectorT& p_GBparams) const;
 
 GNU_CONST inline double CalculateCOCoreMass() const override { return 0.0; } // McCO = 0.0 for HG stars
 
 inline double CalculateHeCoreMass() const override { return Coremass(); } // McHe = Mc for HG stars
 
 inline double CalculateTau_Hurley2000() const override { return CalculateTau_Hurley2000(Age(), Timescales(TIMESCALE::tMS), Timescales(TIMESCALE::tBGB)); }
+GNU_CONST double CalculateTau_Hurley2000(const double p_Age, const double p_tMS, const double p_tBGB) const;
 
-inline double CalculateEffectiveInitialMass_Hurley2000() const override { return CalculateEffectiveInitialMass_Hurley2000(Mass(), Tau(), Coremass(), MassEffectiveInitial()); } /// <<<<<< GBPARAMS
+inline double CalculateEffectiveInitialMass_Hurley2000() const override {
+    return CalculateEffectiveInitialMass_Hurley2000(Mass(), Tau(), Coremass(), GBParams(), MassEffectiveInitial());
+}
+GNU_CONST double CalculateEffectiveInitialMass_Hurley2000(const double p_Mass, const double p_Tau, const double p_Coremass, const DblVectorT& p_GBparams, const double p_MassEffectiveInitial) const;
 
 
 
@@ -149,13 +150,11 @@ inline double CalculateHeAbundanceSurface() const override { return HeAbundanceS
 ///// PHASE END, ETC.      <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 
-double CalculateCoreMassAtPhaseEnd_Hurley2000() const override {
-    return CalculateCoreMassAtPhaseEnd_Hurley2000(m_StateHistory.CurrentState.MassEffectiveInitial(), m_StateHistory.CurrentState.GBparams());
-}
+double CalculateCoreMassAtPhaseEnd_Hurley2000() const override { return CalculateCoreMassAtPhaseEnd_Hurley2000(MassEffectiveInitial(), GBparams()); }
 
 GNU_CONST inline double CalculateCOCoreMassAtPhaseEnd() const override { return 0.0; } // McCO = 0.0 for HG stars
 
-inline double CalculateHeCoreMassAtPhaseEnd() const override { return m_StateHistory.CurrentState.Coremass(); } // McHe = Mc for HG stars
+inline double CalculateHeCoreMassAtPhaseEnd() const override { return Coremass(); } // McHe = Mc for HG stars
 
 
 
@@ -169,7 +168,7 @@ inline double CalculateHeAbundanceSurfaceAtPhaseEnd() const override { return Ca
 
 
 
-    double          ChooseTimestep(const double p_Time) const;
+GNU_CONST double ChooseTimestep_Hurley2000(const double p_Age, const DblVectorT& p_tScales) const override;
 
 
 COMPAS_PURE ENVELOPE HG::DetermineEnvelopeType(const double p_Mass, const double p_Temperature, const double p_CoreMass) const override;
@@ -187,11 +186,11 @@ COMPAS_PURE ENVELOPE HG::DetermineEnvelopeType(const double p_Mass, const double
     bool            ShouldEvolveOnPhase() const                                     { return (utils::Compare(m_Age, m_Timescales[static_cast<int>(TIMESCALE::tBGB)]) < 0); }    // Evolve on HG phase if age < Base Giant Branch timescale
     bool            ShouldSkipPhase() const                                         { return false; }                                                                           // Never skip HG phase
 
-    double          CalculateTAMSCoreMass() const                                   { return 0.0; }
+////    double          CalculateTAMSCoreMass() const                                   { return 0.0; }
 
 
 double CalculateAgeAfterMassLoss() const override;
-GNU_PURE  double CalculateAgeAfterMassLoss_Hurley(const double p_Mass, const double p_Age, const DBL_VECTOR& p_tScales, const DBL_VECTOR& p_aN) const;
+GNU_PURE  double CalculateAgeAfterMassLoss_Hurley(const double p_Mass, const double p_Age, const DblVectorT& p_tScales, const DblVectorT& p_aN) const;
 
 
 
@@ -256,11 +255,11 @@ GNU_PURE  double CalculateAgeAfterMassLoss_Hurley(const double p_Mass, const dou
      */
     double Mass0ToMatchDesiredCoreMass(HG *p_Star, double p_DesiredCoreMass) {
 
-        const boost::uintmax_t maxit = ADAPTIVE_MASS0_MAX_ITERATIONS;                                       // limit to maximum iterations.
-        boost::uintmax_t it          = maxit;                                                               // initially our chosen max iterations, but updated with actual.
+        const boost::uintmax_t maxit = ADAPTIVE_MASS0_MAX_ITERATIONS;                                       // Limit to maximum iterations.
+        boost::uintmax_t it          = maxit;                                                               // Initially our chosen max iterations, but updated with actual.
 
-        // find root
-        // we use an iterative algorithm to find the root here:
+        // Find root.
+        // We use an iterative algorithm to find the root here:
         //    - if the root finder throws an exception, we stop and return a negative value for the root (indicating no root found)
         //    - if the root finder reaches the maximum number of (internal) iterations, we stop and return a negative value for the root (indicating no root found)
         //    - if the root finder returns a solution, we check that func(solution) = 0.0 +/ ROOT_ABS_TOLERANCE
@@ -269,69 +268,71 @@ GNU_PURE  double CalculateAgeAfterMassLoss_Hurley(const double p_Mass, const dou
         //       - if we reach the maximum number of search step reduction iterations, or the search step factor reduces to 1.0 (so search step size = 0.0),
         //         we stop and return a negative value for the root (indicating no root found)
 
-        double guess      = p_Star->Mass();                                                                 // rough guess at solution
+        double guess      = p_Star->Mass();                                                                 // Rough guess at solution
         
-        double factorFrac = ADAPTIVE_MASS0_SEARCH_FACTOR_FRAC;                                              // search step size factor fractional part
-        double factor     = 1.0 + factorFrac;                                                               // factor to determine search step size (size = guess * factor)
+        double factorFrac = ADAPTIVE_MASS0_SEARCH_FACTOR_FRAC;                                              // Search step size factor fractional part
+        double factor     = 1.0 + factorFrac;                                                               // Factor to determine search step size (size = guess * factor)
 
-        std::pair<double, double> root(p_DesiredCoreMass, 0.0);                                             // initialise root - default return
-        std::size_t tries = 0;                                                                              // number of tries
-        bool done         = false;                                                                          // finished (found root or exceed maximum tries)?
+        std::pair<double, double> root(p_DesiredCoreMass, 0.0);                                             // Initialise root - default return
+        SizeT tries = 0;                                                                                    // Number of tries
+        bool done   = false;                                                                                // Finished (found root or exceed maximum tries)?
         Mass0YieldsDesiredCoreMassFunctor<double> func = Mass0YieldsDesiredCoreMassFunctor<double>(p_Star, p_DesiredCoreMass);
-        while (!done) {                                                                                     // while no acceptable root found
+        while (!done) {                                                                                     // While no acceptable root found
         
-            bool isRising = func((const double)guess) >= func((const double)guess * factor) ? false : true; // gradient direction from guess to upper search increment
+            bool isRising = func((const double)guess) >= func((const double)guess * factor) ? false : true; // Gradient direction from guess to upper search increment
 
-            // run the root finder
-            // regardless of any exceptions or errors, display any problems as a warning, then
+            // Run the root finder.
+            // Regardless of any exceptions or errors, display any problems as a warning, then
             // check if the root returned is within tolerance - so even if the root finder
             // bumped up against the maximum iterations, or couldn't bracket the root, use
             // whatever value it ended with and check if it's good enough for us - not finding
             // an acceptable root should be the exception rather than the rule, so this strategy
             // shouldn't cause undue performance issues.
             try {
-                root = boost::math::tools::bracket_and_solve_root(func, guess, factor, isRising, utils::BracketTolerance, it); // find root
-                // root finder returned without raising an exception
-                if (it >= maxit) { SHOW_WARN(ERROR::TOO_MANY_MASS0_ITERATIONS); }                           // too many root finder iterations
+                root = boost::math::tools::bracket_and_solve_root(func, guess, factor, isRising, utils::BracketTolerance, it); // Find root
+                // Root finder returned without raising an exception
+                if (it >= maxit) { SHOW_WARN(ERROR::TOO_MANY_MASS0_ITERATIONS); }                           // Too many root finder iterations
             }
-            catch(std::exception& e) {                                                                      // catch generic boost root finding error
-                // root finder exception
-                // could be too many iterations, or unable to bracket root - it may not
+            catch(std::exception& e) {                                                                      // Catch generic boost root finding error
+                // Root finder exception.
+                // Could be too many iterations, or unable to bracket root - it may not
                 // be a hard error - so no matter what the reason is that we are here,
                 // we'll just emit a warning and keep trying
-                if (it >= maxit) { SHOW_WARN(ERROR::TOO_MANY_MASS0_ITERATIONS); }                           // too many root finder iterations
-                else             { SHOW_WARN(ERROR::ROOT_FINDER_FAILED, e.what()); }                        // some other problem - show it as a warning
+                if (it >= maxit) { SHOW_WARN(ERROR::TOO_MANY_MASS0_ITERATIONS); }                           // Too many root finder iterations
+                else             { SHOW_WARN(ERROR::ROOT_FINDER_FAILED, e.what()); }                        // Some other problem - show it as a warning
             }
 
-            // we have a solution from the root finder - it may not be an acceptable solution
+            // wW have a solution from the root finder - it may not be an acceptable solution
             // so we check if it is within our preferred tolerance
-            if (std::fabs(func(root.first + (root.second - root.first) / 2.0)) <= ROOT_ABS_TOLERANCE) {     // solution within tolerance?
-                done = true;                                                                                // yes - we're done
+            if (std::fabs(func(root.first + (root.second - root.first) / 2.0)) <= ROOT_ABS_TOLERANCE) {     // Solution within tolerance?
+                done = true;                                                                                // Yes - we're done
             }
-            else if (std::fabs(func(root.first)) <= ROOT_ABS_TOLERANCE) {                                   // solution within tolerance at endpoint 1?
+            else if (std::fabs(func(root.first)) <= ROOT_ABS_TOLERANCE) {                                   // Solution within tolerance at endpoint 1?
                 root.second=root.first;
-                done = true;                                                                                // yes - we're done
+                done = true;                                                                                // Yes - we're done
             }
-            else if (std::fabs(func(root.second)) <= ROOT_ABS_TOLERANCE) {                                  // solution within tolerance at endpoint 2?
+            else if (std::fabs(func(root.second)) <= ROOT_ABS_TOLERANCE) {                                  // Solution within tolerance at endpoint 2?
                 root.first=root.second;
-                done = true;                                                                                // yes - we're done
+                done = true;                                                                                // Yes - we're done
             }
-            else {                                                                                          // no - try again
-                // we don't have an acceptable solution - reduce search step size and try again
-                factorFrac /= 2.0;                                                                          // reduce fractional part of factor
-                factor      = 1.0 + factorFrac;                                                             // new search step size
-                tries++;                                                                                    // increment number of tries
-                if (tries > ADAPTIVE_MASS0_MAX_TRIES || std::fabs(factor - 1.0) <= ROOT_ABS_TOLERANCE) {    // too many tries, or step size 0.0?
+            else {                                                                                          // No - try again
+                // We don't have an acceptable solution - reduce search step size and try again
+                factorFrac /= 2.0;                                                                          // Reduce fractional part of factor
+                factor      = 1.0 + factorFrac;                                                             // New search step size
+                tries++;                                                                                    // Increment number of tries
+                if (tries > ADAPTIVE_MASS0_MAX_TRIES || std::fabs(factor - 1.0) <= ROOT_ABS_TOLERANCE) {    // Too many tries, or step size 0.0?
                     // we've tried as much as we can - fail here with -ve return value
-                    root.first  = -1.0;                                                                     // yes - set error return
+                    root.first  = -1.0;                                                                     // Yes - set error return
                     root.second = -1.0;
-                    SHOW_WARN(ERROR::TOO_MANY_MASS0_TRIES);                                                 // show warning
-                    done = true;                                                                            // we're done
+                    SHOW_WARN(ERROR::TOO_MANY_MASS0_TRIES);                                                 // Show warning
+                    done = true;                                                                            // We're done
                 }
             }
         }
         
-        return root.first + (root.second - root.first) / 2.0;                                               // midway between brackets is our result, if necessary we could return the result as an interval here.
+        // Midway between brackets is our result.
+        // If necessary we could return the result as an interval here.
+        return root.first + (root.second - root.first) / 2.0;
     }
 };
 
@@ -368,7 +369,7 @@ GNU_CONST inline double HG::CalculateRho_Hurley2000(const double p_Mass) const {
 
 ///////////////////////////////////////////////////////////////////////////////////////
 //                                                                                   //
-//                         AGE / LIFETIME / TAU / TIMESCALES                         //
+//                    AGE / LIFETIME / TAU / TIMESCALES / TIMESTEP                   //
 //                                                                                   //
 ///////////////////////////////////////////////////////////////////////////////////////
 
@@ -390,7 +391,7 @@ GNU_CONST inline double HG::CalculateRho_Hurley2000(const double p_Mass) const {
  */
 COMPAS_PURE inline double HG::CalculateAgeAfterMassLoss_Hurley2000(const double p_Mass, const double p_Age, const double p_tMS, const double p_tBGB) const {
 
-    const double tBGBprime = BaseStar::CalculateLifetimeToBGB_Hurley2000_Static(p_Mass);
+    const double tBGBprime = utils::CalculateLifetimeToBGB_Hurley2000(p_Mass);
     const double tMSprime  = MainSequence::CalculatePhaseLifetime_Hurley2000(p_Mass, tBGBprime);
 
     return tMSprime + (((tBGBprime - tMSprime) / (p_tBGB - p_tMS)) * (p_Age - p_tMS));
@@ -438,11 +439,7 @@ inline double HG::CalculateAgeAfterMassLoss() const {
 
         EVOLUTION_MODE::SSE_HURLEY:                                                                             // HURLEY SSE
         EVOLUTION_MODE::BSE_HURLEY:                                                                             // HURLEY BSE
-            age = CalculateAgeAfterMassLoss_Hurley2000(m_StateHistory.CurrentState.MassEffectiveInitial(),
-                                                       m_StateHistory.CurrentState.Age(),
-                                                       m_StateHistory.CurrentState.Timescales(tMS),
-                                                       m_StateHistory.CurrentState.Timescales(tBGB)
-                                                       GLOBALS->HurleyACoefficients());
+            age = CalculateAgeAfterMassLoss_Hurley2000(MassEffectiveInitial(), Age(), Timescales(tMS), Timescales(tBGB), GLOBALS->HurleyACoefficients());
             break;
 
         default:                                                                                                // unknown mode
@@ -460,6 +457,77 @@ inline double HG::CalculateAgeAfterMassLoss() const {
 }
 
 
+/*
+ * ChooseTimestep_Hurley2000
+ *
+ * @brief
+ * Choose timestep for evolution
+ * See the discussion in Hurley et al. 2000, p21
+ * The returned value will be clamped to minimum NUCLEAR_MINIMUM_TIMESTEP
+ *
+ *
+ * double ChooseTimestep_Hurley2000(const double p_Age, const DblVectorT& p_tScales)
+ *
+ * @param       p_Age                           Age of the star (Myr)
+ * @param       p_tScales                       Phase timescales (Myr)
+ * @return                                      Suggested timestep (Myr)
+ */
+GNU_CONST inline double HG::ChooseTimestep_Hurley2000(const double p_Age, const DblVectorT& p_tScales) const {
+
+    const double dtk = 0.05 * (p_tScales[HURLEY_TS::BGB] - p_tScales[HURLEY_TS::MS]);   // stellar type specific dt
+    const double dte = p_tScales[HURLEY_TS::BGB] - p_Age;                               // time to end of phase (change of stellar type)
+
+    return std::max(std::min(dtk, dte), NUCLEAR_MINIMUM_TIMESTEP);                      // clamp to minimum NUCLEAR_MINIMUM_TIMESTEP
+}
+
+
+
+///////////////////////////////////////////////////////////////////////////////////////
+//                                                                                   //
+//                                    LUMINOSITY                                     //
+//                                                                                   //
+///////////////////////////////////////////////////////////////////////////////////////
+
+
+/*
+ * CalculateLuminosityAtPhaseEnd_Hurley2000_Static
+ *
+ * @brief
+ * Calculate luminosity at the end of the Hertzsprung Gap, TAHG,
+ * per Hurley et al. 2000, just before eq 8
+ *
+ *
+ * static double CalculateLuminosityAtPhaseEnd_Hurley2000_Static(const double p_Mass)
+ *
+ * @param       p_Mass                          Mass of the star (Msol)
+ * @return                                      TAHG luminosity (Lsol)
+ */
+COMPAS_PURE inline double HG::CalculateLuminosityAtPhaseEnd_Hurley2000_Static(const double p_Mass) const {
+    return p_Mass < GLOBALS->HurleyMassCutoffs(_M_FGB_)
+            ? GiantBranch::CalculateLuminosityAtBGB_Hurley2000_Static(p_Mass)
+            : GiantBranch::CalculateLuminosityAtHeI_Hurley2000_Static(p_Mass,);
+}
+
+
+/*
+ * CalculateLuminosity_Hurley2000_Static
+ *
+ * @brief
+ * Calculate luminosity on the Hertzsprung Gap, per Hurley et al. 2000, eq 26
+ *
+ *
+ * static double CalculateLuminosity_Hurley2000_Static(const double p_Mass, const double p_Tau)
+ *
+ * @param       p_Mass                          Mass of the star (Msol)
+ * @param       p_Tau                           Phase-relative age of the star [0, 1]
+ * @return                                      HG luminosity (Lsol)
+ */
+COMPAS_PURE inline double HG::CalculateLuminosity_Hurley2000_Static(const double p_Mass, const double p_Tau) const {
+    const double lTMS = MainSequence::CalculateLuminosityAtPhaseEnd_Hurley2000(p_Mass);
+    return lTMS * PPOW((CalculateLuminosityAtPhaseEnd_Hurley2000_Static(p_Mass) / lTMS), p_Tau);
+}
+
+
 ///////////////////////////////////////////////////////////////////////////////////////
 //                                                                                   //
 //                                       MASS                                        //
@@ -474,21 +542,21 @@ inline double HG::CalculateAgeAfterMassLoss() const {
  * Calculate core mass at the end of the Hertzsprung Gap, per Hurley et al. 2000, eq 28.
  *
  *
- * double CalculateCoreMassAtPhaseEnd_Hurley2000(const double p_Mass, const DBL_VECTOR& p_GBparams) const {
+ * double CalculateCoreMassAtPhaseEnd_Hurley2000(const double p_Mass, const DblVectorT& p_GBparams) const {
  *
  * @param       p_Mass                          Mass of the star (Msol)
  * @param       p_GBparams                      Hurley GB parameters
  * @return                                      TAHG core mass (Base of the Giant Branch) (Msol)
  */
-COMPAS_PURE inline double HG::CalculateCoreMassAtPhaseEnd_Hurley2000(const double p_Mass, const DBL_VECTOR& p_GBparams) const {
+COMPAS_PURE inline double HG::CalculateCoreMassAtPhaseEnd_Hurley2000(const double p_Mass, const DblVectorT& p_GBparams) const {
 
     double McTAHG;
 
-    if (p_Mass < GLOBALS->HurleyMassCutoffs(static_cast<int>(HURLEY_MASS_CUTOFF::MHeF))) {
+    if (p_Mass < GLOBALS->HurleyMassCutoffs(HURLEY::MCO::HEF)) {
         McTAHG = BaseStar::CalculateCoreMass_Hurley2000_Static(GiantBranch::CalculateLuminosityAtBGB_Hurley2000_Static(p_Mass), p_GBparams);
     }
-    else if (p_Mass < GLOBALS->HurleyMassCutoffs(static_cast<int>(HURLEY_MASS_CUTOFF::MFGB))) {
-        McTAHG = p_GBparams(static_cast<int>(HURLEY_GBP:::McBGB));
+    else if (p_Mass < GLOBALS->HurleyMassCutoffs(_M_FGB_)) {
+        McTAHG = p_GBparams(HURLEY_GBP::MCBGB);
     }
     else {
         McTAHG = CalculateCoreMassAtHeI_Hurley2000(p_Mass);
@@ -510,7 +578,7 @@ COMPAS_PURE inline double HG::CalculateCoreMassAtPhaseEnd_Hurley2000(const doubl
  * reduce the size of the core (per Hurley).
  *
  *
- * double CalculateCoreMass_Hurley2000(const double p_Mass, const double p_Tau, const double p_CoreMass, const DBL_VECTOR& p_GBparams) const
+ * double CalculateCoreMass_Hurley2000(const double p_Mass, const double p_Tau, const double p_CoreMass, const DblVectorT& p_GBparams) const
  *
  * @param       p_Mass                          Mass of the star (Msol)
  * @param       p_Tau                           Phase-relative age of the star [0, 1]
@@ -518,7 +586,7 @@ COMPAS_PURE inline double HG::CalculateCoreMassAtPhaseEnd_Hurley2000(const doubl
  * @param       p_GBparams                      Hurley GB parameters
  * @return                                      HG core mass (Msol)
  */
-GNU_CONST inline double HG::CalculateCoreMass_Hurley2000(const double p_Mass, const double p_Tau, const double p_CoreMass, const DBL_VECTOR& p_GBparams) const {
+GNU_CONST inline double HG::CalculateCoreMass_Hurley2000(const double p_Mass, const double p_Tau, const double p_CoreMass, const DblVectorT& p_GBparams) const {
     return std::max(CalculateCoreMass_Hurley2000_Unconstrained(p_Mass, p_Tau, p_GBparams), p_CoreMass);
 }
 
@@ -536,14 +604,14 @@ GNU_CONST inline double HG::CalculateCoreMass_Hurley2000(const double p_Mass, co
  * core mass should not be allowed to drop.
  *
  *
- * double CalculateCoreMass_Hurley2000_Unconstrained(const double p_Mass, const double p_Tau, const DBL_VECTOR& p_GBparams) const
+ * double CalculateCoreMass_Hurley2000_Unconstrained(const double p_Mass, const double p_Tau, const DblVectorT& p_GBparams) const
  *
  * @param       p_Mass                          Mass of the star (Msol)
  * @param       p_Tau                           Phase-relative age of the star [0, 1]
  * @param       p_GBparams                      Hurley GB parameters
  * @return                                      HG core mass (Msol)
  */
-GNU_CONST inline double HG::CalculateCoreMass_Hurley2000_Unconstrained(const double p_Mass, const double p_Tau, const DBL_VECTOR& p_GBparams) const {
+GNU_CONST inline double HG::CalculateCoreMass_Hurley2000_Unconstrained(const double p_Mass, const double p_Tau, const DblVectorT& p_GBparams) const {
     return (((1.0 - p_Tau) * CalculateRho_Hurley2000(p_Mass)) + p_Tau) * CalculateCoreMassAtPhaseEnd_Hurley2000(p_Mass, p_GBparams);
 }
 
@@ -571,7 +639,7 @@ GNU_CONST inline double HG::CalculateCoreMass_Hurley2000_Unconstrained(const dou
  *     const double      p_Mass,
  *     const double      p_Tau,
  *     const double      p_Coremass,
- *     const DBL_VECTOR& p_GBparams,
+ *     const DblVectorT& p_GBparams,
  *     const double      p_MassEffectiveInitia1
  * ) const
  * 
@@ -586,59 +654,11 @@ GNU_CONST inline double HG::CalculateEffectiveInitialMass_Hurley2000(
     const double      p_Mass,
     const double      p_Tau,
     const double      p_Coremass,
-    const DBL_VECTOR& p_GBparams,
+    const DblVectorT& p_GBparams,
     const double      p_MassEffectiveInitial
 ) const {
     return ((p_MassEffectiveInitial > p_Mass) && (p_Coremass <= CalculateCoreMass_Hurley2000_Unconstrained(p_Mass, p_Tau, p_GBparams))) ? p_Mass : p_MassEffectiveInitial;
 }
-
-
-
-///////////////////////////////////////////////////////////////////////////////////////
-//                                                                                   //
-//                                    LUMINOSITY                                     //
-//                                                                                   //
-///////////////////////////////////////////////////////////////////////////////////////
-
-
-/*
- * CalculateLuminosityAtPhaseEnd_Hurley2000_Static
- *
- * @brief
- * Calculate luminosity at the end of the Hertzsprung Gap, TAHG,
- * per Hurley et al. 2000, just before eq 8
- *
- *
- * static double CalculateLuminosityAtPhaseEnd_Hurley2000_Static(const double p_Mass)
- *
- * @param       p_Mass                          Mass of the star (Msol)
- * @return                                      TAHG luminosity (Lsol)
- */
-COMPAS_PURE inline double HG::CalculateLuminosityAtPhaseEnd_Hurley2000_Static(const double p_Mass) const {
-    return p_Mass < GLOBALS->HurleyMassCutoffs(static_cast<int>(HURLEY_MASS_CUTOFF::MFGB))
-            ? GiantBranch::CalculateLuminosityAtBGB_Hurley2000_Static(p_Mass)
-            : GiantBranch::CalculateLuminosityAtHeI_Hurley2000_Static(p_Mass,);
-}
-
-
-/*
- * CalculateLuminosity_Hurley2000_Static
- *
- * @brief
- * Calculate luminosity on the Hertzsprung Gap, per Hurley et al. 2000, eq 26
- *
- *
- * static double CalculateLuminosity_Hurley2000_Static(const double p_Mass, const double p_Tau)
- *
- * @param       p_Mass                          Mass of the star (Msol)
- * @param       p_Tau                           Phase-relative age of the star [0, 1]
- * @return                                      HG luminosity (Lsol)
- */
-COMPAS_PURE inline double HG::CalculateLuminosity_Hurley2000_Static(const double p_Mass, const double p_Tau) const {
-    const double lTMS = MainSequence::CalculateLuminosityAtPhaseEnd_Hurley2000(p_Mass);
-    return lTMS * PPOW((CalculateLuminosityAtPhaseEnd_Hurley2000_Static(p_Mass) / lTMS), p_Tau);
-}
-
 
 
 
@@ -658,16 +678,18 @@ COMPAS_PURE inline double HG::CalculateLuminosity_Hurley2000_Static(const double
  * per Hurley et al. 2000, eqs 7 & 8
  *
  *
- * double CalculateRadiusAtPhaseEnd_Hurley2000(const double p_Mass)
+ * double CalculateRadiusAtPhaseEnd_Hurley2000(const double p_Mass, const double p_CoreMass, const double p_MinLuminosity) const
  *
  * @param       p_Mass                          Mass of the star (Msol)
+ * @param       p_CoreMass                      Core mass of the star (Msol)
+ * @param       p_MinLuminosity                 Minimum luminosity on phase (Lsol)
  * @return                                      TAHG radius (Rsol)
  */
-COMPAS_PURE inline double HG::CalculateRadiusAtPhaseEnd_Hurley2000(const double p_Mass, const double p_MFGB, const DBL_VECTOR& p_aN) const {
-    const double mFGB = GLOBALS->HurleyMassCutoffs(static_cast<int>(HURLEY_MASS_CUTOFF::MFGB));
+COMPAS_PURE inline double HG::CalculateRadiusAtPhaseEnd_Hurley2000(const double p_Mass, const double p_CoreMass, const double p_MinLuminosity) const {
+    const double mFGB = GLOBALS->HurleyMassCutoffs(_M_FGB);
     return p_Mass < mFGB
-            ? GiantBranch::CalculateRadius_Hurley2000_Static(p_Mass, GiantBranch::CalculateLuminosityAtBGB_Hurley2000_Static(p_Mass))
-            : CalculateRadiusAtHeIgnition_Hurley2000(p_Mass);
+            ? GiantBranch::CalculateRadius_Hurley2000(p_Mass, GiantBranch::CalculateLuminosityAtBGB_Hurley2000_Static(p_Mass))
+            : CalculateRadiusAtHeI_Hurley2000(p_Mass, p_CoreMass, p_MinLuminosity);
 }
 
 

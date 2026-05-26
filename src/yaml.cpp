@@ -29,7 +29,7 @@ namespace yaml {
      * Replace content of default template 'yamlTemplate' declared in yaml.h if read ok.
      * 
      * 
-     * int ReadYAMLtemplate(const std::string p_YAMLtemplateName)
+     * int ReadYAMLtemplate(const StrT p_YAMLtemplateName)
      * 
      * @param   [IN]    p_YAMLtemplateName          Filename to be read - should be fully qualified
      * @return                                      Integer result:
@@ -38,7 +38,7 @@ namespace yaml {
      *                                                 1 indicates file exists but contains no content
      *                                                 2 indicates contents read ok (and replace the default template declared in yaml.h)
      */
-    int ReadYAMLtemplate(const std::string p_YAMLtemplateName) {
+    int ReadYAMLtemplate(const StrT p_YAMLtemplateName) {
         int result = -1;                                                                                        // result - initially error
 
         if (utils::FileExists(p_YAMLtemplateName)) {                                                            // template file exists?
@@ -46,9 +46,9 @@ namespace yaml {
             std::ifstream yamlTemplateFile(p_YAMLtemplateName);                                                 // yes - open the file
             if (yamlTemplateFile.is_open()) {                                                                   // open ok?
  
-                std::vector<std::string> yamlTemplateContent;                                                   // yes - file content
+                StrVectorT yamlTemplateContent;                                                                 // yes - file content
 
-                std::string rec;                                                                                // record read from file
+                StrT rec;                                                                                       // record read from file
                 while (std::getline(yamlTemplateFile, rec)) {                                                   // for all records in file - get record from template file
                     yamlTemplateContent.push_back(rec);                                                         // add record to content vector
                 }
@@ -73,7 +73,7 @@ namespace yaml {
      * Will prompt user for overwrite if file already exists.
      * 
      * 
-     * int WriteYAMLfile(const std::string p_YAMLname, const std::vector<std::string> p_YAMLcontent)
+     * int WriteYAMLfile(const StrT p_YAMLname, const StrVectorT p_YAMLcontent)
      * 
      * @param   [IN]    p_YAMLname                  Filename to be written - should be fully qualified
      * @param   [IN]    p_YAMLcontent               YAML content to be written - vector of strings
@@ -82,20 +82,20 @@ namespace yaml {
      *                                                 0 indicates file already exists - no overwrite
      *                                                 1 indicates success - file written (possibly overwritten) ok
      */
-    int WriteYAMLfile(const std::string p_YAMLname, const std::vector<std::string> p_YAMLcontent) {
+    int WriteYAMLfile(const StrT p_YAMLname, const StrvectorT p_YAMLcontent) {
         int result = -1;                                                                                        // result - initially error
 
         bool doWrite = true;                                                                                    // should write (overwrite)?
         if (utils::FileExists(p_YAMLname)) {                                                                    // file exists?
                                                                                                                 // yes - ask user whether to overwrite
-            std::string prompt = "YAML file '" + p_YAMLname + "' already exists - overwrite (Y/N)?";            // set prompt string for overwrite
-            std::string response = "";                                                                          // user response
+            StrT prompt = "YAML file '" + p_YAMLname + "' already exists - overwrite (Y/N)?";                   // set prompt string for overwrite
+            StrT response = "";                                                                                 // user response
 
             do {
                 std::cout << prompt << std::flush;                                                              // prompt use for input
-                std::string ch = "";                                                                            // user response character
-                std::string lastCh = "";                                                                        // last user response character (will always be newline)
-                size_t charsInput = 0;                                                                          // number of characters input (including newline)
+                StrT ch = "";                                                                                   // user response character
+                StrT lastCh = "";                                                                               // last user response character (will always be newline)
+                SizeT charsInput = 0;                                                                           // number of characters input (including newline)
                 do {
                     lastCh = ch;                                                                                // set last response character
                     ch = std::cin.get();                                                                        // get response character (one character at a time)
@@ -112,7 +112,7 @@ namespace yaml {
             result = 1;                                                                                         // yes - set file written result
             std::ofstream yamlFile(p_YAMLname);                                                                 // open the file
             if (yamlFile.is_open()) {                                                                           // open ok?
-                for (std::size_t i = 0; i < p_YAMLcontent.size(); i++) {                                        // yes - for each record
+                for (SizeT i = 0; i < p_YAMLcontent.size(); i++) {                                              // yes - for each record
                     if (!yamlFile.write(p_YAMLcontent[i].substr(3).c_str(), p_YAMLcontent[i].length() - 3)) {   // remove the marker ("HDR" / "OPT") and write
                         result = false;                                                                         // failed - set result ...
                         break;                                                                                  // ... and stop
@@ -135,13 +135,13 @@ namespace yaml {
      * Constructed content is written to file passed in p_YAMLfilename.
      * 
      * 
-     * void MakeYAMLfile(const std::string p_YAMLfilename, const std::string p_YAMLtemplateName)
+     * void MakeYAMLfile(const StrT p_YAMLfilename, const StrT p_YAMLtemplateName)
      * 
      * @param   [IN]    p_YAMLfilename          Filename to be written - should be fully qualified
      * @param   [IN]    p_YAMLtemplateName      Template filename to be read - should be fully qualified
      */
 
-    void MakeYAMLfile(const std::string p_YAMLfilename, const std::string p_YAMLtemplateName) {
+    void MakeYAMLfile(const StrT p_YAMLfilename, const StrT p_YAMLtemplateName) {
     // following macro is for convenience and readability - undefined at end of function
     // sets strings to be written to the new YAML file
     #define SET_STRINGS(preamble, option, value, allowed, dfault, comment) {    \
@@ -153,42 +153,42 @@ namespace yaml {
         yamlCommentStrings.push_back(comment); }
 
 
-        std::vector<std::string> yamlPreambleStrings;                                                                       // new YAML file content - preamble strings
-        std::vector<std::string> yamlOptionStrings;                                                                         // new YAML file content - option name strings
-        std::vector<std::string> yamlValueStrings;                                                                          // new YAML file content - option value strings
-        std::vector<std::string> yamlAllowedStrings;                                                                        // new YAML file content - allowed values strings
-        std::vector<std::string> yamlDefaultStrings;                                                                        // new YAML file content - default values strings
-        std::vector<std::string> yamlCommentStrings;                                                                        // new YAML file content - comment strings
+        StrVectorT yamlPreambleStrings;                                                                                     // new YAML file content - preamble strings
+        StrVectorT yamlOptionStrings;                                                                                       // new YAML file content - option name strings
+        StrVectorT yamlValueStrings;                                                                                        // new YAML file content - option value strings
+        StrVectorT yamlAllowedStrings;                                                                                      // new YAML file content - allowed values strings
+        StrVectorT yamlDefaultStrings;                                                                                      // new YAML file content - default values strings
+        StrVectorT yamlCommentStrings;                                                                                      // new YAML file content - comment strings
 
 
         // process the option
         // - format strings as required and populate the yaml vectors (declared above)
-        auto ProcessOption = [&] (const std::string              p_OptionStr,                                               // option name string
-                                  const std::string              p_ValueStr,                                                // option value string
-                                  const std::vector<std::string> p_AllowedStr,                                              // option allowed value strings
-                                  const std::string              p_DefaultStr,                                              // option default string
-                                  const std::string              p_CommentStr,                                              // comment string
-                                  const bool                     p_UserSpecified,                                           // user specified option value?
-                                  const TYPENAME                 p_DataType,                                                // short data type
-                                  const std::string              p_TypeStr) {                                               // detailed data type
+        auto ProcessOption = [&] (const StrT       p_OptionStr,                                                             // option name string
+                                  const StrT       p_ValueStr,                                                              // option value string
+                                  const StrVectorT p_AllowedStr,                                                            // option allowed value strings
+                                  const StrT       p_DefaultStr,                                                            // option default string
+                                  const StrT       p_CommentStr,                                                            // comment string
+                                  const bool       p_UserSpecified,                                                         // user specified option value?
+                                  const TYPENAME   p_DataType,                                                              // short data type
+                                  const StrT       p_TypeStr) {                                                             // detailed data type
 
             // format option value/default string
             // fix floating point precision
             // fix bool for python (0/true, 1/false -> True, False)
             // add '' for string options if not already present
             // not all data types need to be formatted - some just pass through
-            auto FormatString = [&] (const std::string p_Str,                                                               // string to be formatted
-                                     const TYPENAME    p_shortType,                                                         // short data type
-                                     const std::string p_detailedType) {                                                    // detailed data type
+            auto FormatString = [&] (const StrT     p_Str,                                                                  // string to be formatted
+                                     const TYPENAME p_shortType,                                                            // short data type
+                                     const StrT     p_detailedType) {                                                       // detailed data type
                 std::stringstream ss;
                 switch (p_shortType) {
-                    case TYPENAME::FLOAT     : {       float v = std::stof(p_Str);          ss << std::fixed << std::setprecision(v < 100 ? 6 : 2) << v;     } break;
-                    case TYPENAME::DOUBLE    : {      double v = std::stod(p_Str);          ss << std::fixed << std::setprecision(v < 100 ? 6 : 2) << v;     } break;
-                    case TYPENAME::LONGDOUBLE: { long double v = std::stold(p_Str);         ss << std::fixed << std::setprecision(v < 100 ? 6 : 2) << v;     } break;
-                    case TYPENAME::BOOL      : { std::string s = p_Str; s = utils::trim(s); ss << (s == "1" || utils::Equals(s, "true") ? "True" : "False"); } break;
+                    case TYPENAME::FLOAT     : {    float v = std::stof(p_Str);          ss << std::fixed << std::setprecision(v < 100 ? 6 : 2) << v;     } break;
+                    case TYPENAME::DOUBLE    : {   double v = std::stod(p_Str);          ss << std::fixed << std::setprecision(v < 100 ? 6 : 2) << v;     } break;
+                    case TYPENAME::LONGDOUBLE: { LongDblT v = std::stold(p_Str);         ss << std::fixed << std::setprecision(v < 100 ? 6 : 2) << v;     } break;
+                    case TYPENAME::BOOL      : { StrT     s = p_Str; s = utils::trim(s); ss << (s == "1" || utils::Equals(s, "true") ? "True" : "False"); } break;
                     case TYPENAME::STRING    : {
                             bool vecType = (p_detailedType == "VECTOR<STRING>");                                            // vector of strings? 
-                            size_t len = p_Str.length();                                                                    // str length
+                            SizeT len = p_Str.length();                                                                     // str length
                             if (len == 0) {                                                                                 // empty str?
                                 ss << (vecType ? "{ }" : "''");                                                             // yes - just quotes/braces (for vector)
                             }
@@ -204,15 +204,15 @@ namespace yaml {
                                     else ss << p_Str;                                                                       // has quotes - just pass through                                                                         
                                 }
                                 else {                                                                                      // yes - string vector - parse and format string
-                                    std::string str = p_Str;                                                                // string to be formatted
+                                    StrT str = p_Str;                                                                       // string to be formatted
                                     str = utils::trim(str);                                                                 // trim whitespace both ends
                                     if (str[0] != '{' || str[len - 1] != '}') {                                             // has open and close brace?
                                         ss << "{ ";                                                                         // no - add open brace
-                                        size_t start = str[0] == '{' ? 1 : 0;                                               // start position for find
-                                        size_t end   = 0;                                                                   // found position
+                                        SizeT start = str[0] == '{' ? 1 : 0;                                                // start position for find
+                                        SizeT end   = 0;                                                                    // found position
                                         bool first   = true;                                                                // for comma placement
                                         while ((end = p_Str.find(' ', start)) != std::string::npos) {                       // find space
-                                            std::string v = p_Str.substr(start, end - start);                               // got it - extract the substring
+                                            StrT v = p_Str.substr(start, end - start);                                      // got it - extract the substring
                                             if (v.length() > 0) {                                                           // skip empty substring
                                                 if (!first) ss << ", ";                                                     // add comma if not first element
                                                 if (v[0] != '\'' || v[len - 1] != '\'') { ss << "'"; ss << v; ss << "'"; }  // add quotes if necessary
@@ -221,7 +221,7 @@ namespace yaml {
                                             start = end + 1;                                                                // for next space
                                             first = false;                                                                  // not first element
                                         }
-                                        std::string v = p_Str.substr(start, end - start);                                   // extract (possible) last substring
+                                        StrT v = p_Str.substr(start, end - start);                                          // extract (possible) last substring
                                         if (v.length() > 0) {                                                               // anything there?
                                             if (!first) ss << ", ";                                                         // yes - add comma if not first element (shouldn't be, but just in case...)
                                             if (v[0] != '\'' || v[len - 1] != '\'') { ss << "'"; ss << v; ss << "'"; }      // add quotes if necessary
@@ -238,21 +238,21 @@ namespace yaml {
                 return ss.str();                                                                                            // formatted string
             };
 
-            std::string valueStr = FormatString(p_ValueStr, p_DataType, p_TypeStr);
-            std::string defaultStr = FormatString(p_DefaultStr, p_DataType, p_TypeStr);
+            StrT valueStr = FormatString(p_ValueStr, p_DataType, p_TypeStr);
+            StrT defaultStr = FormatString(p_DefaultStr, p_DataType, p_TypeStr);
 
-            std::string preamble = p_UserSpecified ? "     --" : "#    --";                                                 // preamble - all option records are commented, except options that are user specified
+            StrT preamble = p_UserSpecified ? "     --" : "#    --";                                                        // preamble - all option records are commented, except options that are user specified
 
             if (p_AllowedStr.size() == 0) {                                                                                 // multiple option values?
                 SET_STRINGS(preamble, p_OptionStr, valueStr, "", defaultStr, p_CommentStr);                                 // no - record for YAML file output - value set
             }
             else {                                                                                                          // yes - multiple option values
-                // We list the allowed values in the order they are stored in the COMPASUnorderedMap
+                // We list the allowed values in the order they are stored in the std::unordered_map
                 // in constants.h.  We could instead list in alphabetical order, but the assumption
                 // is that the order in constants.h was deliberate, so we'll maintain it - if that's
                 // not true then we could just sort alphabetically here
-                std::string allowedValuesStr = "Options: [";                                                                // records allowed option values
-                for (size_t idx = 0; idx < p_AllowedStr.size(); idx++) {                                                    // for each allowed value
+                StrT allowedValuesStr = "Options: [";                                                                       // records allowed option values
+                for (SizeT idx = 0; idx < p_AllowedStr.size(); idx++) {                                                     // for each allowed value
                     allowedValuesStr += p_AllowedStr[idx];                                                                  // show allowed value
                     if (idx < p_AllowedStr.size() - 1) allowedValuesStr += ",";                                             // add delimiter if necessary
                 }
@@ -272,17 +272,17 @@ namespace yaml {
         }
         else {                                                                                                              // yes - have options
                                                                                                                             // process options/create YAML file
-            auto wallTime           = std::chrono::system_clock::now();                                                     // get wall time
-            std::time_t timeNow     = std::chrono::system_clock::to_time_t(wallTime);                                       // current time and date ...
-            std::string currentTime = std::string(std::ctime(&timeNow));                                                    // ... as a string ...
-            currentTime             = utils::trim(currentTime);                                                             // ... trimmed of whitespace (including newline etc.)
+            auto wallTime       = std::chrono::system_clock::now();                                                         // get wall time
+            std::time_t timeNow = std::chrono::system_clock::to_time_t(wallTime);                                           // current time and date ...
+            StrT currentTime    = StrT(std::ctime(&timeNow));                                                               // ... as a string ...
+            currentTime         = utils::trim(currentTime);                                                                 // ... trimmed of whitespace (including newline etc.)
 
             // read YAML template file if supplied
 
             if (p_YAMLtemplateName.length() > 0) {                                                                          // have YAML template filename?
                 int readResult = ReadYAMLtemplate(p_YAMLtemplateName);                                                      // yes - read YAML template file
-                std::string preamble = "*WARNING* File '" + p_YAMLtemplateName + "' ";                                      // preamble for warnings
-                std::string warn     = "";                                                                                  // warning string
+                StrT preamble = "*WARNING* File '" + p_YAMLtemplateName + "' ";                                             // preamble for warnings
+                StrT warn     = "";                                                                                         // warning string
                 if (readResult < 0) warn += "not read: IO error.  COMPAS default template will be used.";                   // IO error
                 else if (readResult == 0) warn += "not read: file does not exist.  COMPAS default template will be used.";  // file not found
                 else if (readResult == 1) warn += "is empty.  COMPAS default template will be used.";                       // no content in file
@@ -293,7 +293,7 @@ namespace yaml {
 
             SET_STRINGS("##~!!~## COMPAS option values", "", "", "", "", "");                                               // header record for YAML file output
 
-            std::string s = "##~!!~## File Created " + currentTime + " by COMPAS v" + VERSION_STRING;                       // time and version stamp
+            StrT s = "##~!!~## File Created " + currentTime + " by COMPAS v" + VERSION_STRING;                              // time and version stamp
             if (s[23] == ' ') s[23] = '0';                                                                                  // add leading zero for day if necessary
             SET_STRINGS(s, "", "", "", "", "");                                                                             // time and version stamp record for YAML file output
 
@@ -303,7 +303,7 @@ namespace yaml {
             SET_STRINGS("##~!!~## option is used by default. To use a value other than the COMPAS default value,", "", "", "", "", "");     // Notice regarding commented line in default YAML                                                                            // time and version stamp record for YAML file output
             SET_STRINGS("##~!!~## users must uncomment the entry and change the option value to the desired value.", "", "", "", "", "");   // Notice regarding commented line in default YAML                                                                            // time and version stamp record for YAML file output
 
-            size_t numTemplateRecords = yamlTemplate.size();                                                                // number of records in the YAML template
+            SizeT numTemplateRecords = yamlTemplate.size();                                                                 // number of records in the YAML template
 
             // create YAML content
 
@@ -320,15 +320,15 @@ namespace yaml {
                 // for each of the datatype categories mentioned above (see note about premature optimisation
                 // at the top of this file)
 
-                std::vector<std::string> categories { "booleanChoices", "numericalChoices", "stringChoices", "listChoices" }; // category names for headers
+                StrVectorT categories { "booleanChoices", "numericalChoices", "stringChoices", "listChoices" };             // category names for headers
 
-                for (size_t idx = 0; idx < categories.size(); idx++) {                                                      // for each category
+                for (SizeT idx = 0; idx < categories.size(); idx++) {                                                       // for each category
 
-                    std::string category = categories[idx];                                                                 // which category?
+                    StrT category = categories[idx];                                                                        // which category?
                     SET_STRINGS("", "", "", "", "", "");                                                                    // blank record for YAML file output
                     SET_STRINGS(category + ":", "", "", "", "", "");                                                        // category header for YAML file output
 
-                    for (size_t optionIdx = 0; optionIdx < optionDetails.size(); optionIdx++) {                             // for each COMPAS option
+                    for (SizeT optionIdx = 0; optionIdx < optionDetails.size(); optionIdx++) {                              // for each COMPAS option
 
                         if (optionDetails[optionIdx].dataType == TYPENAME::BOOL) {                                          // boolean option?
                             if (category != "booleanChoices") continue;                                                     // skip if this category is not booleanChoices 
@@ -359,9 +359,9 @@ namespace yaml {
             }
             else {                                                                                                          // yes - have YAML template
                                                                                                                             // use template to format YAML file
-                for (size_t rec = 0; rec < numTemplateRecords; rec++) {                                                     // for each template record
+                for (SizeT rec = 0; rec < numTemplateRecords; rec++) {                                                      // for each template record
 
-                    std::string thisRec = yamlTemplate[rec];                                                                // template record ...
+                    StrT thisRec = yamlTemplate[rec];                                                                       // template record ...
                     thisRec = utils::trim(thisRec);                                                                         // ... trimmed of whitespace
 
                     // need to allow for commented options in template, especially since the template
@@ -370,7 +370,7 @@ namespace yaml {
                     // first non-whitespace character) as the "leading hash" to differentiate it from
                     // other instances of the hash character in a template record
                     bool   optRec = false;                                                                                  // option template record?
-                    size_t startPos = 0;                                                                                    // where to start looking for non-leading hash
+                    SizeT startPos = 0;                                                                                     // where to start looking for non-leading hash
 
                     if (thisRec.length() > 3) {                                                                             // record long enough to be option record?
                         if (thisRec.substr(0, 2) == "--") {                                                                 // yes - has leading "--"?
@@ -379,7 +379,7 @@ namespace yaml {
                         else if (thisRec[0] == '#') {                                                                       // no - not leading "--": leading hash?
                             optRec = false;                                                                                 // for now...
                             if (thisRec.length() > 4) {                                                                     // enough characters to be option record?
-                                std::string s = thisRec.substr(1);                                                          // yes... strip leading hash
+                                StrT s = thisRec.substr(1);                                                                 // yes... strip leading hash
                                 s = utils::ltrim(s);                                                                        // trim whitespace from start
                                 if (s.length() > 2 && s.substr(0, 2) == "--") {                                             // more than 2 characters, and option indicater?
                                     optRec = true;                                                                          // yes - looks like it might be an option record
@@ -404,8 +404,8 @@ namespace yaml {
                         // both of the (special) strings "# Default:" and "# Options:" may be present,
                         // and if so we just skip over them looking for any comment on the option record
 
-                        size_t hashStart = startPos;                                                                        // where to start looking for the comment hash
-                        size_t p;                                                                                           // position in string
+                        SizeT hashStart = startPos;                                                                         // where to start looking for the comment hash
+                        SizeT p;                                                                                            // position in string
                         if ((p = yamlTemplate[rec].find("# Default:", hashStart)) != std::string::npos) {                   // "# Default:" present?
                             if (p > hashStart) hashStart = p + 1;                                                           // yes - adjust starting position for comment hash search
                         }
@@ -414,9 +414,9 @@ namespace yaml {
                             if (p > hashStart) hashStart = p + 1;                                                           // yes - adjust starting position for comment hash search
                         }
 
-                        std::string optionStr;                                                                              // string to hold option name and value
-                        std::string commentStr;                                                                             // string to hold optional comment
-                        size_t hashLoc = yamlTemplate[rec].find_first_of("#", hashStart);                                   // find the comment if there is one
+                        StrT optionStr;                                                                                     // string to hold option name and value
+                        StrT commentStr;                                                                                    // string to hold optional comment
+                        SizeT hashLoc = yamlTemplate[rec].find_first_of("#", hashStart);                                    // find the comment if there is one
                         if (hashLoc == std::string::npos) {                                                                 // found hash?
                             optionStr = yamlTemplate[rec].substr(startPos);                                                 // no - no comment present - option string is the record (from startPos)
                             commentStr = "";                                                                                // no comment
@@ -431,20 +431,20 @@ namespace yaml {
                         // need to allow for option values in template, especially since the template might
                         // be an existing YAML file. Values in the template are not preserved - we only use
                         // the template to preserve header records, blank records, option groupings, and comments.
-                        size_t colonLoc = optionStr.find_first_of(":");                                                     // find the first colon if there is one
+                        SizeT colonLoc = optionStr.find_first_of(":");                                                      // find the first colon if there is one
                         if (colonLoc != std::string::npos) {                                                                // found colon?
                             optionStr = optionStr.substr(0, colonLoc);                                                      // option string is everything prior to the ":""
                         }
 
                         // Find the value for the option (COMPAS value, not any value present in the template)
-                        // - note: could be user supplied
-                        size_t pos = optionStr.find_first_not_of("\t -");                                                   // find option indicator
-                        std::string templateOptionStr = optionStr.substr(pos);                                              // strip "--" from template option string
+                        // - note: could be user supplied   
+                        SizeT pos = optionStr.find_first_not_of("\t -");                                                    // find option indicator
+                        StrT templateOptionStr = optionStr.substr(pos);                                                     // strip "--" from template option string
 
                         bool found = false;                                                                                 // matching COMPAS option string found?  Not initially...
-                        for (std::size_t optionIdx = 0; optionIdx < optionDetails.size(); optionIdx++) {                    // for each COMPAS option
+                        for (SizeT optionIdx = 0; optionIdx < optionDetails.size(); optionIdx++) {                          // for each COMPAS option
 
-                            std::string compasOptionStr = optionDetails[optionIdx].optionStr;                               // COMPAS option name string
+                            StrT compasOptionStr = optionDetails[optionIdx].optionStr;                                      // COMPAS option name string
                             if (utils::Equals(optionDetails[optionIdx].sourceStr, "calculated")) continue;                  // ignore calculated options                                         
                             if (utils::Equals(compasOptionStr, templateOptionStr)) {                                        // match?
 
@@ -473,9 +473,9 @@ namespace yaml {
             // add any COMPAS options not in the YAML template - alphabetically at end
 
             bool extra = false;                                                                                             // extra records?  Initially false
-            for (std::size_t optionIdx = 0; optionIdx < optionDetails.size(); optionIdx++) {                                // for each COMPAS option
+            for (SizeT optionIdx = 0; optionIdx < optionDetails.size(); optionIdx++) {                                      // for each COMPAS option
 
-                std::string compasOptionStr = optionDetails[optionIdx].optionStr;                                           // option name string
+                StrT compasOptionStr = optionDetails[optionIdx].optionStr;                                                  // option name string
 
                 if (utils::Equals(optionDetails[optionIdx].sourceStr, "calculated")) continue;                              // ignore calculated options    
                 if (utils::Equals(compasOptionStr, "help")) continue;                                                       // ignore 'help' option          
@@ -484,7 +484,7 @@ namespace yaml {
                 if (utils::Equals(compasOptionStr, "YAML-template")) continue;                                              // ignore 'YAML-template' option          
 
                 bool match = false;
-                for (size_t yamlIdx = 0; yamlIdx < yamlOptionStrings.size(); yamlIdx++) {                                   // for each YAML option name
+                for (SizeT yamlIdx = 0; yamlIdx < yamlOptionStrings.size(); yamlIdx++) {                                    // for each YAML option name
                     if (utils::Equals(compasOptionStr, yamlOptionStrings[yamlIdx])) {                                       // match?
                         match = true;                                                                                       // yes - flag it
                         break;                                                                                              // no need to look further
@@ -510,16 +510,16 @@ namespace yaml {
             // partially build new YAML file records
             // for now, just any header or blank records, and preamble, option name, and option value
             // for option records set maximum default str length and maximum allowed str length
-            std::vector<std::string> yamlRecords;                                                                           // new YAML file records
-            size_t maxOptionStrLen  = 0;                                                                                    // maximum length of option strings (to locate default string)
-            size_t maxDefaultStrLen = 0;                                                                                    // maximum length of default strings (to locate allowed string)
-            size_t maxAllowedStrLen = 0;                                                                                    // maximum length of allowed strings (to locate comment string)
-            for (std::size_t yamlIdx = 0; yamlIdx < yamlPreambleStrings.size(); yamlIdx++) {                                // for each YAML option
+            StrVectorT yamlRecords;                                                                                         // new YAML file records
+            SizeT maxOptionStrLen  = 0;                                                                                     // maximum length of option strings (to locate default string)
+            SizeT maxDefaultStrLen = 0;                                                                                     // maximum length of default strings (to locate allowed string)
+            SizeT maxAllowedStrLen = 0;                                                                                     // maximum length of allowed strings (to locate comment string)
+            for (SizeT yamlIdx = 0; yamlIdx < yamlPreambleStrings.size(); yamlIdx++) {                                      // for each YAML option
                 if (yamlOptionStrings[yamlIdx].empty()) {                                                                   // header or blank record?
                     yamlRecords.push_back("HDR" + yamlPreambleStrings[yamlIdx]);                                            // yes - marker and just preamble
                 }
                 else {                                                                                                      // no - not header or blank record
-                    std::string s = "OPT" + yamlPreambleStrings[yamlIdx] + yamlOptionStrings[yamlIdx] + ": " + yamlValueStrings[yamlIdx]; // construct string including value
+                    StrT s = "OPT" + yamlPreambleStrings[yamlIdx] + yamlOptionStrings[yamlIdx] + ": " + yamlValueStrings[yamlIdx]; // construct string including value
                     if (s.length() > maxOptionStrLen) maxOptionStrLen = s.length();                                         // get maximum length of YAML option strings
                     yamlRecords.push_back(s);                                                                               // partial record for YAML file output
                 }
@@ -529,27 +529,27 @@ namespace yaml {
 
             // add default values, allowed values, and template comment as necessary
 
-            size_t defaultPos = maxOptionStrLen + 2;                                                                        // position of default string
-            size_t allowedPos = defaultPos + maxDefaultStrLen + 13;                                                         // position of allowed strings
-            size_t commentPos = allowedPos + maxAllowedStrLen + 4;                                                          // position of comment string
-            for (size_t idx = 0; idx < yamlRecords.size(); idx++) {                                                         // for each YAML record
-                std::string s = yamlRecords[idx];                                                                           // start with partially constructed record
+            SizeT defaultPos = maxOptionStrLen + 2;                                                                         // position of default string
+            SizeT allowedPos = defaultPos + maxDefaultStrLen + 13;                                                          // position of allowed strings
+            SizeT commentPos = allowedPos + maxAllowedStrLen + 4;                                                           // position of comment string
+            for (SizeT idx = 0; idx < yamlRecords.size(); idx++) {                                                          // for each YAML record
+                StrT s = yamlRecords[idx];                                                                                  // start with partially constructed record
                     
                 if (yamlRecords[idx].substr(0, 3) == "OPT") {                                                               // option record?
                                                                                                                             // yes - header and blank records skipped here
-                    size_t len = s.length();                                                                                // current length of record
-                    for (size_t pos = len; pos < defaultPos; pos++) s += " ";                                               // pad with spaces up to option default field
+                    SizeT len = s.length();                                                                                 // current length of record
+                    for (SizeT pos = len; pos < defaultPos; pos++) s += " ";                                                // pad with spaces up to option default field
                     s += "# Default: " + yamlDefaultStrings[idx];                                                           // yes add default values string
 
                     if (!yamlAllowedStrings[idx].empty()) {                                                                 // have allowed values?
-                        size_t len = s.length();                                                                            // yes - current length of record
-                        for (size_t pos = len; pos < allowedPos; pos++) s += " ";                                           // pad with spaces up to allowed strings field
+                        SizeT len = s.length();                                                                             // yes - current length of record
+                        for (SizeT pos = len; pos < allowedPos; pos++) s += " ";                                            // pad with spaces up to allowed strings field
                         s += "# " + yamlAllowedStrings[idx];                                                                // yes add allowed values string
                     }
 
                     if (!yamlCommentStrings[idx].empty()) {                                                                 // have comment?
-                        size_t len = s.length();                                                                            // yes - current length of record
-                        for (size_t pos = len; pos < commentPos; pos++) s += " ";                                           // pad with space ups to comment strings field
+                        SizeT len = s.length();                                                                             // yes - current length of record
+                        for (SizeT pos = len; pos < commentPos; pos++) s += " ";                                            // pad with space ups to comment strings field
                         s += "  " + yamlCommentStrings[idx];                                                                // yes add comment string
                     }
                 }

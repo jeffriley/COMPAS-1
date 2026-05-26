@@ -49,18 +49,10 @@ protected:
     // on phase member functions - aphabetically
     
 
-DBL_VECTOR CalculateTimescales_Hurley2000() const override {
-    return CalculateTimescales_Hurley2000(
-        m_StateHistory.CurrentState.MassEffectiveInitial(),
-        m_StateHistory.CurrentState.GBparams(),
-        m_StateHistory.CurrentState.TimeScales()
-    );
-}
+DBL_VECTOR CalculateTimescales_Hurley2000() const override { return CalculateTimescales_Hurley2000(MassEffectiveInitial(), m_InterimState.GBparams(), m_InterimState.TimeScales()); }
 COMPAS_PURE DBL_VECTOR CalculateTimescales_Hurley2000(const double p_Mass, const DBL_VECTOR& p_GBparams, const DBL_VECTOR& p_tScales) const;
 
-DBL_VECTOR CalculateGBparams_Hurley2000() const override {
-    return CalculateGBparams_Hurley2000(m_StateHistory.CurrentState.MassEffectiveInitial(), m_StateHistory.CurrentState.GBparams());
-}
+DBL_VECTOR CalculateGBparams_Hurley2000() const override { return CalculateGBparams_Hurley2000(MassEffectiveInitial(), m_InterimState.GBparams()); }
 COMPAS_PURE virtual DBL_VECTOR CalculateGBparams_Hurley2000(const double p_Mass, const DBL_VECTOR& p_GBparams) const;
 
 
@@ -78,7 +70,7 @@ GNU_CONST inline double CalculateConvectiveCoreRadius(const double p_Radius, con
 
 
 inline double CalculateRemnantRadius_Hurley2000() const override {
-    return CalculateRemnantRadius_Static(m_StateHistory.CurrentState.CoreMass());
+    return CalculateRemnantRadius_Static(CoreMass());
 }
 GNU_CONST static double CalculateRemnantRadius_Hurley2000_Static(const double p_CoreMass);
 
@@ -132,33 +124,18 @@ inline double CalculateHurleyPerturbationMuAtPhaseEnd() const { return m_Mu; }
 
 ///// ON PHASE FUNCTIONS   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
-inline double CalculateCOCoreMass_Hurley2000() const override {
-    return HeGB::CalculateCoreMass_Hurley2000_Static(
-        m_StateHistory.CurrentState.MassEffectiveInitial(),
-        m_StateHistory.CurrentState.Age(),
-        m_StateHistory.CurrentState.GBparams(),
-        m_StateHistory.CurrentState.Timescales(tHeMS)
-    );
-}
+inline double CalculateCOCoreMass_Hurley2000() const override { return HeGB::CalculateCoreMass_Hurley2000_Static(MassEffectiveInitial(), Age(), GBparams(), Timescales(tHeMS)); }
 
-inline double CalculateHeCoreMass() const override { return m_StateHistory.CurrentState.Mass(); } // McHe = Mc for HeHG stars
+inline double CalculateHeCoreMass() const override { return Mass(); } // McHe = Mc for HeHG stars
 
 GNU_CONST inline double HeHG::CalculateHurleyPerturbationMu(const double p_Mass, const double p_CoreMass) const;
 
 GNU_CONST inline double CalculateTau_Hurley2000() const override { return 0.0; } // Tau (relative age) is not used for HeHG stars in Hurley et al. 2000, so we return 0.0
 
 
-    inline double CalculateLuminosity_Hurley2000() const override {
-        return HeGB::CalculateLuminosity_Hurley2000_Static(
-            m_StateHistory.CurrentState.CoreMass(),
-            m_StateHistory.CurrentState.GBparams(static_cast<int>(HURLEY_GBP::B)),
-            m_StateHistory.CurrentState.GBparams(static_cast<int>(HURLEY_GBP::D))
-        );
-    }
+    inline double CalculateLuminosity_Hurley2000() const override { return HeGB::CalculateLuminosity_Hurley2000_Static(CoreMass(), GBparams(static_cast<int>(HURLEY_GBP::B)), GBparams(static_cast<int>(HURLEY_GBP::D))); }
 
-    inline double CalculateRadius_Hurley2000() const override {
-        return HeGB::CalculateRadius_Hurley2000_Static(m_StateHistory.CurrentState.Mass(), m_StateHistory.CurrentState.Luminosity());
-    }
+    inline double CalculateRadius_Hurley2000() const override { return HeGB::CalculateRadius_Hurley2000_Static(Mass(), Luminosity()); }
 
     GNU_CONST inline double CalculateHAbundanceCore(const double p_Tau) const override { return 0.0; } // No hydrogen in the core for HeHG stars
     GNU_CONST inline double CalculateHeAbundanceCore(const double p_Tau) const override { return 0.0; } // No helium in the core for HeHG stars
@@ -171,17 +148,17 @@ GNU_CONST inline double CalculateTau_Hurley2000() const override { return 0.0; }
 
 inline double CalculateCOCoreMassAtPhaseEnd_Hurley2000() const override { return CalculateCOCoreMass_Hurley2000(); }
 
-inline double CalculateHeCoreMassAtPhaseEnd() const override { return m_StateHistory.CurrentState.Mass(); } // McHe = Mc for HeHG stars
+inline double CalculateHeCoreMassAtPhaseEnd() const override { return Mass(); } // McHe = Mc for HeHG stars
 
 
 
             double          CalculateTemperatureAtPhaseEnd(const double p_Luminosity, const double p_Radius) const  { return m_Temperature; }                                               // NO-OP
             double          CalculateTemperatureAtPhaseEnd() const                                                  { return CalculateTemperatureAtPhaseEnd(m_Luminosity, m_Radius); }      // Use class member variables
 
-inline double CalculateMLrateThermal() const override { return GiantBranch::CalculateMLrateThermal(); } // Skip HeMS
+inline double CalculateMLRateThermal() const override { return GiantBranch::CalculateMLRateThermal(); } // Skip HeMS
 
 
-            double          ChooseTimestep(const double p_Time) const;
+GNU_CONST double ChooseTimestep_Hurley2000(const double p_Age, const DBL_VECTOR& p_tScales) const override;
 
 
 COMPAS_PURE ENVELOPE DetermineEnvelopeType(const double p_Mass, const double p_Temperature, const double p_CoreMass) const override;
@@ -224,10 +201,45 @@ COMPAS_PURE ENVELOPE DetermineEnvelopeType(const double p_Mass, const double p_T
 
 ///////////////////////////////////////////////////////////////////////////////////////
 //                                                                                   //
-//                         AGE / LIFETIME / TAU / TIMESCALES                         //
+//                                     ABUNDANCE                                     //
 //                                                                                   //
 ///////////////////////////////////////////////////////////////////////////////////////
 
+
+
+///////////////////////////////////////////////////////////////////////////////////////
+//                                                                                   //
+//                    AGE / LIFETIME / TAU / TIMESCALES / TIMESTEP                   //
+//                                                                                   //
+///////////////////////////////////////////////////////////////////////////////////////
+
+
+/*
+ * ChooseTimestep_Hurley2000
+ *
+ * @brief
+ * Choose timestep for evolution
+ * See the discussion in Hurley et al. 2000, p21
+ * The returned value will be clamped to minimum NUCLEAR_MINIMUM_TIMESTEP
+ *
+ *
+ * double ChooseTimestep_Hurley2000(const double p_Age, const DBL_VECTOR& p_tScales)
+ *
+ * @param       p_Age                           Age of the star (Myr)
+ * @param       p_tScales                       Phase timescales (Myr)
+ * @return                                      Suggested timestep (Myr)
+ */
+GNU_CONST inline double HeHG::ChooseTimestep_Hurley2000(const double p_Age, const DBL_VECTOR& p_tScales) const {
+#define tScales(x) p_tScales[static_cast<int>(TIMESCALE::x)]
+
+    const double dtk = 0.02 * ((p_Age <= tScales(tx_HeGB) ? tScales(tinf1_HeGB) : tScales(tinf2_HeGB)) - p_Age);    // stellar type specific dt
+                                                                                    
+    // time to end of phase (change of stellar type, dte) not used here - how to calculate?
+    // clamp to minimum NUCLEAR_MINIMUM_TIMESTEP
+    return std::max(dtk, NUCLEAR_MINIMUM_TIMESTEP);
+
+#undef tScales
+}
 
 
 ///////////////////////////////////////////////////////////////////////////////////////

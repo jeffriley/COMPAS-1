@@ -236,13 +236,13 @@ COMPAS_PURE static MASS_LOSS_T HeMS::CalculateMLrate_Merritt2025_Static(const do
     MASS_LOSS_TYPE dominantMLtype;
     double dMdt;
 
-    switch (OPTIONS->WRMassLossPrescription()) {                                                     // which WR mass loss prescription?
+    switch (OPTIONS->WRMassLossPrescription()) {                                            // which WR mass loss prescription?
 
-        case WR_MASS_LOSS_PRESCRIPTION::BELCZYNSKI2010:                             // BELCZYNSKI2010
+        case WR_MASS_LOSS_PRESCRIPTION::BELCZYNSKI2010:                                     // BELCZYNSKI2010
             std::tie(dMdt, dominantMLtype) = HeMS::CalculateMLrate_Belczynski2010_Static(p_Luminosity);
             break;
 
-        case WR_MASS_LOSS_PRESCRIPTION::SANDERVINK2023:                             // SANDERVINK2023
+        case WR_MASS_LOSS_PRESCRIPTION::SANDERVINK2023:                                     // SANDERVINK2023
 
             // start with Sander & Vink 2020
             std::tie(dMdt, dominantMLtype) = BaseStar::CalculateMLrateWR_SanderVink2020_Static(p_Luminosity, 0.0);
@@ -254,12 +254,12 @@ COMPAS_PURE static MASS_LOSS_T HeMS::CalculateMLrate_Merritt2025_Static(const do
             // use the correction given in eq 18, with the effective temperature
             // (what they refer to as T_\star in eq 1) as T_eff,crit
              
-            if (dMdt > 0.0) {                                                       // only apply the correction for positive mass loss rates
-                constexpr double teffMin = 100.0E3;                                 // minimum effective temperature (K) for which correction applies
-                constexpr double teffRef = 141.0E3;                                 // reference effective temperature in Kelvin
-                const double     teff    = p_Temperature * TSOL;                    // effective temperature in Kelvin
-                if (teff > teffMin) {                                               // correction applicable?
-                    dMdt = PPOW(10.0, log10(dMdt) - 6.0 * log10(teff / teffRef));   // yes, apply correction - gives Sander & Vink 2023 mass loss rate
+            if (dMdt > 0.0) {                                                               // only apply the correction for positive mass loss rates
+                constexpr double teffMin = 100.0E3;                                         // minimum effective temperature (K) for which correction applies
+                constexpr double teffRef = 141.0E3;                                         // reference effective temperature in Kelvin
+                const double     teff    = p_Temperature * TSOL;                            // effective temperature in Kelvin
+                if (teff > teffMin) {                                                       // correction applicable?
+                    dMdt = PPOW(10.0, std::log10(dMdt) - 6.0 * std::log10(teff / teffRef)); // yes, apply correction - gives Sander & Vink 2023 mass loss rate
                 }
             }
 
@@ -276,7 +276,7 @@ COMPAS_PURE static MASS_LOSS_T HeMS::CalculateMLrate_Merritt2025_Static(const do
             }
             break;
 
-        case WR_MASS_LOSS_PRESCRIPTION::SHENAR2019:                                 // SHENAR2019
+        case WR_MASS_LOSS_PRESCRIPTION::SHENAR2019:                                         // SHENAR2019
 
             // start with Shenar+ 2019
             std::tie(dMdt, dominantMLtype) = HeMS::CalculateMLrateWR_Shenar2019_Static(p_Luminosity, p_Temperature);
@@ -293,12 +293,12 @@ COMPAS_PURE static MASS_LOSS_T HeMS::CalculateMLrate_Merritt2025_Static(const do
             }
             break;
 
-        case WR_MASS_LOSS_PRESCRIPTION::ZERO:                                       // ZERO
-            dMdt           = 0.0;                                                   // no mass loss
+        case WR_MASS_LOSS_PRESCRIPTION::ZERO:                                               // ZERO
+            dMdt           = 0.0;                                                           // no mass loss
             dominantMLtype = MASS_LOSS_TYPE::NONE;
             break;
 
-        default:                                                                    // unexpected prescription
+        default:                                                                            // unexpected prescription
             // the only way this can happen is if the WR_MASS_LOSS_PRESCRIPTION passed to this function
             // is not accounted for in this code.  We should not default here, with or without a warning.
             // We are here because the code passed a prescription that this function doesn't account
@@ -306,7 +306,7 @@ COMPAS_PURE static MASS_LOSS_T HeMS::CalculateMLrate_Merritt2025_Static(const do
             // of the star or binary.
             // The correct fix for this is to add code to this function for the missing prescription,
             // or fix the calling code to pass a prescription that is handled by this function.
-            THROW_ERROR(ERROR::UNEXPECTED_WR_MASS_LOSS_PRESCRIPTION);               // throw error
+            THROW_ERROR(ERROR::UNEXPECTED_WR_MASS_LOSS_PRESCRIPTION);                       // throw error
     }
 
     // return mass loss rate with user supplied WR factor applied
@@ -334,25 +334,6 @@ COMPAS_PURE static MASS_LOSS_T HeMS::CalculateMLrate_Merritt2025_Static(const do
 //                                                                                   //
 ///////////////////////////////////////////////////////////////////////////////////////
 
-
-/*
- * Choose timestep for evolution
- *
- * Given in the discussion in Hurley et al. 2000
- *
- *
- * ChooseTimestep(const double p_Time)
- *
- * @param   [IN]    p_Time                      Current age of star in Myr
- * @return                                      Suggested timestep (dt)
- */
-double HeMS::ChooseTimestep(const double p_Time) const {
-
-    double dtk = 0.05 * timescales(tHeMS);
-    double dte = timescales(tHeMS) - p_Time;
-
-    return std::max(std::min(dtk, dte), NUCLEAR_MINIMUM_TIMESTEP);
-}
 
 
 /*
@@ -456,8 +437,8 @@ STELLAR_TYPE HeMS::EvolveToNextPhase() {
  */ 
 double MainSequence_Constituent::CalculateCriticalMassRatio_Ge2020_Interpolate(const double p_Mass, const double p_Radius, const double p_MTefficiency) const {
 
-    const double logMass   = log10(p_Mass);   
-    const double logRadius = log10(p_Radius);
+    const double logMass   = std::log10(p_Mass);   
+    const double logRadius = std::log10(p_Radius);
 
     const DBL_VECTOR massVec = std::get<0>(QCRIT_GE_HE_STAR);   // vector of masses from QCRIT_GE_HE_STAR
 
@@ -541,8 +522,8 @@ double MainSequence_Constituent::CalculateCriticalMassRatio_Ge2020_Interpolate(c
     // qCrit
     double qCrit;
 
-    const double logLowM = log10(massVec[lowMIdx]);
-    const double logUppM = log10(massVec[uppMIdx]);
+    const double logLowM = std::log10(massVec[lowMIdx]);
+    const double logUppM = std::log10(massVec[uppMIdx]);
 
          if (logMass < logLowerMass) qCrit = qCritLowM;         // below lower bound?
     else if (logMass > logUpperMass) qCrit = qCritUppM;         // no - above upper bound?  Use upper bound
