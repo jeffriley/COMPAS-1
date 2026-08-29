@@ -1,0 +1,55 @@
+#include "Remnants.h"
+#include "Star.h"
+
+
+
+
+/// Remnants Constituent <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//
+
+
+
+/*
+ * Calculate:
+ *
+ *     (a) the maximum mass acceptance rate of this star, as the accretor, during mass transfer, and
+ *     (b) the accretion efficiency parameter
+ *
+ *
+ * The maximum acceptance rate of the accretor star during mass transfer is based on stellar type: this function
+ * is for compact remnants (NS, BH).
+ *
+ * Mass transfer is assumed Eddington limited for BHs and NSs.  The formalism of Nomoto/Claeys is used for WDs.
+ *
+ * For non compact objects:
+ *
+ *    1) Kelvin-Helmholtz (thermal) timescale if THERMAL (thermally limited) mass transfer efficiency
+ *    2) Choose a fraction of the mass rate that will be effectively accreted for FIXED fraction mass transfer (as in StarTrack)
+ *
+ *
+ * Dbl_DblT CalculateMassAcceptanceRate(const double p_DonorMassRate, const double p_AccretorMassRate)
+ *
+ * @param   [IN]    p_DonorMassRate             Mass transfer rate of the donor
+ * @param   [IN]    p_AccretorMassRate          Thermal mass loss rate of the accretor (this star) - ignored here
+ * @return                                      Tuple containing the Maximum Mass Acceptance Rate and the Accretion Efficiency Parameter
+ */
+Dbl_DblT Remnants::CalculateMassAcceptanceRate(const double p_DonorMassRate, const double p_AccretorMassRate) {
+
+    double thisMassRate     = CalculateEddingtonCriticalRate(); 
+
+    double acceptanceRate   = std::min(thisMassRate, p_DonorMassRate);
+    double fractionAccreted = acceptanceRate / p_DonorMassRate;
+
+    return std::make_tuple(acceptanceRate, fractionAccreted);
+}
+
+
+
+
+Dbl_DblT Remnants_Constituent::CalculateMassAcceptanceRate(const double p_DonorMassRate,
+                                                            const double p_AccretorMassRate,
+                                                            const bool   p_IsHeRich) {
+    (void)p_IsHeRich;
+    return m_Star ? m_Star->CalculateMassAcceptanceRate(p_DonorMassRate, p_AccretorMassRate, false)
+                  : std::make_tuple(0.0, 0.0);
+}
