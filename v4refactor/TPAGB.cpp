@@ -12,65 +12,7 @@
 ///////////////////////////////////////////////////////////////////////////////////////
 
 
-/*
- * CalculateTimescales_Hurley2000
- *
- * @brief
- * (Re)calculate timescales given the mass of the star, per Hurley at al. 2000.
- * 
- * Since timescales depend on a star's mass, they need to be calculated whenever
- * the mass of the star changes (probably every timestep).
- *
- *
- * DBL_VECTOR CalculateTimescales_Hurley2000(const double p_Mass, const DBL_VECTOR& p_GBParams, const DBL_VECTOR& p_tScales) const
- *
- * @param       p_Mass                          Mass of the star (Msol)
- * @param       p_GBParams                      Hurley GB parameters
- * @param       p_tScales                       Timescales (Myr)
- * @return                                      Mutated timescales (Myr)
- */
-void TPAGB::CalculateTimescales(const double p_Mass, DBL_VECTOR &p_Timescales) {
-    p_Timescales = CalculateTimescales_Hurley2000(p_Mass, m_InterimState.HurleyGBParams(), p_Timescales);
-}
 
-
-COMPAS_PURE DBL_VECTOR TPAGB::CalculateTimescales_Hurley2000(const double p_Mass, const DBL_VECTOR& p_GBParams, const DBL_VECTOR& p_tScales) const {
-
-// #defines for convenience and readability - undefined at end of function
-#define GBParams(x) p_GBParams[static_cast<int>(GBP::x)]
-#define tScales(x) tScales[static_cast<int>(TS::x)]
-
-    double p1   = GBParams(p) - 1.0;
-    double q1   = GBParams(q) - 1.0;
-    double p1_p = p1 / GBParams(p);
-    double q1_q = q1 / GBParams(q);
-
-    double lDU  = CalculateLuminosity_Hurley2000(GBParams(McDU), p_GBParams)
-
-    DBL_VECTOR tScales = p_tScales; // copy given timescales
-
-    // (re)calculate EAGB timescales (Note: EAGB does not recalculate earlier timescales) <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-    tScales = EAGB::CalculateTimescales_Hurley(p_Mass, p_GBParams, tScales);
-
-    tScales[static_cast<int>(HURLEY_TIMESCALES::DU2)] = CalculateLifetimeTo2ndDredgeUp(tScales(Inf1_FAGB), tScales(Inf2_FAGB));
-
-    if (lDU > GBParams(Lx)) {
-        tScales[static_cast<int>(HURLEY_TIMESCALES::Inf1_SAGB)] = tScales(Inf1_FAGB);
-        tScales[static_cast<int>(HURLEY_TIMESCALES::Mx_SAGB)]   = tScales(Mx_FAGB);
-        tScales[static_cast<int>(HURLEY_TIMESCALES::Inf2_SAGB)] = tScales(DU2) + ((1.0 / (q1 * GBParams(AHHe) * GBParams(B))) * PPOW((GBParams(B) / lDU), q1_q));
-    }
-    else {
-        tScales[static_cast<int>(HURLEY_TIMESCALES::Inf1_SAGB)] = tScales(DU2) + ((1.0 / (p1 * GBParams(AHHe) * GBParams(D) )) * PPOW((GBParams(D) / lDU), p1_p));
-        tScales[static_cast<int>(HURLEY_TIMESCALES::Mx_SAGB)]   = tScales(Inf1_SAGB) - ((tScales(Inf1_SAGB) - tScales(DU2)) * PPOW((lDU / GBParams(Lx)), p1_p));
-        tScales[static_cast<int>(HURLEY_TIMESCALES::Inf2_SAGB)] = tScales(Mx_SAGB) + ((1.0 / (q1 * GBParams(AHHe) * GBParams(B))) * PPOW((GBParams(B) / GBParams(Lx)), q1_q));
-    }
-
-    // return timescales vector by value - NRVO takes care of performance/efficiency
-    return tScales;
-
-#undef timescales
-#undef GBParams
-}
 
 
 ///////////////////////////////////////////////////////////////////////////////////////

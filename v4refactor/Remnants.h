@@ -2,7 +2,6 @@
 
 #include "constants.h"
 #include "typedefs.h"
-#include "profiling.h"
 #include "utils.h"
 
 #include "HeGB.h"
@@ -21,9 +20,7 @@ public:
     Remnants(const BaseStar &p_BaseStar, const bool p_Initialise = true) : BaseStar(p_BaseStar), HeGB(p_BaseStar, false) { }
 
 
-
 protected:
-
 
     // Member functions (not getters or setters)
     //
@@ -35,27 +32,43 @@ protected:
     // (aka "shadowing", or "hiding"), we discourage it.  Non-virtual functions are statically
     // bound, and as such, especially with indirection, may not produce expected results.
 
-
     //////////////////////////////////////////////////
     //   ABUNDANCE                                  //
     //////////////////////////////////////////////////
 
-    GNU_CONST double CalculateHAbundanceCore(const double p_Tau) const override     { return 0.0; }; // No hydrogen in the core for remnants // JR FIX THIS: DONE
-    GNU_CONST double CalculateHAbundanceSurface(const double p_Tau) const override  { return 0.0; }; // No hydrogen on the surface for remnants // JR FIX THIS: DONE
-    GNU_CONST double CalculateHeAbundanceCore(const double p_Tau) const override    { return 0.0; }; // No helium in the core for remnants (except HeWD) // JR FIX THIS: DONE
-    GNU_CONST double CalculateHeAbundanceSurface(const double p_Tau) const override { return 0.0; }; // No helium on the surface for remnants (except HeWD) // JR FIX THIS: DONE
+    GNU_CONST double CalculateHAbundanceCore(const double p_Tau) const override { // JR FIX THIS: DONE
+        return 0.0; // No hydrogen in the core for remnants
+    }
+
+    GNU_CONST double CalculateHAbundanceSurface(const double p_Tau) const override { // JR FIX THIS: DONE
+        return 0.0; // No hydrogen on the surface for remnants
+    }
+
+
+    GNU_CONST double CalculateHeAbundanceCore(const double p_Tau) const override { // JR FIX THIS: DONE
+        return 0.0; // No helium in the core for remnants (except HeWD)
+    }
+
+    GNU_CONST double CalculateHeAbundanceSurface(const double p_Tau) const override { // JR FIX THIS: DONE
+        return 0.0; // No helium on the surface for remnants (except HeWD)
+    }
     
 
     //////////////////////////////////////////////////
     //   AGE, LIFETIME, TAU, TIMESCALES, TIMESTEP   //
     //////////////////////////////////////////////////
 
-    // Tau (relative age) is not used for remnants in Hurley et al. 2000, so we return 0.0
-    GNU_CONST double CalculateTau_Hurley2000(const double p_Age, const DblVectorT& p_tScales) const override { return 0.0; }; // JR FIX THIS: DONE
-    GNU_CONST double CalculateTauAtPhaseEnd_Hurley2000(const double p_Age, const DblVectorT& p_tScales) const override { return 0.0; }; // JR FIX THIS: DONE
+    
+    GNU_CONST double CalculateTau_Hurley2000(const double p_Age, const DblVectorT& p_tScales) const override { // JR FIX THIS: DONE
+        return 0.0; // Tau (relative age) is not used for remnants in Hurley et al. 2000, so we return 0.0
+    };
+    GNU_CONST double CalculateTauAtPhaseEnd_Hurley2000(const double p_Age, const DblVectorT& p_tScales) const override { // JR FIX THIS: DONE
+        return 0.0; // Tau (relative age) is not used for remnants in Hurley et al. 2000, so we return 0.0
+    };
     
 
-void CalculateTimescales_Hurley2000() override { m_InterimState.SetHurleyTimescales(TPAGB::CalculateTimescales_Hurley2000(MassEffectiveInitial(), m_InterimState.HurleyGBParams(), m_InterimState.HurleyTimescales())); }
+TimescalesT CalculateTimescales_Hurley2000() const override {
+    return TPAGB::CalculateTimescales_Hurley2000(Mass0(), m_InterimState.HurleyGBParams(), m_InterimState.HurleyTimescales())); }
 
 inline double CalculateTimescale_Thermal() const override { return CalculateTimescale_Dynamical(); }
 

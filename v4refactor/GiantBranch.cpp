@@ -97,22 +97,22 @@ COMPAS_PURE DBL_VECTOR GiantBranch::CalculateTimescales_Hurley2000(const double 
  */
 DblVectorT GiantBranch::CalculateGBParams_Hurley2000(const double p_Mass, DblVectorT& p_GBParams) const {
 
-    p_GBParams[HURLEY_GBP::AH]     = CalculateHRateConstant_Hurley2000(p_Mass);
-    p_GBParams[HURLEY_GBP::AHHe]   = HHE_RATE_CONSTANT_HURLEY2000;
-    p_GBParams[HURLEY_GBP::AHe]    = HE_RATE_CONSTANT_HURLEY2000;
+    p_GBParams[GBP::AH]     = CalculateHRateConstant_Hurley2000(p_Mass);
+    p_GBParams[GBP::AHHe]   = HHE_RATE_CONSTANT_HURLEY2000;
+    p_GBParams[GBP::AHe]    = HE_RATE_CONSTANT_HURLEY2000;
 
-    p_GBParams[HURLEY_GBP::B]      = CalculateCoreMass_Luminosity_B_Hurley2000(p_Mass);
-    p_GBParams[HURLEY_GBP::D]      = CalculateCoreMass_Luminosity_D_Hurley2000(p_Mass);
+    p_GBParams[GBP::B]      = CalculateCoreMass_Luminosity_B_Hurley2000(p_Mass);
+    p_GBParams[GBP::D]      = CalculateCoreMass_Luminosity_D_Hurley2000(p_Mass);
 
-    p_GBParams[HURLEY_GBP::p]      = CalculateCoreMass_Luminosity_p_Hurley2000(p_Mass);
-    p_GBParams[HURLEY_GBP::q]      = CalculateCoreMass_Luminosity_q_Hurley2000(p_Mass);
+    p_GBParams[GBP::p]      = CalculateCoreMass_Luminosity_p_Hurley2000(p_Mass);
+    p_GBParams[GBP::q]      = CalculateCoreMass_Luminosity_q_Hurley2000(p_Mass);
 
-    p_GBParams[HURLEY_GBP::Mx]     = CalculateCoreMass_Luminosity_Mx_Hurley2000(p_GBParams);
-    p_GBParams[HURLEY_GBP::Lx]     = CalculateCoreMass_Luminosity_Lx_Hurley2000(p_GBParams);
+    p_GBParams[GBP::Mx]     = CalculateCoreMass_Luminosity_Mx_Hurley2000(p_GBParams);
+    p_GBParams[GBP::Lx]     = CalculateCoreMass_Luminosity_Lx_Hurley2000(p_GBParams);
 
-    p_GBParams[HURLEY_GBP::McBAGB] = CalculateCoreMassAtBAGB_Hurley2000(p_Mass);
-    p_GBParams[HURLEY_GBP::McDU]   = CalculateCoreMassAt2ndDredgeUp_Hurley2000(p_GBParams[HURLEY_GBP::McBAGB]);
-    p_GBParams[HURLEY_GBP::McBGB]  = CalculateCoreMassAtBGB_Hurley2000(p_Mass, p_GBParams[HURLEY_GBP::McBAGB]);
+    p_GBParams[GBP::McBAGB] = CalculateCoreMassAtBAGB_Hurley2000(p_Mass);
+    p_GBParams[GBP::McDU]   = CalculateCoreMassAt2ndDredgeUp_Hurley2000(p_GBParams[GBP::McBAGB]);
+    p_GBParams[GBP::McBGB]  = CalculateCoreMassAtBGB_Hurley2000(p_Mass, p_GBParams[GBP::McBAGB]);
 
     return p_GBParams;
 }

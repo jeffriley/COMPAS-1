@@ -21,25 +21,7 @@ public:
     WhiteDwarfs(const BaseStar &p_BaseStar) : BaseStar(p_BaseStar), Remnants(p_BaseStar) {}
 
 
-
-
-
-    Dbl_DblT         CalculateMassAcceptanceRate(const double p_DonorMassRate, const bool p_IsHeRich);
-    Dbl_DblT         CalculateMassAcceptanceRate(const double p_DonorMassRate, const double p_AccretorMassRate, const bool p_IsHeRich) { return CalculateMassAcceptanceRate(p_DonorMassRate, p_IsHeRich); }
-
-    double           HeShell()        const override { return m_HeShell; }
-    double           HShell()         const override { return m_HShell; }
-    double           L0Ritter()       const override { return m_L0Ritter; }
-    double           LambdaRitter()   const override { return m_LambdaRitter; }
-    double           XRitter()        const override { return m_XRitter; }
-    void             SetHeShell(const double p_Value)      override { m_HeShell = p_Value; }
-    void             SetHShell(const double p_Value)       override { m_HShell = p_Value; }
-    double           CalculateEtaH(const double p_MassIntakeRate)  override;        // bodies in WhiteDwarfs.cpp; promoted from protected to public
-    double           CalculateEtaHe(const double p_MassIntakeRate) override;
-
-
 protected:
-
 
     // Member functions (not getters or setters)
     //
@@ -55,7 +37,9 @@ protected:
     //   ENVELOPE                                   //
     //////////////////////////////////////////////////
 
-    GNU_CONST ENVELOPE DetermineEnvelopeType() const override { return ENVELOPE::CONVECTIVE; }  // Always CONVECTIVE for White Dwarfs // JR FIX THIS: DONE
+    GNU_CONST ENVELOPE DetermineEnvelopeType() const override { // JR FIX THIS: DONE
+        return ENVELOPE::CONVECTIVE; // Always CONVECTIVE for WDs
+    }
 
 
     //////////////////////////////////////////////////
@@ -69,67 +53,47 @@ protected:
     //   MASS                                       //
     //////////////////////////////////////////////////
 
-    GNU_PURE double CalculateCOCoreMass() const override { return COCoreMass(); }               // McCO constant for WDs // JR FIX THIS: DONE
-    GNU_PURE double CalculateCOCoreMassAtPhaseEnd() const override { return COCoreMass(); }     // McCO constant for WDs // JR FIX THIS: DONE
+    GNU_PURE double CalculateCOCoreMass() const override { // JR FIX THIS: DONE
+        return COCoreMass(); // McCO constant for WDs
+    }
+
+    GNU_PURE double CalculateCOCoreMassAtPhaseEnd() const override { // JR FIX THIS: DONE
+        return COCoreMass(); // McCO constant for WDs
+    }
 
 
-    GNU_PURE double CalculateHeCoreMass() const override { return HeCoreMass(); }               // McHe constant for WDs // JR FIX THIS: DONE
-    GNU_PURE double CalculateHeCoreMassAtPhaseEnd() const override { return HeCoreMass(); }     // McHe constant for WDs // JR FIX THIS: DONE
+    GNU_PURE double CalculateHeCoreMass() const override { // JR FIX THIS: DONE
+        return HeCoreMass(); // McHe constant for WDs
+    }
+
+    GNU_PURE double CalculateHeCoreMassAtPhaseEnd() const override { // JR FIX THIS: DONE
+        return HeCoreMass(); // McHe constant for WDs
+    }
 
 
-    GNU_PURE bool   IsMassAboveChandrasekhar() const override { return Mass() > MCH; } // JR FIX THIS: DOME
+    GNU_PURE bool IsMassAboveChandrasekhar() const override { // JR FIX THIS: DOME
+        return Mass() > MCH;
+    }
 
 
     //////////////////////////////////////////////////
     //   RADIUS                                     //
     //////////////////////////////////////////////////
 
-    GNU_PURE  double CalculateRadius() const override { return CalculateRadius_Marsh2004(Mass()); } // JR FIX THIS: DONE
-
+    GNU_PURE  double CalculateRadius() const override { // JR FIX THIS: DONE
+        return CalculateRadius_Marsh2004(Mass());
+    }
 
     GNU_CONST double CalculateRadius_Marsh2004(const double p_Mass) const; // JR FIX THIS: DONE
 
 
-    
+    //////////////////////////////////////////////////
+    //   SUPERNOVAE                                 //
+    //////////////////////////////////////////////////
 
-
-
-
-
-
-
-            
-
-
-            double           CalculateEtaPTY(const double p_MassIntakeRate);
-
-            double           Calculatel0Ritter() const { return (utils::Compare(Metallicity(), 0.01) > 0) ? L0_RITTER_HIGH_Z : L0_RITTER_LOW_Z; }
-
-            double           CalculateXRitter() const { return utils::Compare(Metallicity(), 0.01) > 0 ? 0.7 : 0.8; }
-
-            double           CalculateLambdaRitter() const { return utils::Compare(Metallicity(), 0.01) > 0 ? 8.0 : 5.0; }
-
-            double           CalculateInitialSupernovaMass() const { return 0.0; }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    GNU_CONST double CalculateInitialSupernovaMass() const override { // JR FIX THIS: DONE
+        return 0.0; // Single star: no SN
+    }
 
 };
 
@@ -280,13 +244,31 @@ double CalculateCriticalMassRatio_Hurley2002() const { return HURLEY_HJELLMING_W
 
 
 
+            double           CalculateEtaPTY(const double p_MassIntakeRate);
+
+            double           Calculatel0Ritter() const { return (utils::Compare(Metallicity(), 0.01) > 0) ? L0_RITTER_HIGH_Z : L0_RITTER_LOW_Z; }
+
+            double           CalculateXRitter() const { return utils::Compare(Metallicity(), 0.01) > 0 ? 0.7 : 0.8; }
+
+            double           CalculateLambdaRitter() const { return utils::Compare(Metallicity(), 0.01) > 0 ? 8.0 : 5.0; }
+
+
+    GNU_CONST double CalculateInitialSupernovaMass() const override { } // JR FIX THIS - needed for constituent?
 
 
 
+    Dbl_DblT         CalculateMassAcceptanceRate(const double p_DonorMassRate, const bool p_IsHeRich);
+    Dbl_DblT         CalculateMassAcceptanceRate(const double p_DonorMassRate, const double p_AccretorMassRate, const bool p_IsHeRich) { return CalculateMassAcceptanceRate(p_DonorMassRate, p_IsHeRich); }
 
-
-
-
+    double           HeShell()        const override { return m_HeShell; }
+    double           HShell()         const override { return m_HShell; }
+    double           L0Ritter()       const override { return m_L0Ritter; }
+    double           LambdaRitter()   const override { return m_LambdaRitter; }
+    double           XRitter()        const override { return m_XRitter; }
+    void             SetHeShell(const double p_Value)      override { m_HeShell = p_Value; }
+    void             SetHShell(const double p_Value)       override { m_HShell = p_Value; }
+    double           CalculateEtaH(const double p_MassIntakeRate)  override;        // bodies in WhiteDwarfs.cpp; promoted from protected to public
+    double           CalculateEtaHe(const double p_MassIntakeRate) override;
 
 
 

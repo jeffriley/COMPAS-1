@@ -1,8 +1,6 @@
 #pragma once
 
 #include "constants.h"
-#include "typedefs.h"
-
 #include "WhiteDwarfs.h"
 
 
@@ -30,7 +28,6 @@ private:
 
 protected:
 
-
     // Member functions (not getters or setters)
     //
     // VIRTUAL FUNCTIONS may be (are expected to be) overridden by derived classes.
@@ -45,8 +42,13 @@ protected:
     //   EVOLUTION                                  //
     //////////////////////////////////////////////////
     
-    GNU_PURE  STELLAR_TYPE EvolveToNextPhase() const override { return StellarType(); } // Single-star: no AIC, stay ONeWD // JR FIX THIS: DONE
-    GNU_CONST bool ShouldEvolveOnPhase() const override { return true; }                // Single-star: no AIC, keep cooling // JR FIX THIS: DONE
+    GNU_PURE  STELLAR_TYPE EvolveToNextPhase() const override { // JR FIX THIS: DONE
+        return StellarType(); // Single star: no AIC, stay ONeWD
+    }
+
+    GNU_CONST bool ShouldEvolveOnPhase() const override { // JR FIX THIS: DONE
+        return true; // Single star: no AIC, keep cooling
+    }
 
 
     //////////////////////////////////////////////////
@@ -62,8 +64,13 @@ protected:
     //   SUPERNOVAE                                 //
     //////////////////////////////////////////////////
     
-    GNU_CONST bool IsSupernova() const override { return false; }                        // Single-star: no AIC // JR FIX THIS: DONE
-    GNU_PURE  STELLAR_TYPE ResolveSupernova() const override { return StellarType(); }   // Single-star: no AIC, NO-OP) // JR FIX THIS: DONE
+    GNU_CONST bool IsSupernova() const override { // JR FIX THIS: DONE
+        return false; // Single star: no AIC
+    }
+
+    GNU_PURE  STELLAR_TYPE ResolveSupernova() const override { // JR FIX THIS: DONE
+        return StellarType(); // Single star: no AIC, stay ONeWD
+    }
                                                            
 };
 

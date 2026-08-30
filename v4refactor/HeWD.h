@@ -1,8 +1,6 @@
 #pragma once
 
 #include "constants.h"
-#include "typedefs.h"
-
 #include "WhiteDwarfs.h"
 
 
@@ -10,7 +8,6 @@ class BaseStar;
 class WhiteDwarfs;
 
 class HeWD: virtual public BaseStar, public WhiteDwarfs {
-
 
 public:
 
@@ -31,7 +28,6 @@ private:
 
 protected:
 
-
     // Member functions (not getters or setters)
     //
     // VIRTUAL FUNCTIONS may be (are expected to be) overridden by derived classes.
@@ -46,15 +42,25 @@ protected:
     //   ABUNDANCE                                  //
     //////////////////////////////////////////////////
 
-    GNU_PURE inline double CalculateHeAbundanceCore(const double p_Tau) const override { return 1.0 - Metallicity(); }
-    GNU_PURE inline double CalculateHeAbundanceSurface(const double p_Tau) const override { return 1.0 - Metallicity(); }
+    GNU_PURE double CalculateHeAbundanceCore(const double p_Tau) const override { // JR FIX THIS: DONE
+        return 1.0 - Metallicity();
+    }
+
+    GNU_PURE double CalculateHeAbundanceSurface(const double p_Tau) const override { // JR FIX THIS: DONE
+        return 1.0 - Metallicity();
+    }
 
     //////////////////////////////////////////////////
     //   EVOLUTION                                  //
     //////////////////////////////////////////////////
     
-    GNU_CONST inline bool ShouldEvolveOnPhase() const override { return true; }                 // Single-star: no SNIa or HeSD, keep cooling
-    GNU_CONST inline STELLAR_TYPE EvolveToNextPhase() const override { return StellarType(); }  // Single-star: no SNIa or HeSD, stay HeWD
+    GNU_CONST bool ShouldEvolveOnPhase() const override { // JR FIX THIS: DONE
+        return true; // Single star: no SNIa or HeSD, keep cooling
+    }
+
+    GNU_CONST inline STELLAR_TYPE EvolveToNextPhase() const override { // JR FIX THIS: DONE
+        return StellarType(); // Single star: no SNIa or HeSD, stay HeWD
+    }
 
 
     //////////////////////////////////////////////////
@@ -67,21 +73,24 @@ protected:
 
 
     //////////////////////////////////////////////////
+    //   RADIUS                                     //
+    //////////////////////////////////////////////////
+
+    // JR FIX THIS vvvvvvvvvvvvvvvvvvvvvvvvvvvv
+    //// std::tuple <double, STELLAR_TYPE> CalculateRadiusAndStellarTypeOnPhase() const                          { return BaseStar::CalculateRadiusAndStellarTypeOnPhase(); }
+
+
+    //////////////////////////////////////////////////
     //   SUPERNOVAE                                 //
     //////////////////////////////////////////////////
     
-    GNU_CONST inline bool IsSupernova() const override { return false; }                        // Single-star: no SNIa or HeSD
-    GNU_CONST inline STELLAR_TYPE ResolveSupernova() const override { return StellarType(); }   // Single-star: no SNIa or HeSD, NO-OP)
+    GNU_CONST inline bool IsSupernova() const override { // JR FIX THIS: DONE
+        return false; // Single star: no SNIa or HeSD
+    }
 
-
-    
-
-////    double          CalculateRadiusOnPhase(const double p_Mass) const                                       { return CalculateRadiusOnPhase_Static(p_Mass); }
-////    double          CalculateRadiusOnPhase(double p_Mass, double p_Luminosity) const                        { return CalculateRadiusOnPhase(p_Mass); }                                      // ignore luminosity argument for WDs
-////    double          CalculateRadiusOnPhase() const                                                          { return CalculateRadiusOnPhase(m_Mass); }                                      // Use class member variables
-
-
-    std::tuple <double, STELLAR_TYPE> CalculateRadiusAndStellarTypeOnPhase() const                          { return BaseStar::CalculateRadiusAndStellarTypeOnPhase(); }
+    GNU_CONST inline STELLAR_TYPE ResolveSupernova() const override { // JR FIX THIS: DONE
+        return StellarType(); // Single star: no SNIa or HeSD, stay HeWD
+    }
 
 };
 

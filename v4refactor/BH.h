@@ -34,7 +34,6 @@ private:
     
 protected:
 
-
     // Member functions (not getters or setters)
     //
     // VIRTUAL FUNCTIONS may be (are expected to be) overridden by derived classes.
@@ -50,8 +49,7 @@ protected:
     //////////////////////////////////////////////////
 
     GNU_PURE TimescalesT CalculateTimescales(const double p_Mass, const TimescalesT& p_tScales) const override { // JR FIX THIS: DONE
-        // Not meaningful for BH, so we just return current timescales
-        return Timescales();
+        return Timescales(); // Not meaningful for BH, so we just return current timescales
     }
 
     
@@ -66,37 +64,52 @@ protected:
     //   LUMINOSITY                                 //
     //////////////////////////////////////////////////
    
-    GNU_CONST double CalculateLuminosity_Hurley2000() const override { return 1.0E-10; }                                            // Hurley et al. 2000, eq 96 // JR FIX THIS: DONE
+    GNU_CONST double CalculateLuminosity_Hurley2000() const override { // JR FIX THIS: DONE
+        return 1.0E-10; // Hurley et al. 2000, eq 96
+    }
 
 
     //////////////////////////////////////////////////
     //   MASS LOSS / ACCRETION                      //
     //////////////////////////////////////////////////
 
-    GNU_CONST double CalculateEddingtonCriticalRate(const double p_Mass) const override { return 2.6E-8 * p_Mass * MYR_TO_YEAR; }   // e.g., Marchant+, 2017, Eq. 3, assuming accretion efficiency of 10% // JR FIX THIS: DONE
-    GNU_PURE  double CalculateEddingtonCriticalRate() const override { return CalculateEddingtonCriticalRate(Mass()); } // JR FIX THIS: DONE
+    GNU_CONST double CalculateEddingtonCriticalRate(const double p_Mass) const override { // JR FIX THIS: DONE
+        return 2.6E-8 * p_Mass * MYR_TO_YEAR; // e.g., Marchant+, 2017, Eq. 3, assuming accretion efficiency of 10%
+    }
+    GNU_PURE  double CalculateEddingtonCriticalRate() const override { // JR FIX THIS: DONE
+        return CalculateEddingtonCriticalRate(Mass());
+    }
 
 
-    GNU_CONST MassLossT CalculateMassLossRate() const override { return std::make_tuple(0.0, ML_TYPE::NONE); }                      // Ensure BHs don't lose mass via winds // JR FIX THIS: DONE
+    GNU_CONST MassLossT CalculateMassLossRate() const override { // JR FIX THIS: DONE
+        return std::make_tuple(0.0, ML_TYPE::NONE); // Ensure BHs don't lose mass via winds
+    }
 
-    GNU_PURE  static double CalculateNeutrinoMassLoss(const double p_BaryonicMass); // JR FIX THIS: DONE
+
+    GNU_PURE static double CalculateNeutrinoMassLoss(const double p_BaryonicMass); // JR FIX THIS: DONE
 
     
     //////////////////////////////////////////////////
     //   RADIUS                                     //
     //////////////////////////////////////////////////
 
-    // Radius of Schwarzschild black hole, per Hurley et al. 2000, eq 94.
-    // Note that the Schwarzschild radius is not correct for a rotating BH.
-    GNU_CONST double CalculateRadius_Hurley2000(const double p_Mass) const override { return 4.24E-6 * p_Mass; } // JR FIX THIS: DONE
-    GNU_PURE  double CalculateRadius_Hurley2000() const override { return CalculateRadius_Hurley2000(Mass()); } // JR FIX THIS: DONE
+    
+    GNU_CONST double CalculateRadius_Hurley2000(const double p_Mass) const override { // JR FIX THIS: DONE
+        // Note that the Schwarzschild radius is not correct for a rotating BH.
+        return 4.24E-6 * p_Mass; // Radius of Schwarzschild black hole, per Hurley et al. 2000, eq 94.
+    }
+    GNU_PURE  double CalculateRadius_Hurley2000() const override { // JR FIX THIS: DONE
+        return CalculateRadius_Hurley2000(Mass());
+    }
 
 
     //////////////////////////////////////////////////
     //   SPIN PARAMETERS                            //
     //////////////////////////////////////////////////
 
-    GNU_PURE double CalculateMomentOfInertia() const override { return (2.0 / 5.0) * Mass() * Radius() * Radius(); }                // MoI for solid sphere *Ilya* JR: that's not really right, is it? // JR FIX THIS: DONE
+    GNU_PURE double CalculateMomentOfInertia() const override { // JR FIX THIS: DONE
+        return (2.0 / 5.0) * Mass() * Radius() * Radius(); // MoI for solid sphere *Ilya* JR: that's not really right, is it?
+    }
     
 };
 

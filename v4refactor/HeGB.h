@@ -138,10 +138,10 @@ double HeGB::CalculateAge_Hurley2000(const double p_Mass, const double p_CoreMas
     const double AHe = p_GBParams[GBP::AHe];
     const double B   = p_GBParams[GBP::B];
     const double D   = p_GBParams[GBP::D];
-    const double p   = p_GBParams[GBP::P];
-    const double q   = p_GBParams[GBP::Q];
-    const double Lx  = p_GBParams[GBP::LX];
-    const double Mx  = p_GBParams[GBP::MX];
+    const double p   = p_GBParams[GBP::p];
+    const double q   = p_GBParams[GBP::q];
+    const double Lx  = p_GBParams[GBP::Lx];
+    const double Mx  = p_GBParams[GBP::Mx];
 
     const double p1    = p - 1.0;
     const double p1_p  = p1 / p;
@@ -221,9 +221,9 @@ double HeGB::CalculateCoreMass_Hurley2000(const double p_Mass, const double p_Ag
     const double AHe = p_GBParams[GBP::AHe];
     const double B   = p_GBParams[GBP::B];
     const double D   = p_GBParams[GBP::D];
-    const double p   = p_GBParams[GBP::P];
-    const double q   = p_GBParams[GBP::Q];
-    const double Lx  = p_GBParams[GBP::LX];
+    const double p   = p_GBParams[GBP::p];
+    const double q   = p_GBParams[GBP::q];
+    const double Lx  = p_GBParams[GBP::Lx];
 
     const double p1    = p - 1.0;
     const double p1_p  = p1 / p;

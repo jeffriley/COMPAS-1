@@ -4,9 +4,7 @@
 #include "typedefs.h"
 #include "sampling.h"
 
-#include "Rand.h"
 #include "Remnants.h"
-#include "ConstituentStar.h"
 #include "BH.h"
 
 
@@ -45,7 +43,6 @@ private:
 
 protected:
 
-
     // Member functions (not getters or setters)
     //
     // VIRTUAL FUNCTIONS may be (are expected to be) overridden by derived classes.
@@ -60,12 +57,26 @@ protected:
     //   AGE, LIFETIME, TAU, TIMESCALES, TIMESTEP   //
     //////////////////////////////////////////////////
 
-    GNU_PURE  double ChooseTimestep() const override { return ChooseTimestep(Age()); } // JR FIX THIS: DONE
-    GNU_CONST double ChooseTimestep(const double p_Age) const; // JR FIX THIS: DONE
+    GNU_PURE TimescalesT CalculateTimescales(const double p_Mass, const TimescalesT& p_tScales) const override { // JR FIX THIS: DONE
+        return Timescales(); // Not meaningful for NS, so we just return current timescales
+    }
 
-    GNU_PURE  TimescalesT CalculateTimescales(const double p_Mass, const TimescalesT& p_tScales) const override { // JR FIX THIS: DONE
-        // Not meaningful for NS, so we just return current timescales
-        return Timescales();
+    GNU_CONST double ChooseTimestep(const double p_Age) const; // JR FIX THIS: DONE
+    GNU_PURE  double ChooseTimestep() const override { // JR FIX THIS: DONE
+        return ChooseTimestep(Age());
+    }
+
+    
+    //////////////////////////////////////////////////
+    //   EVOLUTION                                  //
+    //////////////////////////////////////////////////
+
+    GNU_CONST STELLAR_TYPE EvolveToNextPhase() const override { // JR FIX THIS: DONE
+        return STELLAR_TYPE::BLACK_HOLE;
+    }
+
+    GNU_PURE bool ShouldEvolveOnPhase() const override { // JR FIX THIS: DONE
+        return (Mass() <= OPTIONS->MaximumNeutronStarMass());
     }
 
     
@@ -73,15 +84,19 @@ protected:
     //   LUMINOSITY                                 //
     //////////////////////////////////////////////////
 
-    GNU_PURE  double CalculateLuminosity_Hurley2000() const override { return CalculateLuminosity_Hurley2000(Mass(), Age()); } // JR FIX THIS: DONE
     GNU_CONST double CalculateLuminosity_Hurley2000(const double p_Mass, const double p_Age) const; // JR FIX THIS: DONE
+    GNU_PURE  double CalculateLuminosity_Hurley2000() const override { // JR FIX THIS: DONE
+        return CalculateLuminosity_Hurley2000(Mass(), Age());
+    }
 
 
     //////////////////////////////////////////////////
     //   MASS LOSS / ACCRETION                      //
     //////////////////////////////////////////////////
 
-    GNU_CONST MassLossT CalculateMassLossRate() const override { return std::make_tuple(0.0, ML_TYPE::NONE); } // Ensure BHs don't lose mass via winds // JR FIX THIS: DONE
+    GNU_CONST MassLossT CalculateMassLossRate() const override { // JR FIX THIS: DONE
+        return std::make_tuple(0.0, ML_TYPE::NONE); // Ensure BHs don't lose mass via winds
+    }
 
 
     //////////////////////////////////////////////////
@@ -95,8 +110,9 @@ protected:
     //   RADIUS                                     //
     //////////////////////////////////////////////////
 
-    double CalculateRadius() const override { return DetermineRadiusInKM(Mass()) * KM_TO_RSOL;} // JR FIX THIS: DONE
-
+    double CalculateRadius() const override { // JR FIX THIS: DONE
+        return DetermineRadiusInKM(Mass()) * KM_TO_RSOL;
+    }
 
     static double DetermineRadiusInKM(const double p_Mass); // JR FIX THIS: DONE
 
@@ -110,23 +126,9 @@ protected:
         return CalculateMomentOfInertia(const double Mass(), const double Radius());
     }
 
-
     GNU_CONST static double CalculateSpinDownRate(const double p_Radius, const double p_SpinPeriod, const double p_MoI, const double p_MagField) const; // JR FIX THIS: DONE
 
-
     GNU_CONST static PulsarDetailsT CalculateSpinDownValues(const double p_Radius, const double p_Stepsize, const PulsarDetailsT& p_PulsarDetails, const PulsarConstantsT& p_PulsarConstants) const; // JR FIX THIS: DONE
-
-
-
- 
-
-
-
-
-            STELLAR_TYPE    EvolveToNextPhase()                                 { return STELLAR_TYPE::BLACK_HOLE; }
-
-    
-            bool            ShouldEvolveOnPhase() const                         { return (Mass() <= OPTIONS->MaximumNeutronStarMass()); }
 
 };
 
@@ -160,7 +162,7 @@ protected:
  * double ChooseTimestep(const double p_Age)
  *
  * @param       p_Age                           Age of the star (Myr)
- * @return                                      Suggested timestep (Myr)
+ * @return                                      Timestep (Myr)
  */
 inline double NS::ChooseTimestep(const double p_Age) const {
 
@@ -201,7 +203,7 @@ inline double NS::ChooseTimestep(const double p_Age) const {
  */
 inline PulsarDetailsT NS::CalculateBirthParameters(const double p_Mass, const double p_Radius) const {
 
-    PulsarDetailsT pDet;
+    PulsarDetailsT pDet = {};                                                   // Default return value
 
     pDet.magneticField     = PPOW(10.0, sampling::SampleBirthMagneticField());  // Gauss
     pDet.spinPeriod        = sampling::SampleBirthSpinPeriod();                 // Seconds (s)

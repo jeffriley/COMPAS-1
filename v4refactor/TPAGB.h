@@ -22,38 +22,61 @@ public:
         if (p_Initialise) Initialise();                                                                                                                                                                     // Initialise if required
     }
 
-    TPAGB* Clone(const OBJECT_PERSISTENCE p_Persistence, const bool p_Initialise = true) {
-        TPAGB* clone = new TPAGB(*this, p_Initialise); 
-        clone->SetPersistence(p_Persistence); 
-        return clone; 
-    }
 
-    static TPAGB* Clone(TPAGB& p_Star, const OBJECT_PERSISTENCE p_Persistence, const bool p_Initialise = true) {
-        TPAGB* clone = new TPAGB(p_Star, p_Initialise); 
-        clone->SetPersistence(p_Persistence); 
-        return clone; 
+private:
+
+    void Initialise() {
+        m_InterimState.SetAge(m_InterimState.HurleyTimescales(TS::DU2)); // JR FIX THIS <<<<<<<<<<<<<<<<<<<<<<<<
     }
 
 
 protected:
 
-    void Initialise() {
-        CalculateTimescales();                                                                                                                                                                              // Initialise timescales
-        m_InterimState.SetAge(m_InterimState.HurleyTimescales(HURLEY_TIMESCALES::DU2));                                                                                                                     // Set age appropriately (was: m_Age = m_Timescales[HURLEY_TIMESCALES::DU2], where tP -> DU2 under current HURLEY_TIMESCALES enum)
-        
-        EvolveOnPhase(0.0);
-   }
+    // Member functions (not getters or setters)
+    //
+    // VIRTUAL FUNCTIONS may be (are expected to be) overridden by derived classes.
+    // When overriding virtual functions in a derived class, use the "override" attribute.
+    //
+    // NON-VIRTUAL FUNCTIONS should not be overridden (declared separately) by derived classes.
+    // While it is legal in C++ to declare the same (non-virtual) function in multiple classes,
+    // (aka "shadowing", or "hiding"), we discourage it.  Non-virtual functions are statically
+    // bound, and as such, especially with indirection, may not produce expected results.
+
+    //////////////////////////////////////////////////
+    //   AGE, LIFETIME, TAU, TIMESCALES, TIMESTEP   //
+    //////////////////////////////////////////////////
+
+    GNU_CONST double CalculateTau_Hurley2000() const override { // JR FIX THIS: DONE
+        return 0.0; // Tau (relative age) is not used for TPAGB stars in Hurley et al. 2000, so we return 0.0
+    }
+
+    GNU_CONST inline double CalculateTauAtPhaseEnd_Hurley2000(const double p_Age, const DblVectorT& p_tScales) const override { // JR FIX THIS: DONE
+        return 0.0; // Tau (relative age) is not used for TPAGB stars in Hurley et al. 2000, so we return 0.0
+    }
 
 
-   // member functions - alphabetically
+    GNU_PURE TimescalesT CalculateTimescales_Hurley2000(const double p_Mass, const GBParamsT& p_GBParams, const TimescalesT& p_tScales) const; // JR FIX THIS: DONE
+    GNU_PURE TimescalesT CalculateTimescales_Hurley2000() const override { // JR FIX THIS: DONE
+        return CalculateTimescales_Hurley2000(Mass0, GBParams(), Timescales());
+    }
 
 
+    GNU_CONST double TPAGB::ChooseTimestep_Hurley2000(const double p_Age, const TimescalesT& p_tScales) const override; // JR FIX THIS: DONE
 
 
-            double          CalculateConvectiveCoreRadius() const                                                   { return CalculateConvectiveCoreRadius(Radius()); }                                     // Last paragraph of section 6 of Hurley+ 2000
-            double          CalculateConvectiveCoreRadius(const double p_Radius) const                              { return std::min(5.0 * CalculateRemnantRadius(), p_Radius); }
-                                                                // NO-OP
+    //////////////////////////////////////////////////
+    //   ENVELOPE                                   //
+    //////////////////////////////////////////////////
 
+    GNU_CONST Dbl_DblT CalculateConvectiveEnvelopeMass(const double p_Mass, const double p_CoreMass) const; // JR FIX THIS: DONE
+    GNU_PURE  inline Dbl_DblT CalculateConvectiveEnvelopeMass() const override { // JR FIX THIS: DONE
+        return CalculateConvectiveEnvelopeMass(Mass(), CoreMass());
+    }
+    
+
+    //////////////////////////////////////////////////
+    //   LUMINOSITY                                 //
+    //////////////////////////////////////////////////
 
             double          CalculateLuminosityOnPhase(const double p_Time) const;
             double          CalculateLuminosityOnPhase() const                                                      { return CalculateLuminosityOnPhase(Age()); }                                                                                                                                                                                       // Use state-routed values
@@ -61,83 +84,26 @@ protected:
             double          CalculateLuminosityAtPhaseEnd(const double p_Luminosity) const                          { return p_Luminosity; }
 
 
-            double          CalculateRadiusAtPhaseEnd() const                                                       { return CalculateRadiusAtPhaseEnd(Radius()); }                                                                                                                                                                                      // NO-OP
-            double          CalculateRadiusAtPhaseEnd(const double p_Radius) const                                  { return p_Radius; }
-            double          CalculateRadiusOnPhase(const double p_Mass, const double p_Luminosity) const            { return CalculateRadiusOnPhase_Static(p_Mass, p_Luminosity, ZDEP->HurleyMassCutoffs(Metallicity(), HURLEY_MCO::HeF), ZDEP->HurleyBCoefficients(Metallicity())); }                            // metallicity-dependent lookups via ZDEPENDENT (was: m_MassCutoffs[MHeF], m_BnCoefficients)
-            double          CalculateRadiusOnPhase() const                                                          { return CalculateRadiusOnPhase(Mass(), Luminosity()); }                                                                                                                                                                            // Use state-routed values
-    static  double          CalculateRadiusOnPhase_Static(const double      p_Mass,
-                                                          const double      p_Luminosity,
-                                                          const double      p_MHeF,
-                                                          const DBL_VECTOR &p_BnCoefficients);
-
             double          CalculateRemnantLuminosity() const;
 
 
+GNU_CONST double CalculateLuminosity_Hurley2000(const double p_Age, const DBL_VECTOR& p_GBParams, const DBL_VECTOR& p_tScales) const;
+using BaseStar::CalculateLuminosity_Hurley2000;
 
 
 
 
 
+    //////////////////////////////////////////////////
+    //   MASS                                       //
+    //////////////////////////////////////////////////
 
 
-
-
-
-
-///// ON PHASE FUNCTIONS   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<       
-
-
-
-    ////////////////////////////////////////
-    //   AGE, LIFETIME, TAU, TIMESCALES   //
-    ////////////////////////////////////////
-
-    // Tau (relative age) is not used for TPAGB stars in Hurley et al. 2000, so we return 0.0
-    GNU_CONST inline double CalculateTau_Hurley2000() const override { return 0.0; } // JR FIX THIS: DONE
-    GNU_CONST inline double CalculateTauAtPhaseEnd_Hurley2000(const double p_Age, const DblVectorT& p_tScales) const override { return 0.0; }; // JR FIX THIS: DONE
-
-
-void CalculateTimescales_Hurley2000() override { m_InterimState.SetHurleyTimescales(CalculateTimescales_Hurley2000(MassEffectiveInitial(), m_InterimState.HurleyGBParamsOrDefault(), m_InterimState.HurleyTimescalesOrDefault())); }
-COMPAS_PURE DBL_VECTOR CalculateTimescales_Hurley2000(const double p_Mass, const DBL_VECTOR& p_GBParams, const DBL_VECTOR& p_tScales) const;
-
-void CalculateTimescales(const double p_Mass, DBL_VECTOR &p_Timescales) override;
-
-
-
-
-
-
-    
-
-
-
-    ////////////////////////////////////////
-    //   LUMINOSITY                       //
-    ////////////////////////////////////////
-
-
-
-
-
-
-
-
-
-
-    ////////////////////////////////////////
-    //   MASS                             //
-    ////////////////////////////////////////
-
-
-inline Dbl_DblT CalculateConvectiveEnvelopeMass() const override { return CalculateConvectiveEnvelopeMass(Mass(), CoreMass()); }
-GNU_CONST Dbl_DblT CalculateConvectiveEnvelopeMass(const double p_Mass, const double p_CoreMass) const;
 
 
         
 double CalculateCoreMass() const override;
 GNU_CONST double CalculateCoreMass_Hurley2000(const double p_Age, const double p_MassEffectiveInitial, const DBL_VECTOR& p_GBParams, const double p_McDU, const DBL_VECTOR& p_tScales) const;
-GNU_CONST double CalculateLuminosity_Hurley2000(const double p_Age, const DBL_VECTOR& p_GBParams, const DBL_VECTOR& p_tScales) const;
-using BaseStar::CalculateLuminosity_Hurley2000;
 GNU_CONST double CalculateCoreMassPrime_Hurley2000(const double p_Age, const DBL_VECTOR& p_GBParams, const DBL_VECTOR& p_tScales) const;
 
 inline double CalculateCOCoreMass() const override { return CalculateCoreMass(); } // McCO = Mc for TPAGB stars  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< check for already computed
@@ -146,8 +112,6 @@ inline double CalculateHeCoreMass() const override { return CalculateCoreMass();
 GNU_CONST double CalculateMcPrime_Hurley2000(const double p_Age, const DBL_VECTOR& p_GBParams, const DBL_VECTOR& p_tScales) const;
 
 
-inline double CalculateRemnantRadius_Hurley2000() const override { return CalculateRemnantRadius_Hurley2000_Static(CoreMass()); }
-GNU_CONST static double CalculateRemnantRadius_Hurley2000_Static(const double p_CoreMass);
 
 
 
@@ -160,7 +124,6 @@ GNU_CONST static double CalculateRemnantRadius_Hurley2000_Static(const double p_
 
 
 
-///// PHASE END, ETC.      <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 inline double CalculateCOCoreMassAtPhaseEnd() const override { return std::min(CalculateCoreMass(), Mass()); } // McCO = Mc for TPAGB stars; McCO should be <= M  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< check for already computed
 
@@ -175,11 +138,36 @@ inline double CalculateHeCoreMassAtPhaseEnd() const override { return CalculateC
 
 
 
-    ////////////////////////////////////////
-    //   RADIUS                           //
-    ////////////////////////////////////////
+    //////////////////////////////////////////////////
+    //   RADIUS                                     //
+    //////////////////////////////////////////////////
 
 
+            double          CalculateConvectiveCoreRadius() const                                                   { return CalculateConvectiveCoreRadius(Radius()); }                                     // Last paragraph of section 6 of Hurley+ 2000
+            double          CalculateConvectiveCoreRadius(const double p_Radius) const                              { return std::min(5.0 * CalculateRemnantRadius(), p_Radius); }
+
+
+
+                double          CalculateRadiusAtPhaseEnd() const                                                       { return CalculateRadiusAtPhaseEnd(Radius()); }                                                                                                                                                                                      // NO-OP
+            double          CalculateRadiusAtPhaseEnd(const double p_Radius) const                                  { return p_Radius; }
+            double          CalculateRadiusOnPhase(const double p_Mass, const double p_Luminosity) const            { return CalculateRadiusOnPhase_Static(p_Mass, p_Luminosity, ZDEP->HurleyMassCutoffs(Metallicity(), HURLEY_MCO::HeF), ZDEP->HurleyBCoefficients(Metallicity())); }                            // metallicity-dependent lookups via ZDEPENDENT (was: m_MassCutoffs[MHeF], m_BnCoefficients)
+            double          CalculateRadiusOnPhase() const                                                          { return CalculateRadiusOnPhase(Mass(), Luminosity()); }                                                                                                                                                                            // Use state-routed values
+    static  double          CalculateRadiusOnPhase_Static(const double      p_Mass,
+                                                          const double      p_Luminosity,
+                                                          const double      p_MHeF,
+                                                          const DBL_VECTOR &p_BnCoefficients);
+
+
+
+inline double CalculateRemnantRadius_Hurley2000() const override { return CalculateRemnantRadius_Hurley2000_Static(CoreMass()); }
+GNU_CONST static double CalculateRemnantRadius_Hurley2000_Static(const double p_CoreMass);
+
+
+
+
+    //////////////////////////////////////////////////
+    //   TEMPERATURE                                //
+    //////////////////////////////////////////////////
 
 
             double          CalculateTemperatureAtPhaseEnd(const double p_Luminosity, const double p_Radius) const  { return Temperature(); }                                                                                                                                                                                                           // NO-OP (deliberately ignores inputs; returns current temperature)
@@ -187,7 +175,6 @@ inline double CalculateHeCoreMassAtPhaseEnd() const override { return CalculateC
 
 
 
-GNU_CONST double ChooseTimestep_Hurley2000(const double p_Age, const DBL_VECTOR& p_tScales) const override;
 
 GNU_CONST inline ENVELOPE DetermineEnvelopeType() const override { return ENVELOPE::CONVECTIVE; } // Always CONVECTIVE for TPAGB stars
 
@@ -226,6 +213,59 @@ GNU_CONST inline ENVELOPE DetermineEnvelopeType() const override { return ENVELO
 //                                                                                   //
 ///////////////////////////////////////////////////////////////////////////////////////
 
+/*
+ * CalculateTimescales_Hurley2000
+ *
+ * @brief
+ * Calculate timescales given the mass of the star, per Hurley at al. 2000.
+ * 
+ * Since timescales depend on a star's mass, they need to be calculated whenever
+ * the mass of the star changes (probably every timestep).
+ *
+ *
+ * TimescalesT CalculateTimescales_Hurley2000(const double p_Mass, const GBParamsT& p_GBParams, const TimescalesT& p_tScales) const
+ *
+ * @param       p_Mass                          Mass of the star (Msol)
+ * @param       p_GBParams                      GB parameters
+ * @param       p_tScales                       Timescales (Myr)
+ * @return                                      Mutated timescales (Myr)
+ */
+inline TimescalesT TPAGB::CalculateTimescales_Hurley2000(const double p_Mass, const GBParamsT& p_GBParams, const TimescalesT& p_tScales) const {
+
+    const double AHHe = p_GBParams[GBP::AHHe];
+    const double B    = p_GBParams[GBP::B];
+    const double D    = p_GBParams[GBP::D];
+    const double p    = p_GBParams[GBP::p];
+    const double q    = p_GBParams[GBP::q];
+    const double Lx   = p_GBParams[GBP::Lx];
+
+    const double p1   = p - 1.0;
+    const double p1_p = p1 / p;
+    const double q1   = q - 1.0;
+    const double q1_q = q1 / q;
+
+    TimescalesT tScales = p_tScales;                                                // Copy given timescales (can't rely on EAGB::CalculateTimescales_Hurley() to copy all)   
+    tScales = EAGB::CalculateTimescales_Hurley(p_Mass, p_GBParams, tScales);        // Recalculate EAGB timescales (Note: EAGB does not recalculate earlier timescales) // JR FIX THIS: check this <<<<<<<<<<<<<<<<<<
+
+    tScales[TS::DU2] = CalculateLifetimeTo2ndDredgeUp(tScales[TS::Inf1_FAGB], tScales[TS::Inf2_FAGB]);
+
+    double lDU = CalculateLuminosity_Hurley2000(p_GBParams[GBP::McDU], p_GBParams); // Uses McDU as core mass
+
+    if (lDU > Lx) {
+        tScales[TS::Inf1_SAGB] = tScales[TS::Inf1_FAGB];
+        tScales[TS::Mx_SAGB]   = tScales[TS::Mx_FAGB];
+        tScales[TS::Inf2_SAGB] = tScales[TS::DU2] + ((1.0 / (q1 * AHHe * B)) * PPOW(B / lDU, q1_q));
+    }
+    else {
+        tScales[TS::Inf1_SAGB] = tScales[TS::DU2] + ((1.0 / (p1 * AHHe * D )) * PPOW(D / lDU, p1_p));
+        tScales[TS::Mx_SAGB]   = tScales[TS::Inf1_SAGB] - ((tScales[TS::Inf1_SAGB] - tScales[TS::DU2]) * PPOW((lDU / Lx), p1_p));
+        tScales[TS::Inf2_SAGB] = tScales[TS::Mx_SAGB] + ((1.0 / (q1 * AHHe * B)) * PPOW((B / Lx), q1_q));
+    }
+
+    // Return timescales vector by value - NRVO takes care of performance/efficiency
+    return tScales;
+}
+
 
 /*
  * ChooseTimestep_Hurley2000
@@ -236,21 +276,17 @@ GNU_CONST inline ENVELOPE DetermineEnvelopeType() const override { return ENVELO
  * The returned value will be clamped to minimum NUCLEAR_MINIMUM_TIMESTEP
  *
  *
- * double ChooseTimestep_Hurley2000(const double p_Age, const DBL_VECTOR& p_tScales)
+ * double ChooseTimestep_Hurley2000(const double p_Age, const TimescalesT& p_tScales)
  *
  * @param       p_Age                           Age of the star (Myr)
  * @param       p_tScales                       Timescales (Myr)
- * @return                                      Suggested timestep (Myr)
+ * @return                                      Timestep (Myr)
  */
-GNU_CONST inline double TPAGB::ChooseTimestep_Hurley2000(const double p_Age, const DBL_VECTOR& p_tScales) const {
-#define tScales(x) p_tScales[static_cast<int>(HURLEY_TIMESCALES::x)]
+inline double TPAGB::ChooseTimestep_Hurley2000(const double p_Age, const TimescalesT& p_tScales) const {
+    const double dtk = 0.02 * ((!(p_Age > p_tScales[TS::Mx_SAGB]) ? p_tScales[TS::Inf1_SAGB] : p_tScales[TS::Inf2_SAGB]) - p_Age);
+    const double dte = 5.0E-3;
 
-    const double dtk = 0.02 * ((p_Age <= tScales(Mx_SAGB) ? tScales(Inf1_SAGB) : tScales(Inf2_SAGB)) - p_Age);   // stellar type specific dt
-    const double dte = 5.0E-3;                                                                                      // (artificial) time to end of phase (change of stellar type)
-
-    return std::max(std::min(dtk, dte), NUCLEAR_MINIMUM_TIMESTEP);                                                  // clamp to minimum NUCLEAR_MINIMUM_TIMESTEP
-
-#undef tScales
+    return std::max(std::min(dtk, dte), NUCLEAR_MINIMUM_TIMESTEP); // Clamp to minimum NUCLEAR_MINIMUM_TIMESTEP
 }
 
 
